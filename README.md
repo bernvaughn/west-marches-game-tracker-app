@@ -1,12 +1,12 @@
 # D&D Money Tracker: Shopping List and Infrastructure Plan
 
-Plan written 2026-11-09. Prices were checked that day from third-party summaries of DigitalOcean's pricing; confirm them on the signup page.
+Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Prices come from DigitalOcean's own docs where noted and otherwise from third-party summaries; confirm them on the signup page.
 
-Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, printing, and a donate button. The cost and infrastructure sections below were written for the smaller scope and have not been re-checked. User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, maps, quests, trades, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet, with one new item to settle (sending email, see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
 ## Summary
 
-Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own.
+Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own. The larger scope changes the bill little: storage and traffic stay tiny, and the one real gap is that DigitalOcean blocks outgoing email, so any email the app sends needs a separate provider or a design that avoids email.
 
 The app lets game masters (GMs) assign money to player characters, and lets players spend it on shop items between sessions. The game master changes the shop's items and prices between sessions. When a limited-quantity item sells out, it disappears for every other player within a few seconds.
 
@@ -18,35 +18,38 @@ Buy one Basic Droplet with 1 GiB of RAM at $6/month, add backups if you want the
 | --- | --- | --- | --- |
 | DigitalOcean Droplet, Basic, 1 GiB RAM | $6/month | Yes | 1 vCPU, 25 GB SSD, about 1 TB of outbound transfer included ([plan list](https://www.temperstack.com/plans/digitalocean/)) |
 | Automatic Droplet backups | about $1.20/month (20% of the Droplet price) | Optional | Weekly backups ([cost example](https://www.activepieces.com/blog/digitalocean-pricing-plans-and-real-costs-in-2026)) |
-| Domain name | about $10-15/year | Optional | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically |
+| Domain name | about $10-15/year | Optional, needed if the app sends email | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and email providers need one to verify your sender address |
+| Email-sending service | $0 if the app sends no email; otherwise depends on the provider | Only if the app sends email | See [Sending email](#sending-email); free tiers exist at some providers but were not checked |
 | Django, SQLite, htmx, gunicorn, Caddy | $0 | Yes | All free, open-source software |
 
-Total: $6/month for the server alone, or $7.20/month with backups, plus the domain if you buy one.
+Total: $6/month for the server alone, or $7.20/month with backups, plus the domain if you buy one. DigitalOcean's docs confirm weekly backups cost 20% of the Droplet price ([backups pricing](https://docs.digitalocean.com/products/backups/details/pricing/)). A $4 Droplet with 512 MiB RAM also exists ([price list](https://kuberns.com/blogs/digitalocean-pricing/)), but 1 GiB leaves room for gunicorn, Caddy, and the nightly backup running together, so this plan stays at $6.
 
 Do not buy a managed database (about $15/month), a load balancer (from $12/month), or Spaces object storage (from $5/month); SQLite on the Droplet replaces all three ([add-on prices](https://diyai.io/ai-tools/hosting/digitalocean-pricing/)).
 
 ## Tentative architecture
 
-The app is a plain Django site: game masters manage money and the shop in the Django admin, players use a small htmx shop page, and everything is stored in one SQLite file.
+The app is a plain Django site: game masters and players use server-rendered pages with small htmx fragments, and everything is stored in one SQLite file. The first diagram showed only the shop; the architecture is unchanged for the larger scope.
 
 ```mermaid
 flowchart LR
     B["Browsers<br/>GM and players<br/>htmx, every 5s"] --> C
     subgraph D["One DigitalOcean Droplet, $6/month"]
-        C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>shop, ledger"] --> S[("SQLite<br/>one database file")]
+        C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>all seven apps"] --> S[("SQLite<br/>one database file")]
     end
     S --> O["Offsite copy<br/>nightly backup of the file"]
 ```
 
 Browsers talk only to Caddy; the one outbound copy is the nightly backup.
 
-Data model:
+The records for every app are outlined in [docs/DATA_MODEL.md](docs/DATA_MODEL.md); the original sketch (character, item, transaction) has grown into clubs, catalogues, shops, a ledger, trades, quests, and maps.
 
-- Character: owner, name, campaign
-- Item: name, price in copper, quantity (empty means unlimited), available flag
-- Transaction: character, signed amount in copper, reason, timestamp; a character's balance is the sum of their transactions
+How the larger scope fits this architecture:
 
-When two players click Buy on the last item together, the second one gets an "already sold" message. A purchase is one database transaction: check stock and balance, subtract one, write a ledger row. The shop list is a fragment the page re-requests every 5 seconds with htmx, skipped while the browser tab is hidden.
+- **Purchases and trades** stay single database transactions: check stock, holds, and balance, then write ledger rows. When two players click Buy on the last item together, the second gets an "already sold" message.
+- **Live updates** use htmx polling, as before: a fragment the page re-requests every 5 seconds, skipped while the browser tab is hidden. Poll only the pages where freshness matters (shop stock, open trades); the map and character sheets can load once and refresh on demand.
+- **Printing** (item cheat sheets, maps) uses ordinary web pages with a print stylesheet and the browser's own print dialog. Do not add server-side PDF generation; it needs more memory than this Droplet should spare.
+- **The map** can grow forever, but only tiles with something on them are stored, so storage and rendering depend on what exists, not on how far the map extends. Show only the part of the map in view.
+- **SQLite** should run in write-ahead mode so reads do not block the occasional write, which is fine at this scale: writes are short and come from a handful of people.
 
 ## Django apps
 
@@ -62,18 +65,39 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 | `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
 | `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
 
-All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, shops, items, and quests, with proposed ones for map. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
-
-The data model above is a first sketch and is being reworked around these apps.
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist for all seven apps. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
 
 Later: a `lore` app is out of scope for now. The world notes in the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo should eventually live in this app instead of that separate repo.
+
+## Sizing check
+
+Rough estimates for the full scope, not measurements. Nothing has been load-tested.
+
+- **People.** Assume up to 50 people logged in at once, far more than a few game tables.
+- **Traffic.** If every one of them polled the shop every 5 seconds around the clock, with a 5 KB fragment each time (an assumed size), that is about 130 GB of outbound transfer a month, around 13% of the 1 TB included. Real use, with hidden tabs skipped and sessions of a few hours, will be a small fraction of that.
+- **Server load.** Those 50 people make at most about 10 requests per second. One vCPU running a few gunicorn workers should handle that when each request takes tens of milliseconds, which a small query against SQLite normally does.
+- **Storage.** A ledger row is a few hundred bytes. Even 100,000 rows is tens of megabytes against the 25 GB disk, and the database file stays small enough to copy offsite nightly in seconds.
+- **Backups.** Weekly Droplet backups are billed by Droplet price, not data size, so they stay at about $1.20/month.
+
+When to look again: many clubs at once (hundreds of regular users), long-lived live updates for everyone, or a feature that serves files or images. Any of those may call for the $12 Droplet, still a fixed price.
+
+## Sending email
+
+DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and recommends a third-party email service ([DigitalOcean docs](https://docs.digitalocean.com/support/why-is-smtp-blocked/)); the account's support replies say the block can't be lifted. Some providers offer another port, such as 2525, or an HTTPS API, which are not blocked ([Ghost's guide](https://docs.ghost.org/faq/digitalocean-smtp-blocked)).
+
+The stories do not yet say how people log in or recover a password. Choose one before building:
+
+1. **No email at all.** Club admins create accounts and hand out passwords or one-time sign-in links shown on screen. Cost stays $0 and there is nothing to maintain, but password resets go through an admin.
+2. **A transactional email provider.** The app sends sign-in links and password resets through the provider's HTTPS API or port 2525. It needs a domain with sender verification records. Many providers have free tiers for this volume, but I did not check any, so confirm the limits and terms before choosing.
+
+Either way, do not run your own mail server on the Droplet.
 
 ## Cost control
 
 The monthly bill stays at the Droplet price plus backups unless you add resources or send more than the included outbound transfer. This is a pricing structure, not a hard stop: your card stays on file, so a billing alert is the safety net.
 
 - Droplets are billed per second but never above the monthly price ([DigitalOcean pricing summary](https://www.usagepricing.com/blueprint/digitalocean)).
-- The only usage-based charge on a plain Droplet is outbound transfer beyond the allowance, at $0.01 per GiB; inbound transfer is free, and 1,000 GiB of overage would cost $10 ([DigitalOcean community](https://www.digitalocean.com/community/questions/how-is-an-account-billed-if-it-goes-over-its-monthly-bandwidth-limit)). A text-only app for a game table should stay far below the roughly 1 TB included.
+- The only usage-based charge on a plain Droplet is outbound transfer beyond the allowance, at $0.01 per GiB; inbound transfer is free, and 1,000 GiB of overage would cost $10 ([DigitalOcean community](https://www.digitalocean.com/community/questions/how-is-an-account-billed-if-it-goes-over-its-monthly-bandwidth-limit)). A text-only app for a game table should stay far below the roughly 1 TB included (see [Sizing check](#sizing-check)).
 - Things that would add cost: extra Droplets, snapshots ($0.06 per GB per month), block storage volumes (from $10/month), and managed databases ([add-on prices](https://diyai.io/ai-tools/hosting/digitalocean-pricing/)).
 - Safeguards: run exactly one Droplet, delete any snapshots you create, set an email billing alert in DigitalOcean's billing settings (confirm the exact option there), and glance at the invoice monthly.
 
@@ -84,21 +108,23 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 | Risk | What happens | Mitigation |
 | --- | --- | --- |
 | Account lockout | DigitalOcean's automated checks sometimes lock accounts; one customer's services were shut down for about 24 hours in April 2026 ([community post](https://www.digitalocean.com/community/questions/two-unexplained-account-suspensions-missing-tickets-downgraded-support-plan-and-zero-accountability-digitalocean-we-need-to-talk)), and DigitalOcean has acknowledged an anti-fraud false positive ([incident update](https://www.plushcap.com/content/digitalocean/blog/an-update-on-last-weeks-customer-shutdown-incident)) | Complete any verification right away, pay invoices on time, and open a support ticket the moment a lock appears |
-| Data loss | The whole app lives in one SQLite file on one disk | Copy the file every night to somewhere outside DigitalOcean, such as your own computer or a free cloud storage account; keep the weekly Droplet backup too |
+| Data loss | The whole app lives in one SQLite file on one disk | Copy the database every night using SQLite's own backup command (not a plain file copy while the app is writing) to somewhere outside DigitalOcean, such as your own computer or a free cloud storage account; keep the weekly Droplet backup too |
 | Downtime | One server means updates and reboots are yours to handle | Players spend money between sessions, so short outages are tolerable; tell the group where to ask if the site is down |
+| Email blocked | DigitalOcean blocks outgoing mail, so password resets or invitations sent from the Droplet silently fail | Choose the no-email design or an email provider before building login (see [Sending email](#sending-email)) |
 
 ## Setup checklist and open questions
 
 - [ ] Create a DigitalOcean account, finish any verification, and add a payment method
 - [ ] Set an email billing alert
 - [ ] Create one Basic Droplet (1 GiB RAM) in the region nearest your players, and turn on backups if you want them
-- [ ] Optional: buy a domain and point it at the Droplet
+- [ ] Decide how people log in and whether the app sends email (see Sending email)
+- [ ] Optional: buy a domain and point it at the Droplet (needed if the app sends email)
 - [ ] Install Python, Caddy and the app; run Django under gunicorn behind Caddy
 - [ ] Set up the nightly offsite copy of the SQLite file and test restoring it once
-- [ ] Create game master and player groups in Django and add the first campaign's characters
+- [ ] Create the first club, add its game masters and players to the email whitelist, and add the first campaign's characters
 
 Open questions:
 
-- How many players and campaigns will use the app? More than a table or two of players may call for a second look at sizing.
-- Do you want a domain, or is the server's IP address fine for the group?
-- Should items have a quantity limit by default, or only when the game master sets one?
+- How many clubs and regular players will use the app? Hundreds of regular users, rather than a few tables, would justify another look at sizing.
+- Do you want a domain, or is the server's IP address fine for the group? A domain is needed if the app sends email.
+- How do people log in, and should the app send email at all? (See Sending email.)
