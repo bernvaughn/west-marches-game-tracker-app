@@ -12,17 +12,17 @@ The app lets game masters (GMs) assign money to player characters, and lets play
 
 ## What to buy
 
-Buy one Basic Droplet with 1 GiB of RAM at $6/month, add backups if you want them, and optionally a domain name.
+Buy one Basic Droplet with 1 GiB of RAM at $6/month, add backups if you want them, and a domain name (needed for agent access).
 
 | Item | Cost | Needed? | Notes |
 | --- | --- | --- | --- |
 | DigitalOcean Droplet, Basic, 1 GiB RAM | $6/month | Yes | 1 vCPU, 25 GB SSD, about 1 TB of outbound transfer included ([plan list](https://www.temperstack.com/plans/digitalocean/)) |
 | Automatic Droplet backups | about $1.20/month (20% of the Droplet price) | Optional | Weekly backups ([cost example](https://www.activepieces.com/blog/digitalocean-pricing-plans-and-real-costs-in-2026)) |
-| Domain name | about $10-15/year | Yes, for agent access | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and email providers need one to verify your sender address |
+| Domain name | about $10-15/year | Yes, for agent access | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and agents need a public HTTPS address to connect |
 | Email-sending service | $0 | No | The app sends no email for now; see [Sending email](#sending-email) |
 | Django, SQLite, htmx, gunicorn, Caddy | $0 | Yes | All free, open-source software |
 
-Total: $6/month for the server alone, or $7.20/month with backups, plus the domain if you buy one. DigitalOcean's docs confirm weekly backups cost 20% of the Droplet price ([backups pricing](https://docs.digitalocean.com/products/backups/details/pricing/)). A $4 Droplet with 512 MiB RAM also exists ([price list](https://kuberns.com/blogs/digitalocean-pricing/)), but 1 GiB leaves room for gunicorn, Caddy, and the nightly backup running together, so this plan stays at $6.
+Total: $6/month for the server alone, or $7.20/month with backups, plus the domain. DigitalOcean's docs confirm weekly backups cost 20% of the Droplet price ([backups pricing](https://docs.digitalocean.com/products/backups/details/pricing/)). A $4 Droplet with 512 MiB RAM also exists ([price list](https://kuberns.com/blogs/digitalocean-pricing/)), but 1 GiB leaves room for gunicorn, Caddy, and the nightly backup running together, so this plan stays at $6.
 
 Do not buy a managed database (about $15/month), a load balancer (from $12/month), or Spaces object storage (from $5/month); SQLite on the Droplet replaces all three ([add-on prices](https://diyai.io/ai-tools/hosting/digitalocean-pricing/)).
 
@@ -86,7 +86,7 @@ When to look again: many clubs at once (hundreds of regular users), long-lived l
 
 DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and recommends a third-party email service ([DigitalOcean docs](https://docs.digitalocean.com/support/why-is-smtp-blocked/)); the account's support replies say the block can't be lifted. Some providers offer another port, such as 2525, or an HTTPS API, which are not blocked ([Ghost's guide](https://docs.ghost.org/faq/digitalocean-smtp-blocked)).
 
-**Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; club admins reset passwords for players and game masters whose clubs they all administer; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no provider or domain is needed for it. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
+**Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; club admins reset passwords for players and game masters whose clubs they all administer; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no email provider is needed. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
 
 Do not run your own mail server on the Droplet.
 
