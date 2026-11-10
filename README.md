@@ -2,7 +2,7 @@
 
 Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Prices come from DigitalOcean's own docs where noted and otherwise from third-party summaries; confirm them on the signup page.
 
-Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, maps, quests, trades, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+Scope has since grown to eight Django apps (see [Django apps](#django-apps)), clubs, maps, quests, trades, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
 ## Summary
 
@@ -34,7 +34,7 @@ The app is a plain Django site: game masters and players use server-rendered pag
 flowchart LR
     B["Browsers<br/>GM and players<br/>htmx, every 5s"] --> C
     subgraph D["One DigitalOcean Droplet, $6/month"]
-        C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>all seven apps"] --> S[("SQLite<br/>one database file")]
+        C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>all eight apps"] --> S[("SQLite<br/>one database file")]
     end
     S --> O["Offsite copy<br/>nightly backup of the file"]
 ```
@@ -64,8 +64,9 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 | `ledger` | The history of every gain or loss of items or coins for a character, each with a note and a date |
 | `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
 | `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
+| `agent_access` | An MCP endpoint so a game master's AI agent can propose awards from session notes, which the game master reviews and confirms on the site (the app is not named `mcp`, which would clash with the `mcp` Python package) |
 
-All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist for all seven apps. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist for all eight apps. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
 
 Later: a `lore` app is out of scope for now. The world notes in the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo should eventually live in this app instead of that separate repo.
 
@@ -88,6 +89,17 @@ DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and 
 **Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; club admins reset passwords for players and game masters whose clubs they all administer; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no provider or domain is needed for it. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
 
 Do not run your own mail server on the Droplet.
+
+## Agent access (MCP)
+
+Proposed, not yet decided; the stories are A1 to A7 in [docs/USER_STORIES.md](docs/USER_STORIES.md).
+
+MCP is an open standard that lets an AI agent call named actions ("tools") on another program. The app would serve an MCP endpoint over HTTPS, and a game master's agent would connect to it with a personal token, look up characters and catalogue items, and propose a batch of awards from session notes. The game master confirms the batch on the site before anything is applied.
+
+- **Fits the plan.** A Django library, `django-mcp-server`, serves an MCP endpoint inside an existing Django app on WSGI or ASGI and supports token authentication ([PyPI](https://pypi.org/project/django-mcp-server/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
+- **Spec moves quickly.** The MCP specification is dated and changes between revisions; the 2025-03-26 revision added OAuth 2.1 authorization and Streamable HTTP, and a later revision reportedly removed protocol sessions ([summary](https://www.getmaxim.ai/topics/mcp-gateway/mcp-specification)). Choose a library that tracks the current revision, and re-check before building.
+- **Authentication is the open point.** The MCP authorization spec is optional, but for remote servers it recommends OAuth 2.1, and which clients accept a plain access token varies ([authorization spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)). A personal token per game master and club is simplest and fits the no-email design, but it depends on the agent software the game masters use. Check which one that is before settling.
+- **Safety.** The agent only proposes; the game master confirms; the ledger stays append-only. The agent has the connecting game master's permissions in one club, cannot see player emails or messages, and its tool results are treated as data. Session notes and character text can contain instructions, and the confirm step is what keeps a stray instruction from changing anyone's coins.
 
 ## Cost control
 

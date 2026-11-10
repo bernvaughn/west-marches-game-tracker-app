@@ -14,7 +14,7 @@ In the stories below, "admin" means a club admin, except U11 (donate button) and
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
-Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `ledger`, `map`, `quests`. Lore is out of scope for now (see Later).
+Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `ledger`, `map`, `quests`, `agent_access`. Lore is out of scope for now (see Later).
 
 ## Stories
 
@@ -196,6 +196,32 @@ Worth checking against your source: CR 5-6 jumps from 400 to 2,825, and most row
 Still to settle for the map:
 
 - **Tile grid.** Positions will be hex coordinates; the exact scheme is a design detail for later, not a story.
+
+## Agent access (MCP): proposed stories
+
+MCP (Model Context Protocol) is a standard way for an AI agent to call a list of named actions on another program. The app would publish a small set of actions, and a game master's agent connects to them and uses them on the GM's behalf. These stories are drafts for you to cut or change.
+
+Design principles:
+
+- The agent acts as the game master who connected it, with that GM's permissions in one club and nothing more.
+- The agent **proposes**; the game master **confirms** on the site. Nothing changes a balance or an inventory until the GM confirms. Agents misread notes, and the ledger is append-only, so a mistake is cheaper to catch before it lands.
+- Applied changes go through the same rules and ledger as anything a GM does by hand, and are marked as recorded through an agent.
+
+**A1 Connect my agent.** As a game master, I want to create a personal access token for one club, which my agent uses to connect, and to see when it was last used and revoke it any time. *(agent_access, accounts)*
+
+**A2 Look things up.** As a game master's agent, I want to list the club's characters and search its item catalogue, so I can match names in session and loot notes to real records. It cannot see player emails, messages, or other clubs. *(agent_access)*
+
+**A3 Propose awards from notes.** As a game master, I want my agent to turn my session and loot notes into a proposed batch of awards (coins or items for named characters, each with a note and a date), so I do not type them in by hand. Nothing is applied yet. Sending the same batch twice does not create two. *(agent_access, ledger)*
+
+**A4 Review and confirm.** As a game master, I want to see the proposed batch on the site, fix or remove lines, and confirm it, so that the awards are applied to the ledger with my name and the note "recorded through an agent". *(agent_access, ledger, player_characters)*
+
+**A5 Propose new items.** As a game master, I want my agent to propose a new catalogue item (name, description, traits, value) when loot is not in the catalogue, instead of guessing a match, and I or a club admin approve it before it can be awarded or stocked. *(agent_access, items)*
+
+**A6 Undo a batch.** As a game master, I want to reverse a confirmed batch in one step, which adds reversing ledger entries and leaves the history intact. *(agent_access, ledger)*
+
+**A7 Map updates from notes (later).** As a game master, I want my agent to propose visits, discovered or explored credit, and encounters from my session notes, reviewed and confirmed the same way (M7, M12, M14). *(agent_access, map)*
+
+Not included: players' agents, spending a player's coins, trades, and anything outside the connecting GM's club.
 
 ## Later
 

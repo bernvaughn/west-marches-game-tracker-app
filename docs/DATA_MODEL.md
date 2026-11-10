@@ -73,7 +73,7 @@ A player's email is shown only to club admins (U17).
 
 ### ledger
 
-- **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Records what kind of event it was: award, purchase, sale, trade, transfer, quest turn-in, quest reward, consumed, or manual adjustment.
+- **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Notes whether it was recorded through an agent batch. Records what kind of event it was: award, purchase, sale, trade, transfer, quest turn-in, quest reward, consumed, or manual adjustment.
 - **Ledger line**: part of an entry. Either an item with a signed quantity, or a signed amount of coins. A purchase is one entry with a coin line and an item line.
 
 ### shops
@@ -90,6 +90,15 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **Quest requirement**: an item and a quantity a player must turn in. All requirements must be met in one turn-in, and the items are always used up.
 - **Quest reward**: an item and quantity, or an amount of coins. A quest can have several.
 - **Quest completion**: a quest, a character, and a date. The limits are counted from these. Completing one writes ledger entries for the turn-in and the reward.
+
+### agent_access
+
+- **Access token**: a user, a club, a label, a hashed secret, created and last-used dates, and a revoked flag. Only a game master can hold one for a club where they are a game master (A1). The secret is shown once.
+- **Proposed batch**: a club, the token and user that sent it, a date, a key that prevents duplicates when the same batch is sent twice, a status (pending, confirmed, discarded, reversed), and the source notes if the agent sends them (A3, A4).
+- **Proposed line**: a batch, a character, either an item with a quantity or an amount of copper, and a note. It points at a catalogue item or a proposed new item. Applying a confirmed batch writes one ledger entry per line, marked as recorded through an agent (A4).
+- **Proposed item**: a club, and the details of a new catalogue item waiting for a game master or club admin to approve (A5). It cannot be awarded until approved.
+- Reversal writes new ledger entries that undo the batch; it never edits old ones (A6).
+- Later: proposed map changes in the same shape (A7).
 
 ### map
 
