@@ -27,8 +27,9 @@ erDiagram
     CHARACTER ||--o{ QUEST_COMPLETION : completes
     HEX_MAP ||--o{ TILE : contains
     TILE ||--o{ LOCATION : holds
-    TILE ||--o{ ENCOUNTER : "happens on"
-    LOCATION ||--o{ ENCOUNTER : "may be at"
+    LOCATION ||--o{ ENCOUNTER : "happens at"
+    CLUB ||--o{ XP_LEVEL : sets
+    CHARACTER ||--o{ VISIT_REQUEST : asks
     HEX_MAP ||--o{ TILE_VISIT : records
     CHARACTER ||--o{ TILE_VISIT : makes
     MEMBERSHIP ||--o{ MESSAGE : sends
@@ -92,10 +93,12 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 
 - **Hex map**: belongs to a club. A name, an archived flag, and no size limit (M1, M2). Safe town sits at position 0,0.
 - **Tile**: a map, a position, and an optional color. Only tiles that have a location or encounter are stored; every other position is drawn blank. A tile's location count is counted from its locations (M3).
-- **Location**: a tile, a name, a color, a symbol, player notes, and GM notes (M3-M5). A tile can have several.
-- **Encounter**: a tile, optionally a location, a date, and a description of what happened (M6). Can be added during play or later.
+- **Location**: a tile, a name, a color, a symbol, player notes, GM notes, and a target level (M3-M5, M11). A tile can have several.
+- **XP level**: per club, one row per target level band (CR 1-2 to CR 19-20) with the XP for discovering and for exploring. Filled from the default table and editable by a club admin (M13).
+- **Encounter**: a location, a date, and a description of what happened (M6). Can be added during play or later.
+- **Visit request**: a character, a tile position, a status (requested, approved, declined), and the date. Approving creates the tile visit (M12).
 - **Tile visit**: a map, a position, and a character that has been there (M7). It stores the position rather than the tile so empty tiles can be visited too.
-- **What each person sees.** Game masters and club admins see everything, including GM notes, and can print either the full map or the players' view (M10). A player sees the tiles their characters visited, with player notes only (M8, M9).
+- **What each person sees.** Game masters and club admins see everything, including GM notes, and can print either the full map or the players' view (M10). A player sees the tiles visited by the characters they pick, with those tiles' locations, player notes, and encounters, but never GM notes (M8, M9).
 
 ## Settled since the first draft
 
@@ -110,5 +113,5 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 
 ## Still open
 
-- Who counts as "the players" in the game master's players-only map: the whole club, a party, or one character?
-- Do players see encounters, or only a location's player notes?
+- Who counts as "the players" in the game master's players-only map: the whole club, a party, or chosen characters?
+- Do we record whether a character discovered or fully explored a location, or is the XP table only a reference?

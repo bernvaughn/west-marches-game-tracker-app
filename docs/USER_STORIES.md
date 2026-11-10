@@ -147,21 +147,44 @@ Decided: maps stay very basic. No art. A club can have several hex maps (for exa
 
 **M5 Player notes and GM notes.** As a game master, I want separate player notes and GM notes on every location, so I can leave tips for other game masters while players whose characters have visited the tile see only the player notes. *(map)*
 
-**M6 Record encounters.** As a game master, I want to add encounters to a tile or location during play and afterwards, noting what the players ran into and what they did, so the map is a record of the campaign. *(map)*
+**M6 Record encounters.** As a game master, I want to add encounters to a location during play and afterwards, noting what the players ran into and what they did, so the map is a record of places players could return to. Players whose characters have visited the tile see its locations and their encounters, with no separate hidden or visible setting. *(map)*
 
 **M7 Track visits.** As a game master, I want to record which characters have been to which tiles, picking several characters at once for a party. *(map, player_characters)*
 
-**M8 Player map.** As a player, I want to look at the digital map for my club and see where my characters have been, so I can look back and find where something happened. *(map)*
+**M8 Player map.** As a player, I want to look at the digital map for my club and choose some or all of my own characters to see where they have been, so I can look back and find where something happened. *(map, player_characters)*
 
-**M9 Print the map.** As a game master or player, I want to print the map I can see, to bring to the table. *(map)*
+**M9 Print the map.** As a game master or player, I want to print the map I can see, to bring to the table. A player prints the view for the characters they selected in M8. *(map)*
 
 **M10 Two views for game masters.** As a game master, I want to see and print one copy of the map with everything visible and another copy showing only what my players can see, so I can check what they know and put the right map on the table. *(map)*
 
+**M11 Target level.** As a game master, I want to set a target level on a location, in bands of two challenge ratings (CR 1-2 up to CR 19-20), so players and game masters know roughly how strong it is and how much XP to award the party for discovering it and for exploring it. The app shows the XP amounts; it does not track anyone's XP. *(map)*
+
+**M12 Request a visit.** As a player, I want to ask for a tile to be marked as visited by one of my characters, so my map stays accurate when the game master has not recorded it. The game master or club admin approves or declines, much like an item request; approving records the visit. *(map, player_characters)*
+
+**M13 XP table.** As a club admin, I want the XP amounts for each target level to be editable for my club, starting from the West Marches table, so a club can use its own numbers. *(map)*
+
+The default table, as you gave it:
+
+| Target level | Discovering | Exploring |
+|---|---|---|
+| CR 1-2 | 75 | 225 |
+| CR 3-4 | 200 | 400 |
+| CR 5-6 | 2,825 | 8,475 |
+| CR 7-8 | 5,000 | 15,000 |
+| CR 9-10 | 7,500 | 22,500 |
+| CR 11-12 | 9,000 | 27,000 |
+| CR 13-14 | 10,000 | 30,000 |
+| CR 15-16 | 13,750 | 41,250 |
+| CR 17-18 | 17,500 | 52,000 |
+| CR 19-20 | 22,500 | 67,500 |
+
+Worth checking against your source: CR 5-6 jumps from 400 to 2,825, and most rows are exactly 3 times discovering (CR 3-4 is 2 times, CR 17-18 is 52,000 rather than 52,500). Because M13 makes the table editable, a typo is easy to fix later.
+
 Still to settle for the map:
 
-- **Player view scope.** Is the players' copy everything visited by any character in the club, or can I choose a party or a single character?
-- **Encounters for players.** Do players see the encounters recorded on tiles their characters visited, or only the location's player notes?
-- **Tile grid.** Positions will be hex coordinates; the exact scheme (and how "x,y" appears on screen) is a design detail for later, not a story.
+- **Game master's players-only copy.** M10's players-only map could show everything any character in the club has visited, or let you pick a party or characters, like the player view in M8. Which do you want?
+- **Discovered versus explored.** Do we record whether each party only discovered a location or fully explored it, or is the XP table just a reference?
+- **Tile grid.** Positions will be hex coordinates; the exact scheme is a design detail for later, not a story.
 
 ## Later
 
@@ -187,7 +210,8 @@ Still to settle for the map:
 - **One-of-a-kind items.** There are none as a special kind. A unique item is an ordinary club catalogue item that a shop stocks one of, or that a game master gives out once.
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
-- **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters can be added during play or afterwards (M2-M6).
+- **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see the locations and encounters on tiles their characters visited, with no hidden-or-visible split (M2-M6).
+- **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference only (M11, M13). Players can ask for a visit to be recorded (M12).
 - **Left for later.** Lore and the donate service.
 
 ## Still open
