@@ -2,7 +2,7 @@
 
 Plan written 2026-11-09. Prices were checked that day from third-party summaries of DigitalOcean's pricing; confirm them on the signup page.
 
-Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, printing, and a donate button. The cost and infrastructure sections below were written for the smaller scope and have not been re-checked. User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
+Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, printing, and a donate button. The cost and infrastructure sections below were written for the smaller scope and have not been re-checked. User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
 ## Summary
 
