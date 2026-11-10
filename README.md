@@ -54,15 +54,15 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 
 | App | What it holds |
 | --- | --- |
-| `accounts` | User accounts, the email whitelist, who holds which permission in which club, and messages to club admins (a separate messaging app may make sense later) |
-| `player_characters` | The characters players play as (a player can have several): notes, stats, coins, and owned items |
-| `items` | Each club's item catalogue: names, descriptions, and prices |
-| `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), and buying and selling |
+| `accounts` | User accounts, each club's email whitelist, who holds which permission in which club, and messages to club admins (a separate messaging app may make sense later) |
+| `player_characters` | The characters players play as (a player can have several; game masters can have them too): notes, stats, coins, owned items, and trades between characters |
+| `items` | Each club's item catalogue: names, descriptions, traits and other details, and prices |
+| `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), rotations with start and end dates, and buying and selling at percentage-based prices with per-item overrides |
 | `ledger` | The history of every gain or loss of items or coins for a character, each with a note and a date |
 | `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
 | `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
 
-All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, shops, items, and quests, with proposed ones for map. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown split into denominations. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, shops, items, and quests, with proposed ones for map. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
 
 The data model above is a first sketch and is being reworked around these apps.
 

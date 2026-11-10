@@ -8,9 +8,9 @@ Roles and permissions:
 - Inside each club, **admin** and **game master (GM)** are two separate permissions on an account. A club's admins are expected to be the same people as its game masters, but one account can hold either permission or both.
   - **Club admin**: manages the club's email whitelist, shops, items, and content.
   - **Game master (GM)**: runs a game; awards loot and keeps track of what players use up.
-- **Player**: owns one or more characters and spends their coins. Anyone in a club without those permissions is a player.
+- **Player**: owns one or more characters and spends their coins. Anyone in a club without those permissions is a player. Game masters can also own characters and play as players when they are not running a session. A person can have characters in more than one club, but a character never moves between clubs.
 
-In the stories below, "admin" means a club admin, except U11 (donate button) and C7 and C8 (backup and cost), which I assumed are the site admin's. Correct me if that is wrong.
+In the stories below, "admin" means a club admin, except U11 (donate button) and C7 and C8 (backup and cost), which are the site admin's.
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
@@ -19,6 +19,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 ## Stories
 
 **U1 Whitelist emails.** As an admin, I want to whitelist email addresses to be used for accounts, and assign those email addresses to player characters for the players to access. *(accounts, player_characters)*
+- The whitelist belongs to a club; the same email can be whitelisted in more than one club.
 
 **U2 Log in and keep notes.** As a player, I want to be able to log in and add details to my character, so I can keep notes and stats and etc. *(accounts, player_characters)*
 
@@ -28,11 +29,14 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U5 Always-open shops.** As an admin, I want there to be some shops that carry fixed generally-available inventory like torches and ropes that players can have available to buy. *(shops)*
 
-**U6 Printable items.** As a player, I want to be able to print out items that I purchased so I have a reference while actually playing. *(player_characters, shops)*
+**U6 Printable items.** As a player, I want to be able to print out items that I purchased so I have a reference while actually playing. *(player_characters, items)*
+- A printout shows each item's name, description, traits, and other details. It is a cheat sheet for using the item in play, not a record of who owns it.
 
 **U7 Consume items.** As a game master, I want to be able to mark players' items as consumed or spent, if they spend or use something in game (potion or coins, etc). *(player_characters)*
 
 **U8 Coin denominations.** As a player, I want to have different denominations of coins, but have it auto-exchange when buying things so I can see my coins split out but do not need to suffer when buying. *(player_characters, shops)*
+- The denominations are copper, silver, gold, and platinum, and amounts are stored in copper.
+- I assumed the usual rates: 10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum. Confirm or change.
 
 **U9 Unlimited or limited stock.** As an admin, I want some items to be unlimited and some to have limited quantities at a given shop, so players can or cannot buy as many as they want. *(shops)*
 
@@ -66,9 +70,17 @@ Rules:
 - Either player can decline or cancel the trade at any time.
 - A character that sends trade requests can have only one accepted trade at a time. The limit starts once a request is accepted and applies to the sending player's character.
 - Players cannot see the inventories of characters they do not own; they see only what is in the trade.
+- A trade stays open until someone cancels or declines it; it does not expire.
+- Items and coins held for one trade request cannot be offered in another request at the same time.
 - Both characters must be in the same club.
 
 **U17 Private email.** As a player, I want my email address to only be visible to club admins, so other players cannot contact me via email without my permission. *(accounts)*
+
+**U18 Hand over a character.** As a club admin, I want to transfer a character from one player to another, if needed, for example when a character turned evil and was handed over to the game master. *(player_characters)*
+- Game masters can own characters too, so a character can be handed to a game master.
+- A character stays in its club; it cannot move to another club.
+
+**U19 Private inventories.** As a player, I want only the game masters, the club admins, and me to be able to see my characters' inventories, so other players cannot see what my characters are carrying. *(player_characters)*
 
 ## Quests
 
@@ -84,6 +96,14 @@ Rules:
 **Q3 Completion limits.** As a club admin, I want to set limits on how many total times a quest can be completed at the club level and how many times a single character can complete it. *(quests)*
 
 **Q4 Quests per club.** As a site admin, I want quests to be defined at the club level, so different clubs' quests do not bleed into each other. *(quests)*
+
+## Shops: stories from your answers
+
+**S1 Shop pricing.** As a club admin, I want each shop to have a default sell price and a default buyback price, each a percentage of an item's catalogue value, with per-item overrides, so that I can make a shop charge more or less for items I call out, such as a shop that sells rope cheaply. *(shops, items)*
+- Players can sell items to a shop at that shop's buyback price.
+
+**S2 Shop rotations.** As a club admin, I want shop rotations with start and end dates, where a shop can appear in more than one rotation, so that I can set rotations up before they go live. *(shops)*
+- A rotation is a set of shops that are open between its start date and its end date.
 
 ## Carried over from the first draft
 
@@ -109,11 +129,11 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 
 ## Items: proposed story
 
-**I1 Homebrew items.** As a club admin, I want to add my own items to my club's catalogue (name, description, price) so that my club can use homebrew items that other clubs never see. *(items)*
+**I1 Homebrew items.** As a club admin, I want to add my own items to my club's catalogue (name, description, traits and other details, price) so that my club can use homebrew items that other clubs never see. *(items)*
 
 ## Map: constraints and proposed stories
 
-Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations.
+Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations. Game masters see the whole map; players see only the tiles they have visited.
 
 Proposed stories, from your description of the map app (cut or change freely):
 
@@ -123,25 +143,32 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 **M3 Track visits.** As a game master, I want to record which players have been to which tiles. *(map)*
 
+**M4 See where I have been.** As a player, I want to see the tiles I have visited, and only those, so that the rest of the map stays a surprise. *(map)*
+
 ## Later
 
 - **lore**: out of scope for now. The world notes in the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo should eventually live in this app instead of that separate repo, so they are more available. When it comes up, decide whether some lore can be game-master-only.
+- **Donate button**: which service it points to is still to be decided; dig into it later.
 
-## Open questions
+## Decisions so far
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now; players turn in quest items without admin approval; quests have a start and an end date; messages to club admins live in `accounts` for now, and a separate messaging app may make sense later; game masters can give and take items and coins too, with the date defaulting to today and editable; every gain or loss of items or coins for a character goes into one ledger with a note and a date; turned-in quest items can be used up and carry a quantity, and only items (not coins) can be turned in; messages are mostly free text, with an optional choice of which of the sender's characters they are about; the ledger gets its own `ledger` app; quest rewards can be coins, items, or both; and the trade rules in U16 are settled (own side editable until approved, either player can decline or cancel at any time, locked items and held coins, no seeing other players' inventories).
+- **Permissions.** The site admin is separate from club permissions. Club admin and game master are separate permissions that one account can hold together. The donate button and the backup and cost stories are the site admin's; everything else is club-level.
+- **Clubs.** Each club's data is separate, and the email whitelist belongs to a club. A person can have characters in several clubs; a character never moves between clubs. Game masters can own characters and play when they are not running a session, and club admins can hand a character from one player to another (U18).
+- **Items.** Each club has its own item catalogue (the `items` app), so clubs can add their own homebrew items. The `shops` app holds inventories that point at the catalogue, with a stock amount per item, and handles buying and selling. A shop only sees its own club's items.
+- **Shop prices.** Each shop has a default sell price and buyback price as percentages of an item's value, with per-item overrides (S1). Shop rotations have start and end dates, and a shop can be in several rotations (S2).
+- **Coins.** Stored as copper and shown as copper, silver, gold, and platinum.
+- **Ledger.** The `ledger` app records every gain or loss of items or coins for a character, with a note and a date.
+- **Trades.** The `player_characters` app owns trades. The rules are in U16: players edit their own side until they approve, either player can decline or cancel at any time, trades never expire, offered items are locked and offered coins are held, and held items and coins cannot be offered twice.
+- **Who sees what.** A character's inventory is visible to its owner, game masters, and club admins. A player's email is visible to club admins only. On the map, game masters see everything and players see only the tiles they have visited.
+- **Quests.** Players turn in items themselves, with a quantity; turned-in items can be used up; coins cannot be turned in; rewards can be coins, items, or both; quests have start and end dates.
+- **Messages.** Mostly free text, with an optional choice of which of the sender's characters it is about. They live in `accounts` for now; a separate messaging app may make sense later.
+- **Printing.** A printout is a cheat sheet of item name, description, traits, and other details, not a record of ownership.
+- **Left for later.** Lore and the donate service.
 
-Still open:
+## Still open
 
-- **Permissions.** Which stories need the site admin and which a club admin? I assumed the donate button and the backup and cost stories are site-wide and the rest are club-level; does that match? Is the email whitelist (U1) site-wide or per club?
-- **Denominations.** Which coins, and at what exchange rates (the 5th-edition set is copper, silver, electrum, gold, platinum)?
-- **Map visibility.** Do players see the whole map, or only the tiles they have visited?
-- **Selling.** U3 says players can sell loot to shops. Do shops buy items back, and at what share of the price?
-- **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
-- **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
-- **Printing.** What should a printout contain: item name, description, quantity, and which character?
-- **Trades home.** Which app owns trades: `player_characters`, or a `trades` app of its own?
-- **Trade expiry.** Can a trade or trade request expire on its own, or does it stay open until someone cancels or declines it?
-- **Overlapping offers.** A character can send several trade requests before any is accepted, and offered items and coins are held. Can the same items or coins be offered in more than one request at once?
-- **Who sees inventories.** Players cannot see inventories they do not own. Can game masters and club admins see all of them? Are coin balances private too?
-- **Donate.** Which service will the donate button point to?
+- **Exchange rates.** I assumed 10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum. Is that right?
+- **Coin visibility.** I treated coins as part of the inventory, so only the owner, game masters, and club admins see a character's coins. Is that right?
+- **Game masters who play.** A game master can see every character's inventory. Should that still hold while they are playing a character of their own?
+- **Shop pricing.** I read "(and sell value)" as a default sell price that is also a percentage of the item's value. Is that what you meant?
+- **Rotations.** Does a rotation only decide which shops are open, or does it also set what each shop has in stock during that period?
