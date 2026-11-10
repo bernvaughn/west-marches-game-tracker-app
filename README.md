@@ -2,11 +2,11 @@
 
 Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Prices come from DigitalOcean's own docs where noted and otherwise from third-party summaries; confirm them on the signup page.
 
-Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, maps, quests, trades, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet, with one new item to settle (sending email, see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, maps, quests, trades, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
 ## Summary
 
-Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own. The larger scope changes the bill little: storage and traffic stay tiny, and the one real gap is that DigitalOcean blocks outgoing email, so any email the app sends needs a separate provider or a design that avoids email.
+Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own. The larger scope changes the bill little: storage and traffic stay tiny, and the one real gap is that DigitalOcean blocks outgoing email, so the app is designed to send no email.
 
 The app lets game masters (GMs) assign money to player characters, and lets players spend it on shop items between sessions. The game master changes the shop's items and prices between sessions. When a limited-quantity item sells out, it disappears for every other player within a few seconds.
 
@@ -18,8 +18,8 @@ Buy one Basic Droplet with 1 GiB of RAM at $6/month, add backups if you want the
 | --- | --- | --- | --- |
 | DigitalOcean Droplet, Basic, 1 GiB RAM | $6/month | Yes | 1 vCPU, 25 GB SSD, about 1 TB of outbound transfer included ([plan list](https://www.temperstack.com/plans/digitalocean/)) |
 | Automatic Droplet backups | about $1.20/month (20% of the Droplet price) | Optional | Weekly backups ([cost example](https://www.activepieces.com/blog/digitalocean-pricing-plans-and-real-costs-in-2026)) |
-| Domain name | about $10-15/year | Optional, needed if the app sends email | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and email providers need one to verify your sender address |
-| Email-sending service | $0 if the app sends no email; otherwise depends on the provider | Only if the app sends email | See [Sending email](#sending-email); free tiers exist at some providers but were not checked |
+| Domain name | about $10-15/year | Optional | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and email providers need one to verify your sender address |
+| Email-sending service | $0 | No | The app sends no email for now; see [Sending email](#sending-email) |
 | Django, SQLite, htmx, gunicorn, Caddy | $0 | Yes | All free, open-source software |
 
 Total: $6/month for the server alone, or $7.20/month with backups, plus the domain if you buy one. DigitalOcean's docs confirm weekly backups cost 20% of the Droplet price ([backups pricing](https://docs.digitalocean.com/products/backups/details/pricing/)). A $4 Droplet with 512 MiB RAM also exists ([price list](https://kuberns.com/blogs/digitalocean-pricing/)), but 1 GiB leaves room for gunicorn, Caddy, and the nightly backup running together, so this plan stays at $6.
@@ -85,12 +85,9 @@ When to look again: many clubs at once (hundreds of regular users), long-lived l
 
 DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and recommends a third-party email service ([DigitalOcean docs](https://docs.digitalocean.com/support/why-is-smtp-blocked/)); the account's support replies say the block can't be lifted. Some providers offer another port, such as 2525, or an HTTPS API, which are not blocked ([Ghost's guide](https://docs.ghost.org/faq/digitalocean-smtp-blocked)).
 
-The stories do not yet say how people log in or recover a password. Choose one before building:
+**Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; admins reset passwords for their club's players and game masters; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no provider or domain is needed for it. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
 
-1. **No email at all.** Club admins create accounts and hand out passwords or one-time sign-in links shown on screen. Cost stays $0 and there is nothing to maintain, but password resets go through an admin.
-2. **A transactional email provider.** The app sends sign-in links and password resets through the provider's HTTPS API or port 2525. It needs a domain with sender verification records. Many providers have free tiers for this volume, but I did not check any, so confirm the limits and terms before choosing.
-
-Either way, do not run your own mail server on the Droplet.
+Do not run your own mail server on the Droplet.
 
 ## Cost control
 
@@ -110,15 +107,14 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 | Account lockout | DigitalOcean's automated checks sometimes lock accounts; one customer's services were shut down for about 24 hours in April 2026 ([community post](https://www.digitalocean.com/community/questions/two-unexplained-account-suspensions-missing-tickets-downgraded-support-plan-and-zero-accountability-digitalocean-we-need-to-talk)), and DigitalOcean has acknowledged an anti-fraud false positive ([incident update](https://www.plushcap.com/content/digitalocean/blog/an-update-on-last-weeks-customer-shutdown-incident)) | Complete any verification right away, pay invoices on time, and open a support ticket the moment a lock appears |
 | Data loss | The whole app lives in one SQLite file on one disk | Copy the database every night using SQLite's own backup command (not a plain file copy while the app is writing) to somewhere outside DigitalOcean, such as your own computer or a free cloud storage account; keep the weekly Droplet backup too |
 | Downtime | One server means updates and reboots are yours to handle | Players spend money between sessions, so short outages are tolerable; tell the group where to ask if the site is down |
-| Email blocked | DigitalOcean blocks outgoing mail, so password resets or invitations sent from the Droplet silently fail | Choose the no-email design or an email provider before building login (see [Sending email](#sending-email)) |
+| Locked-out people | With no email, forgotten passwords cannot be reset by the person | Club admins reset their members' passwords; the site admin resets club admins' (see [Sending email](#sending-email)) |
 
 ## Setup checklist and open questions
 
 - [ ] Create a DigitalOcean account, finish any verification, and add a payment method
 - [ ] Set an email billing alert
 - [ ] Create one Basic Droplet (1 GiB RAM) in the region nearest your players, and turn on backups if you want them
-- [ ] Decide how people log in and whether the app sends email (see Sending email)
-- [ ] Optional: buy a domain and point it at the Droplet (needed if the app sends email)
+- [ ] Optional: buy a domain and point it at the Droplet
 - [ ] Install Python, Caddy and the app; run Django under gunicorn behind Caddy
 - [ ] Set up the nightly offsite copy of the SQLite file and test restoring it once
 - [ ] Create the first club, add its game masters and players to the email whitelist, and add the first campaign's characters
@@ -126,5 +122,4 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 Open questions:
 
 - How many clubs and regular players will use the app? Hundreds of regular users, rather than a few tables, would justify another look at sizing.
-- Do you want a domain, or is the server's IP address fine for the group? A domain is needed if the app sends email.
-- How do people log in, and should the app send email at all? (See Sending email.)
+- Do you want a domain, or is the server's IP address fine for the group?
