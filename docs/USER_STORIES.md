@@ -14,7 +14,7 @@ In the stories below, "admin" means a club admin, except U11 (donate button) and
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
-Apps (names tentative; see the README): `accounts`, `player_characters`, `shops`, `map`, `lore`, `quests`.
+Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `map`, `lore`, `quests`.
 
 ## Stories
 
@@ -24,7 +24,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `shops`
 
 **U3 Loot.** As a player, I want my game master to award me loot (coins, items) that I can sell and buy with to available shops. *(player_characters, shops)*
 
-**U4 Fresh shops.** As an admin, I want to change up the shops and items available between sessions, so players have fresh things to buy. *(shops)*
+**U4 Fresh shops.** As an admin, I want to change up the shops and items available between sessions, so players have fresh things to buy. *(shops, items)*
 
 **U5 Always-open shops.** As an admin, I want there to be some shops that carry fixed generally-available inventory like torches and ropes that players can have available to buy. *(shops)*
 
@@ -67,6 +67,10 @@ These still apply and are not covered above. Keep, change, or drop them.
 
 **C8 Predictable cost.** As an admin, I want the hosting bill to stay at the fixed monthly price so that I am never surprised by a charge. *(site-wide)*
 
+## Items: proposed story
+
+**I1 Homebrew items.** As a club admin, I want to add my own items to my club's catalogue (name, description, price) so that my club can use homebrew items that other clubs never see. *(items)*
+
 ## Map: constraints and proposed stories
 
 Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations.
@@ -88,12 +92,11 @@ You described these apps but have not written stories for them.
 
 ## Open questions
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, and each shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art.
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art.
 
 Still open:
 
 - **Permissions.** Which stories need the site admin and which a club admin? I assumed the donate button and the backup and cost stories are site-wide and the rest are club-level; does that match? Is the email whitelist (U1) site-wide or per club?
-- **Catalogue home.** Which app owns the catalogue: `shops`, or its own `items` app, since loot and quests use it too?
 - **Denominations.** Which coins, and at what exchange rates (the 5th-edition set is copper, silver, electrum, gold, platinum)?
 - **Map visibility.** Do players see the whole map, or only the tiles they have visited?
 - **Selling.** U3 says players can sell loot to shops. Do shops buy items back, and at what share of the price?
