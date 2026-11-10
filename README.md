@@ -54,14 +54,16 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 
 | App | What it holds |
 | --- | --- |
-| `accounts` | User accounts and the email whitelist |
+| `accounts` | User accounts, the email whitelist, and who holds which permission in which club |
 | `player_characters` | The characters players play as (a player can have several): notes, stats, coins, and owned items |
-| `shops` | Named shops and shopkeepers, their rotating and fixed inventories, item descriptions, and the spending of player coins |
-| `map` | Hex maps, which players have visited which tiles, and encounters and locations on those tiles |
+| `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of each item), and the spending of player coins |
+| `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
 | `lore` | The world and its details, migrated from the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo |
 | `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
 
-All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, and shops; map, lore, and quests are still to be written. The data model above is a first sketch and is being reworked around these apps.
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, and shops; map, lore, and quests are still to be written. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Items live in one shared catalogue (names, descriptions, prices), and each shop holds a stock amount of each item; which app owns the catalogue is still open. Coins are stored as copper and shown split into denominations.
+
+The data model above is a first sketch and is being reworked around these apps.
 
 ## Cost control
 

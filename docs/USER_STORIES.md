@@ -2,11 +2,15 @@
 
 Your stories come first, as you wrote them, with two edits: "gm" is spelled "game master", and each story is tagged with the Django apps it touches. Stories from the first draft that still apply follow after them. No code is implied by anything here.
 
-Roles:
+Roles and permissions:
 
-- **Player**: owns one or more characters and spends their coins.
-- **Game master (GM)**: runs a game; awards loot and keeps track of what players use up.
-- **Admin**: runs the site and its content (email whitelist, shops, items, donate button).
+- **Site admin**: runs the whole site (you). Sees every club and sets up the donate button.
+- Inside each club, **admin** and **game master (GM)** are two separate permissions on an account. A club's admins are expected to be the same people as its game masters, but one account can hold either permission or both.
+  - **Club admin**: manages the club's email whitelist, shops, items, and content.
+  - **Game master (GM)**: runs a game; awards loot and keeps track of what players use up.
+- **Player**: owns one or more characters and spends their coins. Anyone in a club without those permissions is a player.
+
+In the stories below, "admin" means a club admin, except U11 (donate button) and C7 and C8 (backup and cost), which I assumed are the site admin's. Correct me if that is wrong.
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
@@ -63,19 +67,36 @@ These still apply and are not covered above. Keep, change, or drop them.
 
 **C8 Predictable cost.** As an admin, I want the hosting bill to stay at the fixed monthly price so that I am never surprised by a charge. *(site-wide)*
 
+## Map: constraints and proposed stories
+
+Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations.
+
+Proposed stories, from your description of the map app (cut or change freely):
+
+**M1 Several maps.** As a game master, I want to create more than one hex map for my club so that each world gets its own map. *(map)*
+
+**M2 Mark tiles.** As a game master, I want to give a tile a color, a symbol, and a note about an encounter or location so that the map shows what is there at a glance. *(map)*
+
+**M3 Track visits.** As a game master, I want to record which players have been to which tiles. *(map)*
+
 ## Apps with no stories yet
 
 You described these apps but have not written stories for them.
 
-- **map**: hex maps, which players have been to which tiles, and encounters and locations on those tiles.
 - **lore**: the world and its details; the contents of the `dnd-world-keeper` repo move here so they are more available.
 - **quests**: small side quests, such as gathering items during a session and trading them in for a special reward or more money.
 
 ## Open questions
 
-- **Admin vs game master vs club.** Is an admin the site-wide owner (you), or a role inside each club? Can a club have several game masters, and can a game master edit shops, or only admins?
-- **Items.** Shops, loot, quests, and printed inventories all use items. Which app owns the item definitions (name, description, price)? One shared catalog would let a quest reward and a shop item be the same thing.
-- **Coins.** Do you store a total in copper and only display it split into denominations, or store actual coins per denomination? Which denominations (the 5th-edition set is copper, silver, electrum, gold, platinum)?
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; there is one shared item catalogue, and each shop holds a stock amount of each item; coins are stored as copper and shown split into denominations; hex maps are basic, with no art.
+
+Still open:
+
+- **Permissions.** Which stories need the site admin and which a club admin? I assumed the donate button and the backup and cost stories are site-wide and the rest are club-level; does that match? Is the email whitelist (U1) site-wide or per club?
+- **Catalogue scope.** Is the item catalogue one list per club, or one site-wide base that clubs can copy and change?
+- **Catalogue home.** Which app owns the catalogue: `shops`, or its own `items` app, since loot and quests use it too?
+- **Denominations.** Which coins, and at what exchange rates (the 5th-edition set is copper, silver, electrum, gold, platinum)?
+- **Map visibility.** Do players see the whole map, or only the tiles they have visited?
 - **Selling.** U3 says players can sell loot to shops. Do shops buy items back, and at what share of the price?
 - **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
 - **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
