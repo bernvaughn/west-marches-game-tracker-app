@@ -27,7 +27,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U4 Fresh shops.** As an admin, I want to change up the shops and items available between sessions, so players have fresh things to buy. *(shops, items)*
 
-**U5 Always-open shops.** As an admin, I want there to be some shops that carry fixed generally-available inventory like torches and ropes that players can have available to buy. *(shops)*
+**U5 Always-open shops.** As an admin, I want there to be some shops that carry fixed generally-available inventory like torches and ropes that players can have available to buy. These are shops in a rotation with no close date. *(shops)*
 
 **U6 Printable items.** As a player, I want to be able to print out items that I purchased so I have a reference while actually playing. *(player_characters, items)*
 - A printout shows each item's name, description, traits, and other details. It is a cheat sheet for using the item in play, not a record of who owns it.
@@ -135,7 +135,7 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 
 ## Map: constraints and proposed stories
 
-Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations. Game masters see the whole map; players see only the tiles they have visited.
+Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations. Game masters see the whole map; players see only the tiles their characters have visited.
 
 Proposed stories, from your description of the map app (cut or change freely):
 
@@ -143,9 +143,23 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 **M2 Mark tiles.** As a game master, I want to give a tile a color, a symbol, and a note about an encounter or location so that the map shows what is there at a glance. *(map)*
 
-**M3 Track visits.** As a game master, I want to record which players have been to which tiles. *(map)*
+**M3 Track visits.** As a game master, I want to record which characters have been to which tiles. *(map)*
 
-**M4 See where I have been.** As a player, I want to see the tiles I have visited, and only those, so that the rest of the map stays a surprise. *(map)*
+**M4 See where my characters have been.** As a player, I want to see the tiles my characters have visited, and only those, so that the rest of the map stays a surprise. *(map)*
+
+**M5 Mark a visit for a party.** As a game master, I want to pick several characters at once and mark a tile as visited by all of them, so that recording a session's travel is quick. *(map, player_characters)*
+
+**M6 Legend.** As a game master, I want each map to have a small legend of colors and symbols (for example town, dungeon, danger) that I choose from when marking tiles, so the map stays consistent. *(map)*
+
+**M7 Hidden details.** As a game master, I want a tile's notes and features to stay hidden from players until I reveal them, even after a character has visited the tile, so a visit does not give away everything. *(map)*
+
+**M8 Player notes.** As a player, I want to add my own short note to a tile my character has visited (for example "bridge is out"), so I can keep track of what we learned. *(map)*
+
+**M9 Link to shops and quests.** As a game master, I want a tile feature to optionally point at a shop or quest in my club, so players can see where a town's shop or a quest giver is. *(map, shops, quests)*
+
+**M10 Retire a map.** As a game master, I want to rename or archive a map without deleting its history, so old worlds stay on record. *(map)*
+
+**Open for you:** M7 to M10 are my guesses and are the likeliest to be cut. Also, should a map have a fixed size (for example 20 by 20) or grow in any direction as tiles are added?
 
 ## Later
 
@@ -162,10 +176,15 @@ Proposed stories, from your description of the map app (cut or change freely):
 - **Coins.** Stored as copper and shown as copper, silver, gold, and platinum (10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum).
 - **Ledger.** The `ledger` app records every gain or loss of items or coins for a character, with a note and a date.
 - **Trades.** The `player_characters` app owns trades. The rules are in U16: players edit their own side until they approve, either player can decline or cancel at any time, trades never expire, offered items are locked and offered coins are held, and held items and coins cannot be offered twice.
-- **Who sees what.** A character's inventory and coins are visible to its owner, game masters, and club admins, and game masters keep that view even while they play a character of their own. A player's email is visible to club admins only. On the map, game masters see everything and players see only the tiles they have visited.
-- **Quests.** Players turn in items themselves, with a quantity; turned-in items can be used up; coins cannot be turned in; rewards can be coins, items, or both; quests have start and end dates.
-- **Messages.** Mostly free text, with an optional choice of which of the sender's characters it is about. They live in `accounts` for now; a separate messaging app may make sense later.
+- **Who sees what.** A character's inventory and coins are visible to its owner, game masters, and club admins, and game masters keep that view even while they play a character of their own. A player's email is visible to club admins only. On the map, game masters see everything and players see only the tiles their characters have visited.
+- **Quests.** Players turn in items themselves, with a quantity, and only once they have everything the quest asks for (no partial turn-ins); turned-in items are always used up; coins cannot be turned in; rewards can be coins, items, or both; quests have start and end dates.
+- **Message content.** Mostly free text, with an optional choice of which of the sender's characters it is about. They live in `accounts` for now; a separate messaging app may make sense later.
 - **Printing.** A printout is a cheat sheet of item name, description, traits, and other details, not a record of ownership.
+- **Buying and selling.** A shop can buy items it does not sell, but an item is purchasable only if the shop already sells it (bought items do not become stock on their own).
+- **Always-open shops.** A rotation with no close date.
+- **One-of-a-kind items.** There are none as a special kind. A unique item is an ordinary club catalogue item that a shop stocks one of, or that a game master gives out once.
+- **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
+- **Map visits.** Recorded per character, not per player.
 - **Left for later.** Lore and the donate service.
 
 ## Still open

@@ -28,7 +28,7 @@ erDiagram
     HEX_MAP ||--o{ TILE : contains
     TILE ||--o{ TILE_FEATURE : has
     HEX_MAP ||--o{ TILE_VISIT : records
-    MEMBERSHIP ||--o{ TILE_VISIT : makes
+    CHARACTER ||--o{ TILE_VISIT : makes
     MEMBERSHIP ||--o{ MESSAGE : sends
     CHARACTER ||--o{ MESSAGE : "may be about"
 ```
@@ -51,13 +51,13 @@ Reading it: a person (user) joins clubs through memberships, and a membership ow
 - **Club**: a name. The unit that separates data.
 - **Membership**: a user in a club, with two separate yes/no permissions, club admin and game master. Everyone with a membership is also a player and can own characters.
 - **Whitelist entry**: an email address allowed to join a club (U1). Belongs to one club; the same email can be whitelisted in several.
-- **Message**: from a membership to the club's admins, free text, with an optional character it is about (U13).
+- **Message**: from a membership to the club's admins, free text, with an optional character it is about, and a handled/closed flag set by an admin (U13). No replies are stored.
 
 A player's email is shown only to club admins (U17).
 
 ### items
 
-- **Item**: belongs to a club. Name, description, traits and other details, and a value in copper (I1). Items already held or in the ledger are retired rather than deleted.
+- **Item**: belongs to a club. Name, description, traits and other details, and a value in copper (I1). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually.
 
 ### player_characters
 
@@ -74,15 +74,15 @@ A player's email is shown only to club admins (U17).
 ### shops
 
 - **Shop**: belongs to a club. Name, description, shopkeeper's name and description, a default sell percentage, and a default buy percentage (S1).
-- **Shop stock**: a shop, an item, a quantity in stock (empty means unlimited), and optional sell and buy percentage overrides for that item in that shop (U9, S1). Stock lives here and carries over between rotations.
-- **Rotation**: a name, an open date, and a close date (S2). Links to the shops that are open in it; a shop can be in several rotations.
+- **Shop stock**: a shop, an item, a quantity in stock (empty means unlimited), and optional sell and buy percentage overrides for that item in that shop (U9, S1). Stock lives here and carries over between rotations. Only items with a stock row are purchasable. A shop can still buy items it has no stock row for, using its default buy percentage, and that does not create a stock row.
+- **Rotation**: a name, an open date, and an optional close date (S2). An empty close date means always open, which is how always-open shops (U5) work. Links to the shops that are open in it; a shop can be in several rotations.
 
 There is no separate purchase record. A purchase or sale changes the stock and writes a ledger entry that points at the shop.
 
 ### quests
 
 - **Quest**: belongs to a club. Name, description, start date, end date, a limit on total completions in the club, and a limit on completions per character (Q1-Q3). Empty limits mean no limit.
-- **Quest requirement**: an item and a quantity a player must turn in.
+- **Quest requirement**: an item and a quantity a player must turn in. All requirements must be met in one turn-in, and the items are always used up.
 - **Quest reward**: an item and quantity, or an amount of coins. A quest can have several.
 - **Quest completion**: a quest, a character, and a date. The limits are counted from these. Completing one writes ledger entries for the turn-in and the reward.
 
@@ -91,17 +91,19 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **Hex map**: belongs to a club. A name; a club can have several (M1).
 - **Tile**: a map and a position, with a color. Only tiles that have something on them are stored.
 - **Tile feature**: a tile, a symbol, a name, and a note, for an encounter or location (M2). A tile can have several.
-- **Tile visit**: a map, a position, and a membership that has been there (M3). It stores the position rather than the tile so empty tiles can be visited too. Players see only tiles they have visited; game masters see everything (M4).
+- **Tile visit**: a map, a position, and a character that has been there (M3). It stores the position rather than the tile so empty tiles can be visited too. A player sees the tiles visited by any of their characters; game masters see everything (M4).
 
-## What the stories do not settle yet
+## Settled since the first draft
 
-Questions that came up while outlining. Each one changes what gets stored.
+1. Memberships are created when an email is whitelisted, so characters can be assigned before first sign-in.
+2. Shops can buy items they do not sell, but only items they stock are purchasable.
+3. Always-open shops are in a rotation with no close date.
+4. Quests have no partial turn-ins.
+5. Turned-in quest items are always used up.
+6. No individually tracked items; a unique item is a catalogue item with a quantity of 1.
+7. Messages are only marked handled or closed.
+8. Map visits are per character.
 
-1. **Characters before sign-up.** U1 assigns characters to a whitelisted email before that person has an account. Do we create the membership as soon as the email is whitelisted (so characters can be assigned to it), and fill in the user when they first sign in?
-2. **Shops buying things they do not sell.** Can a shop buy an item that is not in its stock list, and if so at what percentage? Do items a shop buys become part of its stock?
-3. **Always-open shops.** U5 wants shops with a fixed inventory that are always available. Is that a shop marked "always open", or a rotation with no close date?
-4. **Partial quest turn-ins.** Can a player turn in part of a quest's items now and the rest in a later session, or must everything be handed in at once?
-5. **Used up or kept.** You said turned-in items can be used up. Is each requirement either "used up" or "shown and kept", or are turned-in items always used up?
-6. **One-of-a-kind items.** Inventory is a quantity of catalogue items. Do any items need to be tracked individually, such as a magic sword with its own notes or charges?
-7. **Message replies.** Can club admins reply inside the app, or only act on the message? Does a message get marked as handled?
-8. **Map visits.** Visits are recorded per player. If a player has two characters, do both share the same visited tiles? Does a map have a fixed size, or can it grow in any direction?
+## Still open
+
+- Map size: fixed, or able to grow in any direction? (To be settled with the map stories.)
