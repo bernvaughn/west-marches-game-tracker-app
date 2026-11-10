@@ -85,7 +85,7 @@ When to look again: many clubs at once (hundreds of regular users), long-lived l
 
 DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and recommends a third-party email service ([DigitalOcean docs](https://docs.digitalocean.com/support/why-is-smtp-blocked/)); the account's support replies say the block can't be lifted. Some providers offer another port, such as 2525, or an HTTPS API, which are not blocked ([Ghost's guide](https://docs.ghost.org/faq/digitalocean-smtp-blocked)).
 
-**Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; admins reset passwords for their club's players and game masters; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no provider or domain is needed for it. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
+**Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; club admins reset passwords for players and game masters whose clubs they all administer; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no provider or domain is needed for it. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
 
 Do not run your own mail server on the Droplet.
 
@@ -107,7 +107,7 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 | Account lockout | DigitalOcean's automated checks sometimes lock accounts; one customer's services were shut down for about 24 hours in April 2026 ([community post](https://www.digitalocean.com/community/questions/two-unexplained-account-suspensions-missing-tickets-downgraded-support-plan-and-zero-accountability-digitalocean-we-need-to-talk)), and DigitalOcean has acknowledged an anti-fraud false positive ([incident update](https://www.plushcap.com/content/digitalocean/blog/an-update-on-last-weeks-customer-shutdown-incident)) | Complete any verification right away, pay invoices on time, and open a support ticket the moment a lock appears |
 | Data loss | The whole app lives in one SQLite file on one disk | Copy the database every night using SQLite's own backup command (not a plain file copy while the app is writing) to somewhere outside DigitalOcean, such as your own computer or a free cloud storage account; keep the weekly Droplet backup too |
 | Downtime | One server means updates and reboots are yours to handle | Players spend money between sessions, so short outages are tolerable; tell the group where to ask if the site is down |
-| Locked-out people | With no email, forgotten passwords cannot be reset by the person | Club admins reset their members' passwords; the site admin resets club admins' (see [Sending email](#sending-email)) |
+| Locked-out people | With no email, forgotten passwords cannot be reset by the person | Club admins reset their members' passwords (when they administer all of that person's clubs); the site admin handles the rest (see [Sending email](#sending-email)) |
 
 ## Setup checklist and open questions
 

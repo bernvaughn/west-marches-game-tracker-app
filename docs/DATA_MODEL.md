@@ -52,7 +52,7 @@ Reading it: a person (user) joins clubs through memberships, and a membership ow
 
 ### accounts
 
-- **User**: a login (email, password, display name, and a flag that the person must choose a new password at next sign-in). Accounts are created by club admins (U20) and passwords reset by them (U21); the app sends no email. One person has one user, even with characters in several clubs. The site admin is a flag on the user.
+- **User**: a login (email, password, display name, and a flag that the person must choose a new password at next sign-in). Accounts are created by club admins (U20) and passwords reset by them when they administer every club the person belongs to (U21); the app sends no email. One person has one user, even with characters in several clubs. The site admin is a flag on the user.
 - **Club**: a name. The unit that separates data.
 - **Membership**: a user in a club, with two separate yes/no permissions, club admin and game master. Everyone with a membership is also a player and can own characters.
 - **Whitelist entry**: an email address allowed to join a club (U1). Belongs to one club; the same email can be whitelisted in several.

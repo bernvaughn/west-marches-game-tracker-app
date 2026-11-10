@@ -26,7 +26,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U20 Create accounts without email.** As an admin, I want to create accounts for my club's players and game masters myself and hand them a temporary password, so the app never has to send email. On first sign-in the person must choose their own password. The temporary password is shown once. *(accounts)*
 
-**U21 Reset passwords.** As an admin, I want to reset the password of any player or game master in my club, which gives them a new temporary password to choose a new one from and signs them out everywhere, so people who forget a password are not locked out. The site admin can reset any account, including a club admin's. *(accounts)*
+**U21 Reset passwords.** As an admin, I want to reset the password of a player or game master in my club, which gives them a new temporary password to choose a new one from and signs them out everywhere, so people who forget a password are not locked out. Because a password belongs to the person's account, I can do this only if I am an admin of every club they belong to; otherwise the site admin does it. The site admin can reset any account, including a club admin's. *(accounts)*
 
 **U22 Change my password.** As a player, I want to change my own password while signed in. *(accounts)*
 
@@ -205,7 +205,7 @@ Still to settle for the map:
 ## Decisions so far
 
 - **Permissions.** The site admin is separate from club permissions. Club admin and game master are separate permissions that one account can hold together. The donate button and the backup and cost stories are the site admin's; everything else is club-level.
-- **Login without email.** The app never sends email. Admins create accounts and hand out one-time temporary passwords, people choose their own on first sign-in, and admins reset passwords for their club's members (U20-U22). Email addresses identify accounts and are never mailed.
+- **Login without email.** The app never sends email. Admins create accounts and hand out one-time temporary passwords, people choose their own on first sign-in, and admins reset passwords for members of their club when they administer every club that person belongs to, and the site admin handles the rest (U20-U22). Email addresses identify accounts and are never mailed.
 - **Clubs.** Each club's data is separate, and the email whitelist belongs to a club. A person can have characters in several clubs; a character never moves between clubs. Game masters can own characters and play when they are not running a session, and club admins can hand a character from one player to another (U18).
 - **Items.** Each club has its own item catalogue (the `items` app), so clubs can add their own homebrew items. The `shops` app holds inventories that point at the catalogue, with a stock amount per item, and handles buying and selling. A shop only sees its own club's items.
 - **Shop prices.** Each item has a value. Each shop has a default sell percentage and a separate default buy percentage of that value, which can be overridden item by item within the shop (S1).
@@ -228,6 +228,4 @@ Still to settle for the map:
 
 ## Still open
 
-- **Shared passwords across clubs.** A person's password belongs to their account, not to a club. A club admin who resets the password of someone who also belongs to another club can sign in as that person there. Should club admins be able to reset only people who belong to no other club (the site admin handles the rest), or is trusting club admins with this fine?
-
-Lore and the donate service are left for later (see Later).
+Nothing right now. Lore and the donate service are left for later (see Later).
