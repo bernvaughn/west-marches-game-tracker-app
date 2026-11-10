@@ -88,12 +88,11 @@ You described these apps but have not written stories for them.
 
 ## Open questions
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; there is one shared item catalogue, and each shop holds a stock amount of each item; coins are stored as copper and shown split into denominations; hex maps are basic, with no art.
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, and each shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art.
 
 Still open:
 
 - **Permissions.** Which stories need the site admin and which a club admin? I assumed the donate button and the backup and cost stories are site-wide and the rest are club-level; does that match? Is the email whitelist (U1) site-wide or per club?
-- **Catalogue scope.** Is the item catalogue one list per club, or one site-wide base that clubs can copy and change?
 - **Catalogue home.** Which app owns the catalogue: `shops`, or its own `items` app, since loot and quests use it too?
 - **Denominations.** Which coins, and at what exchange rates (the 5th-edition set is copper, silver, electrum, gold, platinum)?
 - **Map visibility.** Do players see the whole map, or only the tiles they have visited?
