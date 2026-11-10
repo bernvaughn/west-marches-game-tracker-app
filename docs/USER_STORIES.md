@@ -205,9 +205,10 @@ Design principles:
 
 - The agent acts as the game master who connected it, with that GM's permissions in one club and nothing more.
 - The agent **proposes**; the game master **confirms** on the site. Nothing changes a balance or an inventory until the GM confirms. Agents misread notes, and the ledger is append-only, so a mistake is cheaper to catch before it lands.
+- **Everything is propose-then-confirm** in the first version; no change applies directly.
 - Applied changes go through the same rules and ledger as anything a GM does by hand, and are marked as recorded through an agent.
 
-**A1 Connect my agent.** As a game master, I want to create a personal access token for one club, which my agent uses to connect, and to see when it was last used and revoke it any time. *(agent_access, accounts)*
+**A1 Connect my agent.** As a game master, I want to connect my agent by signing in to the app with my own account, choosing one club, and approving the connection, so I do not have to copy secrets around. I can see my connected agents, when each was last used, and revoke any of them. For agent software that can only use a fixed token, I can create a personal token for one club instead, which I can also revoke. *(agent_access, accounts)*
 
 **A2 Look things up.** As a game master's agent, I want to list the club's characters and search its item catalogue, so I can match names in session and loot notes to real records. It cannot see player emails, messages, or other clubs. *(agent_access)*
 
@@ -219,7 +220,7 @@ Design principles:
 
 **A6 Undo a batch.** As a game master, I want to reverse a confirmed batch in one step, which adds reversing ledger entries and leaves the history intact. *(agent_access, ledger)*
 
-**A7 Map updates from notes (later).** As a game master, I want my agent to propose visits, discovered or explored credit, and encounters from my session notes, reviewed and confirmed the same way (M7, M12, M14). *(agent_access, map)*
+**A7 Map updates from notes (coming soon).** As a game master, I want my agent to propose visits, discovered or explored credit, and encounters from my session notes, reviewed and confirmed the same way (M7, M12, M14). This is planned for soon after the first version, not part of it. *(agent_access, map)*
 
 Not included: players' agents, spending a player's coins, trades, and anything outside the connecting GM's club.
 
@@ -232,6 +233,7 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 
 - **Permissions.** The site admin is separate from club permissions. Club admin and game master are separate permissions that one account can hold together. The donate button and the backup and cost stories are the site admin's; everything else is club-level.
 - **Login without email.** The app never sends email. Admins create accounts and hand out one-time temporary passwords, people choose their own on first sign-in, and admins reset passwords for members of their club when they administer every club that person belongs to, and the site admin handles the rest (U20-U22). Email addresses identify accounts and are never mailed.
+- **Agent access.** A game master's agent connects through MCP, proposes batches of awards and new items from notes, and the game master confirms them on the site before anything changes (A1-A6). Map updates from notes (A7) are coming soon, not in the first version. Some GMs use Claude and some use Meta's Muse.
 - **Clubs.** Each club's data is separate, and the email whitelist belongs to a club. A person can have characters in several clubs; a character never moves between clubs. Game masters can own characters and play when they are not running a session, and club admins can hand a character from one player to another (U18).
 - **Items.** Each club has its own item catalogue (the `items` app), so clubs can add their own homebrew items. The `shops` app holds inventories that point at the catalogue, with a stock amount per item, and handles buying and selling. A shop only sees its own club's items.
 - **Shop prices.** Each item has a value. Each shop has a default sell percentage and a separate default buy percentage of that value, which can be overridden item by item within the shop (S1).

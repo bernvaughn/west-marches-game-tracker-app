@@ -18,7 +18,7 @@ Buy one Basic Droplet with 1 GiB of RAM at $6/month, add backups if you want the
 | --- | --- | --- | --- |
 | DigitalOcean Droplet, Basic, 1 GiB RAM | $6/month | Yes | 1 vCPU, 25 GB SSD, about 1 TB of outbound transfer included ([plan list](https://www.temperstack.com/plans/digitalocean/)) |
 | Automatic Droplet backups | about $1.20/month (20% of the Droplet price) | Optional | Weekly backups ([cost example](https://www.activepieces.com/blog/digitalocean-pricing-plans-and-real-costs-in-2026)) |
-| Domain name | about $10-15/year | Optional | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and email providers need one to verify your sender address |
+| Domain name | about $10-15/year | Yes, for agent access | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and email providers need one to verify your sender address |
 | Email-sending service | $0 | No | The app sends no email for now; see [Sending email](#sending-email) |
 | Django, SQLite, htmx, gunicorn, Caddy | $0 | Yes | All free, open-source software |
 
@@ -92,13 +92,15 @@ Do not run your own mail server on the Droplet.
 
 ## Agent access (MCP)
 
-Proposed, not yet decided; the stories are A1 to A7 in [docs/USER_STORIES.md](docs/USER_STORIES.md).
+Decided in outline: propose-then-confirm for everything in the first version, with map updates from notes coming soon. Stories A1 to A7 are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
 
 MCP is an open standard that lets an AI agent call named actions ("tools") on another program. The app would serve an MCP endpoint over HTTPS, and a game master's agent would connect to it with a personal token, look up characters and catalogue items, and propose a batch of awards from session notes. The game master confirms the batch on the site before anything is applied.
 
 - **Fits the plan.** A Django library, `django-mcp-server`, serves an MCP endpoint inside an existing Django app on WSGI or ASGI and supports token authentication ([PyPI](https://pypi.org/project/django-mcp-server/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
 - **Spec moves quickly.** The MCP specification is dated and changes between revisions; the 2025-03-26 revision added OAuth 2.1 authorization and Streamable HTTP, and a later revision reportedly removed protocol sessions ([summary](https://www.getmaxim.ai/topics/mcp-gateway/mcp-specification)). Choose a library that tracks the current revision, and re-check before building.
-- **Authentication is the open point.** The MCP authorization spec is optional, but for remote servers it recommends OAuth 2.1, and which clients accept a plain access token varies ([authorization spec](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)). A personal token per game master and club is simplest and fits the no-email design, but it depends on the agent software the game masters use. Check which one that is before settling.
+- **Which agents.** Some game masters use Claude and some use Meta's Muse. Claude connects to a remote MCP server by URL as a custom connector, from Anthropic's cloud, and Claude's docs describe both OAuth sign-in and fixed request headers such as a bearer token, though one of Claude's own pages lists fixed headers as beta ([Claude custom connectors](https://claude.com/docs/connectors/custom), [Claude authentication](https://claude.com/docs/connectors/building/authentication)). Muse is less clear: Meta's documentation does not mention MCP in the consumer app, while several third-party guides show a remote server added as a custom connector over Streamable HTTP with OAuth sign-in, and Meta's coding agent supports MCP directly ([guide](https://anythingmcp.com/guides/clients/muse), [Meta Muse MCP summary](https://www.aiagentslibrary.com/blog/meta-muse-connectors/)). Treat Muse support as unconfirmed until tested with a real account.
+- **Authentication.** Both can use OAuth sign-in, so the plan is OAuth with the game master's own app account as the sign-in step: they log in, pick a club, and approve. A fixed token is a fallback for agent software that cannot sign in. The Django pieces for OAuth with MCP's discovery rules have not been checked, so verify this before building.
+- **A domain is now required.** Claude and Muse call the server from their own clouds, so the app needs a public HTTPS address ([Claude custom connectors](https://claude.com/docs/connectors/custom)). A bare IP address is not enough in practice; buy a domain.
 - **Safety.** The agent only proposes; the game master confirms; the ledger stays append-only. The agent has the connecting game master's permissions in one club, cannot see player emails or messages, and its tool results are treated as data. Session notes and character text can contain instructions, and the confirm step is what keeps a stray instruction from changing anyone's coins.
 
 ## Cost control
@@ -126,7 +128,7 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 - [ ] Create a DigitalOcean account, finish any verification, and add a payment method
 - [ ] Set an email billing alert
 - [ ] Create one Basic Droplet (1 GiB RAM) in the region nearest your players, and turn on backups if you want them
-- [ ] Optional: buy a domain and point it at the Droplet
+- [ ] Buy a domain and point it at the Droplet (required for agent access)
 - [ ] Install Python, Caddy and the app; run Django under gunicorn behind Caddy
 - [ ] Set up the nightly offsite copy of the SQLite file and test restoring it once
 - [ ] Create the first club, add its game masters and players to the email whitelist, and add the first campaign's characters
@@ -134,4 +136,4 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 Open questions:
 
 - How many clubs and regular players will use the app? Hundreds of regular users, rather than a few tables, would justify another look at sizing.
-- Do you want a domain, or is the server's IP address fine for the group?
+- Which domain name should the app use? A domain is needed for agent access.

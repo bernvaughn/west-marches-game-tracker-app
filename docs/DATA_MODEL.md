@@ -93,12 +93,12 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 
 ### agent_access
 
-- **Access token**: a user, a club, a label, a hashed secret, created and last-used dates, and a revoked flag. Only a game master can hold one for a club where they are a game master (A1). The secret is shown once.
-- **Proposed batch**: a club, the token and user that sent it, a date, a key that prevents duplicates when the same batch is sent twice, a status (pending, confirmed, discarded, reversed), and the source notes if the agent sends them (A3, A4).
+- **Agent connection**: a user, a club, an agent label, when it was approved, last used, and revoked. Created when a game master signs in and approves an agent (A1). It holds the sign-in grant the agent uses and can be limited to one club where that person is a game master. A fixed personal token for agent software that cannot sign in is the same record with a hashed secret shown once.
+- **Proposed batch**: a club, the connection and user that sent it, a date, a key that prevents duplicates when the same batch is sent twice, a status (pending, confirmed, discarded, reversed), and the source notes if the agent sends them (A3, A4).
 - **Proposed line**: a batch, a character, either an item with a quantity or an amount of copper, and a note. It points at a catalogue item or a proposed new item. Applying a confirmed batch writes one ledger entry per line, marked as recorded through an agent (A4).
 - **Proposed item**: a club, and the details of a new catalogue item waiting for a game master or club admin to approve (A5). It cannot be awarded until approved.
 - Reversal writes new ledger entries that undo the batch; it never edits old ones (A6).
-- Later: proposed map changes in the same shape (A7).
+- Coming soon: proposed map changes in the same shape (A7).
 
 ### map
 
