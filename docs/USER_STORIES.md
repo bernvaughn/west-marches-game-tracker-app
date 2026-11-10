@@ -133,33 +133,35 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 
 **I1 Homebrew items.** As a club admin, I want to add my own items to my club's catalogue (name, description, traits and other details, price) so that my club can use homebrew items that other clubs never see. *(items)*
 
-## Map: constraints and proposed stories
+## Map: decisions and stories
 
-Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols marking locations. Game masters see the whole map; players see only the tiles their characters have visited.
-
-Proposed stories, from your description of the map app (cut or change freely):
+Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols. A map grows without limit in every direction. Its first tile, "safe town", sits at position 0,0, and other tiles are placed by their position relative to it. A tile with nothing defined on it shows blank. Game masters see the whole map; players see only what their characters have visited.
 
 **M1 Several maps.** As a game master, I want to create more than one hex map for my club so that each world gets its own map. *(map)*
 
-**M2 Mark tiles.** As a game master, I want to give a tile a color, a symbol, and a note about an encounter or location so that the map shows what is there at a glance. *(map)*
+**M2 Unlimited growth.** As a club admin, I want maps to grow in size indefinitely, with "safe town" at 0,0 and locations added at any other position, so that exploration is never boxed in. Tiles with no location or encounter appear blank. *(map)*
 
-**M3 Track visits.** As a game master, I want to record which characters have been to which tiles. *(map)*
+**M3 Several locations per tile.** As a game master, I want more than one location on a tile (for example a town and some nearby ruins), and I want each tile to show how many locations it holds. *(map)*
 
-**M4 See where my characters have been.** As a player, I want to see the tiles my characters have visited, and only those, so that the rest of the map stays a surprise. *(map)*
+**M4 Mark locations.** As a game master, I want to give a location a name, a color, and a symbol so the map shows what is there at a glance. *(map)*
 
-**M5 Mark a visit for a party.** As a game master, I want to pick several characters at once and mark a tile as visited by all of them, so that recording a session's travel is quick. *(map, player_characters)*
+**M5 Player notes and GM notes.** As a game master, I want separate player notes and GM notes on every location, so I can leave tips for other game masters while players whose characters have visited the tile see only the player notes. *(map)*
 
-**M6 Legend.** As a game master, I want each map to have a small legend of colors and symbols (for example town, dungeon, danger) that I choose from when marking tiles, so the map stays consistent. *(map)*
+**M6 Record encounters.** As a game master, I want to add encounters to a tile or location during play and afterwards, noting what the players ran into and what they did, so the map is a record of the campaign. *(map)*
 
-**M7 Hidden details.** As a game master, I want a tile's notes and features to stay hidden from players until I reveal them, even after a character has visited the tile, so a visit does not give away everything. *(map)*
+**M7 Track visits.** As a game master, I want to record which characters have been to which tiles, picking several characters at once for a party. *(map, player_characters)*
 
-**M8 Player notes.** As a player, I want to add my own short note to a tile my character has visited (for example "bridge is out"), so I can keep track of what we learned. *(map)*
+**M8 Player map.** As a player, I want to look at the digital map for my club and see where my characters have been, so I can look back and find where something happened. *(map)*
 
-**M9 Link to shops and quests.** As a game master, I want a tile feature to optionally point at a shop or quest in my club, so players can see where a town's shop or a quest giver is. *(map, shops, quests)*
+**M9 Print the map.** As a game master or player, I want to print the map I can see, to bring to the table. *(map)*
 
-**M10 Retire a map.** As a game master, I want to rename or archive a map without deleting its history, so old worlds stay on record. *(map)*
+**M10 Two views for game masters.** As a game master, I want to see and print one copy of the map with everything visible and another copy showing only what my players can see, so I can check what they know and put the right map on the table. *(map)*
 
-**Open for you:** M7 to M10 are my guesses and are the likeliest to be cut. Also, should a map have a fixed size (for example 20 by 20) or grow in any direction as tiles are added?
+Still to settle for the map:
+
+- **Player view scope.** Is the players' copy everything visited by any character in the club, or can I choose a party or a single character?
+- **Encounters for players.** Do players see the encounters recorded on tiles their characters visited, or only the location's player notes?
+- **Tile grid.** Positions will be hex coordinates; the exact scheme (and how "x,y" appears on screen) is a design detail for later, not a story.
 
 ## Later
 
@@ -185,6 +187,7 @@ Proposed stories, from your description of the map app (cut or change freely):
 - **One-of-a-kind items.** There are none as a special kind. A unique item is an ordinary club catalogue item that a shop stocks one of, or that a game master gives out once.
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
+- **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters can be added during play or afterwards (M2-M6).
 - **Left for later.** Lore and the donate service.
 
 ## Still open

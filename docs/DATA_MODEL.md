@@ -26,7 +26,9 @@ erDiagram
     QUEST ||--o{ QUEST_COMPLETION : "completed as"
     CHARACTER ||--o{ QUEST_COMPLETION : completes
     HEX_MAP ||--o{ TILE : contains
-    TILE ||--o{ TILE_FEATURE : has
+    TILE ||--o{ LOCATION : holds
+    TILE ||--o{ ENCOUNTER : "happens on"
+    LOCATION ||--o{ ENCOUNTER : "may be at"
     HEX_MAP ||--o{ TILE_VISIT : records
     CHARACTER ||--o{ TILE_VISIT : makes
     MEMBERSHIP ||--o{ MESSAGE : sends
@@ -88,10 +90,12 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 
 ### map
 
-- **Hex map**: belongs to a club. A name; a club can have several (M1).
-- **Tile**: a map and a position, with a color. Only tiles that have something on them are stored.
-- **Tile feature**: a tile, a symbol, a name, and a note, for an encounter or location (M2). A tile can have several.
-- **Tile visit**: a map, a position, and a character that has been there (M3). It stores the position rather than the tile so empty tiles can be visited too. A player sees the tiles visited by any of their characters; game masters see everything (M4).
+- **Hex map**: belongs to a club. A name, an archived flag, and no size limit (M1, M2). Safe town sits at position 0,0.
+- **Tile**: a map, a position, and an optional color. Only tiles that have a location or encounter are stored; every other position is drawn blank. A tile's location count is counted from its locations (M3).
+- **Location**: a tile, a name, a color, a symbol, player notes, and GM notes (M3-M5). A tile can have several.
+- **Encounter**: a tile, optionally a location, a date, and a description of what happened (M6). Can be added during play or later.
+- **Tile visit**: a map, a position, and a character that has been there (M7). It stores the position rather than the tile so empty tiles can be visited too.
+- **What each person sees.** Game masters and club admins see everything, including GM notes, and can print either the full map or the players' view (M10). A player sees the tiles their characters visited, with player notes only (M8, M9).
 
 ## Settled since the first draft
 
@@ -106,4 +110,5 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 
 ## Still open
 
-- Map size: fixed, or able to grow in any direction? (To be settled with the map stories.)
+- Who counts as "the players" in the game master's players-only map: the whole club, a party, or one character?
+- Do players see encounters, or only a location's player notes?
