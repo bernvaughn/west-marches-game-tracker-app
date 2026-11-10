@@ -159,11 +159,11 @@ Decided: maps stay very basic. No art. A club can have several hex maps (for exa
 
 **M11 Target level.** As a game master, I want to set a target level on a location, in bands of two challenge ratings (CR 1-2 up to CR 19-20), so players and game masters know roughly how strong it is and how much XP to award the party for discovering it and for exploring it. The app shows the XP amounts; it does not track anyone's XP. *(map)*
 
-**M12 Request a visit.** As a player, I want to ask for a tile to be marked as visited by one of my characters, so my map stays accurate when the game master has not recorded it. The game master or club admin approves or declines, much like an item request; approving records the visit. *(map, player_characters)*
+**M12 Ask for credit.** As a player, I want to ask for a tile to be marked visited, or for a location to be marked discovered or explored, by one of my characters (or several at once), based on how a session went. The game master or club admin approves or declines, much like an item request, and approving records it. A request for "explored" on a location that is already explored by another party is declined automatically with that reason. *(map, player_characters)*
 
-**M14 Discovered or explored.** As a game master, I want to record, for each character in a party, whether a location has been discovered or fully explored, so the XP for each is clear. Exploring a location after discovering it upgrades its status. Recording either also marks the tile as visited. *(map, player_characters)*
+**M14 Discovered or explored.** As a game master, I want to record, for each character in a party, whether a location has been discovered or fully explored, so the XP for each is clear. Recording either also marks the tile as visited. Many parties can discover the same location, but only one party gets explored credit: the characters I record when the location is explored are the credited group, and later parties who visit are not added to it. I can correct the credited group if I made a mistake. *(map, player_characters)*
 
-**M15 Where to go back.** As a player, I want the map to clearly mark locations my characters have discovered but not yet explored, and to show each location's target level, so we can see which places to return to once we are stronger. *(map)*
+**M15 Where to go back.** As a player, I want the map to clearly mark locations my characters have discovered but not yet explored, and to show each location's target level, so we can see which places to return to once we are stronger. A location that another party has already explored shows as explored, with the credited characters visible to players who have visited. *(map)*
 
 **M13 XP table.** As a club admin, I want the XP amounts for each target level to be editable for my club, starting from the West Marches table, so a club can use its own numbers. *(map)*
 
@@ -213,7 +213,7 @@ Still to settle for the map:
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
 - **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see the locations and encounters on tiles their characters visited, with no hidden-or-visible split (M2-M6).
-- **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each character's progress on a location is recorded as discovered or explored, and the map marks discovered-but-unexplored places (M14, M15). Players can ask for a visit to be recorded (M12).
+- **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each character's progress on a location is recorded as discovered or explored, and the map marks discovered-but-unexplored places (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants (M12). Only one party gets explored credit for a location; many can discover it.
 - **Left for later.** Lore and the donate service.
 
 ## Still open

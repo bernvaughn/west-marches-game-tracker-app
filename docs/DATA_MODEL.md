@@ -29,7 +29,7 @@ erDiagram
     TILE ||--o{ LOCATION : holds
     LOCATION ||--o{ ENCOUNTER : "happens at"
     CLUB ||--o{ XP_LEVEL : sets
-    CHARACTER ||--o{ VISIT_REQUEST : asks
+    CHARACTER ||--o{ MAP_REQUEST : asks
     CHARACTER ||--o{ LOCATION_PROGRESS : makes
     LOCATION ||--o{ LOCATION_PROGRESS : "progress on"
     HEX_MAP ||--o{ TILE_VISIT : records
@@ -98,8 +98,8 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **Location**: a tile, a name, a color, a symbol, player notes, GM notes, and a target level (M3-M5, M11). A tile can have several.
 - **XP level**: per club, one row per target level band (CR 1-2 to CR 19-20) with the XP for discovering and for exploring. Filled from the default table and editable by a club admin (M13).
 - **Encounter**: a location, a date, and a description of what happened (M6). Can be added during play or later.
-- **Location progress**: a character, a location, a status (discovered or explored), and a date. Exploring upgrades discovered. Recording progress also records a visit to the tile (M14). The map marks locations a player's characters have discovered but not explored (M15).
-- **Visit request**: a character, a tile position, a status (requested, approved, declined), and the date. Approving creates the tile visit (M12).
+- **Location progress**: a character, a location, a status (discovered or explored), and a date. Discovered can be held by any number of characters on a location. Explored is held by only one party per location: the characters recorded together at that time. Later characters can never be added to it, though a game master can correct the credited group (M14). Recording either also records a visit to the tile. The map marks locations a player's characters have discovered but not explored, and shows explored ones as explored (M15).
+- **Request**: a character (or several), what is asked for (tile visit, location discovered, or location explored), a status (requested, approved, declined), and a date. Approving creates the visit or progress records. An explored request for an already-explored location is declined automatically (M12).
 - **Tile visit**: a map, a position, and a character that has been there (M7). It stores the position rather than the tile so empty tiles can be visited too.
 - **What each person sees.** Game masters and club admins see everything, including GM notes, and can print either the full map or a players' view for a group of characters they pick (M10). A player sees the tiles visited by the characters they pick, with those tiles' locations, player notes, and encounters, but never GM notes (M8, M9).
 
@@ -114,7 +114,8 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 7. Messages are only marked handled or closed.
 8. Map visits are per character.
 9. The game master's players-only map is for a group of characters they pick.
-10. Discovered versus explored is recorded per character per location.
+10. Discovered versus explored is recorded per character per location; only one party gets explored credit, many can discover.
+11. Players can request visits, discovered, or explored credit, and a game master or club admin grants them.
 
 ## Still open
 
