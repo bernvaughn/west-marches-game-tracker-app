@@ -2,11 +2,13 @@
 
 Plan written 2026-11-09. Prices were checked that day from third-party summaries of DigitalOcean's pricing; confirm them on the signup page.
 
+Scope has since grown to six Django apps (see [Django apps](#django-apps)), clubs, printing, and a donate button. The cost and infrastructure sections below were written for the smaller scope and have not been re-checked. User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
+
 ## Summary
 
 Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own.
 
-The app lets DMs assign money to player characters, and lets players spend it on shop items between sessions. The DM changes the shop's items and prices between sessions. When a limited-quantity item sells out, it disappears for every other player within a few seconds.
+The app lets game masters (GMs) assign money to player characters, and lets players spend it on shop items between sessions. The game master changes the shop's items and prices between sessions. When a limited-quantity item sells out, it disappears for every other player within a few seconds.
 
 ## What to buy
 
@@ -25,11 +27,11 @@ Do not buy a managed database (about $15/month), a load balancer (from $12/month
 
 ## Tentative architecture
 
-The app is a plain Django site: DMs manage money and the shop in the Django admin, players use a small htmx shop page, and everything is stored in one SQLite file.
+The app is a plain Django site: game masters manage money and the shop in the Django admin, players use a small htmx shop page, and everything is stored in one SQLite file.
 
 ```mermaid
 flowchart LR
-    B["Browsers<br/>DM and players<br/>htmx, every 5s"] --> C
+    B["Browsers<br/>GM and players<br/>htmx, every 5s"] --> C
     subgraph D["One DigitalOcean Droplet, $6/month"]
         C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>shop, ledger"] --> S[("SQLite<br/>one database file")]
     end
@@ -45,6 +47,21 @@ Data model:
 - Transaction: character, signed amount in copper, reason, timestamp; a character's balance is the sum of their transactions
 
 When two players click Buy on the last item together, the second one gets an "already sold" message. A purchase is one database transaction: check stock and balance, subtract one, write a ledger row. The shop list is a fragment the page re-requests every 5 seconds with htmx, skipped while the browser tab is hidden.
+
+## Django apps
+
+Planned split. Names are tentative; a Django app name must be a valid Python name, so `player-characters` becomes `player_characters`.
+
+| App | What it holds |
+| --- | --- |
+| `accounts` | User accounts and the email whitelist |
+| `player_characters` | The characters players play as (a player can have several): notes, stats, coins, and owned items |
+| `shops` | Named shops and shopkeepers, their rotating and fixed inventories, item descriptions, and the spending of player coins |
+| `map` | Hex maps, which players have visited which tiles, and encounters and locations on those tiles |
+| `lore` | The world and its details, migrated from the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo |
+| `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
+
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, and shops; map, lore, and quests are still to be written. The data model above is a first sketch and is being reworked around these apps.
 
 ## Cost control
 
@@ -73,10 +90,10 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 - [ ] Optional: buy a domain and point it at the Droplet
 - [ ] Install Python, Caddy and the app; run Django under gunicorn behind Caddy
 - [ ] Set up the nightly offsite copy of the SQLite file and test restoring it once
-- [ ] Create DM and player groups in Django and add the first campaign's characters
+- [ ] Create game master and player groups in Django and add the first campaign's characters
 
 Open questions:
 
 - How many players and campaigns will use the app? More than a table or two of players may call for a second look at sizing.
 - Do you want a domain, or is the server's IP address fine for the group?
-- Should items have a quantity limit by default, or only when the DM sets one?
+- Should items have a quantity limit by default, or only when the game master sets one?

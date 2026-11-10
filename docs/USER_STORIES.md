@@ -1,87 +1,84 @@
-# User Stories (draft)
+# User Stories (draft 2)
 
-First pass drawn from the plan in the README. Edit freely. No code is implied by anything here.
+Your stories come first, as you wrote them, with two edits: "gm" is spelled "game master", and each story is tagged with the Django apps it touches. Stories from the first draft that still apply follow after them. No code is implied by anything here.
 
 Roles:
 
-- **Player**: owns one or more characters and spends their money.
-- **DM**: runs a campaign, assigns money, and manages the shop.
-- **Site owner**: runs the server (the person who deploys and backs it up). Uses the Django admin.
+- **Player**: owns one or more characters and spends their coins.
+- **Game master (GM)**: runs a game; awards loot and keeps track of what players use up.
+- **Admin**: runs the site and its content (email whitelist, shops, items, donate button).
 
-Money is stored in copper; every change to a balance is a ledger entry, and a balance is the sum of a character's entries.
+A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
-## 1. Accounts and characters
+Apps (names tentative; see the README): `accounts`, `player_characters`, `shops`, `map`, `lore`, `quests`.
 
-**US-1 Sign in.** As a player, I want to sign in with my own account so that I only see and spend my own characters' money.
-- Signed-out visitors cannot see balances or the shop.
-- A player never sees another player's characters unless they are a DM of that campaign.
+## Stories
 
-**US-2 Create characters.** As a DM, I want to create a character, give it a name and a campaign, and assign it to a player so that it appears on that player's account.
-- A character has an owner, a name, and a campaign.
-- The new character starts with a zero balance.
+**U1 Whitelist emails.** As an admin, I want to whitelist email addresses to be used for accounts, and assign those email addresses to player characters for the players to access. *(accounts, player_characters)*
 
-**US-3 See all characters.** As a DM, I want to see every character in my campaign and their balances so that I know who has what before a session.
+**U2 Log in and keep notes.** As a player, I want to be able to log in and add details to my character, so I can keep notes and stats and etc. *(accounts, player_characters)*
 
-**US-4 Manage accounts.** As the site owner, I want to create DM and player accounts in the Django admin so that I control who can use the app.
+**U3 Loot.** As a player, I want my game master to award me loot (coins, items) that I can sell and buy with to available shops. *(player_characters, shops)*
 
-## 2. Money
+**U4 Fresh shops.** As an admin, I want to change up the shops and items available between sessions, so players have fresh things to buy. *(shops)*
 
-**US-5 Grant money.** As a DM, I want to give a character money with a short reason so that rewards from a session show up before players shop.
-- The grant appears in the character's history with the reason and a timestamp.
-- The new balance is visible to the player right away.
+**U5 Always-open shops.** As an admin, I want there to be some shops that carry fixed generally-available inventory like torches and ropes that players can have available to buy. *(shops)*
 
-**US-6 See my balance.** As a player, I want to see each of my characters' current balance so that I know what I can afford.
+**U6 Printable items.** As a player, I want to be able to print out items that I purchased so I have a reference while actually playing. *(player_characters, shops)*
 
-**US-7 See my history.** As a player, I want to see a list of everything that changed my character's balance (grants and purchases) so that I can check where the money went.
-- Entries are newest first, with amount, reason, and timestamp.
+**U7 Consume items.** As a game master, I want to be able to mark players' items as consumed or spent, if they spend or use something in game (potion or coins, etc). *(player_characters)*
 
-**US-8 Correct a mistake.** As a DM, I want to subtract money with a reason so that I can fix a grant I got wrong without erasing history.
-- Corrections are new ledger entries; existing entries are never edited or deleted.
+**U8 Coin denominations.** As a player, I want to have different denominations of coins, but have it auto-exchange when buying things so I can see my coins split out but do not need to suffer when buying. *(player_characters, shops)*
 
-## 3. The shop
+**U9 Unlimited or limited stock.** As an admin, I want some items to be unlimited and some to have limited quantities at a given shop, so players can or cannot buy as many as they want. *(shops)*
 
-**US-9 Stock the shop.** As a DM, I want to add, edit, and remove shop items (name, price, optional quantity) so that the shop matches what is for sale in my world.
-- Leaving quantity empty means the item is unlimited.
+**U10 Fun shops.** As an admin, I want to have a fun interface with rotating memorable shops, selling mixes of useful and not-useful items, because I want this app to be entertaining to players to entice them to use it more. *(shops)*
 
-**US-10 Change the shop between sessions.** As a DM, I want to switch items on or off without deleting them so that I can change what is for sale from one session to the next.
-- An item that is off does not show to players and cannot be bought.
+**U11 Donate.** As an admin, I want to set up a donate button to help me pay for all this. *(site-wide)*
 
-**US-11 Browse items.** As a player, I want to see the items currently for sale with their prices and any remaining quantity so that I can decide what to buy.
+**U12 Clubs.** As an admin, I want data segregated between groups (I like the term "club") so I can eventually have other people use this app too, or I could have multiple "club"s going at once, and keep the players and items and etc separated between the clubs. *(all apps)*
 
-**US-12 Buy an item.** As a player, I want to buy an item for one of my characters so that the cost comes out of that character's balance.
-- The purchase fails with a clear message if the balance is too low.
-- A successful purchase subtracts the price, reduces any limited quantity by one, and adds a history entry.
+## Carried over from the first draft
+
+These still apply and are not covered above. Keep, change, or drop them.
+
+**C1 Browse items.** As a player, I want to see the items a shop currently has, with prices and any remaining quantity, so that I can decide what to buy. *(shops)*
+
+**C2 Buy an item.** As a player, I want to buy an item for one of my characters so that the price comes out of that character's coins. *(shops, player_characters)*
+- The purchase fails with a clear message if the character cannot afford it.
 - A purchase is all or nothing: no half-finished purchases.
 
-**US-13 Last one wins.** As a player, I want a clear "already sold" message when someone else buys the last unit first so that I understand why my purchase did not go through.
+**C3 Last one wins.** As a player, I want a clear "already sold" message when someone else buys the last unit first. *(shops)*
 - Two players buying the last unit at the same moment never both succeed.
 
-**US-14 Live shop.** As a player, I want sold-out items to disappear from my screen within a few seconds, without reloading, so that I do not try to buy something that is gone.
-- The shop list refreshes about every 5 seconds while the page is visible.
-- The page does not keep refreshing while the browser tab is hidden.
+**C4 Live shop.** As a player, I want sold-out items to disappear from my screen within a few seconds, without reloading. *(shops)*
+- The shop refreshes about every 5 seconds while the page is visible, and not while the tab is hidden.
 
-## 4. Running the app
+**C5 Balance and history.** As a player, I want to see each of my characters' coins and a list of everything that changed them (loot, purchases, sales), newest first. *(player_characters)*
 
-**US-15 Nightly backup.** As the site owner, I want a nightly copy of the database stored outside the server so that a server or account problem does not lose the group's data.
-- The copy has been restored successfully at least once.
+**C6 Correct a mistake.** As a game master, I want to subtract coins with a reason so that I can fix an award I got wrong without erasing history. *(player_characters)*
+- Corrections are new entries; existing entries are never edited or deleted.
 
-**US-16 Predictable cost.** As the site owner, I want the hosting bill to stay at the fixed monthly price so that I am never surprised by a charge.
-- Exactly one server; a billing alert is set.
+**C7 Nightly backup.** As an admin, I want a nightly copy of the database stored outside the server so that a server or account problem does not lose a club's data. *(site-wide)*
 
-## Proposed, not in the plan yet
+**C8 Predictable cost.** As an admin, I want the hosting bill to stay at the fixed monthly price so that I am never surprised by a charge. *(site-wide)*
 
-These came up while writing the stories above. Keep, change, or drop them.
+## Apps with no stories yet
 
-**US-17 Owned items.** As a player, I want a list of what my character has bought so that I do not have to reconstruct it from the history.
+You described these apps but have not written stories for them.
 
-**US-18 Familiar coins.** As a player, I want amounts shown as gold, silver, and copper so that prices read like the game does.
-
-**US-19 Per-campaign shops.** As a DM, I want my campaign's shop to be separate from other campaigns' shops so that different worlds can sell different things.
+- **map**: hex maps, which players have been to which tiles, and encounters and locations on those tiles.
+- **lore**: the world and its details; the contents of the `dnd-world-keeper` repo move here so they are more available.
+- **quests**: small side quests, such as gathering items during a session and trading them in for a special reward or more money.
 
 ## Open questions
 
-- Should purchased items be recorded on the character (US-17), or is the history enough?
-- Does each campaign get its own shop (US-19), or is there one shared shop?
-- Can one player own characters in more than one campaign?
-- Can a player ever send money to another character, or only the DM moves money in?
-- Should a DM be able to see who bought what, or only balances?
+- **Admin vs game master vs club.** Is an admin the site-wide owner (you), or a role inside each club? Can a club have several game masters, and can a game master edit shops, or only admins?
+- **Items.** Shops, loot, quests, and printed inventories all use items. Which app owns the item definitions (name, description, price)? One shared catalog would let a quest reward and a shop item be the same thing.
+- **Coins.** Do you store a total in copper and only display it split into denominations, or store actual coins per denomination? Which denominations (the 5th-edition set is copper, silver, electrum, gold, platinum)?
+- **Selling.** U3 says players can sell loot to shops. Do shops buy items back, and at what share of the price?
+- **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
+- **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
+- **Printing.** What should a printout contain: item name, description, quantity, and which character?
+- **Lore visibility.** Is all lore visible to every player in the club, or can some of it be game-master-only?
+- **Donate.** Which service will the donate button point to?
