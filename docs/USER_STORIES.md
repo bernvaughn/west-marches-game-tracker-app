@@ -36,7 +36,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U8 Coin denominations.** As a player, I want to have different denominations of coins, but have it auto-exchange when buying things so I can see my coins split out but do not need to suffer when buying. *(player_characters, shops)*
 - The denominations are copper, silver, gold, and platinum, and amounts are stored in copper.
-- I assumed the usual rates: 10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum. Confirm or change.
+- The rates are 10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum.
 
 **U9 Unlimited or limited stock.** As an admin, I want some items to be unlimited and some to have limited quantities at a given shop, so players can or cannot buy as many as they want. *(shops)*
 
@@ -99,11 +99,13 @@ Rules:
 
 ## Shops: stories from your answers
 
-**S1 Shop pricing.** As a club admin, I want each shop to have a default sell price and a default buyback price, each a percentage of an item's catalogue value, with per-item overrides, so that I can make a shop charge more or less for items I call out, such as a shop that sells rope cheaply. *(shops, items)*
-- Players can sell items to a shop at that shop's buyback price.
+**S1 Shop pricing.** As a club admin, I want each item to have a value, and each shop to have a default sell percentage (what players pay) and a separate default buy percentage (what the shop pays players) of that value, which I can override item by item within a shop, so that a shop can sell most items at 100% of their value but sell rope at 50%. *(shops, items)*
+- Players can sell items to a shop at that shop's buy percentage of the item's value, unless the item has an override in that shop.
+- An override applies only within the shop it is set in.
 
 **S2 Shop rotations.** As a club admin, I want shop rotations with start and end dates, where a shop can appear in more than one rotation, so that I can set rotations up before they go live. *(shops)*
-- A rotation is a set of shops that are open between its start date and its end date.
+- A rotation only sets when its shops open and close.
+- A shop's inventory is an ongoing list that carries over between rotations, and stock quantities are kept per shop, not per rotation.
 
 ## Carried over from the first draft
 
@@ -155,11 +157,12 @@ Proposed stories, from your description of the map app (cut or change freely):
 - **Permissions.** The site admin is separate from club permissions. Club admin and game master are separate permissions that one account can hold together. The donate button and the backup and cost stories are the site admin's; everything else is club-level.
 - **Clubs.** Each club's data is separate, and the email whitelist belongs to a club. A person can have characters in several clubs; a character never moves between clubs. Game masters can own characters and play when they are not running a session, and club admins can hand a character from one player to another (U18).
 - **Items.** Each club has its own item catalogue (the `items` app), so clubs can add their own homebrew items. The `shops` app holds inventories that point at the catalogue, with a stock amount per item, and handles buying and selling. A shop only sees its own club's items.
-- **Shop prices.** Each shop has a default sell price and buyback price as percentages of an item's value, with per-item overrides (S1). Shop rotations have start and end dates, and a shop can be in several rotations (S2).
-- **Coins.** Stored as copper and shown as copper, silver, gold, and platinum.
+- **Shop prices.** Each item has a value. Each shop has a default sell percentage and a separate default buy percentage of that value, which can be overridden item by item within the shop (S1).
+- **Rotations.** A rotation only sets when its shops open and close, and a shop can be in several rotations. A shop's inventory is an ongoing list that carries over between rotations, with stock quantities kept per shop (S2).
+- **Coins.** Stored as copper and shown as copper, silver, gold, and platinum (10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum).
 - **Ledger.** The `ledger` app records every gain or loss of items or coins for a character, with a note and a date.
 - **Trades.** The `player_characters` app owns trades. The rules are in U16: players edit their own side until they approve, either player can decline or cancel at any time, trades never expire, offered items are locked and offered coins are held, and held items and coins cannot be offered twice.
-- **Who sees what.** A character's inventory is visible to its owner, game masters, and club admins. A player's email is visible to club admins only. On the map, game masters see everything and players see only the tiles they have visited.
+- **Who sees what.** A character's inventory and coins are visible to its owner, game masters, and club admins, and game masters keep that view even while they play a character of their own. A player's email is visible to club admins only. On the map, game masters see everything and players see only the tiles they have visited.
 - **Quests.** Players turn in items themselves, with a quantity; turned-in items can be used up; coins cannot be turned in; rewards can be coins, items, or both; quests have start and end dates.
 - **Messages.** Mostly free text, with an optional choice of which of the sender's characters it is about. They live in `accounts` for now; a separate messaging app may make sense later.
 - **Printing.** A printout is a cheat sheet of item name, description, traits, and other details, not a record of ownership.
@@ -167,8 +170,4 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 ## Still open
 
-- **Exchange rates.** I assumed 10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum. Is that right?
-- **Coin visibility.** I treated coins as part of the inventory, so only the owner, game masters, and club admins see a character's coins. Is that right?
-- **Game masters who play.** A game master can see every character's inventory. Should that still hold while they are playing a character of their own?
-- **Shop pricing.** I read "(and sell value)" as a default sell price that is also a percentage of the item's value. Is that what you meant?
-- **Rotations.** Does a rotation only decide which shops are open, or does it also set what each shop has in stock during that period?
+Nothing right now. Lore and the donate service are left for later (see Later).
