@@ -42,16 +42,37 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U12 Clubs.** As an admin, I want data segregated between groups (I like the term "club") so I can eventually have other people use this app too, or I could have multiple "club"s going at once, and keep the players and items and etc separated between the clubs. *(all apps)*
 
-**U13 Ask for a fix.** As a player, I want to be able to message the club admins to manually evaluate and give me items, so if I remember something my character gathered but the game master forgot to add to my online inventory, a club admin can fix it. *(accounts or a messages app, player_characters, items)*
+**U13 Ask for a fix.** As a player, I want to be able to message the club admins to manually evaluate and give me items, so if I remember something my character gathered but the game master forgot to add to my online inventory, a club admin can fix it. *(accounts, player_characters, items)*
+- Messages are mostly free text; the sender can pick which of their characters the message is about.
 
 **U14 Manual adjustments.** As a club admin or game master, I want to be able to give and take items and money to and from players, so I can manually adjust their loot as needed. I need to be able to tag the give and take actions with notes and dates. *(player_characters, items)*
 - Adjustments are recorded as new entries with a note and a date; earlier entries are never edited or deleted.
 - The date defaults to the current date and can be changed to any date.
 
+**U15 Move items between my characters.** As a player, I want to be able to send items from one character to another, if both characters are mine, so I can transfer items between my characters. This stays within the same club. *(player_characters, items)*
+
+**U16 Trades.** As a player, I want to be able to propose trades to other players' characters (within the same club), so we can exchange items easily. *(player_characters, items, shops)*
+
+How a trade works:
+1. Player 1, on character 1a, sends a trade request to character 2a, which is owned by player 2.
+2. The request lists the items player 1 is offering and a note, such as "can you give me your cool axe for these?". Coins are allowed as part of the trade too.
+3. Player 2 sees the request, accepts it, adds the items (and any coins) they will give, and approves it.
+4. Player 1 may adjust the items and coins. Whenever items or coins are added or removed, all approvals are cleared.
+5. Player 1 approves. Once both approvals are on the trade, the items and coins transfer between the characters.
+
+Rules:
+- Items in an open trade cannot be sold.
+- A player may have only one open trade for each of their characters at a time.
+- Both characters must be in the same club.
+
+**U17 Private email.** As a player, I want my email address to only be visible to club admins, so other players cannot contact me via email without my permission. *(accounts)*
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
 - Players turn items in themselves; no admin has to approve it.
+- Turned-in items can be used up, and the player specifies a quantity.
+- Only items can be turned in, not coins; coins are for buying things.
 
 **Q2 Effective dates.** As a club admin, I want effective dates for quests, so some quests will time out without being completed. *(quests)*
 - A quest has a start date and an end date, so quests can be made before they go live.
@@ -76,7 +97,7 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 **C4 Live shop.** As a player, I want sold-out items to disappear from my screen within a few seconds, without reloading. *(shops)*
 - The shop refreshes about every 5 seconds while the page is visible, and not while the tab is hidden.
 
-**C5 Balance and history.** As a player, I want to see each of my characters' coins and a list of everything that changed them (loot, purchases, sales), newest first. *(player_characters)*
+**C5 Ledger.** As a player, I want to see a history of every time each of my characters gained or lost items or coins, newest first, with a note on what happened (for example `traded to <character name>` or `awarded by game master <name>`), so I can see where things came from and went. *(player_characters)*
 
 **C7 Nightly backup.** As an admin, I want a nightly copy of the database stored outside the server so that a server or account problem does not lose a club's data. *(site-wide)*
 
@@ -104,7 +125,7 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 ## Open questions
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now; players turn in quest items without admin approval; quests have a start and an end date; messages to club admins live in `accounts` for now, and a separate messaging app may make sense later; game masters can give and take items and coins too, with the date defaulting to today and editable.
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now; players turn in quest items without admin approval; quests have a start and an end date; messages to club admins live in `accounts` for now, and a separate messaging app may make sense later; game masters can give and take items and coins too, with the date defaulting to today and editable; every gain or loss of items or coins for a character goes into one ledger with a note and a date; turned-in quest items can be used up and carry a quantity, and only items (not coins) can be turned in; messages are mostly free text, with an optional choice of which of the sender's characters they are about.
 
 Still open:
 
@@ -115,6 +136,8 @@ Still open:
 - **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
 - **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
 - **Printing.** What should a printout contain: item name, description, quantity, and which character?
-- **Quest turn-in.** Are turned-in items used up? Can rewards be coins, items, or both?
-- **Messages.** Is a message free text, or tied to a character and the items being claimed?
+- **Quest rewards.** Can rewards be coins, items, or both?
+- **Trades.** Can either player cancel an open trade, and can a trade be declined or expire? After a request is accepted, can both players change their own side (clearing approvals)? Does "one open trade per character" also count a character that has received a request, or only one that sent it?
+- **Locked items and coins.** Items in an open trade cannot be sold. Should they also be locked from transfers, quest turn-ins, and being marked consumed, and are offered coins held aside until the trade ends?
+- **Ledger and trades home.** Which app owns the ledger and trades: `player_characters`, or their own apps, since shops, quests, trades, and adjustments all write to the ledger?
 - **Donate.** Which service will the donate button point to?
