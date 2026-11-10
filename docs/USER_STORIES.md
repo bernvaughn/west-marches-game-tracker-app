@@ -14,7 +14,7 @@ In the stories below, "admin" means a club admin, except U11 (donate button) and
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
-Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `map`, `quests`. Lore is out of scope for now (see Later).
+Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `ledger`, `map`, `quests`. Lore is out of scope for now (see Later).
 
 ## Stories
 
@@ -57,12 +57,15 @@ How a trade works:
 1. Player 1, on character 1a, sends a trade request to character 2a, which is owned by player 2.
 2. The request lists the items player 1 is offering and a note, such as "can you give me your cool axe for these?". Coins are allowed as part of the trade too.
 3. Player 2 sees the request, accepts it, adds the items (and any coins) they will give, and approves it.
-4. Player 1 may adjust the items and coins. Whenever items or coins are added or removed, all approvals are cleared.
+4. Either player may change their own side of the trade after the request is accepted and before they approve. Whenever items or coins are added or removed, all approvals are cleared.
 5. Player 1 approves. Once both approvals are on the trade, the items and coins transfer between the characters.
 
 Rules:
-- Items in an open trade cannot be sold.
-- A player may have only one open trade for each of their characters at a time.
+- Items in an open trade or trade request are locked: they cannot be sold, transferred to another character, turned in to a quest, or marked consumed.
+- Coins offered in an open trade or trade request are held aside and cannot be spent in a shop.
+- Either player can decline or cancel the trade at any time.
+- A character that sends trade requests can have only one accepted trade at a time. The limit starts once a request is accepted and applies to the sending player's character.
+- Players cannot see the inventories of characters they do not own; they see only what is in the trade.
 - Both characters must be in the same club.
 
 **U17 Private email.** As a player, I want my email address to only be visible to club admins, so other players cannot contact me via email without my permission. *(accounts)*
@@ -73,6 +76,7 @@ Rules:
 - Players turn items in themselves; no admin has to approve it.
 - Turned-in items can be used up, and the player specifies a quantity.
 - Only items can be turned in, not coins; coins are for buying things.
+- Rewards can be coins, items, or both.
 
 **Q2 Effective dates.** As a club admin, I want effective dates for quests, so some quests will time out without being completed. *(quests)*
 - A quest has a start date and an end date, so quests can be made before they go live.
@@ -125,7 +129,7 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 ## Open questions
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now; players turn in quest items without admin approval; quests have a start and an end date; messages to club admins live in `accounts` for now, and a separate messaging app may make sense later; game masters can give and take items and coins too, with the date defaulting to today and editable; every gain or loss of items or coins for a character goes into one ledger with a note and a date; turned-in quest items can be used up and carry a quantity, and only items (not coins) can be turned in; messages are mostly free text, with an optional choice of which of the sender's characters they are about.
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now; players turn in quest items without admin approval; quests have a start and an end date; messages to club admins live in `accounts` for now, and a separate messaging app may make sense later; game masters can give and take items and coins too, with the date defaulting to today and editable; every gain or loss of items or coins for a character goes into one ledger with a note and a date; turned-in quest items can be used up and carry a quantity, and only items (not coins) can be turned in; messages are mostly free text, with an optional choice of which of the sender's characters they are about; the ledger gets its own `ledger` app; quest rewards can be coins, items, or both; and the trade rules in U16 are settled (own side editable until approved, either player can decline or cancel at any time, locked items and held coins, no seeing other players' inventories).
 
 Still open:
 
@@ -136,8 +140,8 @@ Still open:
 - **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
 - **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
 - **Printing.** What should a printout contain: item name, description, quantity, and which character?
-- **Quest rewards.** Can rewards be coins, items, or both?
-- **Trades.** Can either player cancel an open trade, and can a trade be declined or expire? After a request is accepted, can both players change their own side (clearing approvals)? Does "one open trade per character" also count a character that has received a request, or only one that sent it?
-- **Locked items and coins.** Items in an open trade cannot be sold. Should they also be locked from transfers, quest turn-ins, and being marked consumed, and are offered coins held aside until the trade ends?
-- **Ledger and trades home.** Which app owns the ledger and trades: `player_characters`, or their own apps, since shops, quests, trades, and adjustments all write to the ledger?
+- **Trades home.** Which app owns trades: `player_characters`, or a `trades` app of its own?
+- **Trade expiry.** Can a trade or trade request expire on its own, or does it stay open until someone cancels or declines it?
+- **Overlapping offers.** A character can send several trade requests before any is accepted, and offered items and coins are held. Can the same items or coins be offered in more than one request at once?
+- **Who sees inventories.** Players cannot see inventories they do not own. Can game masters and club admins see all of them? Are coin balances private too?
 - **Donate.** Which service will the donate button point to?
