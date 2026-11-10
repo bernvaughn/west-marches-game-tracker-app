@@ -54,7 +54,7 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 
 | App | What it holds |
 | --- | --- |
-| `accounts` | User accounts, the email whitelist, and who holds which permission in which club |
+| `accounts` | User accounts, the email whitelist, who holds which permission in which club, and messages to club admins (a separate messaging app may make sense later) |
 | `player_characters` | The characters players play as (a player can have several): notes, stats, coins, and owned items |
 | `items` | Each club's item catalogue: names, descriptions, and prices |
 | `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), and buying and selling |

@@ -44,14 +44,17 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U13 Ask for a fix.** As a player, I want to be able to message the club admins to manually evaluate and give me items, so if I remember something my character gathered but the game master forgot to add to my online inventory, a club admin can fix it. *(accounts or a messages app, player_characters, items)*
 
-**U14 Manual adjustments.** As a club admin, I want to be able to give and take items and money to and from players, so I can manually adjust their loot as needed. I need to be able to tag the give and take actions with notes and dates. *(player_characters, items)*
+**U14 Manual adjustments.** As a club admin or game master, I want to be able to give and take items and money to and from players, so I can manually adjust their loot as needed. I need to be able to tag the give and take actions with notes and dates. *(player_characters, items)*
 - Adjustments are recorded as new entries with a note and a date; earlier entries are never edited or deleted.
+- The date defaults to the current date and can be changed to any date.
 
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
+- Players turn items in themselves; no admin has to approve it.
 
 **Q2 Effective dates.** As a club admin, I want effective dates for quests, so some quests will time out without being completed. *(quests)*
+- A quest has a start date and an end date, so quests can be made before they go live.
 
 **Q3 Completion limits.** As a club admin, I want to set limits on how many total times a quest can be completed at the club level and how many times a single character can complete it. *(quests)*
 
@@ -101,7 +104,7 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 ## Open questions
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now.
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now; players turn in quest items without admin approval; quests have a start and an end date; messages to club admins live in `accounts` for now, and a separate messaging app may make sense later; game masters can give and take items and coins too, with the date defaulting to today and editable.
 
 Still open:
 
@@ -112,8 +115,6 @@ Still open:
 - **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
 - **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
 - **Printing.** What should a printout contain: item name, description, quantity, and which character?
-- **Quest turn-in.** Does a player turn items in themselves, with the app checking it, or does an admin approve each turn-in? Are turned-in items used up? Can rewards be coins, items, or both?
-- **Quest dates.** Does a quest have a start and an end date, or only an end date?
-- **Messages.** Which app owns messaging to club admins: `accounts`, or a small app of its own? Is it free text, or tied to a character and the items being claimed?
-- **Adjustments.** U14 is for club admins. Can game masters also award and take items and coins (U3, U7), or only club admins? Does the date on an adjustment default to today, or can the admin pick any date?
+- **Quest turn-in.** Are turned-in items used up? Can rewards be coins, items, or both?
+- **Messages.** Is a message free text, or tied to a character and the items being claimed?
 - **Donate.** Which service will the donate button point to?
