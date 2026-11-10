@@ -1,6 +1,6 @@
 # User Stories (draft 2)
 
-Your stories come first, as you wrote them, with two edits: "gm" is spelled "game master", and each story is tagged with the Django apps it touches. Stories from the first draft that still apply follow after them. No code is implied by anything here.
+Your stories come first, as you wrote them, with small edits: "gm" is spelled "game master", a few awkward phrases are smoothed, and each story is tagged with the Django apps it touches. Stories from the first draft that still apply follow after them. No code is implied by anything here.
 
 Roles and permissions:
 
@@ -14,7 +14,7 @@ In the stories below, "admin" means a club admin, except U11 (donate button) and
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
-Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `map`, `lore`, `quests`.
+Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `map`, `quests`. Lore is out of scope for now (see Later).
 
 ## Stories
 
@@ -42,9 +42,24 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 
 **U12 Clubs.** As an admin, I want data segregated between groups (I like the term "club") so I can eventually have other people use this app too, or I could have multiple "club"s going at once, and keep the players and items and etc separated between the clubs. *(all apps)*
 
+**U13 Ask for a fix.** As a player, I want to be able to message the club admins to manually evaluate and give me items, so if I remember something my character gathered but the game master forgot to add to my online inventory, a club admin can fix it. *(accounts or a messages app, player_characters, items)*
+
+**U14 Manual adjustments.** As a club admin, I want to be able to give and take items and money to and from players, so I can manually adjust their loot as needed. I need to be able to tag the give and take actions with notes and dates. *(player_characters, items)*
+- Adjustments are recorded as new entries with a note and a date; earlier entries are never edited or deleted.
+
+## Quests
+
+**Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
+
+**Q2 Effective dates.** As a club admin, I want effective dates for quests, so some quests will time out without being completed. *(quests)*
+
+**Q3 Completion limits.** As a club admin, I want to set limits on how many total times a quest can be completed at the club level and how many times a single character can complete it. *(quests)*
+
+**Q4 Quests per club.** As a site admin, I want quests to be defined at the club level, so different clubs' quests do not bleed into each other. *(quests)*
+
 ## Carried over from the first draft
 
-These still apply and are not covered above. Keep, change, or drop them.
+These still apply and are not covered above. Keep, change, or drop them. C6 (correct a mistake) was merged into U14.
 
 **C1 Browse items.** As a player, I want to see the items a shop currently has, with prices and any remaining quantity, so that I can decide what to buy. *(shops)*
 
@@ -59,9 +74,6 @@ These still apply and are not covered above. Keep, change, or drop them.
 - The shop refreshes about every 5 seconds while the page is visible, and not while the tab is hidden.
 
 **C5 Balance and history.** As a player, I want to see each of my characters' coins and a list of everything that changed them (loot, purchases, sales), newest first. *(player_characters)*
-
-**C6 Correct a mistake.** As a game master, I want to subtract coins with a reason so that I can fix an award I got wrong without erasing history. *(player_characters)*
-- Corrections are new entries; existing entries are never edited or deleted.
 
 **C7 Nightly backup.** As an admin, I want a nightly copy of the database stored outside the server so that a server or account problem does not lose a club's data. *(site-wide)*
 
@@ -83,16 +95,13 @@ Proposed stories, from your description of the map app (cut or change freely):
 
 **M3 Track visits.** As a game master, I want to record which players have been to which tiles. *(map)*
 
-## Apps with no stories yet
+## Later
 
-You described these apps but have not written stories for them.
-
-- **lore**: the world and its details; the contents of the `dnd-world-keeper` repo move here so they are more available.
-- **quests**: small side quests, such as gathering items during a session and trading them in for a special reward or more money.
+- **lore**: out of scope for now. The world notes in the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo should eventually live in this app instead of that separate repo, so they are more available. When it comes up, decide whether some lore can be game-master-only.
 
 ## Open questions
 
-Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art.
+Decided so far: the site admin is separate from club permissions; club admin and game master are separate permissions that one account can hold together; each club has its own item catalogue so clubs can add their own homebrew items, the `items` app owns the catalogue while `shops` holds inventories that point at it and handles buying and selling, and a shop holds a stock amount of items from its own club's catalogue only; coins are stored as copper and shown split into denominations; hex maps are basic, with no art; lore is out of scope for now.
 
 Still open:
 
@@ -103,5 +112,8 @@ Still open:
 - **Rotation.** Do shop inventories rotate by hand between sessions, or on a schedule or at random?
 - **Whitelist.** Can a player have characters in more than one club, and can a character move from one email to another?
 - **Printing.** What should a printout contain: item name, description, quantity, and which character?
-- **Lore visibility.** Is all lore visible to every player in the club, or can some of it be game-master-only?
+- **Quest turn-in.** Does a player turn items in themselves, with the app checking it, or does an admin approve each turn-in? Are turned-in items used up? Can rewards be coins, items, or both?
+- **Quest dates.** Does a quest have a start and an end date, or only an end date?
+- **Messages.** Which app owns messaging to club admins: `accounts`, or a small app of its own? Is it free text, or tied to a character and the items being claimed?
+- **Adjustments.** U14 is for club admins. Can game masters also award and take items and coins (U3, U7), or only club admins? Does the date on an adjustment default to today, or can the admin pick any date?
 - **Donate.** Which service will the donate button point to?

@@ -2,7 +2,7 @@
 
 Plan written 2026-11-09. Prices were checked that day from third-party summaries of DigitalOcean's pricing; confirm them on the signup page.
 
-Scope has since grown to seven Django apps (see [Django apps](#django-apps)), clubs, printing, and a donate button. The cost and infrastructure sections below were written for the smaller scope and have not been re-checked. User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
+Scope has since grown to six Django apps (see [Django apps](#django-apps)), clubs, printing, and a donate button. The cost and infrastructure sections below were written for the smaller scope and have not been re-checked. User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
 
 ## Summary
 
@@ -59,12 +59,13 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 | `items` | Each club's item catalogue: names, descriptions, and prices |
 | `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), and buying and selling |
 | `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
-| `lore` | The world and its details, migrated from the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo |
 | `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
 
-All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, shops, and items, with proposed ones for map; lore and quests are still to be written. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown split into denominations.
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist so far for accounts, player characters, shops, items, and quests, with proposed ones for map. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown split into denominations.
 
 The data model above is a first sketch and is being reworked around these apps.
+
+Later: a `lore` app is out of scope for now. The world notes in the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo should eventually live in this app instead of that separate repo.
 
 ## Cost control
 
