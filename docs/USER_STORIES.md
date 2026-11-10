@@ -155,11 +155,15 @@ Decided: maps stay very basic. No art. A club can have several hex maps (for exa
 
 **M9 Print the map.** As a game master or player, I want to print the map I can see, to bring to the table. A player prints the view for the characters they selected in M8. *(map)*
 
-**M10 Two views for game masters.** As a game master, I want to see and print one copy of the map with everything visible and another copy showing only what my players can see, so I can check what they know and put the right map on the table. *(map)*
+**M10 Two views for game masters.** As a game master, I want to see and print one copy of the map with everything visible and another copy showing only what my players can see, so I can check what they know and put the right map on the table. For the players' copy I pick the group of characters that make up the party, the same way a player picks theirs in M8. *(map, player_characters)*
 
 **M11 Target level.** As a game master, I want to set a target level on a location, in bands of two challenge ratings (CR 1-2 up to CR 19-20), so players and game masters know roughly how strong it is and how much XP to award the party for discovering it and for exploring it. The app shows the XP amounts; it does not track anyone's XP. *(map)*
 
 **M12 Request a visit.** As a player, I want to ask for a tile to be marked as visited by one of my characters, so my map stays accurate when the game master has not recorded it. The game master or club admin approves or declines, much like an item request; approving records the visit. *(map, player_characters)*
+
+**M14 Discovered or explored.** As a game master, I want to record, for each character in a party, whether a location has been discovered or fully explored, so the XP for each is clear. Exploring a location after discovering it upgrades its status. Recording either also marks the tile as visited. *(map, player_characters)*
+
+**M15 Where to go back.** As a player, I want the map to clearly mark locations my characters have discovered but not yet explored, and to show each location's target level, so we can see which places to return to once we are stronger. *(map)*
 
 **M13 XP table.** As a club admin, I want the XP amounts for each target level to be editable for my club, starting from the West Marches table, so a club can use its own numbers. *(map)*
 
@@ -182,8 +186,6 @@ Worth checking against your source: CR 5-6 jumps from 400 to 2,825, and most row
 
 Still to settle for the map:
 
-- **Game master's players-only copy.** M10's players-only map could show everything any character in the club has visited, or let you pick a party or characters, like the player view in M8. Which do you want?
-- **Discovered versus explored.** Do we record whether each party only discovered a location or fully explored it, or is the XP table just a reference?
 - **Tile grid.** Positions will be hex coordinates; the exact scheme is a design detail for later, not a story.
 
 ## Later
@@ -211,7 +213,7 @@ Still to settle for the map:
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
 - **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see the locations and encounters on tiles their characters visited, with no hidden-or-visible split (M2-M6).
-- **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference only (M11, M13). Players can ask for a visit to be recorded (M12).
+- **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each character's progress on a location is recorded as discovered or explored, and the map marks discovered-but-unexplored places (M14, M15). Players can ask for a visit to be recorded (M12).
 - **Left for later.** Lore and the donate service.
 
 ## Still open
