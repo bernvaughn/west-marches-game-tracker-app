@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Hand over {{ character.name }}{% endblock %}
+{% block content %}
+<h1>Hand over {{ character.name }}</h1>
+<p>Current owner: {{ character.owner.user.display_name }}</p>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Hand over</button>
+</form>
+<p><a href="{% url 'characters:detail' club.slug character.pk %}">Cancel</a></p>
+{% endblock %}

@@ -1,29 +1,69 @@
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
-from accounts.permissions import club_admin_required, club_member_required
-from accounts.scoping import club_get_object_or_404
+from accounts.permissions import (
+    can_view_inventory,
+    club_admin_required,
+    club_member_required,
+    is_club_admin,
+    is_game_master,
+)
+from accounts.scoping import club_get_object_or_404, club_queryset
 
-from ..access import can_edit_character
+from ..access import can_edit_character, owns_character
+from ..character_forms import CharacterForm, HandoverForm
+from ..inventory import coin_summary, inventory_rows
 from ..models import Character
-
-PLACEHOLDER = "player_characters/characters/placeholder.html"
 
 
 @club_member_required
 def index(request, club_slug):
-    return render(request, "player_characters/characters/index.html")
+    characters = club_queryset(request, Character).select_related("owner__user")
+    return render(request, "player_characters/characters/index.html", {"characters": characters})
 
 
 @club_member_required
 def create(request, club_slug):
-    return render(request, PLACEHOLDER, {"title": "New character"})
+    can_pick = is_club_admin(request.user, request.club) or is_game_master(
+        request.user, request.club
+    )
+    initial = {"owner": request.membership} if can_pick and request.membership else {}
+    form = CharacterForm(
+        request.POST or None, club=request.club, choose_owner=can_pick, initial=initial
+    )
+    if request.method == "POST" and form.is_valid():
+        character = form.save(commit=False)
+        if not can_pick:
+            character.owner = request.membership
+        character.save()
+        messages.success(request, f"Created {character.name}.")
+        return redirect("characters:detail", club_slug=request.club.slug, pk=character.pk)
+    return render(
+        request, "player_characters/characters/form.html", {"form": form, "title": "New character"}
+    )
 
 
 @club_member_required
 def detail(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
-    return render(request, PLACEHOLDER, {"title": character.name, "character": character})
+    can_view = can_view_inventory(request.user, character)
+    admin = is_club_admin(request.user, request.club)
+    ctx = {
+        "character": character,
+        "owner_name": character.owner.user.display_name,
+        "can_view": can_view,
+        "can_edit": can_view,
+        "can_adjust": admin or is_game_master(request.user, request.club),
+        "can_handover": admin,
+        "can_transfer": owns_character(request.user, character)
+        and Character.objects.for_club(request.club).filter(owner=character.owner).count() >= 2,
+    }
+    if can_view:
+        ctx["rows"] = inventory_rows(character)
+        ctx["coins"] = coin_summary(character)
+        ctx["show_held"] = any(r.held for r in ctx["rows"])
+    return render(request, "player_characters/characters/detail.html", ctx)
 
 
 @club_member_required
@@ -31,12 +71,30 @@ def edit(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     if not can_edit_character(request.user, character):
         raise PermissionDenied
-    return render(request, PLACEHOLDER, {"title": f"Edit {character.name}", "character": character})
+    form = CharacterForm(request.POST or None, instance=character, club=request.club)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, f"Saved {character.name}.")
+        return redirect("characters:detail", club_slug=request.club.slug, pk=character.pk)
+    return render(
+        request,
+        "player_characters/characters/form.html",
+        {"form": form, "title": f"Edit {character.name}", "character": character},
+    )
 
 
 @club_admin_required
 def handover(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
+    form = HandoverForm(request.POST or None, character=character)
+    if request.method == "POST" and form.is_valid():
+        new_owner = form.cleaned_data["owner"]
+        character.owner = new_owner
+        character.save(update_fields=["owner"])
+        messages.success(request, f"{character.name} now belongs to {new_owner.user.display_name}.")
+        return redirect("characters:detail", club_slug=request.club.slug, pk=character.pk)
     return render(
-        request, PLACEHOLDER, {"title": f"Hand over {character.name}", "character": character}
+        request,
+        "player_characters/characters/handover.html",
+        {"form": form, "character": character},
     )
