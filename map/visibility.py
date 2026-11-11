@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from accounts.permissions import is_club_admin, is_game_master
 from player_characters.models import Character
 
@@ -32,3 +34,42 @@ def visible_positions(hex_map, characters):
     )
     positions.add((0, 0))
     return positions
+
+
+def resolve_view(request, hex_map):
+    """One place for the M8 and M10 rules. Returns the view state for a request."""
+    is_editor = is_map_editor(request.user, request.club)
+    ids = request.GET.getlist("characters")
+    wants_players = request.GET.get("view") == "players"
+    explicit = []
+    if is_editor and not wants_players:
+        players_view = False
+        picked = []
+        visible = None
+    elif is_editor:
+        players_view = True
+        explicit = list(pick_characters(request, ids, allow_any=True))
+        picked = explicit
+        visible = visible_positions(hex_map, picked)
+    else:
+        players_view = True
+        explicit = list(pick_characters(request, ids, allow_any=False))
+        picked = explicit or list(own_characters(request))
+        visible = visible_positions(hex_map, picked)
+    if is_editor:
+        choices = Character.objects.for_club(request.club).order_by("name")
+    else:
+        choices = own_characters(request).order_by("name")
+    pairs = [("characters", c.pk) for c in explicit]
+    if is_editor and players_view:
+        pairs.append(("view", "players"))
+    return {
+        "is_editor": is_editor,
+        "players_view": players_view,
+        "show_gm": is_editor and not players_view,
+        "picked": picked,
+        "picked_ids": {c.pk for c in picked},
+        "choices": list(choices),
+        "visible": visible,
+        "char_params": urlencode(pairs),
+    }
