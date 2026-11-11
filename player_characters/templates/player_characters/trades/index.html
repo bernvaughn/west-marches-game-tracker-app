@@ -2,4 +2,31 @@
 {% block title %}Trades{% endblock %}
 {% block content %}
 <h1>Trades</h1>
+<p><a href="{% url 'trades:propose' club.slug %}">Propose trade</a></p>
+<h2>Open trades</h2>
+<ul>
+{% for t in open_trades %}
+  <li><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }} ({{ t.sender.owner.user.display_name }}) &rarr; {{ t.receiver.name }} ({{ t.receiver.owner.user.display_name }})</a> &middot; {{ t.get_status_display }} &middot; {{ t.created|date }}</li>
+{% empty %}
+  <li>No open trades.</li>
+{% endfor %}
+</ul>
+<h2>Closed trades</h2>
+<ul>
+{% for t in closed_trades %}
+  <li><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }} ({{ t.sender.owner.user.display_name }}) &rarr; {{ t.receiver.name }} ({{ t.receiver.owner.user.display_name }})</a> &middot; {{ t.get_status_display }} &middot; {{ t.created|date }}</li>
+{% empty %}
+  <li>No closed trades.</li>
+{% endfor %}
+</ul>
+{% if show_all %}
+<h2>All club trades</h2>
+<ul>
+{% for t in all_trades %}
+  <li><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }} ({{ t.sender.owner.user.display_name }}) &rarr; {{ t.receiver.name }} ({{ t.receiver.owner.user.display_name }})</a> &middot; {{ t.get_status_display }} &middot; {{ t.created|date }}</li>
+{% empty %}
+  <li>No trades in this club.</li>
+{% endfor %}
+</ul>
+{% endif %}
 {% endblock %}

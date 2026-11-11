@@ -68,7 +68,6 @@ def test_cross_club_pk_404(
 def test_routes_and_stubs(login, club, trade, player):
     c = login(player)
     assert reverse("trades:index", args=[club.slug])
-    assert c.get(reverse("trades:propose", args=[club.slug])).status_code == 501
     assert c.get(url(club, trade, "edit_side")).status_code == 501
     for name in ("accept", "decline", "cancel", "approve", "edit_side"):
         assert c.post(url(club, trade, name)).status_code == 501
