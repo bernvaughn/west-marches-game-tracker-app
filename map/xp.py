@@ -20,3 +20,25 @@ def copy_default_xp_table(club):
         XPLevel.objects.get_or_create(
             club=club, band=band, defaults={"discover_xp": discover_xp, "explore_xp": explore_xp}
         )
+
+
+def band_label(band):
+    return f"CR {band}" if band else ""
+
+
+def xp_table(club):
+    """The club's XPLevel rows in DEFAULT_XP_TABLE order (copies defaults lazily)."""
+    copy_default_xp_table(club)
+    rows = {r.band: r for r in XPLevel.objects.filter(club=club)}
+    return [rows[band] for band, _d, _e in DEFAULT_XP_TABLE if band in rows]
+
+
+def xp_for(club, band):
+    """Return (discover_xp, explore_xp) for the band, or None for an empty band."""
+    if not band:
+        return None
+    row = XPLevel.objects.filter(club=club, band=band).first()
+    if row is None:
+        copy_default_xp_table(club)
+        row = XPLevel.objects.filter(club=club, band=band).first()
+    return (row.discover_xp, row.explore_xp) if row else None
