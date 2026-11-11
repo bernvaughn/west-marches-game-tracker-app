@@ -4,6 +4,26 @@ Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Pri
 
 Scope has since grown to eight Django apps (see [Django apps](#django-apps)), clubs, maps, quests, trades, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
+## Run locally
+
+```bash
+uv sync
+uv run python manage.py migrate
+uv run python manage.py seed_demo
+uv run python manage.py runserver
+```
+
+Open http://127.0.0.1:8000/ and sign in with a demo login. The password for all of them is `demo-password`.
+
+| Email | Role |
+| --- | --- |
+| `admin@example.com` | Site admin |
+| `gm@example.com` | Club admin and game master |
+| `alice@example.com` | Player (Aria Windrunner) |
+| `bob@example.com` | Player (Borin Stonefist) |
+
+Run the checks with `uv run pytest` and `uv run ruff check`.
+
 ## Summary
 
 Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own. The larger scope changes the bill little: storage and traffic stay tiny, and the one real gap is that DigitalOcean blocks outgoing email, so the app is designed to send no email.
