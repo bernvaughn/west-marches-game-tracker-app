@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Whitelist{% endblock %}
+{% block content %}
+<h1>Whitelist</h1>
+{% if temp_password %}{% include "accounts/_temp_password.html" %}{% endif %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Add</button>
+</form>
+<h2>Whitelisted emails</h2>
+<ul>
+  {% for e in entries %}<li>{{ e.email }}</li>{% empty %}<li>None yet.</li>{% endfor %}
+</ul>
+{% endblock %}
