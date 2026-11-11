@@ -69,7 +69,7 @@ def test_admin_access(login, request, who, quest):
         assert c.get(_url(name, *args)).status_code == 200
     assert c.get(_url("delete", quest.pk)).status_code == 405
     assert c.post(_url("delete", quest.pk)).status_code == 302
-    assert Quest.objects.filter(pk=quest.pk).exists()
+    assert not Quest.objects.filter(pk=quest.pk).exists()
 
 
 @pytest.mark.story("Q4")
