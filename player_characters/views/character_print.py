@@ -4,6 +4,7 @@ from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 
 from ..access import require_inventory_access
+from ..inventory import coin_summary, inventory_rows
 from ..models import Character
 
 
@@ -13,6 +14,10 @@ def print_items(request, club_slug, pk):
     require_inventory_access(request.user, character)
     return render(
         request,
-        "player_characters/characters/placeholder.html",
-        {"title": f"Items of {character.name}", "character": character},
+        "player_characters/characters/print.html",
+        {
+            "character": character,
+            "rows": inventory_rows(character),
+            "coins": coin_summary(character),
+        },
     )
