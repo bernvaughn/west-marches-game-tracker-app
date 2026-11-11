@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}History of {{ character.name }}{% endblock %}
+{% block content %}
+<h1>History of {{ character.name }}</h1>
+<p><a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back to sheet</a></p>
+{% if entries %}
+<table>
+  <thead><tr><th>Date</th><th>Kind</th><th>Note</th><th>Lines</th><th>By</th></tr></thead>
+  <tbody>
+  {% for e in entries %}
+  <tr>
+    <td>{{ e.date|date:"Y-m-d" }}</td>
+    <td>{{ e.get_kind_display }} (#{{ e.id }}){% if e.reverses_id %} <small>reverses #{{ e.reverses_id }}</small>{% endif %}</td>
+    <td>{{ e.note }}</td>
+    <td>
+      <ul>
+        {% for line in e.lines.all %}
+        <li>
+          {% if line.item %}{{ line.quantity|stringformat:"+d" }} {{ line.item.name }}{% endif %}
+          {% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </td>
+    <td>{% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}{% if e.via_agent %} <span class="badge">agent</span>{% endif %}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p>
+  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</p>
+{% else %}
+<p>No history yet.</p>
+{% endif %}
+{% endblock %}
