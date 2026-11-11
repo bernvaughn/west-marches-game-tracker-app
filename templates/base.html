@@ -12,6 +12,7 @@
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <header class="site-header">
   <a href="{% url 'home' %}">West Marches</a>
+  {% include "accounts/_donate.html" %}
   {% if user.is_authenticated %}
   <nav class="club-switcher" aria-label="Clubs">
     {% for c in user_clubs %}<a href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a>{% endfor %}

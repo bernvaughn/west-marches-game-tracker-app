@@ -1,1 +1,11 @@
+{% if club %}
 <a href="{% url 'accounts:index' club.slug %}">People</a>
+{% if user.is_superuser or request.membership.is_club_admin %}<a href="{% url 'accounts:whitelist' club.slug %}">Whitelist</a>{% endif %}
+<a href="{% url 'accounts:message_new' club.slug %}">Message admins</a>
+{% if user.is_superuser or request.membership.is_club_admin %}<a href="{% url 'accounts:message_inbox' club.slug %}">Inbox</a>{% endif %}
+<a href="{% url 'password_change' %}">Change password</a>
+{% if user.is_superuser %}
+<a href="{% url 'site_clubs' %}">Clubs</a>
+<a href="{% url 'site_settings' %}">Site settings</a>
+{% endif %}
+{% endif %}
