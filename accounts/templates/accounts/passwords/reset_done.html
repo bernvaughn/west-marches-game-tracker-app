@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Password reset{% endblock %}
+{% block content %}
+<h1>Password reset</h1>
+{% include "accounts/_temp_password.html" %}
+<p><a href="{% url 'accounts:index' club.slug %}">Back to people</a></p>
+{% endblock %}
