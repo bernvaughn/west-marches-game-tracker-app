@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ kind|capfirst }}: {{ location.name }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>{{ kind|capfirst }} by: {{ location.name }}</h1>
+<p><a href="{% url 'map:tile' club.slug hex_map.pk q r %}">Back to the tile</a> ·
+<a href="{% url 'map:credit' club.slug location.pk other_kind %}">Edit {{ other_kind }}</a></p>
+<h2>Credited characters</h2>
+{% if credited %}
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="remove">
+  {% for c in credited %}
+  <label><input type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  {% endfor %}
+  {% if credit.date %}<p>Date: {{ credit.date }}</p>{% endif %}
+  <button type="submit">Remove selected</button>
+</form>
+{% else %}<p>Nobody yet.</p>{% endif %}
+<h2>Add characters</h2>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="add">
+  {{ form.non_field_errors }}
+  {% for c in available %}
+  <label><input type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  {% endfor %}
+  <p>{{ form.date.errors }}<label>Date {{ form.date }}</label></p>
+  <button type="submit">Add</button>
+</form>
+{% endblock %}

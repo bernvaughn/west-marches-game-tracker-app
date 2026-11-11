@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Visits: {{ hex_map.name }} ({{ q }}, {{ r }}){% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>Visits: {{ hex_map.name }} ({{ q }}, {{ r }})</h1>
+<p><a href="{% url 'map:tile' club.slug hex_map.pk q r %}">Back to the tile</a></p>
+<h2>Who visited</h2>
+<ul>
+{% for v in visits %}
+  <li>{{ v.character.name }}{% if v.date %} ({{ v.date }}){% endif %}
+    <form method="post" style="display:inline">{% csrf_token %}
+      <input type="hidden" name="action" value="remove">
+      <input type="hidden" name="visit_id" value="{{ v.pk }}">
+      <button type="submit">Remove</button>
+    </form></li>
+{% empty %}<li>Nobody yet.</li>{% endfor %}
+</ul>
+<h2>Record visits</h2>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="add">
+  {{ form.non_field_errors }}
+  {% for c in characters %}
+  <label><input type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  {% endfor %}
+  <p>{{ form.date.errors }}<label>Date {{ form.date }}</label></p>
+  <button type="submit">Record visits</button>
+</form>
+{% endblock %}

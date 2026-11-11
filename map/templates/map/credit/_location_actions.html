@@ -1,1 +1,1 @@
-{# Slot for the credit story. #}
+{% if is_editor %}<p><a href="{% url 'map:credit' club.slug location.pk 'discovered' %}">Edit discovered</a> · <a href="{% url 'map:credit' club.slug location.pk 'explored' %}">Edit explored</a></p>{% endif %}
