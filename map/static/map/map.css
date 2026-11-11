@@ -6,7 +6,10 @@
 .hex-symbol { font-size: 16px; pointer-events: none; }
 .hex-badge { fill: #222; }
 .hex-badge-text { fill: #fff; font-size: 10px; pointer-events: none; }
+.hex-unexplored { fill: #c00; font-weight: bold; font-size: 14px; pointer-events: none; }
+.unexplored { color: #c00; }
+.map-key { break-inside: avoid; }
 @media print {
-  .site-header, .area-nav, .map-actions, .pan-links, form, button { display: none !important; }
+  .site-header, .area-nav, .map-actions, .pan-links, .map-picker, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }
   .hexmap svg { width: 100%; max-width: none; }
 }

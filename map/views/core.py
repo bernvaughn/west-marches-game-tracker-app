@@ -10,19 +10,23 @@ from accounts.scoping import club_get_object_or_404, club_queryset
 from ..hexgrid import pan_links, parse_window
 from ..models import HexMap, Tile
 from ..render import build_cells
-from ..visibility import is_map_editor, own_characters, visible_positions
+from ..visibility import is_map_editor, resolve_view
 
 
-def _map_context(request, hex_map, q, r, tile=None, picked=None, char_params=""):
+def _map_context(request, hex_map, q, r, view, tile=None):
     return {
         "club": request.club,
         "hex_map": hex_map,
         "q": q,
         "r": r,
         "tile": tile,
-        "is_editor": is_map_editor(request.user, request.club),
-        "picked": picked,
-        "char_params": char_params,
+        "is_editor": view["is_editor"],
+        "show_gm": view["show_gm"],
+        "players_view": view["players_view"],
+        "picked": view["picked"],
+        "picked_ids": view["picked_ids"],
+        "choices": view["choices"],
+        "char_params": view["char_params"],
     }
 
 
@@ -33,11 +37,24 @@ def _get_map(request, map_id, is_editor):
     return hex_map
 
 
-def _visibility(request, hex_map, is_editor):
-    if is_editor:
-        return None, None
-    picked = list(own_characters(request))
-    return picked, visible_positions(hex_map, picked)
+def with_params(url, *queries):
+    """Join a url with query strings that have no leading separator."""
+    query = "&".join(item for item in queries if item)
+    return f"{url}?{query}" if query else url
+
+
+def location_rows(tile_obj):
+    """Locations of a tile with discovered, explored and unexplored set."""
+    locations = list(tile_obj.locations.all()) if tile_obj else []
+    for loc in locations:
+        loc.discovered, loc.explored = [], []
+        for credit in loc.credits.all():
+            if credit.kind == "discovered":
+                loc.discovered = list(credit.characters.all())
+            elif credit.kind == "explored":
+                loc.explored = list(credit.characters.all())
+        loc.unexplored = not loc.explored
+    return locations
 
 
 @club_member_required
@@ -61,21 +78,31 @@ def detail(request, club_slug, map_id):
     is_editor = is_map_editor(request.user, request.club)
     hex_map = _get_map(request, map_id, is_editor)
     cq, cr, radius = parse_window(request.GET)
-    picked, visible = _visibility(request, hex_map, is_editor)
-    ctx = _map_context(request, hex_map, cq, cr, picked=picked)
+    view = resolve_view(request, hex_map)
+    ctx = _map_context(request, hex_map, cq, cr, view)
+    char_params = view["char_params"]
     base = reverse("map:detail", kwargs={"club_slug": club_slug, "map_id": hex_map.pk})
-    extra = ctx["char_params"]
     pan = [
         {
             "name": name,
-            "url": f"{base}?{urlencode({'q': q, 'r': r, 'radius': radius})}{extra}",
+            "url": with_params(base, urlencode({"q": q, "r": r, "radius": radius}), char_params),
         }
         for name, (q, r) in pan_links(cq, cr, radius).items()
     ]
+    window = urlencode({"q": cq, "r": cr, "radius": radius})
+    print_base = reverse("map:print", kwargs={"club_slug": club_slug, "map_id": hex_map.pk})
     ctx.update(
-        build_cells(hex_map, cq, cr, radius, visible, ctx["char_params"], club_slug=club_slug)
+        build_cells(hex_map, cq, cr, radius, view["visible"], char_params, club_slug=club_slug)
     )
-    ctx.update(pan=pan, radius=radius, has_characters=bool(picked))
+    ctx.update(
+        pan=pan,
+        radius=radius,
+        window=window,
+        has_characters=bool(view["picked"]),
+        print_url=with_params(print_base, window, char_params),
+        full_url=with_params(base, window),
+        players_url=with_params(base, window, "view=players"),
+    )
     return render(request, "map/core/detail.html", ctx)
 
 
@@ -83,7 +110,8 @@ def detail(request, club_slug, map_id):
 def tile(request, club_slug, map_id, q, r):
     is_editor = is_map_editor(request.user, request.club)
     hex_map = _get_map(request, map_id, is_editor)
-    picked, visible = _visibility(request, hex_map, is_editor)
+    view = resolve_view(request, hex_map)
+    visible = view["visible"]
     if visible is not None and (q, r) not in visible:
         raise Http404
     tile_obj = (
@@ -92,17 +120,12 @@ def tile(request, club_slug, map_id, q, r):
         .prefetch_related("locations__encounters", "locations__credits__characters")
         .first()
     )
-    locations = list(tile_obj.locations.all()) if tile_obj else []
-    for loc in locations:
-        loc.discovered, loc.explored = [], []
-        for credit in loc.credits.all():
-            if credit.kind == "discovered":
-                loc.discovered = list(credit.characters.all())
-            elif credit.kind == "explored":
-                loc.explored = list(credit.characters.all())
-    ctx = _map_context(request, hex_map, q, r, tile=tile_obj, picked=picked)
+    ctx = _map_context(request, hex_map, q, r, view, tile=tile_obj)
     back = reverse("map:detail", kwargs={"club_slug": club_slug, "map_id": hex_map.pk})
     ctx.update(
-        locations=locations, back_url=f"{back}?{urlencode({'q': q, 'r': r})}{ctx['char_params']}"
+        locations=location_rows(tile_obj),
+        back_url=with_params(back, urlencode({"q": q, "r": r}), view["char_params"]),
+        players_url=with_params(request.path, "view=players"),
+        full_url=request.path,
     )
     return render(request, "map/core/tile.html", ctx)

@@ -1,7 +1,8 @@
+from django.db.models import Exists, OuterRef, Prefetch
 from django.urls import reverse
 
 from .hexgrid import hex_points, to_pixel, window_bounds, window_positions
-from .models import Tile
+from .models import Location, LocationCredit, Tile
 
 
 def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, club_slug=None):
@@ -11,7 +12,18 @@ def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, c
         (t.q, t.r): t
         for t in Tile.objects.filter(
             map=hex_map, q__range=(q_min, q_max), r__range=(r_min, r_max)
-        ).prefetch_related("locations")
+        ).prefetch_related(
+            Prefetch(
+                "locations",
+                queryset=Location.objects.annotate(
+                    is_explored=Exists(
+                        LocationCredit.objects.filter(
+                            location=OuterRef("pk"), kind=LocationCredit.Kind.EXPLORED
+                        )
+                    )
+                ),
+            )
+        )
     }
     cells = []
     for q, r in window_positions(cq, cr, radius):
@@ -33,6 +45,7 @@ def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, c
                 "r": r,
                 "tile": tile,
                 "count": len(locations),
+                "unexplored": sum(1 for loc in locations if not loc.is_explored),
                 "symbol": next((loc.symbol for loc in locations if loc.symbol), ""),
                 "fill": fill,
                 "visited": visible is not None and shown and not fill,
@@ -43,7 +56,7 @@ def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, c
                         "map:tile",
                         kwargs={"club_slug": club_slug, "map_id": hex_map.pk, "q": q, "r": r},
                     )
-                    + url_params
+                    + (f"?{url_params}" if url_params else "")
                     if shown
                     else ""
                 ),

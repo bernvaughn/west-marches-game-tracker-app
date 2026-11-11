@@ -10,6 +10,8 @@
 {% include "map/requests/_map_actions.html" %}
 </div>
 {% if not is_editor and not has_characters %}<p>You have no characters yet, so only the safe town is shown.</p>{% endif %}
+{% include "map/core/_picker.html" %}
+<p><a class="print-link" href="{{ print_url }}">Print</a></p>
 <nav class="pan-links" aria-label="Pan">
 {% for link in pan %}<a href="{{ link.url }}">{{ link.name }}</a> {% endfor %}
 </nav>
