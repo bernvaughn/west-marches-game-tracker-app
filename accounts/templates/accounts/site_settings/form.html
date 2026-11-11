@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Site settings</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <p>Leave the Donate URL empty to hide the Donate link.</p>
+  <button type="submit">Save</button>
+</form>
+{% endblock %}
