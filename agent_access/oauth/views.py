@@ -3,6 +3,7 @@ from functools import wraps
 
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from oauth2_provider.models import get_application_model
 from oauth2_provider.views import AuthorizationView, DynamicClientRegistrationView
 from oauth2_provider.www_authenticate import build_bearer_challenge
@@ -36,10 +37,10 @@ def cors(view):
             response[key] = value
         return response
 
-    wrapped.csrf_exempt = getattr(view, "csrf_exempt", False)
     return wrapped
 
 
+@csrf_exempt
 @cors
 def mcp_entry(request, *args, **kwargs):
     response = mcp_view(request, *args, **kwargs)
@@ -97,7 +98,11 @@ class ConsentView(AuthorizationView):
     def form_valid(self, form):
         if not form.cleaned_data.get("allow"):
             return super().form_valid(form)
-        application = get_application_model().objects.get(client_id=form.cleaned_data["client_id"])
+        application = (
+            get_application_model().objects.filter(client_id=form.cleaned_data["client_id"]).first()
+        )
+        if application is None:
+            return HttpResponse("Unknown client.", status=400, content_type="text/plain")
         user = self.request.user
         with transaction.atomic():
             prepare_approval(user, application)

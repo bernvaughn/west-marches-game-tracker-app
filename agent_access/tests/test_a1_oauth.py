@@ -213,3 +213,47 @@ def test_pkce_required_and_verified(gm_client, client_id, club):
     _, approved = approve(gm_client, client_id, club)
     bad = exchange(client_id, code_of(approved)["code"], verifier="w" * 64)
     assert bad.status_code == 400
+
+
+MCP_HEADERS = {
+    "HTTP_ACCEPT": "application/json, text/event-stream",
+    "HTTP_MCP_PROTOCOL_VERSION": "2025-11-25",
+}
+
+
+def strict_mcp(secret):
+    """Call whoami like a real client: CSRF checks on, no session cookie."""
+    body = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {"name": "whoami", "arguments": {}},
+    }
+    extra = dict(MCP_HEADERS)
+    if secret:
+        extra["HTTP_AUTHORIZATION"] = f"Bearer {secret}"
+    return Client(enforce_csrf_checks=True).post(
+        "/mcp", json.dumps(body), content_type="application/json", **extra
+    )
+
+
+def test_mcp_is_csrf_exempt_for_real_clients(gm_client, client_id, club, gm_connection):
+    _, personal = gm_connection
+    assert strict_mcp(personal).status_code == 200
+    token = get_token(gm_client, client_id, club)["access_token"]
+    response = strict_mcp(token)
+    assert response.status_code == 200
+    assert response.json()["result"]["structuredContent"]["club_slug"] == club.slug
+    anonymous = strict_mcp(None)
+    assert anonymous.status_code == 401
+    assert "resource_metadata=" in anonymous["WWW-Authenticate"]
+
+
+def test_consent_post_with_unknown_client_is_refused(gm_client, client_id, club):
+    params = authorize_params(client_id)
+    url = "/oauth/authorize/?" + urlencode(params)
+    gm_client.get(url)
+    data = {**params, "client_id": "no-such-client", "allow": "true", "club": club.pk}
+    response = gm_client.post(url, data)
+    assert response.status_code == 400
+    assert not AgentConnection.objects.filter(kind="oauth").exists()
