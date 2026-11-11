@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ quest.name }}{% endblock %}
+{% block content %}
+<h1>{{ quest.name }}</h1>
+<p><a href="{% url 'quests:index' club.slug %}">All quests</a></p>
+{% include "quests/_info.html" %}
+{% if club_left is not None %}<p>{{ club_left }} left</p>{% endif %}
+<h2>Turn in</h2>
+{% for row in rows %}
+<form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}">
+  {% csrf_token %}
+  <input type="hidden" name="character" value="{{ row.character.pk }}">
+  <strong>{{ row.character.name }}</strong>:
+  {% if row.limit_reached %}Limit reached
+  {% elif row.ready %}Ready
+  {% else %}Missing {% for item, n in row.missing %}{{ n }} x {{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
+  <button type="submit"{% if not row.ready %} disabled{% endif %}>Turn in</button>
+</form>
+{% empty %}
+<p>You have no characters in this club.</p>
+{% endfor %}
+{% endblock %}
