@@ -1,5 +1,21 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block content %}
-<h1>Buy</h1>
-<p>Coming soon.</p>
+<h1>Buy from {{ shop.name }}</h1>
+<h2>{{ stock.item.name }}</h2>
+{% if stock.item.description %}<p>{{ stock.item.description }}</p>{% endif %}
+<p>Price each: {{ price|coins }}</p>
+<p>Remaining: {% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</p>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+{% if sold_out %}
+{% elif not has_characters %}
+<p>You have no characters in this club to buy for.</p>
+{% else %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Buy</button>
+</form>
+{% endif %}
+<p><a href="{% url 'shops:detail' request.club.slug shop.pk %}">Back to {{ shop.name }}</a></p>
 {% endblock %}
