@@ -1,0 +1,76 @@
+from django.core.exceptions import ValidationError
+from django.db import models
+
+from accounts.scoping import ClubScopedManager
+
+
+class Character(models.Model):
+    club_path = "club"
+
+    club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="characters")
+    owner = models.ForeignKey(
+        "accounts.Membership", on_delete=models.PROTECT, related_name="characters"
+    )
+    name = models.CharField(max_length=200)
+    notes = models.TextField(blank=True)
+    stats = models.TextField(blank=True)
+    details = models.TextField(blank=True)
+    created = models.DateTimeField(auto_now_add=True)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    def clean(self):
+        if self.owner_id and self.owner.club_id != self.club_id:
+            raise ValidationError("Owner must be a member of the character's club.")
+
+
+class Trade(models.Model):
+    club_path = "club"
+
+    class Status(models.TextChoices):
+        REQUESTED = "requested", "Requested"
+        ACCEPTED = "accepted", "Accepted"
+        COMPLETED = "completed", "Completed"
+        DECLINED = "declined", "Declined"
+        CANCELLED = "cancelled", "Cancelled"
+
+    club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="trades")
+    sender = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="trades_sent")
+    receiver = models.ForeignKey(
+        Character, on_delete=models.CASCADE, related_name="trades_received"
+    )
+    status = models.CharField(max_length=10, choices=Status, default=Status.REQUESTED)
+    note = models.TextField(blank=True)
+    sender_approved = models.BooleanField(default=False)
+    receiver_approved = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"Trade {self.pk}: {self.sender} -> {self.receiver}"
+
+
+class TradeLine(models.Model):
+    club_path = "trade__club"
+
+    trade = models.ForeignKey(Trade, on_delete=models.CASCADE, related_name="lines")
+    from_sender = models.BooleanField(default=True)
+    item = models.ForeignKey("items.Item", null=True, blank=True, on_delete=models.PROTECT)
+    quantity = models.IntegerField(default=0)
+    coins = models.IntegerField(default=0)
+
+    objects = ClubScopedManager()
+
+    def __str__(self):
+        return f"TradeLine {self.pk} of trade {self.trade_id}"

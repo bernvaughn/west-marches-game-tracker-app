@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Your clubs</h1>
+<ul>
+  {% for c in user_clubs %}<li><a href="{% url 'club_home' c.slug %}">{{ c.name }}</a></li>
+  {% empty %}<li>You are not in any club yet.</li>{% endfor %}
+</ul>
+{% endblock %}
