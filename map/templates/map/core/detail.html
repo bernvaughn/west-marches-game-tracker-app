@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ hex_map.name }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>{{ hex_map.name }}</h1>
+<p><a href="{% url 'map:index' club.slug %}">All maps</a></p>
+<div class="map-actions">
+{% include "map/edit/_map_actions.html" %}
+{% include "map/requests/_map_actions.html" %}
+</div>
+{% if not is_editor and not has_characters %}<p>You have no characters yet, so only the safe town is shown.</p>{% endif %}
+<nav class="pan-links" aria-label="Pan">
+{% for link in pan %}<a href="{{ link.url }}">{{ link.name }}</a> {% endfor %}
+</nav>
+{% include "map/_hexmap.html" %}
+{% endblock %}

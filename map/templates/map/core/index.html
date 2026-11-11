@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Maps{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>Maps</h1>
+<div class="map-actions">
+{% include "map/edit/_index_actions.html" %}
+{% include "map/xp/_index_actions.html" %}
+{% include "map/requests/_index_actions.html" %}
+</div>
+<ul>
+{% for m in maps %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{{ m.name }}</a></li>
+{% empty %}<li>No maps yet.</li>{% endfor %}
+</ul>
+{% if is_editor %}
+<h2>Archived maps</h2>
+<ul>
+{% for m in archived %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{{ m.name }}</a></li>
+{% empty %}<li>No archived maps.</li>{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

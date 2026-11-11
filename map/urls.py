@@ -1,8 +1,15 @@
-from django.urls import path
+from django.urls import include, path, register_converter
 
-from . import views
+from .converters import SignedIntConverter
+
+register_converter(SignedIntConverter, "signed")
 
 app_name = "map"
 urlpatterns = [
-    path("", views.index, name="index"),
+    path("", include("map.urls_core")),
+    path("", include("map.urls_edit")),
+    path("", include("map.urls_xp")),
+    path("", include("map.urls_credit")),
+    path("", include("map.urls_requests")),
+    path("", include("map.urls_views")),
 ]
