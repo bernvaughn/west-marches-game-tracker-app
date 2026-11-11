@@ -35,3 +35,27 @@ def open_shops(club, today):
         )
         .distinct()
     )
+
+
+def is_open(shop, today):
+    """True when the shop is in a rotation open on `today`. Agrees with `open_shops`."""
+    return open_shops(shop.club, today).filter(pk=shop.pk).exists()
+
+
+class ShopError(Exception):
+    default_message = "The shop cannot do that."
+
+    def __init__(self, message=None):
+        super().__init__(message or self.default_message)
+
+
+class ShopClosed(ShopError):
+    default_message = "This shop is closed."
+
+
+class NotStocked(ShopError):
+    default_message = "This item is not in stock."
+
+
+class AlreadySold(ShopError):
+    default_message = "Already sold: someone bought the last one."

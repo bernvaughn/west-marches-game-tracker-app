@@ -4,6 +4,14 @@ from accounts.scoping import ClubScopedManager
 
 
 class Shop(models.Model):
+    class Color(models.TextChoices):
+        PARCHMENT = "parchment", "Parchment"
+        FOREST = "forest", "Forest"
+        EMBER = "ember", "Ember"
+        OCEAN = "ocean", "Ocean"
+        VIOLET = "violet", "Violet"
+        SLATE = "slate", "Slate"
+
     club_path = "club"
 
     club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="shops")
@@ -13,6 +21,8 @@ class Shop(models.Model):
     keeper_description = models.TextField(blank=True)
     sell_percent = models.PositiveIntegerField(default=100)
     buy_percent = models.PositiveIntegerField(default=50)
+    color = models.CharField(max_length=16, choices=Color.choices, default=Color.PARCHMENT)
+    symbol = models.CharField(max_length=8, blank=True)
 
     objects = ClubScopedManager()
 
