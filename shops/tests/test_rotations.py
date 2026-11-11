@@ -138,11 +138,18 @@ def test_other_club_shop_refused(club, club_admin, other_shop, login):
 def test_player_forbidden(club, player, shop, login):
     r = make(club, shop, date(2030, 1, 1))
     c = login(player)
-    for name, args in (("rotation_list", ()), ("rotation_create", ()),
-                       ("rotation_edit", (r.pk,)), ("rotation_delete", (r.pk,))):
+    for name, args in (
+        ("rotation_list", ()),
+        ("rotation_create", ()),
+        ("rotation_edit", (r.pk,)),
+        ("rotation_delete", (r.pk,)),
+    ):
         assert c.get(url(name, club, *args)).status_code in (403, 405), name
-    for name, args in (("rotation_create", ()), ("rotation_edit", (r.pk,)),
-                       ("rotation_delete", (r.pk,))):
+    for name, args in (
+        ("rotation_create", ()),
+        ("rotation_edit", (r.pk,)),
+        ("rotation_delete", (r.pk,)),
+    ):
         assert c.post(url(name, club, *args), payload()).status_code == 403, name
     assert Rotation.objects.filter(pk=r.pk).exists()
     assert c.get(url("rotation_list", club)).status_code == 403
