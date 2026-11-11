@@ -1,5 +1,47 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block content %}
-<h1>Sell</h1>
-<p>Coming soon.</p>
+<h1>Sell to {{ shop.name }}</h1>
+<p><a href="{% url 'shops:detail' club.slug shop.id %}">Back to {{ shop.name }}</a></p>
+{% if not characters %}
+<p>You have no characters in this club.</p>
+{% else %}
+<form method="get">
+  <label>Character
+    <select name="character">
+      {% for c in characters %}
+      <option value="{{ c.id }}" {% if character and c.id == character.id %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit">Show items</button>
+</form>
+{% if character %}
+{% if rows %}
+<table>
+  <thead><tr><th>Item</th><th>Available</th><th>Buy price (each)</th><th></th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+  <tr>
+    <td>{{ row.item.name }}</td>
+    <td>{{ row.quantity }}</td>
+    <td>{{ row.price|coins }}</td>
+    <td>
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="character" value="{{ character.id }}">
+        <input type="hidden" name="item" value="{{ row.item.id }}">
+        <input type="number" name="quantity" value="1" min="1" max="{{ row.quantity }}" aria-label="Quantity">
+        <button type="submit">Sell</button>
+      </form>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No items to sell.</p>
+{% endif %}
+{% endif %}
+{% endif %}
 {% endblock %}

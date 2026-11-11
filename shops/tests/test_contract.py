@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.urls import resolve, reverse
 
 from items.models import Item
-from shops import buying, selling
+from shops import buying
 from shops.models import Rotation, Shop, ShopStock
 from shops.services import AlreadySold, NotStocked, ShopClosed, ShopError, is_open, open_shops
 from shops.views import browse, manage, rotations
@@ -151,8 +151,6 @@ def test_nav_for_roles(login, player, club_admin, site_admin, club):
 
 def test_slice_stubs_raise(rich_character, stock, shop):
     assert callable(buying.buy)  # filled in by the Buy story
-    with pytest.raises(NotImplementedError):
-        selling.sell(rich_character, shop, stock.item)
 
 
 def test_exceptions():
