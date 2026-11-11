@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Connect an agent{% endblock %}
+{% block content %}
+<h1>Connect an agent</h1>
+<p><strong>{{ application.name|default:"An MCP client" }}</strong> wants to act for you in one club.</p>
+<ul>{% for d in scopes_descriptions %}<li>{{ d }}</li>{% endfor %}</ul>
+<p>Nothing the agent proposes changes a balance until you confirm it on this site.</p>
+{% if form.errors %}<ul class="errorlist">{% for field, errs in form.errors.items %}{% for e in errs %}<li>{{ e }}</li>{% endfor %}{% endfor %}</ul>{% endif %}
+<form method="post" action="">
+  {% csrf_token %}
+  {% for field in form.hidden_fields %}{{ field }}{% endfor %}
+  {% if form.club.field.queryset.exists %}
+  <p><label for="id_club">Club</label>
+  <select name="club" id="id_club" required>
+    {% for c in form.club.field.queryset %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+  </select></p>
+  <button type="submit" name="allow" value="true">Approve</button>
+  {% else %}
+  <p>You are not a game master in any club, so you cannot connect an agent.</p>
+  {% endif %}
+  <button type="submit">Deny</button>
+</form>
+{% endblock %}

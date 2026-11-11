@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from accounts.scoping import ClubScopedManager
@@ -20,6 +21,13 @@ class AgentConnection(models.Model):
     kind = models.CharField(max_length=10, choices=Kind, default=Kind.OAUTH)
     token_hash = models.CharField(max_length=128, blank=True, db_index=True)
     token_prefix = models.CharField(max_length=16, blank=True)
+    oauth_application = models.ForeignKey(
+        settings.OAUTH2_PROVIDER_APPLICATION_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
     created = models.DateTimeField(auto_now_add=True)
     approved_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)

@@ -1,7 +1,8 @@
-from django.urls import path
+from django.urls import include, path
 
-from .mcp.server import mcp_view
+from .oauth.views import mcp_entry
 
 urlpatterns = [
-    path("mcp", mcp_view, name="mcp"),
+    path("", include("agent_access.oauth.urls")),
+    path("mcp", mcp_entry, name="mcp"),
 ]
