@@ -1,1 +1,12 @@
-{# Filled by the "Accept, decline and cancel a trade" story. #}
+{% if can_act %}
+<div class="trade-actions">
+{% if side == "receiver" %}
+{% if trade.status == "requested" %}
+<form method="post" action="{% url 'trades:accept' club.slug trade.pk %}">{% csrf_token %}<button type="submit">Accept</button></form>
+{% endif %}
+<form method="post" action="{% url 'trades:decline' club.slug trade.pk %}">{% csrf_token %}<button type="submit">Decline</button></form>
+{% elif side == "sender" %}
+<form method="post" action="{% url 'trades:cancel' club.slug trade.pk %}">{% csrf_token %}<button type="submit">Cancel trade</button></form>
+{% endif %}
+</div>
+{% endif %}
