@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}Consume items: {{ character.name }}{% endblock %}
+{% block content %}
+<h1>Consume items: {{ character.name }}</h1>
+<p>Available coins: {{ coins_available|coins }}</p>
+<ul>
+  {% for item, qty in available %}<li>{{ item.name }}: {{ qty }}</li>{% empty %}<li>No items available to consume.</li>{% endfor %}
+</ul>
+<form method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {{ form.as_p }}
+  <h2>Items</h2>
+  {{ formset.management_form }}
+  {{ formset.non_form_errors }}
+  {% for row in formset %}
+    <div>{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
+  {% endfor %}
+  <button type="submit">Consume</button>
+  <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+</form>
+{% endblock %}
