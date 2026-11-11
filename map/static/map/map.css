@@ -1,0 +1,12 @@
+.hexmap svg { width: 100%; max-width: 900px; height: auto; }
+.hex { stroke: #555; stroke-width: 1; fill: none; }
+.hex-empty { fill: none; }
+.hex-visited { fill: #eef6e8; }
+.hex-safe { stroke: #222; stroke-width: 2.5; }
+.hex-symbol { font-size: 16px; pointer-events: none; }
+.hex-badge { fill: #222; }
+.hex-badge-text { fill: #fff; font-size: 10px; pointer-events: none; }
+@media print {
+  .site-header, .area-nav, .map-actions, .pan-links, form, button { display: none !important; }
+  .hexmap svg { width: 100%; max-width: none; }
+}

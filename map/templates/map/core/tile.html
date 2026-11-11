@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ hex_map.name }} ({{ q }}, {{ r }}){% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>{{ hex_map.name }}: ({{ q }}, {{ r }})</h1>
+<p><a href="{{ back_url }}">Back to the map</a></p>
+{% if tile.is_safe_town %}<p><strong>Safe town</strong></p>{% endif %}
+<div class="map-actions">
+{% include "map/edit/_tile_actions.html" %}
+{% include "map/credit/_tile_actions.html" %}
+{% include "map/requests/_tile_actions.html" %}
+</div>
+{% for location in locations %}
+<section class="location">
+  <h2>{{ location.name }}</h2>
+  <p>Colour: {{ location.color|default:"none" }}. Symbol: {{ location.symbol|default:"none" }}.</p>
+  {% if location.target_band %}<p>Target level: CR {{ location.target_band }}</p>{% endif %}
+  {% if location.player_notes %}<h3>Notes</h3><p>{{ location.player_notes|linebreaksbr }}</p>{% endif %}
+  {% if is_editor and location.gm_notes %}<h3>GM notes</h3><p>{{ location.gm_notes|linebreaksbr }}</p>{% endif %}
+  {% if location.encounters.all %}<h3>Encounters</h3><ul>
+  {% for e in location.encounters.all %}<li>{% if e.date %}{{ e.date }}: {% endif %}{{ e.description }}</li>{% endfor %}</ul>{% endif %}
+  <p>Discovered by: {% for c in location.discovered %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody yet{% endfor %}</p>
+  <p>Explored by: {% for c in location.explored %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody yet{% endfor %}</p>
+  {% include "map/edit/_location_actions.html" %}
+  {% include "map/xp/_location_xp.html" %}
+  {% include "map/credit/_location_actions.html" %}
+  {% include "map/requests/_location_actions.html" %}
+</section>
+{% empty %}
+{% if not tile.is_safe_town %}<p>Nothing here yet.</p>{% endif %}
+{% endfor %}
+{% endblock %}
