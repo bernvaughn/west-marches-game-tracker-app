@@ -2,4 +2,14 @@
 {% block title %}Quests{% endblock %}
 {% block content %}
 <h1>Quests</h1>
+{% if is_admin %}<p><a href="{% url 'quests:manage' club.slug %}">Manage quests</a></p>{% endif %}
+{% for quest in quests %}
+<section class="card">
+  <h2><a href="{% url 'quests:detail' club.slug quest.pk %}">{{ quest.name }}</a></h2>
+  {% include "quests/_info.html" with requirements=quest.requirements.all rewards=quest.rewards.all %}
+  {% if quest.left is not None %}<p>{{ quest.left }} left</p>{% endif %}
+</section>
+{% empty %}
+<p>No quests are live right now.</p>
+{% endfor %}
 {% endblock %}
