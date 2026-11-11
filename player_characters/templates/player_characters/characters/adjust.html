@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Adjust {{ character.name }}{% endblock %}
+{% block content %}
+<h1>Adjust {{ character.name }}</h1>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <h2>Items</h2>
+  {{ formset.management_form }}
+  {{ formset.non_form_errors }}
+  {% for row in formset %}
+    <div>{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
+  {% endfor %}
+  <button type="submit">Save</button>
+  <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+</form>
+{% endblock %}
