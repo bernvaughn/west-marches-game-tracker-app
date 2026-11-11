@@ -1,1 +1,12 @@
-{# Slot for the edit story. #}
+{% if is_editor %}
+<p class="location-actions">
+<a href="{% url 'map:location_edit' club.slug location.pk %}">Edit location</a>
+<a href="{% url 'map:location_delete' club.slug location.pk %}">Delete location</a>
+<a href="{% url 'map:encounter_create' club.slug location.pk %}">Add encounter</a>
+</p>
+{% if location.encounters.all %}<ul>
+{% for e in location.encounters.all %}<li>Encounter {{ forloop.counter }}:
+<a href="{% url 'map:encounter_edit' club.slug e.pk %}">edit</a>
+<a href="{% url 'map:encounter_delete' club.slug e.pk %}">delete</a></li>{% endfor %}
+</ul>{% endif %}
+{% endif %}
