@@ -1,1 +1,1 @@
-{# Slot for the edit story. #}
+{% if is_editor %}<a href="{% url "map:map_create" club.slug %}">New map</a>{% endif %}

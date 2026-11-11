@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Confirm delete{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>Delete {{ object_name }}?</h1>
+<form method="post">
+{% csrf_token %}
+<button type="submit">Yes, delete</button>
+<a href="{{ back }}">Cancel</a>
+</form>
+{% endblock %}
