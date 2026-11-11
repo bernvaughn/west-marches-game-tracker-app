@@ -6,6 +6,16 @@ from items.models import Item
 from player_characters.models import Character
 
 
+@pytest.fixture(autouse=True)
+def _fast_password_hasher(settings):
+    """Hash passwords with MD5 in tests.
+
+    Django's default PBKDF2 hasher is deliberately slow, and every user-creating
+    fixture pays that cost. Tests only need passwords to round-trip, not to be secure.
+    """
+    settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
+
 @pytest.fixture
 def club(db):
     return Club.objects.create(name="Club A", slug="club-a")
