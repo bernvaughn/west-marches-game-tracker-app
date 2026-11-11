@@ -14,7 +14,7 @@ def _build_form(rows, data=None):
     for row in rows:
         for kind in ("discover", "explore"):
             fields[f"{kind}_{row.band}"] = forms.IntegerField(
-                min_value=0, label=f"{kind} {row.band}"
+                min_value=0, label=f"{kind} {row.band}", initial=getattr(row, f"{kind}_xp")
             )
     return type("XPForm", (forms.Form,), fields)(data)
 
