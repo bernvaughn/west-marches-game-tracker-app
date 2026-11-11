@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}Move loot: {{ character.name }}{% endblock %}
+{% block content %}
+<h1>Move loot from {{ character.name }}</h1>
+{% if not destinations %}
+<p>You have no other character in this club.</p>
+<a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back</a>
+{% else %}
+<p>Available coins: {{ coins_available|coins }}</p>
+<ul>
+  {% for item, qty in available %}<li>{{ item.name }}: {{ qty }}</li>{% empty %}<li>No items available to move.</li>{% endfor %}
+</ul>
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <h2>Items</h2>
+  {{ formset.management_form }}
+  {{ formset.non_form_errors }}
+  {% for row in formset %}
+    <div>{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
+  {% endfor %}
+  <button type="submit">Move loot</button>
+  <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+</form>
+{% endif %}
+{% endblock %}
