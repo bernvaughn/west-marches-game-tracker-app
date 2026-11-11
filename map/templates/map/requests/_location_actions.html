@@ -1,1 +1,2 @@
-{# Slot for the requests story. #}
+{% if request.membership %}<p><a href="{% url 'map:request_credit' club.slug 'discovered' location.pk %}">Request discovered credit</a>
+<a href="{% url 'map:request_credit' club.slug 'explored' location.pk %}">Request explored credit</a></p>{% endif %}

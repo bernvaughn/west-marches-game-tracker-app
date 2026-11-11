@@ -1,8 +1,9 @@
 from django.utils import timezone
 
+from accounts.models import Membership
 from player_characters.models import Character
 
-from .models import Encounter, HexMap, Location, LocationCredit, Tile, TileVisit
+from .models import Encounter, HexMap, Location, LocationCredit, MapRequest, Tile, TileVisit
 from .xp import copy_default_xp_table
 
 LOCATIONS = [
@@ -44,3 +45,23 @@ def seed(club):
     )
     if created:
         credit.characters.add(chars["Aria Windrunner"])
+
+    borin = chars["Borin Stonefist"]
+    owner = Membership.objects.filter(pk=borin.owner_id).first()
+    if (
+        owner is not None
+        and not MapRequest.objects.filter(
+            club=club, kind=MapRequest.Kind.VISIT, map=hex_map, q=0, r=-2, requested_by=owner
+        ).exists()
+    ):
+        req = MapRequest.objects.create(
+            club=club,
+            kind=MapRequest.Kind.VISIT,
+            map=hex_map,
+            q=0,
+            r=-2,
+            date=today,
+            note="We passed the Wolf Den on the way back.",
+            requested_by=owner,
+        )
+        req.characters.add(borin)

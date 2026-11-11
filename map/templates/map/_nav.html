@@ -1,1 +1,4 @@
+{% load map_requests_tags %}
 <a href="{% url 'map:index' club.slug %}">Map</a>
+{% open_map_request_count as open_requests %}
+<a href="{% url 'map:requests' club.slug %}">Map requests{% if open_requests is not None %} ({{ open_requests }}){% endif %}</a>

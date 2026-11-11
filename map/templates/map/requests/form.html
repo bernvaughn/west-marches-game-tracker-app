@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>{{ title }}</h1>
+<p>Map: {{ hex_map.name }}{% if location %}. Location: {{ location.name }}{% endif %}</p>
+{% if not has_characters %}<p>You have no characters in this club, so you cannot make a request.</p>{% endif %}
+<form method="post">{% csrf_token %}
+{{ form.as_p }}
+<button type="submit">Send request</button>
+</form>
+<p><a href="{% url 'map:requests' club.slug %}">Map requests</a></p>
+{% endblock %}
