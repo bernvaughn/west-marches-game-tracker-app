@@ -1,1 +1,1 @@
-{# Slot for the requests story. #}
+{% if request.membership %}<a href="{% url 'map:request_visit' club.slug hex_map.pk %}?q={{ q }}&r={{ r }}">Request a visit</a>{% endif %}

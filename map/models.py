@@ -153,6 +153,20 @@ class MapRequest(models.Model):
     tile = models.ForeignKey(Tile, null=True, blank=True, on_delete=models.SET_NULL)
     location = models.ForeignKey(Location, null=True, blank=True, on_delete=models.SET_NULL)
     created = models.DateTimeField(auto_now_add=True)
+    map = models.ForeignKey(
+        HexMap, null=True, blank=True, on_delete=models.SET_NULL, related_name="requests"
+    )
+    q = models.IntegerField(null=True, blank=True)
+    r = models.IntegerField(null=True, blank=True)
+    note = models.TextField(blank=True)
+    decided_by = models.ForeignKey(
+        "accounts.Membership",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="decided_map_requests",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
 
     objects = ClubScopedManager()
 
