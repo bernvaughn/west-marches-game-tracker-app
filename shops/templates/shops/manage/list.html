@@ -1,5 +1,18 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Manage shops</h1>
-<p>Coming soon.</p>
+<p><a href="{% url 'shops:manage_create' club.slug %}">New shop</a></p>
+<table>
+<tr><th>Name</th><th>Symbol</th><th>Status</th><th>Stock</th></tr>
+{% for shop, is_open in rows %}
+<tr>
+<td><a href="{% url 'shops:manage_edit' club.slug shop.pk %}">{{ shop.name }}</a></td>
+<td>{{ shop.symbol }}</td>
+<td>{% if is_open %}Open{% else %}Closed{% endif %}</td>
+<td>{{ shop.stock_count }}</td>
+</tr>
+{% empty %}
+<tr><td colspan="4">No shops yet.</td></tr>
+{% endfor %}
+</table>
 {% endblock %}

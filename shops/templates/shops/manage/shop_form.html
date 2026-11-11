@@ -1,5 +1,32 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block content %}
-<h1>Shop</h1>
-<p>Coming soon.</p>
+<h1>{% if shop %}Edit {{ shop.name }}{% else %}New shop{% endif %}</h1>
+<form method="post">{% csrf_token %}
+{{ form.as_p }}
+<button type="submit">Save</button>
+</form>
+{% if shop %}
+<h2>Stock</h2>
+<p><a href="{% url 'shops:stock_add' club.slug shop.pk %}">Add item</a></p>
+<table>
+<tr><th>Item</th><th>Value</th><th>Quantity</th><th>Sell %</th><th>Buy %</th><th>Sell price</th><th>Buy price</th><th></th></tr>
+{% for row in rows %}
+<tr>
+<td>{{ row.stock.item.name }}{% if row.stock.quantity == 0 %} (Sold out){% endif %}{% if row.stock.item.retired %} (Retired){% endif %}</td>
+<td>{{ row.stock.item.value_cp|coins }}</td>
+<td>{% if row.stock.quantity is None %}Unlimited{% else %}{{ row.stock.quantity }}{% endif %}</td>
+<td>{% if row.stock.sell_percent is None %}default{% else %}{{ row.stock.sell_percent }}{% endif %}</td>
+<td>{% if row.stock.buy_percent is None %}default{% else %}{{ row.stock.buy_percent }}{% endif %}</td>
+<td>{{ row.sell_price|coins }}</td>
+<td>{{ row.buy_price|coins }}</td>
+<td><a href="{% url 'shops:stock_edit' club.slug shop.pk row.stock.pk %}">Edit</a>
+<form method="post" action="{% url 'shops:stock_remove' club.slug shop.pk row.stock.pk %}" style="display:inline">{% csrf_token %}<button type="submit">Remove</button></form></td>
+</tr>
+{% empty %}
+<tr><td colspan="8">No stock.</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+<p><a href="{% url 'shops:manage_list' club.slug %}">Back to shops</a></p>
 {% endblock %}
