@@ -1,6 +1,15 @@
 from django.db import models
+from django.db.models import Q
 
-from accounts.scoping import ClubScopedManager
+from accounts.scoping import ClubScopedManager, ClubScopedQuerySet
+
+
+class QuestQuerySet(ClubScopedQuerySet):
+    def live_on(self, date):
+        return self.filter(
+            Q(start_date__isnull=True) | Q(start_date__lte=date),
+            Q(end_date__isnull=True) | Q(end_date__gte=date),
+        )
 
 
 class Quest(models.Model):
@@ -14,13 +23,23 @@ class Quest(models.Model):
     max_completions = models.PositiveIntegerField(null=True, blank=True)
     max_per_character = models.PositiveIntegerField(null=True, blank=True)
 
-    objects = ClubScopedManager()
+    objects = models.Manager.from_queryset(QuestQuerySet)()
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    def status_on(self, date):
+        if self.start_date and date < self.start_date:
+            return "upcoming"
+        if self.end_date and date > self.end_date:
+            return "ended"
+        return "live"
+
+    def is_live_on(self, date):
+        return self.status_on(date) == "live"
 
 
 class QuestRequirement(models.Model):
