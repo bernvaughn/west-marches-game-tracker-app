@@ -1,5 +1,17 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'shops/shops.css' %}">
 <h1>Shops</h1>
-<p>Coming soon.</p>
+<ul class="shop-list">
+{% for shop in shops %}
+  <li class="shop-card shop--{{ shop.color }}">
+    <span class="shop-symbol">{{ shop.symbol }}</span>
+    <a href="{% url 'shops:detail' club.slug shop.id %}">{{ shop.name }}</a>
+    <span class="shop-keeper">Keeper: {{ shop.keeper_name }}</span>
+  </li>
+{% empty %}
+  <li>No shops are open today.</li>
+{% endfor %}
+</ul>
 {% endblock %}
