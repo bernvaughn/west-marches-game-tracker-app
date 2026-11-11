@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{% if item %}Edit {{ item.name }}{% else %}New item{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if item %}Edit {{ item.name }}{% else %}New item{% endif %}</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button>Save</button>
+  <a href="{% url 'items:index' club.slug %}">Cancel</a>
+</form>
+{% endblock %}

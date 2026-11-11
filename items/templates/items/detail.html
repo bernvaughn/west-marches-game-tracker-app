@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}{{ item.name }}{% endblock %}
+{% block content %}
+<h1>{{ item.name }}{% if item.retired %} <em>(Retired)</em>{% endif %}</h1>
+<p>Value: {{ item.value_cp|coins }}</p>
+{% if item.description %}<h2>Description</h2>{{ item.description|linebreaks }}{% endif %}
+{% if item.traits %}<h2>Traits</h2>{{ item.traits|linebreaks }}{% endif %}
+{% if item.details %}<h2>Details</h2>{{ item.details|linebreaks }}{% endif %}
+<p><a href="{% url 'items:index' club.slug %}">Back to items</a></p>
+{% if is_admin %}
+<p><a href="{% url 'items:edit' club.slug item.pk %}">Edit</a></p>
+{% if item.retired %}
+<form method="post" action="{% url 'items:restore' club.slug item.pk %}">{% csrf_token %}<button>Restore</button></form>
+{% else %}
+<form method="post" action="{% url 'items:retire' club.slug item.pk %}">{% csrf_token %}<button>Retire</button></form>
+{% endif %}
+<form method="post" action="{% url 'items:delete' club.slug item.pk %}">{% csrf_token %}
+  <button>Delete</button> Deletes only if unused; otherwise retires.
+</form>
+{% endif %}
+{% endblock %}
