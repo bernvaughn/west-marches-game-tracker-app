@@ -120,3 +120,9 @@ def test_helpers(club):
 @m11
 def test_tile_cross_club_404(login, club, hex_map, tile_location, other_club_member):
     assert login(other_club_member).get(tile_url(hex_map, club)).status_code == 404
+
+
+@m13
+def test_admin_form_shows_current_values(login, club, club_admin):
+    html = login(club_admin).get(xp_url(club)).content.decode()
+    assert 'value="17500"' in html and 'value="52000"' in html
