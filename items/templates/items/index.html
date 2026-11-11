@@ -1,5 +1,27 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block title %}Items{% endblock %}
 {% block content %}
 <h1>Items</h1>
+{% if is_admin %}
+<p>
+  <a href="{% url 'items:create' club.slug %}">New item</a> |
+  {% if show_retired %}<a href="{% url 'items:index' club.slug %}">Hide retired</a>
+  {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}
+</p>
+{% endif %}
+<table>
+  <thead><tr><th>Name</th><th>Value</th><th>Traits</th></tr></thead>
+  <tbody>
+  {% for i in items %}
+    <tr>
+      <td><a href="{% url 'items:detail' club.slug i.pk %}">{{ i.name }}</a>{% if i.retired %} <em>(Retired)</em>{% endif %}</td>
+      <td>{{ i.value_cp|coins }}</td>
+      <td>{{ i.traits }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="3">No items.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
 {% endblock %}
