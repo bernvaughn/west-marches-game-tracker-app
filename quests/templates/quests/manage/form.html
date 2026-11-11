@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{% if quest %}Edit {{ quest.name }}{% else %}New quest{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if quest %}Edit {{ quest.name }}{% else %}New quest{% endif %}</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <h2>Requirements</h2>
+  {{ reqs.management_form }}
+  {{ reqs.non_form_errors }}
+  {% for f in reqs %}
+  <fieldset>{{ f.non_field_errors }}{{ f.as_p }}</fieldset>
+  {% endfor %}
+  <h2>Rewards</h2>
+  {{ rews.management_form }}
+  {{ rews.non_form_errors }}
+  {% for f in rews %}
+  <fieldset>{{ f.non_field_errors }}{{ f.as_p }}</fieldset>
+  {% endfor %}
+  <button>Save</button>
+  <a href="{% url 'quests:manage' club.slug %}">Cancel</a>
+</form>
+{% if quest %}
+<form method="post" action="{% url 'quests:delete' club.slug quest.pk %}">{% csrf_token %}
+  <button>Delete quest</button>
+</form>
+{% endif %}
+{% endblock %}
