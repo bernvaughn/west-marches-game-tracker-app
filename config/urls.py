@@ -20,5 +20,6 @@ urlpatterns = [
     path("", account_views.home, name="home"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("admin/", admin.site.urls),
+    path("", include("agent_access.urls_root")),
     path("c/<slug:club_slug>/", include(club_patterns)),
 ]

@@ -24,6 +24,18 @@ Open http://127.0.0.1:8000/ and sign in with a demo login. The password for all 
 
 Run the checks with `uv run pytest` and `uv run ruff check`.
 
+### Agent access
+
+`seed_demo` also creates a local agent token and a pending batch, so you can try the MCP endpoint with the MCP Inspector:
+
+1. Run `npx @modelcontextprotocol/inspector`.
+2. Set the transport to **Streamable HTTP**.
+3. Set the URL to `http://localhost:8000/mcp` and the connection type to **Via Proxy**.
+4. Add the header `Authorization: Bearer wm_demo_local_token_change_me`.
+5. Connect, then call the `whoami` tool.
+
+The demo token is for local use only. It must never exist on a hosted site.
+
 ## Summary
 
 Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own. The larger scope changes the bill little: storage and traffic stay tiny, and the one real gap is that DigitalOcean blocks outgoing email, so the app is designed to send no email.

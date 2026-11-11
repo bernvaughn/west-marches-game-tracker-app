@@ -52,6 +52,14 @@ class ProposedBatch(models.Model):
     status = models.CharField(max_length=10, choices=Status, default=Status.PENDING)
     source_notes = models.TextField(blank=True)
     created = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    confirmed_by = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+    reversed_at = models.DateTimeField(null=True, blank=True)
+    reversed_by = models.ForeignKey(
+        "accounts.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
 
     objects = ClubScopedManager()
 
@@ -90,6 +98,14 @@ class ProposedItem(models.Model):
     batch = models.ForeignKey(
         ProposedBatch, null=True, blank=True, on_delete=models.CASCADE, related_name="new_items"
     )
+    connection = models.ForeignKey(
+        AgentConnection,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="proposed_items",
+    )
+    created = models.DateTimeField(auto_now_add=True)
 
     objects = ClubScopedManager()
 
@@ -106,6 +122,7 @@ class ProposedLine(models.Model):
     proposed_item = models.ForeignKey(
         ProposedItem, null=True, blank=True, on_delete=models.CASCADE, related_name="lines"
     )
+    date = models.DateField(null=True, blank=True)
     quantity = models.IntegerField(default=0)
     coins = models.IntegerField(default=0)
     note = models.TextField(blank=True)
