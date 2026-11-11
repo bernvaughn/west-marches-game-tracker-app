@@ -150,8 +150,7 @@ def test_nav_for_roles(login, player, club_admin, site_admin, club):
 
 
 def test_slice_stubs_raise(rich_character, stock, shop):
-    with pytest.raises(NotImplementedError):
-        buying.buy(rich_character, stock)
+    assert callable(buying.buy)  # filled in by the Buy story
     with pytest.raises(NotImplementedError):
         selling.sell(rich_character, shop, stock.item)
 
