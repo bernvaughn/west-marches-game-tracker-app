@@ -1,0 +1,10 @@
+{% load coins %}
+{% if lines %}
+<ul>
+{% for line in lines %}
+  <li>{% if line.item %}{{ line.item.name }} &times; {{ line.quantity }}{% else %}{{ line.coins|coins }}{% endif %}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>Nothing yet.</p>
+{% endif %}

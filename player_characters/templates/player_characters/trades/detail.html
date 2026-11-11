@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Trade {{ trade.pk }}{% endblock %}
+{% block content %}
+<div id="trade-live" hx-get="{% url 'trades:detail' club.slug trade.pk %}" hx-select="#trade-live" hx-swap="outerHTML" hx-trigger="every 5s [document.visibilityState === 'visible']">
+<h1>Trade: {{ trade.sender.name }} and {{ trade.receiver.name }}</h1>
+<p>Status: <strong>{{ trade.get_status_display }}</strong></p>
+<p>
+  {{ trade.sender.name }} ({{ trade.sender.owner.user.display_name }}):
+  {% if trade.sender_approved %}approved{% else %}not approved{% endif %}<br>
+  {{ trade.receiver.name }} ({{ trade.receiver.owner.user.display_name }}):
+  {% if trade.receiver_approved %}approved{% else %}not approved{% endif %}
+</p>
+{% if trade.note %}<p>{{ trade.note|linebreaksbr }}</p>{% endif %}
+<h2>{{ trade.sender.name }} gives</h2>
+{% include "player_characters/trades/_lines.html" with lines=sender_lines %}
+<h2>{{ trade.receiver.name }} gives</h2>
+{% include "player_characters/trades/_lines.html" with lines=receiver_lines %}
+{% include "player_characters/trades/_status_actions.html" %}
+{% include "player_characters/trades/_side_actions.html" %}
+</div>
+{% endblock %}
