@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}Manage quests{% endblock %}
+{% block content %}
+<h1>Manage quests</h1>
+<p><a href="{% url 'quests:create' club.slug %}">New quest</a></p>
+{% if rows %}
+<table>
+  <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Max total</th><th>Max per character</th><th>Status</th><th>Completions</th><th></th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ row.quest.name }}</td>
+      <td>{{ row.quest.start_date|default:"-" }}</td>
+      <td>{{ row.quest.end_date|default:"-" }}</td>
+      <td>{{ row.quest.max_completions|default:"No limit" }}</td>
+      <td>{{ row.quest.max_per_character|default:"No limit" }}</td>
+      <td>{{ row.status }}</td>
+      <td>{{ row.count }}</td>
+      <td>
+        <a href="{% url 'quests:edit' club.slug row.quest.pk %}">Edit</a>
+        {% if not row.count %}
+        <form method="post" action="{% url 'quests:delete' club.slug row.quest.pk %}" style="display:inline">{% csrf_token %}
+          <button>Delete</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No quests yet.</p>
+{% endif %}
+{% endblock %}
