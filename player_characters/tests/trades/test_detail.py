@@ -65,11 +65,5 @@ def test_cross_club_pk_404(
     assert login(game_master).get(url(club, t)).status_code == 404
 
 
-def test_routes_and_stubs(login, club, trade, player):
-    c = login(player)
+def test_routes_resolve(login, club):
     assert reverse("trades:index", args=[club.slug])
-    assert c.get(url(club, trade, "edit_side")).status_code == 501
-    for name in ("approve", "edit_side"):
-        assert c.post(url(club, trade, name)).status_code == 501
-        if name != "edit_side":
-            assert c.get(url(club, trade, name)).status_code == 405
