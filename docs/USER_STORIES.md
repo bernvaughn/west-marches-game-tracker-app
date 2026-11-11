@@ -89,6 +89,31 @@ Rules:
 
 **U19 Private inventories.** As a player, I want only the game masters, the club admins, and me to be able to see my characters' inventories, so other players cannot see what my characters are carrying. *(player_characters)*
 
+## Look and navigation: stories from the first look (2026-11-11)
+
+From the first run of a local build. M8, M12, M15 and M16 in the map section also came from it.
+
+**U23 A finished look.** As anyone using the app, I want every page, starting with the sign-in page, to use one consistent, compact look based on the Bootswatch Journal theme for Bootstrap 5, so the app feels finished and does not waste screen space. *(site-wide)*
+- The sign-in, first-password, and password-change pages are styled like the rest of the site.
+- Pages are denser: less empty space, and tables and lists that fit more on screen, while staying usable on a phone.
+- The theme is Bootswatch Journal (MIT license), chosen for its serif, storybook feel. Its files are served from the app itself so pages do not depend on a third-party site.
+- Journal is roomier than admin themes, so dense pages (inventories, ledgers, shop stock, approval lists) use Bootstrap's compact table and form sizes to keep them tight.
+
+**U24 Act as a character.** As a player, I want to pick one of my characters to act as from a dropdown in the top bar, so shops, buying and selling, trades, moving items, quests, and requests use that character without me choosing it on every page. *(player_characters, accounts, shops, quests, map)*
+- The dropdown appears only if I have more than one character in the current club. With one character, that character is always selected. With none, the top bar says so and pages that need a character tell me I don't have one.
+- My selection is remembered per club across pages and sign-ins, and switching clubs switches to my selection for that club.
+- Pages that act on a character use the selected one by default. Where a page involves a second character of mine (moving items, U15), the selected character is the starting side and I pick the other.
+- If my selected character is handed to someone else (U18), my selection falls back to another of my characters.
+- Game masters and club admins who own characters get the same dropdown. Selecting a character never limits their game master or club admin views.
+
+**U25 Who I am.** As anyone signed in, I want the top bar to show my name and, if I have one, the character I am acting as (U24), so I always know who I am acting as. *(accounts, player_characters)*
+
+**U26 Approvals waiting.** As a game master or club admin, I want an indicator in the top bar showing how many things in the current club are waiting for me to act on, so I notice them without checking each page. *(accounts, agent_access, map, items)*
+- It counts what I am allowed to act on: proposed agent batches (A4), proposed catalogue items (A5), map requests for visits and discovered or explored credit (M12), and, for club admins, open messages (U13).
+- Clicking it lists each waiting thing, grouped by kind, with a link to where I approve, decline, or handle it.
+- The count disappears when nothing is waiting. Players never see it.
+- It updates when I load a page; it does not need to be live.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -142,7 +167,7 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 
 ## Map: decisions and stories
 
-Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols. A map grows without limit in every direction. Its first tile, "safe town", sits at position 0,0, and other tiles are placed by their position relative to it. A tile with nothing defined on it shows blank. Game masters see the whole map; players see only what their characters have visited.
+Decided: maps stay very basic. No art. A club can have several hex maps (for example one per world). Storage is kept simple, and tiles are drawn with plain colors and symbols. A map grows without limit in every direction. Its first tile, "safe town", sits at position 0,0, and other tiles are placed by their position relative to it. A tile with nothing defined on it shows blank. Game masters see the whole map; players see only the tiles their characters have visited and the locations they have found (M16).
 
 **M1 Several maps.** As a game master, I want to create more than one hex map for my club so that each world gets its own map. *(map)*
 
@@ -152,13 +177,17 @@ Decided: maps stay very basic. No art. A club can have several hex maps (for exa
 
 **M4 Mark locations.** As a game master, I want to give a location a name, a color, and a symbol so the map shows what is there at a glance. *(map)*
 
-**M5 Player notes and GM notes.** As a game master, I want separate player notes and GM notes on every location, so I can leave tips for other game masters while players whose characters have visited the tile see only the player notes. *(map)*
+**M5 Player notes and GM notes.** As a game master, I want separate player notes and GM notes on every location, so I can leave tips for other game masters while players who can see the location (M16) see only the player notes. *(map)*
 
-**M6 Record encounters.** As a game master, I want to add encounters to a location during play and afterwards, noting what the players ran into and what they did, so the map is a record of places players could return to. Players whose characters have visited the tile see its locations and their encounters, with no separate hidden or visible setting. *(map)*
+**M6 Record encounters.** As a game master, I want to add encounters to a location during play and afterwards, noting what the players ran into and what they did, so the map is a record of places players could return to. Players see a location and its encounters only once a character they are viewing the map as has found it (M16); visiting the tile is not enough. *(map)*
 
 **M7 Track visits.** As a game master, I want to record which characters have been to which tiles, picking several characters at once for a party. *(map, player_characters)*
 
 **M8 Player map.** As a player, I want to look at the digital map for my club and choose some or all of my own characters to see where they have been, so I can look back and find where something happened. *(map, player_characters)*
+- The map starts filtered to the character selected in the top bar (U24).
+- I can change the filter to any of my characters, one or several. This overrides the top-bar selection on the map only; it does not change the character I act as elsewhere.
+- With several characters picked, I see every tile any of them visited and every location any of them found.
+- Game masters and club admins who own characters can filter the same way, alongside the views in M10.
 
 **M9 Print the map.** As a game master or player, I want to print the map I can see, to bring to the table. A player prints the view for the characters they selected in M8. *(map)*
 
@@ -166,13 +195,23 @@ Decided: maps stay very basic. No art. A club can have several hex maps (for exa
 
 **M11 Target level.** As a game master, I want to set a target level on a location, in bands of two challenge ratings (CR 1-2 up to CR 19-20), so players and game masters know roughly how strong it is and how much XP to award the party for discovering it and for exploring it. The app shows the XP amounts; it does not track anyone's XP. *(map)*
 
-**M12 Ask for credit.** As a player, I want to ask for a tile to be marked visited, or for a location to be marked discovered or explored, by one or several of my characters, based on how a session went. The game master or club admin approves or declines, much like an item request. Nothing is declined automatically, so a character left out of a credited group by mistake can be added by asking. *(map, player_characters)*
+**M12 Ask for credit.** As a player, I want to ask for a tile to be marked visited, or for a location to be marked discovered, explored, or found (M16), by one or several of my characters, based on how a session went. The game master or club admin approves or declines, much like an item request. Nothing is declined automatically, so a character left out of a credited group by mistake can be added by asking. *(map, player_characters)*
+- A player can ask about an unfound location shown as "?" on a visited tile (M16) by picking that placeholder, without learning anything more about it. The usual ask is a found mark or explored credit; discovered credit is for a character left out of the first group by mistake.
+- Players cannot ask for first discovery. A location nobody has discovered yet does not appear at all, and only a game master or club admin records its first discovery (M14). A player who thinks it was missed tells the game master, for example through a message (U13).
 
 **M14 Discovered or explored.** As a game master, I want to record which characters discovered a location and which explored it, so the XP for each is clear. Only the first group to discover a location gets discovery credit, and only one group gets explored credit, which can be a different group that comes later if the first failed or avoided it. Later characters who visit are not added to either. A game master or club admin can correct either credited group, adding or removing characters. Recording either also marks the tile as visited for those characters. *(map, player_characters)*
 
 **Parties.** A "party" is not a record. It just means the list of characters I pick for a given day or action (M7, M10, M14). We do not track sessions or who played in them, though that may change later.
 
-**M15 Where to go back.** As a player, I want the map to clearly mark locations on tiles my characters have visited that nobody has explored yet, and to show each location's target level, so we can see which places to return to once we are stronger. Everyone who can see a location sees the characters credited with discovering and exploring it. *(map)*
+**M15 Where to go back.** As a player, I want the map to clearly mark locations my characters have found that nobody has explored yet, and to show each location's target level, so we can see which places to return to once we are stronger. Everyone who can see a location sees the characters credited with discovering and exploring it. *(map)*
+
+**M16 Hidden until found.** As a game master, I want a location to stay hidden from players until a character they are viewing the map as has found it, even when that character has visited the tile, so the map does not give away what is still out there. *(map, player_characters)*
+- A character has found a location if it is credited with discovering or exploring it (M14), or if it has a found mark. A game master or club admin can give one or several characters a found mark on a location. It gives no XP and does not change either credited group; it only lets those characters see the location. This covers characters who arrive after another party already discovered or explored it. Found marks can be removed to correct mistakes.
+- On a tile the viewer's characters have visited, a location that someone has discovered (any character, from any player, holds discovery credit) but that the viewer's characters have not found shows as an unnamed "?" placeholder. It reveals only that something is there: no name, symbol, notes, encounters, target level, or credited characters. Players can ask for credit on it (M12).
+- A location that nobody has discovered yet is left out completely, with no placeholder.
+- A tile's location count (M3) counts the found locations and the "?" placeholders the viewer can see, never undiscovered ones. A visited tile whose locations are all undiscovered looks like an empty visited tile.
+- Game masters and club admins see every location in their full view, and their players' view (M10) follows this same rule for the characters they pick.
+- Printing (M9) follows the same rule as the screen, placeholders included.
 
 **M13 XP table.** As a club admin, I want the XP amounts for each target level to be editable for my club, starting from the West Marches table, so a club can use its own numbers. *(map)*
 
@@ -241,7 +280,7 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Coins.** Stored as copper and shown as copper, silver, gold, and platinum (10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum).
 - **Ledger.** The `ledger` app records every gain or loss of items or coins for a character, with a note and a date.
 - **Trades.** The `player_characters` app owns trades. The rules are in U16: players edit their own side until they approve, either player can decline or cancel at any time, trades never expire, offered items are locked and offered coins are held, and held items and coins cannot be offered twice.
-- **Who sees what.** A character's inventory and coins are visible to its owner, game masters, and club admins, and game masters keep that view even while they play a character of their own. A player's email is visible to club admins only. On the map, game masters see everything and players see only the tiles their characters have visited.
+- **Who sees what.** A character's inventory and coins are visible to its owner, game masters, and club admins, and game masters keep that view even while they play a character of their own. A player's email is visible to club admins only. On the map, game masters and club admins see everything; players see only the tiles their characters have visited and only the locations those characters have found (M16).
 - **Quests.** Players turn in items themselves, with a quantity, and only once they have everything the quest asks for (no partial turn-ins); turned-in items are always used up; coins cannot be turned in; rewards can be coins, items, or both; quests have start and end dates.
 - **Message content.** Mostly free text, with an optional choice of which of the sender's characters it is about. They live in `accounts` for now; a separate messaging app may make sense later.
 - **Printing.** A printout is a cheat sheet of item name, description, traits, and other details, not a record of ownership.
@@ -250,7 +289,10 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **One-of-a-kind items.** There are none as a special kind. A unique item is an ordinary club catalogue item that a shop stocks one of, or that a game master gives out once.
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
-- **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see the locations and encounters on tiles their characters visited, with no hidden-or-visible split (M2-M6).
+- **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see a location and its encounters only once a character they are viewing the map as has found it; visiting the tile is not enough (M2-M6, M16).
+- **Acting as a character.** A player picks one character to act as from the top bar, remembered per club, and pages that act on a character use it by default. The map starts filtered to that character, but any of the player's characters can be picked there without changing the top-bar selection (U24, M8).
+- **Found locations.** A character has found a location if it is credited with discovering or exploring it, or has a found mark from a game master or club admin. A found mark gives no XP and only makes the location visible; players can ask for one like other map credit (M12, M16). On visited tiles, players see an unnamed "?" for each location someone has discovered but their characters have not found, and can ask for credit on it. Undiscovered locations show nothing, and only a game master or club admin records first discovery.
+- **Look.** The Bootswatch Journal theme (MIT) for Bootstrap 5 across the whole site, served by the app, with compact tables and forms on dense pages (U23).
 - **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each location has one credited discovery group (the first) and one credited explored group (which may differ). Game masters and club admins can correct them, and everyone who sees the location sees the credited characters (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants, with no automatic declines (M12). A party is only a list of characters picked at the time, not a stored record.
 - **Left for later.** Lore and the donate service.
 
