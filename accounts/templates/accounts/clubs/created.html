@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Club created{% endblock %}
+{% block content %}
+<h1>Club created: {{ club.name }}</h1>
+<p>First admin: {{ membership.user.display_name|default:membership.user.email }}</p>
+{% if temp_password %}
+  {% include "accounts/_temp_password.html" %}
+{% else %}
+  <p>Existing user. Their password is unchanged.</p>
+{% endif %}
+<p><a href="{% url 'club_home' club.slug %}">Open club home</a> · <a href="{% url 'site_clubs' %}">All clubs</a></p>
+{% endblock %}

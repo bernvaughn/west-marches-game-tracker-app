@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Clubs{% endblock %}
+{% block content %}
+<h1>Clubs</h1>
+<p><a href="{% url 'site_club_new' %}">New club</a></p>
+<ul>
+{% for c in clubs %}
+  <li><a href="{% url 'club_home' c.slug %}">{{ c.name }}</a> ({{ c.member_count }} member{{ c.member_count|pluralize }})</li>
+{% empty %}
+  <li>No clubs yet.</li>
+{% endfor %}
+</ul>
+{% endblock %}
