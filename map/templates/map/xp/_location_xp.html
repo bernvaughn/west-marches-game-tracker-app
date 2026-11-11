@@ -1,1 +1,1 @@
-{# Slot for the xp story. #}
+{% load map_xp %}{% if location.target_band %}{% xp_for club location.target_band as band_xp %}{% if band_xp %}<p class="location-xp">{{ location.target_band|band_label }}: Discover {{ band_xp.0 }} XP, explore {{ band_xp.1 }} XP</p>{% endif %}{% endif %}
