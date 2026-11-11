@@ -1,1 +1,5 @@
 .site-header, .area-nav, .messages, button { display: none !important; }
+
+/* Characters: print view */
+.no-print { display: none !important; }
+.print-item { break-inside: avoid; page-break-inside: avoid; }
