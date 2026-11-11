@@ -1,4 +1,4 @@
-"""Bearer authentication for the MCP endpoint. OAuth can add an authenticator later."""
+"""Bearer authentication for the MCP endpoint: personal tokens and OAuth access tokens."""
 
 from django.utils import timezone
 
@@ -16,7 +16,14 @@ def token_authenticator(raw):
     )
 
 
-AUTHENTICATORS = [token_authenticator]
+def oauth_authenticator(raw):
+    """Map a valid OAuth access token to its connection. The caller checks revocation."""
+    from .oauth.tokens import connection_for_access_token
+
+    return connection_for_access_token(raw)
+
+
+AUTHENTICATORS = [token_authenticator, oauth_authenticator]
 
 
 def authenticate_bearer(header):

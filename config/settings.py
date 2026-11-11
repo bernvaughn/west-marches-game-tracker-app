@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "oauth2_provider",
     "accounts",
     "player_characters",
     "items",
@@ -96,3 +97,17 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+OAUTH2_PROVIDER = {
+    "SCOPES": {"mcp": "Use the West Marches tools for one club"},
+    "DEFAULT_SCOPES": ["mcp"],
+    "PKCE_REQUIRED": True,
+    "COMPLIANT_BCP_RFC9700_PKCE_METHOD": True,  # S256 only
+    "REQUEST_APPROVAL_PROMPT": "force",
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
+    "ROTATE_REFRESH_TOKEN": True,
+    "DCR_ENABLED": True,
+    "DCR_REGISTRATION_PERMISSION_CLASSES": ("oauth2_provider.dcr.AllowAllDCRPermission",),
+    "OAUTH2_PROTECTED_RESOURCE_NAME": "West Marches MCP",
+}
+OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"

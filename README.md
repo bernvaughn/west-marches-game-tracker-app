@@ -36,6 +36,8 @@ Run the checks with `uv run pytest` and `uv run ruff check`.
 
 The demo token is for local use only. It must never exist on a hosted site.
 
+OAuth sign-in also works, with no secret to copy. In the Inspector pick **OAuth** and add no header. The Inspector finds the endpoints from `/.well-known/oauth-protected-resource/mcp`, registers itself, and sends you to the site. Sign in, pick one club where you are a game master, and approve. Access tokens last one hour and refresh on their own. Revoke the connection on the connections page and its tokens stop working.
+
 ## Summary
 
 Run the app on one $6/month DigitalOcean Droplet with Django and SQLite; with backups the bill is about $7.20/month, and nothing in this plan scales on its own. The larger scope changes the bill little: storage and traffic stay tiny, and the one real gap is that DigitalOcean blocks outgoing email, so the app is designed to send no email.
