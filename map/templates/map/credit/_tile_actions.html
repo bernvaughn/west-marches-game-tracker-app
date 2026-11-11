@@ -1,1 +1,1 @@
-{# Slot for the credit story. #}
+{% if is_editor %}<a href="{% url 'map:visits' club.slug hex_map.pk q r %}">Record visits</a>{% endif %}
