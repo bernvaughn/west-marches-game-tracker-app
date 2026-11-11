@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Batch #{{ batch.pk }}{% endblock %}
+{% block content %}
+<h1>Batch #{{ batch.pk }}</h1>
+{% include "agent_access/_nav.html" %}
+<p>Status: <strong>{{ batch.get_status_display }}</strong>. Date: {{ batch.date }}.
+  Proposed by {{ batch.user.display_name }} through {{ batch.connection.label }} on {{ batch.created }}.</p>
+{% if batch.confirmed_at %}<p>Confirmed by {{ batch.confirmed_by.display_name }} on {{ batch.confirmed_at }}.</p>{% endif %}
+{% if batch.reversed_at %}<p>Reversed by {{ batch.reversed_by.display_name }} on {{ batch.reversed_at }}.</p>{% endif %}
+{% if batch.source_notes %}
+<h2>Source notes</h2>
+<pre>{{ batch.source_notes }}</pre>
+{% endif %}
+
+<h2>Lines</h2>
+{% for row in rows %}
+  <section id="line-{{ row.line.pk }}">
+    <h3>Line {{ row.n }}</h3>
+    {% if row.form %}
+    <form method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
+      {% csrf_token %}
+      {{ row.form.as_p }}
+      <button type="submit">Save line</button>
+    </form>
+    <form method="post" action="{% url 'agent_access:batch_line_remove' club.slug batch.pk row.line.pk %}">
+      {% csrf_token %}
+      <button type="submit">Remove line</button>
+    </form>
+    {% else %}
+    <p>{{ row.line.character }}:
+      {% if row.line.item %}{{ row.line.quantity }} × {{ row.line.item }}
+      {% elif row.line.proposed_item %}{{ row.line.quantity }} × {{ row.line.proposed_item }} (proposed)
+      {% else %}{{ row.line.coins }} cp{% endif %}
+      {% if row.line.note %}— {{ row.line.note }}{% endif %}</p>
+    {% endif %}
+  </section>
+{% empty %}
+  <p>No lines.</p>
+{% endfor %}
+
+{% if pending %}
+<form method="post" action="{% url 'agent_access:batch_confirm' club.slug batch.pk %}">
+  {% csrf_token %}<button type="submit">Confirm batch</button>
+</form>
+<form method="post" action="{% url 'agent_access:batch_discard' club.slug batch.pk %}">
+  {% csrf_token %}<button type="submit">Discard batch</button>
+</form>
+{% elif batch.status == "confirmed" %}
+<form method="post" action="{% url 'agent_access:batch_reverse' club.slug batch.pk %}">
+  {% csrf_token %}<button type="submit">Reverse</button>
+</form>
+{% endif %}
+{% endblock %}
