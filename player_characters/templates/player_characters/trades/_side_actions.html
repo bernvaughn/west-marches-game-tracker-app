@@ -1,1 +1,15 @@
-{# Filled by the "Edit sides, approve and complete a trade" story. #}
+{% if trade.status == "completed" %}
+<p>Trade completed. Items and coins moved.</p>
+{% elif side and trade.status == "accepted" %}
+  {% if side == "sender" and not trade.sender_approved or side == "receiver" and not trade.receiver_approved %}
+  <p>
+    <a href="{% url 'trades:edit_side' club.slug trade.pk %}">Edit my side</a>
+  </p>
+  <form method="post" action="{% url 'trades:approve' club.slug trade.pk %}">
+    {% csrf_token %}
+    <button type="submit">Approve</button>
+  </form>
+  {% else %}
+  <p>You approved. Waiting for the other player.</p>
+  {% endif %}
+{% endif %}
