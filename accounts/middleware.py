@@ -1,5 +1,8 @@
+from django.conf import settings
 from django.contrib.auth.views import redirect_to_login
 from django.http import Http404
+from django.shortcuts import redirect
+from django.urls import reverse
 
 from .models import Club, Membership
 
@@ -13,6 +16,12 @@ class ClubMiddleware:
     def __call__(self, request):
         request.club = None
         request.membership = None
+        user = request.user
+        if user.is_authenticated and user.must_change_password:
+            allowed = {reverse(n) for n in ("password_change", "password_change_done", "logout")}
+            static_prefix = "/" + settings.STATIC_URL.lstrip("/")
+            if request.path not in allowed and not request.path.startswith(static_prefix):
+                return redirect("password_change")
         return self.get_response(request)
 
     def process_view(self, request, view_func, view_args, view_kwargs):

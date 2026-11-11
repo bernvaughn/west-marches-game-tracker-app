@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Reset password{% endblock %}
+{% block content %}
+<h1>Reset password</h1>
+<p>Reset the password for {{ target.display_name|default:"this member" }}? They are signed out and must choose a new password.</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Reset password</button>
+  <a href="{% url 'accounts:index' club.slug %}">Cancel</a>
+</form>
+{% endblock %}
