@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+{% block title %}Inbox{% endblock %}
+{% block content %}
+<h1>Inbox</h1>
+<p>
+  {% for f in filters %}
+    {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
+  {% endfor %}
+</p>
+<table>
+  <tr><th>From</th><th>Email</th><th>Character</th><th>Message</th><th>Date</th><th>Status</th></tr>
+  {% for m in messages_list %}
+  <tr>
+    <td>{{ m.sender.user.display_name }}</td>
+    <td>{% member_email m.sender.user %}</td>
+    <td>{{ m.character.name|default:"-" }}</td>
+    <td>{{ m.body|linebreaksbr }}</td>
+    <td>{{ m.created|date:"Y-m-d H:i" }}</td>
+    <td>
+      {{ m.get_status_display }}
+      <form method="post" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="filter" value="{{ status }}">
+        <select name="status">
+          {% for value, label in statuses %}
+          <option value="{{ value }}"{% if value == m.status %} selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit">Set</button>
+      </form>
+    </td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="6">No messages.</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

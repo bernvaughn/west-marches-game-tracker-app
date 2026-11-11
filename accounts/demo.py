@@ -1,4 +1,4 @@
-from .models import Club, Membership, User
+from .models import Club, Membership, Message, User
 
 DEMO_PASSWORD = "demo-password"
 DEMO_LOGINS = [
@@ -26,4 +26,10 @@ def seed():
     )
     for email, name in (("alice@example.com", "Alice"), ("bob@example.com", "Bob")):
         Membership.objects.get_or_create(user=_user(email, name), club=club)
+    alice = Membership.objects.get(user__email="alice@example.com", club=club)
+    Message.objects.get_or_create(
+        club=club,
+        sender=alice,
+        body="I think Gwen forgot the silver ring from the goblin cave.",
+    )
     return club

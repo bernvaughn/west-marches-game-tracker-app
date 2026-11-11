@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Message admins{% endblock %}
+{% block content %}
+<h1>Message the club admins</h1>
+{% if form %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Send</button>
+</form>
+<h2>Your messages</h2>
+<table>
+  <tr><th>Date</th><th>Character</th><th>Message</th><th>Status</th></tr>
+  {% for m in sent %}
+  <tr>
+    <td>{{ m.created|date:"Y-m-d H:i" }}</td>
+    <td>{{ m.character.name|default:"-" }}</td>
+    <td>{{ m.body|linebreaksbr }}</td>
+    <td>{{ m.get_status_display }}</td>
+  </tr>
+  {% empty %}
+  <tr><td colspan="4">No messages yet.</td></tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>Only club members can send messages.</p>
+{% endif %}
+{% endblock %}

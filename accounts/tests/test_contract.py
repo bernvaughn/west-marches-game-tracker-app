@@ -34,7 +34,7 @@ def test_member_and_admin_access(club, player, club_admin, login):
     a = login(club_admin)
     for k in ("whitelist", "reset", "inbox"):
         assert a.get(u[k]).status_code == 200
-    assert a.post(u["status"]).status_code == 200
+    assert a.post(u["status"]).status_code == 404
     assert a.get(u["status"]).status_code == 405
 
 
