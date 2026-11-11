@@ -36,7 +36,9 @@ def test_create_club_new_admin(site_admin, login):
     pw = r.context["temp_password"]
     assert pw in r.content.decode()
     assert pw not in c.get(reverse(LIST)).content.decode()
-    assert login(user).get(reverse("club_home", args=["club-c"])).status_code == 200
+    # U20: the new admin must change the temporary password first.
+    r = login(user).get(reverse("club_home", args=["club-c"]))
+    assert r.status_code == 302 and r.url == reverse("password_change")
 
 
 @pytest.mark.story("U12")
