@@ -69,7 +69,7 @@ def test_routes_and_stubs(login, club, trade, player):
     c = login(player)
     assert reverse("trades:index", args=[club.slug])
     assert c.get(url(club, trade, "edit_side")).status_code == 501
-    for name in ("accept", "decline", "cancel", "approve", "edit_side"):
+    for name in ("approve", "edit_side"):
         assert c.post(url(club, trade, name)).status_code == 501
         if name != "edit_side":
             assert c.get(url(club, trade, name)).status_code == 405
