@@ -1,5 +1,16 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
-<h1>{{ shop.name }}</h1>
-{% include "shops/browse/_stock.html" %}
+<link rel="stylesheet" href="{% static 'shops/shops.css' %}">
+<article class="shop shop--{{ shop.color }}">
+  {% if not is_open %}<p class="shop-closed-banner">Closed</p>{% endif %}
+  <h1><span class="shop-symbol">{{ shop.symbol }}</span> {{ shop.name }}</h1>
+  {{ shop.description|linebreaks }}
+  <section class="shop-keeper">
+    <h2>{{ shop.keeper_name }}</h2>
+    {{ shop.keeper_description|linebreaks }}
+  </section>
+  <div id="stock" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
+  <p><a href="{% url 'shops:sell' club.slug shop.id %}">Sell to this shop</a></p>
+</article>
 {% endblock %}
