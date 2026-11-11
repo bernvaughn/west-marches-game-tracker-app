@@ -5,7 +5,7 @@ description = "West Marches game tracker"
 requires-python = ">=3.12"
 dependencies = [
     "Django>=5.2,<5.3",
-    "django-mcp-server>=0.5.7",
+    "mcp>=2.3,<3",
     "djangorestframework>=3.15",
 ]
 

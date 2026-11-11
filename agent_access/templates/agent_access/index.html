@@ -2,4 +2,9 @@
 {% block title %}Agent access{% endblock %}
 {% block content %}
 <h1>Agent access</h1>
+{% if user.is_superuser or request.membership.is_game_master or request.membership.is_club_admin %}
+<a href="{% url 'agent_access:connections' club.slug %}">Connections</a>
+<a href="{% url 'agent_access:batches' club.slug %}">Batches</a>
+<a href="{% url 'agent_access:proposed_items' club.slug %}">Proposed items</a>
+{% endif %}
 {% endblock %}
