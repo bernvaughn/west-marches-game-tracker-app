@@ -1,0 +1,40 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}West Marches{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
+  {# htmx 2.0.4, vendored #}
+  <script src="{% static 'htmx.min.js' %}" defer></script>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<header class="site-header">
+  <a href="{% url 'home' %}">West Marches</a>
+  {% if user.is_authenticated %}
+  <nav class="club-switcher" aria-label="Clubs">
+    {% for c in user_clubs %}<a href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a>{% endfor %}
+  </nav>
+  <form method="post" action="{% url 'logout' %}" class="logout">
+    {% csrf_token %}<button type="submit">Log out</button>
+  </form>
+  {% endif %}
+</header>
+{% if club %}
+<nav class="area-nav" aria-label="{{ club.name }}">
+  {% include "accounts/_nav.html" %}
+  {% include "player_characters/characters/_nav.html" %}
+  {% include "player_characters/trades/_nav.html" %}
+  {% include "items/_nav.html" %}
+  {% include "shops/_nav.html" %}
+  {% include "ledger/_nav.html" %}
+  {% include "map/_nav.html" %}
+  {% include "quests/_nav.html" %}
+  {% include "agent_access/_nav.html" %}
+</nav>
+{% endif %}
+{% if messages %}<ul class="messages">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul>{% endif %}
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

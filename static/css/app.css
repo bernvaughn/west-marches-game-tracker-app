@@ -1,0 +1,6 @@
+body { font-family: system-ui, sans-serif; margin: 0; padding: 0 1rem; line-height: 1.5; }
+.site-header, .area-nav { display: flex; gap: 1rem; align-items: center; padding: .5rem 0; flex-wrap: wrap; }
+.area-nav { border-bottom: 1px solid #ccc; }
+.club-switcher { display: flex; gap: .5rem; flex: 1; }
+.messages { list-style: none; padding: 0; }
+.messages .error { color: #a00; }
