@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}Items of {{ character.name }}{% endblock %}
+{% block content %}
+<p class="no-print">
+  <a href="{% url 'characters:detail' club.slug character.pk %}">Back to sheet</a>
+  <button type="button" onclick="window.print()">Print</button>
+</p>
+<h1>{{ character.name }}</h1>
+<p>Coins: {{ coins.owned|coins }}</p>
+{% for row in rows %}
+<article class="print-item">
+  <h2>{{ row.item.name }}{% if row.item.retired %} (retired){% endif %}</h2>
+  <p>Quantity: {{ row.owned }}</p>
+  {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
+  {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}
+  {% if row.item.details %}<div><strong>Details</strong>{{ row.item.details|linebreaks }}</div>{% endif %}
+</article>
+{% empty %}
+<p>No items.</p>
+{% endfor %}
+{% endblock %}

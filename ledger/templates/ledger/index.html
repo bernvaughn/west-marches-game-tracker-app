@@ -2,4 +2,13 @@
 {% block title %}Ledger{% endblock %}
 {% block content %}
 <h1>Ledger</h1>
+{% if characters %}
+<ul>
+  {% for c in characters %}
+  <li><a href="{% url 'ledger:character_history' club.slug c.pk %}">{{ c.name }}</a> — {{ c.owner.user.display_name }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No characters to show.</p>
+{% endif %}
 {% endblock %}

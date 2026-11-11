@@ -1,5 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Rotations</h1>
-<p>Coming soon.</p>
+<p><a href="{% url 'shops:rotation_create' club.slug %}">New rotation</a></p>
+<table>
+  <thead><tr><th>Name</th><th>Opens</th><th>Closes</th><th>Status</th><th>Shops</th><th></th></tr></thead>
+  <tbody>
+  {% for rotation, status in rows %}
+    <tr>
+      <td><a href="{% url 'shops:rotation_edit' club.slug rotation.id %}">{{ rotation.name }}</a></td>
+      <td>{{ rotation.open_date|date:"Y-m-d" }}</td>
+      <td>{% if rotation.close_date %}{{ rotation.close_date|date:"Y-m-d" }}{% else %}No close date{% endif %}</td>
+      <td>{{ status }}</td>
+      <td>{% for s in rotation.shops.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% empty %}No shops{% endfor %}</td>
+      <td>
+        <form method="post" action="{% url 'shops:rotation_delete' club.slug rotation.id %}">
+          {% csrf_token %}<button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6">No rotations yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
 {% endblock %}

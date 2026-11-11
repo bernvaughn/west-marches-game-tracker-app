@@ -1,1 +1,19 @@
-<p>Coming soon.</p>
+{% load coins %}
+{% if rows %}
+<table class="shop-stock">
+  <thead><tr><th>Item</th><th>Description</th><th>Price</th><th>Quantity</th><th></th></tr></thead>
+  <tbody>
+  {% for stock in rows %}
+    <tr>
+      <td>{{ stock.item.name }}</td>
+      <td>{{ stock.item.description }}</td>
+      <td>{{ stock.price|coins }}</td>
+      <td>{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</td>
+      <td><a href="{% url 'shops:buy' club.slug shop.id stock.id %}">Buy</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>Nothing in stock right now.</p>
+{% endif %}
