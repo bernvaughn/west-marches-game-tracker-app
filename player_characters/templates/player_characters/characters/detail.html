@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}{{ character.name }}{% endblock %}
+{% block content %}
+<h1>{{ character.name }}</h1>
+<p>Owner: {{ owner_name }}</p>
+{% if can_view %}
+<p>
+  {% if can_edit %}<a href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}
+  {% if can_adjust %}
+    <a href="{% url 'characters:adjust' club.slug character.pk %}">Adjust</a>
+    <a href="{% url 'characters:consume' club.slug character.pk %}">Consume</a>
+  {% endif %}
+  {% if can_transfer %}<a href="{% url 'characters:transfer' club.slug character.pk %}">Transfer</a>{% endif %}
+  <a href="{% url 'characters:print_items' club.slug character.pk %}">Print</a>
+  <a href="{% url 'ledger:character_history' club.slug character.pk %}">History</a>
+  {% if can_handover %}<a href="{% url 'characters:handover' club.slug character.pk %}">Hand over</a>{% endif %}
+</p>
+<h2>Coins</h2>
+<p>{{ coins.owned|coins }}</p>
+<ul>
+{% for label, value in coins.parts %}<li>{{ label }}: {{ value }}</li>{% endfor %}
+</ul>
+{% if coins.has_holds %}
+<p>Held: {{ coins.held|coins }}. Available: {{ coins.available|coins }}.</p>
+{% endif %}
+<h2>Items</h2>
+{% if rows %}
+<table>
+  <tr><th>Item</th><th>Owned</th>{% if show_held %}<th>Held</th>{% endif %}<th>Available</th></tr>
+  {% for r in rows %}
+  <tr>
+    <td>{{ r.item.name }}{% if r.item.retired %} (retired){% endif %}</td>
+    <td>{{ r.owned }}</td>
+    {% if show_held %}<td>{{ r.held }}</td>{% endif %}
+    <td>{{ r.available }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No items.</p>
+{% endif %}
+<h2>Notes</h2>
+{{ character.notes|linebreaks }}
+<h2>Stats</h2>
+{{ character.stats|linebreaks }}
+<h2>Details</h2>
+{{ character.details|linebreaks }}
+{% endif %}
+{% endblock %}
