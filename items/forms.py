@@ -10,7 +10,7 @@ class ItemForm(forms.ModelForm):
 
     class Meta:
         model = Item
-        fields = ["name", "description", "traits", "details"]
+        fields = ["name", "symbol", "description", "traits", "details"]
 
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)

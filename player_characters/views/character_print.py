@@ -1,5 +1,6 @@
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render
+from django.utils import timezone
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
@@ -21,7 +22,12 @@ def print_items(request, club_slug, pk):
     return render(
         request,
         "player_characters/characters/print.html",
-        {"character": character, "sheets": sheets, "coins": coin_summary(character)},
+        {
+            "character": character,
+            "sheets": sheets,
+            "coins": coin_summary(character),
+            "printed_on": timezone.localdate(),
+        },
     )
 
 
@@ -33,7 +39,7 @@ def print_item(request, club_slug, pk, item_pk):
     if row is None:
         raise Http404
     layout = request.GET.get("layout")
-    context = {"character": character, "row": row}
+    context = {"character": character, "row": row, "printed_on": timezone.localdate()}
     if layout is None:
         return render(request, "player_characters/characters/print_item_choose.html", context)
     if layout not in LAYOUTS:

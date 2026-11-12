@@ -55,7 +55,7 @@
         <tbody>
         {% for r in rows %}
         <tr>
-          <td>{{ r.item.name }}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
+          <td>{% include "items/_item_name.html" with item=r.item %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
           <td class="num">{{ r.owned }}</td>
           {% if show_held %}<td class="num">{{ r.held }}</td>{% endif %}
           <td class="num">{{ r.available }}</td>
@@ -81,7 +81,7 @@
       <ul class="wm-sheet-ledger">
       {% for e in recent_entries %}
         <li><span class="wm-sheet-date">{{ e.date|date:"Y-m-d" }}</span> {{ e.get_kind_display }}:
-          {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {{ line.item.name }}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
         </li>
       {% empty %}
         <li class="wm-sheet-note">No entries yet.</li>

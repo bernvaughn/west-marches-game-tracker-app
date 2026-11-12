@@ -1,5 +1,5 @@
 {% load coins %}
-<h2 class="h5">{{ stock.item.name }}</h2>
+<h2 class="h5">{% include "items/_item_name.html" with item=stock.item %}</h2>
 {% if stock.item.description %}<p>{{ stock.item.description }}</p>{% endif %}
 <p>Price each: {{ price|coins }}</p>
 <p>Remaining: {% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</p>

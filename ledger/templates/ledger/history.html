@@ -16,7 +16,7 @@
       <ul class="wm-ledger-lines">
         {% for line in e.lines.all %}
         <li>
-          {% if line.item %}<span class="{% if line.quantity > 0 %}wm-credit{% else %}wm-debit{% endif %}">{{ line.quantity|stringformat:"+d" }} {{ line.item.name }}</span>{% endif %}
+          {% if line.item %}<span class="{% if line.quantity > 0 %}wm-credit{% else %}wm-debit{% endif %}">{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}</span>{% endif %}
           {% if line.coins %}<span class="{% if line.coins > 0 %}wm-credit{% else %}wm-debit{% endif %}">{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}</span>{% endif %}
         </li>
         {% endfor %}
