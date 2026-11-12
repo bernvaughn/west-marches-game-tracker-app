@@ -8,7 +8,7 @@ from player_characters.models import Character
 from ..forms.people import WhitelistForm
 from ..models import Membership, WhitelistEntry
 from ..passwords import get_or_create_member
-from ..permissions import club_admin_required, club_member_required
+from ..permissions import can_see_email, club_admin_required, club_member_required
 from ..scoping import club_queryset
 
 
@@ -20,7 +20,9 @@ def member_list(request, club_slug):
         .prefetch_related("characters")
         .order_by("user__display_name", "user__email")
     )
-    return render(request, "accounts/people/member_list.html", {"members": members})
+    show_email = can_see_email(request.user, request.club)
+    ctx = {"members": members, "show_email": show_email, "table_cols": 5 if show_email else 3}
+    return render(request, "accounts/people/member_list.html", ctx)
 
 
 def _whitelist_page(request, form, **extra):
