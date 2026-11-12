@@ -26,14 +26,14 @@
     <div class="site-header-fixed d-flex align-items-center gap-2 order-3 order-lg-last ms-lg-auto">
       <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
       {% if user.is_authenticated and club %}
-      <div class="dropdown club-switcher no-print">
-        <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name text-truncate" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}">{{ club.name }}</a>
+      <div class="dropdown club-switcher no-print d-none d-sm-block">
+        <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}">{{ club.name }}</a>
         <ul class="dropdown-menu">
           {% for c in user_clubs %}<li><a class="dropdown-item{% if c == club %} active{% endif %}" href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}
         </ul>
       </div>
       {% endif %}
-      {% if user.is_authenticated %}<span class="navbar-text user-name text-truncate">{{ user.display_name|default:user.email }}</span>{% endif %}
+      {% if user.is_authenticated %}<span class="navbar-text user-name d-none d-sm-inline">{{ user.display_name|default:user.email }}</span>{% endif %}
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="logout">

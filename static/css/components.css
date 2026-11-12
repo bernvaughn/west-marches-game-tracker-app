@@ -157,10 +157,44 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .wm-empty .wm-icon { font-size: 2rem; display: block; margin: 0 auto var(--wm-space-2); }
 .wm-empty p { margin: 0 0 var(--wm-space-3); }
 
+/* ---- Banner: a full-width band OUTSIDE the card, tinted by a shop preset ---- */
+.wm-banner { --wm-banner-bg: var(--wm-shop-parchment-deep); background: var(--wm-banner-bg); color: var(--wm-on-accent);
+  margin: calc(-1 * var(--wm-space-4)) calc(-1 * var(--wm-space-4)) var(--wm-space-5); padding: var(--wm-space-5) var(--wm-space-4); }
+@media (min-width: 576px) { .wm-banner { margin: calc(-1 * var(--wm-space-5)) calc(-1 * var(--wm-space-6)) var(--wm-space-5); padding: var(--wm-space-5) var(--wm-space-6); } }
+.wm-banner h1, .wm-banner a { color: inherit; }
+.wm-banner-subtitle { margin: var(--wm-space-1) 0 0; opacity: .92; }
+.wm-banner--soft { background: var(--wm-banner-bg); color: var(--wm-text); }
+.wm-banner--parchment { --wm-banner-bg: var(--wm-shop-parchment-deep); }
+.wm-banner--forest { --wm-banner-bg: var(--wm-shop-forest-deep); }
+.wm-banner--ember { --wm-banner-bg: var(--wm-shop-ember-deep); }
+.wm-banner--ocean { --wm-banner-bg: var(--wm-shop-ocean-deep); }
+.wm-banner--violet { --wm-banner-bg: var(--wm-shop-violet-deep); }
+.wm-banner--slate { --wm-banner-bg: var(--wm-shop-slate-deep); }
+.wm-banner--soft.wm-banner--parchment { --wm-banner-bg: var(--wm-shop-parchment-soft); }
+.wm-banner--soft.wm-banner--forest { --wm-banner-bg: var(--wm-shop-forest-soft); }
+.wm-banner--soft.wm-banner--ember { --wm-banner-bg: var(--wm-shop-ember-soft); }
+.wm-banner--soft.wm-banner--ocean { --wm-banner-bg: var(--wm-shop-ocean-soft); }
+.wm-banner--soft.wm-banner--violet { --wm-banner-bg: var(--wm-shop-violet-soft); }
+.wm-banner--soft.wm-banner--slate { --wm-banner-bg: var(--wm-shop-slate-soft); }
+
+/* ---- Club card: the whole card is the link ---- */
+.wm-club-card { position: relative; height: 100%; transition: box-shadow .15s, border-color .15s; }
+.wm-club-card:hover { box-shadow: var(--wm-shadow-2); border-color: var(--wm-text-muted); }
+.wm-club-card h2 { margin: 0 0 var(--wm-space-2); font-size: var(--wm-text-xl); }
+.wm-club-card h2 a { color: var(--wm-text); text-decoration: none; }
+.wm-club-card:focus-within { outline: var(--wm-focus-outline); outline-offset: 2px; }
+.wm-club-card h2 a:focus-visible { outline: none; }
+.wm-club-roles { display: flex; flex-wrap: wrap; gap: var(--wm-space-1); margin-bottom: var(--wm-space-3); }
+.wm-club-stats { display: grid; grid-template-columns: 1fr; gap: var(--wm-space-2); margin: 0; }
+.wm-club-stats > div { display: flex; gap: var(--wm-space-2); align-items: baseline; }
+.wm-club-stats dt { flex: none; width: 6.5rem; font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--wm-text-muted); }
+.wm-club-stats dd { margin: 0; font-size: var(--wm-text-sm); }
+.wm-club-stats .wm-stat-num { font-family: var(--wm-font-heading); font-weight: 700; font-size: var(--wm-text-md); }
+
 /* ---- Modal (shared #app-modal frame) ---- */
 .modal-content { background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-lg); box-shadow: var(--wm-shadow-2); }
 .modal-header { border-bottom: 1px solid var(--wm-border); padding: var(--wm-space-3) var(--wm-space-4); }
-.modal-title { font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); }
+.modal-title { font-family: var(--wm-font-heading); font-size: var(--wm-text-md); }
 .modal-body { padding: var(--wm-space-4); }
 .modal-footer { border-top: 1px solid var(--wm-border); background: var(--wm-surface-sunken); padding: var(--wm-space-3) var(--wm-space-4); gap: var(--wm-space-2); }
 .modal-backdrop { --bs-backdrop-bg: var(--wm-text); }

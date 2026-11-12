@@ -60,6 +60,26 @@
   --wm-coin-pp: #eef4ff;
   --wm-coin-pp-bg: #3d4b5c;
 
+  /* Coin metal dots (decorative; the text label carries the meaning) */
+  --wm-coin-dot-cp: #b87333;
+  --wm-coin-dot-sp: #b8bcc4;
+  --wm-coin-dot-gp: #e0a800;
+  --wm-coin-dot-pp: #9fb4d0;
+
+  /* Shop presets: -deep reads with light text, -soft reads with dark text (--wm-text) */
+  --wm-shop-parchment-deep: #6f5320;
+  --wm-shop-parchment-soft: #f5ecd6;
+  --wm-shop-forest-deep: #2f6b3a;
+  --wm-shop-forest-soft: #e1efe0;
+  --wm-shop-ember-deep: #a23d12;
+  --wm-shop-ember-soft: #fbe3d6;
+  --wm-shop-ocean-deep: #1f5f93;
+  --wm-shop-ocean-soft: #dcecf7;
+  --wm-shop-violet-deep: #6a3f9a;
+  --wm-shop-violet-soft: #ece3f6;
+  --wm-shop-slate-deep: #46505c;
+  --wm-shop-slate-soft: #e4e8ec;
+
   /* Radii and shadows */
   --wm-radius-sm: 4px;
   --wm-radius-md: 8px;

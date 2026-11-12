@@ -71,6 +71,13 @@
   <div class="wm-table-scroll"><table class="table table-sm wm-data-table"><tbody>{% include "components/data_table_empty.html" with cols=4 text="No lines yet." action_url="#" action_label="Add one" %}</tbody></table></div>
 </section>
 
+<section id="component-banner" class="wm-section">
+  <h3>banner (banner_open, banner_close)</h3>
+  <pre>{% verbatim %}{% include "components/banner_open.html" with color="forest" title=shop.name subtitle="Keeper: Mira" %}{% include "components/banner_close.html" %}{% endverbatim %}</pre>
+  <p class="text-muted">The band sits outside the card and bleeds to the page edges. Deep colour with light text, or <code>soft=1</code> for a light tint with dark text.</p>
+  <div class="row g-2">{% for c in banner_colors %}<div class="col-6 col-md-4"><div class="wm-banner wm-banner--{{ c }}" style="margin:0"><h4 class="mb-0 text-reset">{{ c|capfirst }}</h4></div><div class="wm-banner wm-banner--soft wm-banner--{{ c }}" style="margin:0"><h4 class="mb-0 text-reset">{{ c|capfirst }} soft</h4></div></div>{% endfor %}</div>
+</section>
+
 <section id="component-stat" class="wm-section">
   <h3>stat</h3>
   <pre>{% verbatim %}{% include "components/stat.html" with label="Level" value=5 %}{% endverbatim %}</pre>

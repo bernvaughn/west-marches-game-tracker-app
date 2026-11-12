@@ -80,6 +80,30 @@ def test_text_contrast_meets_aa():
     assert contrast_ratio(_hex(t, "coin-pp"), _hex(t, "coin-pp-bg")) >= 4.5
 
 
+def test_shop_presets_read_with_light_and_dark_text():
+    t = read_tokens()
+    for name in ("parchment", "forest", "ember", "ocean", "violet", "slate"):
+        assert contrast_ratio(_hex(t, "on-accent"), _hex(t, f"shop-{name}-deep")) >= 4.5, name
+        assert contrast_ratio(_hex(t, "text"), _hex(t, f"shop-{name}-soft")) >= 4.5, name
+
+
+def test_platinum_chip_is_readable_on_parchment():
+    t = read_tokens()
+    assert contrast_ratio(_hex(t, "coin-pp"), _hex(t, "coin-pp-bg")) >= 4.5
+    # The dark chip itself stands out against the page (non-text contrast).
+    assert contrast_ratio(_hex(t, "coin-pp-bg"), _hex(t, "surface")) >= 3
+    assert contrast_ratio(_hex(t, "coin-pp-bg"), _hex(t, "surface-raised")) >= 3
+    css = (ROOT / "static/css/coins.css").read_text()
+    assert ".coin-gp::before" in css and "--wm-coin-dot-gp" in css
+
+
+def test_character_switch_submits_on_change_with_noscript_fallback():
+    html = (
+        ROOT / "player_characters/templates/player_characters/characters/_selector.html"
+    ).read_text()
+    assert "onchange=" in html and "<noscript>" in html
+
+
 def test_bootstrap_bridge_and_link_order():
     css = (ROOT / "static/css/tokens.css").read_text()
     assert "--bs-primary:" in css and "--bs-link-color-rgb:" in css

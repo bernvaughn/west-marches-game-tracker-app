@@ -6,6 +6,7 @@
     <ul class="dropdown-menu">
       {% for l in nav.more %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
       <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="{% url 'home' %}">Your clubs ({{ club.name }})</a></li>
       <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
     </ul>
   </li>

@@ -4,16 +4,15 @@
 .temp-password { font-family: monospace; }
 .site-header-fixed { flex-wrap: nowrap; min-width: 0; max-width: 100%; }
 .site-header-fixed > * { min-width: 0; }
-.site-header .user-name, .site-header .club-name, .site-header .character-name {
-  max-width: 8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.site-header .user-name, .site-header .club-name, .site-header .character-name { white-space: nowrap; }
 .site-header .character-name { display: inline-block; vertical-align: middle; }
-.site-header .character-selector select { max-width: 9rem; }
+.site-header .character-selector select { width: auto; max-width: 16rem; }
 @media (max-width: 575.98px) {
-  .site-header-fixed { flex-wrap: wrap; row-gap: var(--wm-space-1); justify-content: flex-start; }
-  .site-header .user-name, .site-header .club-name, .site-header .character-name { max-width: 4.5rem; }
-  .site-header .character-selector select { max-width: 6rem; }
-  /* Approvals: badge only; the button keeps its aria-label. */
+  .site-header-fixed { flex-wrap: nowrap; justify-content: flex-start; }
+  /* Phone: the character name shows in full; the club and user names live in the menu / are hidden. */
+  .site-header .character-selector, .site-header .character-name { flex: 1 1 auto; }
+  .site-header .character-selector select { width: 100%; max-width: none; }
+  .site-header .character-name { white-space: normal; }
   .site-header .approvals-menu { font-size: 0; }
   .site-header .approvals-menu .badge { font-size: .75rem; }
   .site-header .approvals-menu::after { margin-left: .15rem; }

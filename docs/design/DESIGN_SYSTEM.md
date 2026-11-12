@@ -27,7 +27,10 @@ The live reference is `/site/design/` (site admin only).
 Roles: `surface`, `surface-raised`, `surface-sunken`, `border`, `text`, `text-muted`, `accent`, `accent-hover`, `on-accent`, `success`, `warning`, `danger`, `info` (each with a `-bg` pale variant) and `neutral-bg`. Every text pair is 4.5:1 or better, and a test enforces it. The accent is Journal's red hue, darkened. **Do** pair danger with an icon or text: it looks close to the accent. **Don't** convey meaning by colour alone.
 
 ### Coins
-`--wm-coin-cp/sp/gp/pp` (and `pp-bg`). Same values as U31. Print stays black.
+`--wm-coin-cp/sp/gp/pp` (and `pp-bg`) are the text colours, unchanged from U31. `--wm-coin-dot-*` colour a small metal dot before each amount (copper, silver, gold, platinum), so gold reads as gold. Platinum is light text on a dark chip (8:1, and the chip is 8:1 against the page). Print stays black with no dots.
+
+### Shop presets
+`--wm-shop-<preset>-deep` and `--wm-shop-<preset>-soft` for parchment, forest, ember, ocean, violet and slate. Deep reads with light text (`--wm-on-accent`), soft reads with dark text (`--wm-text`); a test enforces AA for both. Use them with `banner`.
 
 ### Radii
 `--wm-radius-sm/md/lg` = 4, 8, 12 px.
@@ -48,6 +51,7 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **card**: raised surface with header, body, optional footer. Don't nest cards.
 - **section**: titled `h2` block with a rule. Use to group a page; don't use for one-off spacing.
 - **data_table**: CSS classes, not an include. Markup: `<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">`, numbers in `td.num`, buttons in `td.actions`, and `data_table_empty.html` in `{% empty %}`. Do: wrap in `wm-table-scroll`. Don't: clip columns.
+- **banner**: `banner_open.html` and `banner_close.html`. A full-width coloured band outside the card, tinted by a shop preset. Do: put it first in the page. Don't: fill a whole card with the preset colour.
 - **stat**: label and value. **definition_list**: `(term, value)` pairs.
 - **badge**: status pill; `text` is required. Don't: a coloured dot without a word.
 - **coins**: wraps the `coins` filter in `.wm-coins`. Don't recolour it.
@@ -59,6 +63,7 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **modal_frame**: header, body, footer for `#app-modal`. Below `sm` the modal is full screen.
 
 ### Rules
+- Top bar: one row on desktop for every role, names in full. The character dropdown submits on change (a `<noscript>` Switch button is the fallback). On a phone the club and user names hide and the menu has a link to Your clubs.
 - Touch targets: below 576 px every `.btn`, input, select, `.nav-link` and `.dropdown-item` is at least 44 px high. Desktop stays compact.
 - Page width: `{% block main_class %}wm-main--narrow{% endblock %}` caps a page at 72 rem. The default is full width with token gutters.
 - The top bar must fit at 390 px with no horizontal overflow. Check it with `scripts/screenshots.py`.

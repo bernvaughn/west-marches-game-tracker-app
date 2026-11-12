@@ -1,0 +1,9 @@
+{% comment %}banner_open: a full-width coloured band at the top of a page, OUTSIDE any card. Pair with banner_close.html.
+   Put it first inside {% block content %}; it bleeds to the page edges. Use for a shop or other themed page.
+   Context: color (parchment, forest, ember, ocean, violet, slate; default parchment), title (required, renders the page h1),
+   subtitle (optional), soft (set to 1 for a light tint with dark text instead of deep colour with light text).
+   Colours are the --wm-shop-*-deep and --wm-shop-*-soft tokens, so both text schemes meet AA.
+   Example: {% include "components/banner_open.html" with color=shop.color title=shop.name subtitle=shop.keeper_name %} extra content {% include "components/banner_close.html" %}
+{% endcomment %}<div class="wm-banner wm-banner--{{ color|default:'parchment' }}{% if soft %} wm-banner--soft{% endif %}">
+  <h1 class="mb-0">{{ title }}</h1>{% if subtitle %}
+  <p class="wm-banner-subtitle">{{ subtitle }}</p>{% endif %}

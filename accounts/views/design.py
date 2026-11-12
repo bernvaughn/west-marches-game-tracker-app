@@ -28,6 +28,7 @@ def design_reference(request):
         "form": form,
         "characters": ["Alice the Bold", "Bram Stonefoot", "Cinder"],
         "coin_values": [5, 120, 1250, 25000],
+        "banner_colors": ["parchment", "forest", "ember", "ocean", "violet", "slate"],
         "badge_statuses": ["success", "warning", "danger", "info", "neutral"],
         "dl_items": [("Class", "Fighter"), ("Level", 3), ("Home", "Rivermouth")],
         "breadcrumbs": [{"url": "/", "label": "Home"}, {"url": "", "label": "Design system"}],

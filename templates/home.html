@@ -5,15 +5,15 @@
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
   {% for card in cards %}
   <div class="col">
-    <div class="card h-100">
-      <div class="card-body">
-        <h2 class="h5 card-title"><a class="stretched-link" href="{% url 'club_home' card.club.slug %}">{{ card.club.name }}</a></h2>
-        <p class="mb-2">{% for role in card.roles %}<span class="badge bg-secondary me-1">{{ role }}</span>{% endfor %}</p>
-        <p class="mb-1"><strong>Game masters:</strong> {% if card.gms %}{{ card.gms|join:", " }}{% else %}None yet{% endif %}</p>
-        <p class="mb-1">{{ card.players }} player{{ card.players|pluralize }}</p>
-        <p class="mb-0"><strong>Your characters:</strong> {% if card.characters %}{{ card.characters|join:", " }}{% else %}None{% endif %}</p>
-      </div>
-    </div>
+    <div class="wm-card wm-club-card"><div class="wm-card-body">
+      <h2><a class="stretched-link" href="{% url 'club_home' card.club.slug %}">{{ card.club.name }}</a></h2>
+      <div class="wm-club-roles">{% for role in card.roles %}{% if role == "Club admin" %}{% include "components/badge.html" with status="danger" text=role %}{% elif role == "Game master" %}{% include "components/badge.html" with status="warning" text=role %}{% else %}{% include "components/badge.html" with status="success" text=role %}{% endif %}{% endfor %}</div>
+      <dl class="wm-club-stats">
+        <div><dt>Game masters</dt><dd>{% if card.gms %}{{ card.gms|join:", " }}{% else %}None yet{% endif %}</dd></div>
+        <div><dt>Players</dt><dd class="wm-stat-num">{{ card.players }} player{{ card.players|pluralize }}</dd></div>
+        <div><dt>My characters</dt><dd>{% if card.characters %}{{ card.characters|join:", " }}{% else %}None{% endif %}</dd></div>
+      </dl>
+    </div></div>
   </div>
   {% endfor %}
 </div>
