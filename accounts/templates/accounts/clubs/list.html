@@ -7,7 +7,7 @@
   <thead><tr><th>Name</th><th class="num">Members</th></tr></thead>
   <tbody>
   {% for c in clubs %}
-    <tr><td><a href="{% url 'club_home' c.slug %}">{{ c.name }}</a></td><td class="num">{{ c.member_count }} member{{ c.member_count|pluralize }}</td></tr>
+    <tr><td><a class="wm-row-link" href="{% url 'club_home' c.slug %}">{{ c.name }}</a></td><td class="num">{{ c.member_count }} member{{ c.member_count|pluralize }}</td></tr>
   {% empty %}
     {% include "components/data_table_empty.html" with cols=2 text="No clubs yet." %}
   {% endfor %}
