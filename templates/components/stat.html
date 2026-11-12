@@ -1,0 +1,4 @@
+{% comment %}stat: a label and a value. Context: label (required), value (required; may be markup such as a coins include).
+   Example: {% include "components/stat.html" with label="Level" value=5 %}
+{% endcomment %}
+<div class="wm-stat"><span class="wm-stat-label">{{ label }}</span><span class="wm-stat-value">{{ value }}</span></div>

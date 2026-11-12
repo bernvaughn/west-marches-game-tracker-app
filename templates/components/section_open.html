@@ -1,0 +1,7 @@
+{% comment %}section_open: a titled page section. Pair with section_close.html.
+   Context: title (required, renders an h2), lead (optional muted line), id (optional anchor).
+   Example: {% include "components/section_open.html" with title="Quests" %} ... {% include "components/section_close.html" %}
+{% endcomment %}
+<section class="wm-section"{% if id %} id="{{ id }}"{% endif %}>
+  <h2>{{ title }}</h2>
+  {% if lead %}<p class="wm-section-lead">{{ lead }}</p>{% endif %}

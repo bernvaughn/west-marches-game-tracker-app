@@ -1,10 +1,10 @@
 /* Coin colours for .coin-cp, .coin-sp, .coin-gp and .coin-pp (U31, U32).
-   Contrast on #fff: cp 7.1, sp 6.1, gp 6.3, pp text on chip 8.1. Print is black. */
+   Colours live in tokens.css. Contrast on #fff: cp 7.1, sp 6.1, gp 6.3, pp text on chip 8.1. Print is black. */
 .coin { white-space: nowrap; }
-.coin-cp { color: #8b4513; }
-.coin-sp { color: #5f6368; }
-.coin-gp { color: #7a5c00; }
-.coin-pp { color: #eef4ff; background: #3d4b5c; padding: 0 .25em; border-radius: .2em; }
+.coin-cp { color: var(--wm-coin-cp); }
+.coin-sp { color: var(--wm-coin-sp); }
+.coin-gp { color: var(--wm-coin-gp); }
+.coin-pp { color: var(--wm-coin-pp); background: var(--wm-coin-pp-bg); padding: 0 .25em; border-radius: .2em; }
 @media print {
   .coin { color: #000 !important; background: none !important; padding: 0; }
 }

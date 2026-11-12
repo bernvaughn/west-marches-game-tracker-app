@@ -5,6 +5,7 @@
     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
     <ul class="dropdown-menu">
       {% for l in nav.more %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
+      <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
     </ul>
   </li>
@@ -22,8 +23,10 @@
     <ul class="dropdown-menu">
       {% for l in nav.admin %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
       {% if user.is_superuser %}
+      {% if nav.admin %}<li><hr class="dropdown-divider"></li>{% endif %}
       <li><a class="dropdown-item" href="{% url 'site_clubs' %}">Clubs</a></li>
       <li><a class="dropdown-item" href="{% url 'site_settings' %}">Site settings</a></li>
+      <li><a class="dropdown-item" href="{% url 'site_design' %}">Design system</a></li>
       {% endif %}
     </ul>
   </li>

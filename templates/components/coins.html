@@ -1,0 +1,3 @@
+{% comment %}coins: money in copper, formatted by the coins filter (U31, U32). Context: value (int copper, required).
+   Example: {% include "components/coins.html" with value=1250 %}
+{% endcomment %}{% load coins %}<span class="wm-coins">{{ value|coins }}</span>

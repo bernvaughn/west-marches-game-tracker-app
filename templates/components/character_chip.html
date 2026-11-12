@@ -1,0 +1,4 @@
+{% comment %}character_chip: a name with an initial avatar. Context: name (required), url (optional link).
+   Example: {% include "components/character_chip.html" with name=c.name url=c.get_absolute_url %}
+{% endcomment %}
+{% if url %}<a class="wm-chip" href="{{ url }}">{% else %}<span class="wm-chip">{% endif %}<span class="wm-avatar" aria-hidden="true">{{ name|first|upper }}</span><span>{{ name }}</span>{% if url %}</a>{% else %}</span>{% endif %}

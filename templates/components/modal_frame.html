@@ -1,0 +1,13 @@
+{% comment %}modal_frame: the layout of a shared-modal response. A partial EXTENDS this file and fills blocks.
+   Blocks: title (required), subtitle, body, footer; "content" wraps all of them (a form partial wraps {{ block.super }} in <form>).
+   Example: {% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% block footer %}<button class="btn btn-primary">Buy</button>{% endblock %}
+   The reference page renders this through accounts/design/_modal_sample.html. modal.js targets .modal-content, so these are its children.
+{% endcomment %}
+{% block content %}
+<div class="modal-header">
+  <div><h2 class="modal-title">{% block title %}{% endblock %}</h2>{% block subtitle %}{% endblock %}</div>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">{% block body %}{% endblock %}</div>
+<div class="modal-footer">{% block footer %}<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>{% endblock %}</div>
+{% endblock %}

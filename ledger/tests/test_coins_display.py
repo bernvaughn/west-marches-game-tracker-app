@@ -7,7 +7,9 @@ from django.template import Context, Template
 
 from ledger.coins import CoinsField, display_parts, format_coins
 
-CSS = (Path(__file__).resolve().parents[2] / "static/css/coins.css").read_text()
+STATIC = Path(__file__).resolve().parents[2] / "static/css"
+CSS = (STATIC / "coins.css").read_text()
+TOKENS = (STATIC / "tokens.css").read_text()  # coin colours live in tokens (U35)
 
 
 def render(src, v):
@@ -82,8 +84,11 @@ def test_widget_labels():
 @pytest.mark.story("U31")
 def test_css_contrast_and_print():
     for u in ("cp", "sp", "gp"):
-        colour = re.search(rf"\.coin-{u} \{{ color: (#\w+)", CSS).group(1)
+        assert f".coin-{u} {{ color: var(--wm-coin-{u}); }}" in CSS
+        colour = re.search(rf"--wm-coin-{u}: (#\w+)", TOKENS).group(1)
         assert ratio(colour, "#ffffff") >= 4.5
-    fg, bg = re.search(r"\.coin-pp \{ color: (#\w+); background: (#\w+)", CSS).groups()
+    assert "color: var(--wm-coin-pp); background: var(--wm-coin-pp-bg)" in CSS
+    fg = re.search(r"--wm-coin-pp: (#\w+)", TOKENS).group(1)
+    bg = re.search(r"--wm-coin-pp-bg: (#\w+)", TOKENS).group(1)
     assert ratio(fg, bg) >= 4.5
     assert re.search(r"@media print\s*\{[^}]*#000", CSS)

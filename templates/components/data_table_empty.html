@@ -1,0 +1,5 @@
+{% comment %}data_table_empty: the empty row of a data table (see DESIGN_SYSTEM.md for the table markup).
+   Context: cols (number of columns, required), text (default "Nothing here yet."), action_url + action_label (optional).
+   Example: <tbody>{% for r in rows %}...{% empty %}{% include "components/data_table_empty.html" with cols=4 text="No lines." %}{% endfor %}</tbody>
+{% endcomment %}
+<tr class="wm-data-empty"><td colspan="{{ cols }}">{{ text|default:"Nothing here yet." }}{% if action_url %} <a href="{{ action_url }}">{{ action_label }}</a>{% endif %}</td></tr>

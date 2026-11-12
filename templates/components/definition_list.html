@@ -1,0 +1,4 @@
+{% comment %}definition_list: term/value pairs. Context: items (list of (term, value) pairs, required).
+   Example: {% include "components/definition_list.html" with items=pairs %}
+{% endcomment %}
+<dl class="wm-dl">{% for term, value in items %}<dt>{{ term }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>

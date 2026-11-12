@@ -1,0 +1,15 @@
+{% comment %}page_header: the page title block. Renders the page's one h1.
+   Context: title (required), subtitle, action_url + action_label (the one primary action), action_icon (sprite id),
+   secondary (list of {url, label}), breadcrumbs (list of {url, label}; url may be empty for the last).
+   Example: {% include "components/page_header.html" with title="Shops" subtitle="Where to spend coin" action_url=new_url action_label="New shop" action_icon="plus-lg" %}
+{% endcomment %}
+<header class="wm-page-header">
+  {% if breadcrumbs %}<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>{% for b in breadcrumbs %}<li>{% if b.url %}<a href="{{ b.url }}">{{ b.label }}</a>{% else %}<span aria-current="page">{{ b.label }}</span>{% endif %}</li>{% endfor %}</ol></nav>{% endif %}
+  <div class="wm-page-header-row">
+    <div><h1>{{ title }}</h1>{% if subtitle %}<p class="wm-page-subtitle">{{ subtitle }}</p>{% endif %}</div>
+    {% if action_url or secondary %}<div class="wm-page-actions no-print">
+      {% for s in secondary %}<a class="btn btn-outline-secondary" href="{{ s.url }}">{{ s.label }}</a>{% endfor %}
+      {% if action_url %}<a class="btn btn-primary" href="{{ action_url }}">{% if action_icon %}{% include "components/icon.html" with name=action_icon %} {% endif %}{{ action_label }}</a>{% endif %}
+    </div>{% endif %}
+  </div>
+</header>

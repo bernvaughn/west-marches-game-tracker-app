@@ -1,0 +1,7 @@
+{% comment %}card_open: opens a card. Pair with card_close.html. Put an optional card_footer.html include just before card_close.
+   Context: title, subtitle (both optional; with neither, no header is drawn).
+   Example: {% include "components/card_open.html" with title="Inventory" %} ...body... {% include "components/card_close.html" %}
+{% endcomment %}
+<div class="wm-card">
+  {% if title %}<div class="wm-card-header"><h2 class="wm-card-title">{{ title }}</h2>{% if subtitle %}<p class="wm-card-subtitle">{{ subtitle }}</p>{% endif %}</div>{% endif %}
+  <div class="wm-card-body">

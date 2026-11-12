@@ -10,7 +10,7 @@
 .site-header .character-name { display: inline-block; vertical-align: middle; }
 .site-header .character-selector select { max-width: 9rem; }
 @media (max-width: 575.98px) {
-  .site-header-fixed { flex-wrap: wrap; row-gap: .25rem; justify-content: flex-end; }
+  .site-header-fixed { flex-wrap: wrap; row-gap: var(--wm-space-1); justify-content: flex-start; }
   .site-header .user-name, .site-header .club-name, .site-header .character-name { max-width: 4.5rem; }
   .site-header .character-selector select { max-width: 6rem; }
   /* Approvals: badge only; the button keeps its aria-label. */

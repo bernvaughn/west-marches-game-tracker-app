@@ -1,0 +1,5 @@
+{% comment %}icon: a Bootstrap Icons sprite icon.
+   Context: name (required, sprite id such as "plus-lg"), label (optional; adds visually-hidden text).
+   Without a label the icon is decorative (aria-hidden). Never use an icon alone to carry meaning.
+   Example: {% include "components/icon.html" with name="plus-lg" label="Add" %}
+{% endcomment %}{% load static %}<svg class="wm-icon" aria-hidden="true" focusable="false"><use href="{% static 'vendor/bootstrap-icons-1.11.3/bootstrap-icons.svg' %}#{{ name }}"></use></svg>{% if label %}<span class="visually-hidden">{{ label }}</span>{% endif %}

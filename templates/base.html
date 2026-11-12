@@ -5,8 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}West Marches{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'vendor/bootswatch-5.3.3/journal/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/components.css' %}">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/coins.css' %}">
+  <link rel="stylesheet" href="{% static 'css/areas/accounts.css' %}">
+  <link rel="stylesheet" href="{% static 'css/areas/characters.css' %}">
+  <link rel="stylesheet" href="{% static 'css/areas/catalogue.css' %}">
+  <link rel="stylesheet" href="{% static 'css/areas/agent.css' %}">
   <link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
   {# htmx 2.0.4, vendored #}
   <script src="{% static 'htmx.min.js' %}" defer></script>
@@ -14,10 +20,10 @@
   <script src="{% static 'js/modal.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-<nav class="site-header navbar navbar-expand-lg bg-body-tertiary py-1">
+<nav class="site-header navbar navbar-expand-lg py-1">
   <div class="container-fluid flex-wrap">
-    <a class="navbar-brand" href="{% url 'home' %}">West Marches</a>
-    <div class="site-header-fixed d-flex align-items-center gap-2 order-lg-last ms-auto">
+    <a class="navbar-brand order-1" href="{% url 'home' %}">West Marches</a>
+    <div class="site-header-fixed d-flex align-items-center gap-2 order-3 order-lg-last ms-lg-auto">
       <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
       {% if user.is_authenticated and club %}
       <div class="dropdown club-switcher no-print">
@@ -31,20 +37,20 @@
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="logout">
-        {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><svg class="d-sm-none" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1.5v6"/><path d="M4.4 3.6a5.5 5.5 0 1 0 7.2 0"/></svg></button>
+        {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><span class="d-sm-none">{% include "components/icon.html" with name="box-arrow-right" %}</span></button>
       </form>
       {% endif %}
     </div>
-    {% if club %}
-    <button class="navbar-toggler no-print" type="button" data-bs-toggle="collapse" data-bs-target="#site-header-menu" aria-controls="site-header-menu" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse " id="site-header-menu">
-      {% include "partials/nav.html" %}
+    {% if club or user.is_superuser %}
+    <button class="navbar-toggler no-print order-2 ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#site-header-menu" aria-controls="site-header-menu" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse order-4" id="site-header-menu">
+      {% if club %}{% include "partials/nav.html" %}{% else %}{% include "partials/site_nav.html" %}{% endif %}
     </div>
     {% endif %}
   </div>
 </nav>
-{% if messages %}<ul class="messages list-unstyled px-2 pt-2 mb-0">{% for m in messages %}<li class="alert alert-{% if m.level_tag == 'error' %}danger{% else %}{{ m.level_tag|default:'info' }}{% endif %} {{ m.tags }} py-1 px-2 mb-1">{{ m }}</li>{% endfor %}</ul>{% endif %}
-<main class="container-fluid py-2">{% block content %}{% endblock %}</main>
-<div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"></div></div></div>
+{% if messages %}<ul class="messages wm-messages wm-main pb-0">{% for m in messages %}<li class="alert alert-{% if m.level_tag == 'error' %}danger{% else %}{{ m.level_tag|default:'info' }}{% endif %} wm-alert {{ m.tags }}" role="{% if m.level_tag == 'error' or m.level_tag == 'warning' %}alert{% else %}status{% endif %}">{% if m.level_tag == 'error' %}{% include "components/icon.html" with name="x-octagon-fill" %}{% elif m.level_tag == 'warning' %}{% include "components/icon.html" with name="exclamation-triangle-fill" %}{% elif m.level_tag == 'success' %}{% include "components/icon.html" with name="check-circle-fill" %}{% else %}{% include "components/icon.html" with name="info-circle-fill" %}{% endif %}<div>{{ m }}</div></li>{% endfor %}</ul>{% endif %}
+<main class="wm-main {% block main_class %}{% endblock %}">{% block content %}{% endblock %}</main>
+<div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>
 </html>

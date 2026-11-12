@@ -1,0 +1,5 @@
+{% comment %}badge: a status pill. Always has text; colour never carries the meaning alone.
+   Context: text (required), status (one of success, warning, danger, info, neutral; default neutral).
+   Example: {% include "components/badge.html" with status="warning" text="Pending" %}
+{% endcomment %}
+<span class="wm-badge wm-badge--{{ status|default:'neutral' }}">{{ text }}</span>

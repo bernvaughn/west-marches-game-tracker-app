@@ -1,0 +1,12 @@
+{% comment %}form_layout: a whole form with its buttons. The fields come from templates/forms/ (the project form renderer).
+   Context: form (required), submit_label (default "Save"), cancel_url (optional), action (optional URL), method (default post).
+   Needs a request context for the CSRF token. Example: {% include "components/form_layout.html" with form=form submit_label="Create" cancel_url=back %}
+{% endcomment %}
+<form method="{{ method|default:'post' }}"{% if action %} action="{{ action }}"{% endif %} class="wm-form">
+  {% csrf_token %}
+  {{ form }}
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-primary">{{ submit_label|default:"Save" }}</button>
+    {% if cancel_url %}<a class="btn btn-outline-secondary" href="{{ cancel_url }}">Cancel</a>{% endif %}
+  </div>
+</form>
