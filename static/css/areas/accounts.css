@@ -5,7 +5,7 @@
 .wm-area-card { position: relative; margin: 0; padding: var(--wm-space-4); font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); transition: box-shadow .15s, border-color .15s; }
 .wm-area-card:hover { box-shadow: var(--wm-shadow-2); border-color: var(--wm-text-muted); }
 .wm-area-card a { color: var(--wm-text); text-decoration: none; display: flex; align-items: center; min-height: 2.75rem; }
-.wm-area-card:focus-within { outline: var(--wm-focus-outline); outline-offset: 2px; }
+.wm-area-card:focus-within { outline: var(--wm-focus-outline); outline-offset: var(--wm-space-1); }
 .wm-area-card a:focus-visible { outline: none; }
 .wm-site-links { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-4); }
 
@@ -31,7 +31,7 @@
 .wm-narrow-block { max-width: 40rem; }
 
 /* One-time passwords */
-.wm-temp-secret { display: flex; gap: var(--wm-space-3); align-items: flex-start; padding: var(--wm-space-4); margin-bottom: var(--wm-space-4); background: var(--wm-warning-bg); color: var(--wm-warning); border: 1px solid var(--wm-warning); border-radius: var(--wm-radius-md); }
+.wm-temp-secret { font-family: var(--wm-font-body); display: flex; gap: var(--wm-space-3); align-items: flex-start; padding: var(--wm-space-4); margin-bottom: var(--wm-space-4); background: var(--wm-warning-bg); color: var(--wm-warning); border: 1px solid var(--wm-warning); border-radius: var(--wm-radius-md); }
 .wm-temp-secret p { margin: 0 0 var(--wm-space-1); }
 .wm-temp-code { display: inline-block; padding: var(--wm-space-1) var(--wm-space-2); font-size: var(--wm-text-xl); color: var(--wm-text); background: var(--wm-surface-raised); border-radius: var(--wm-radius-sm); word-break: break-all; user-select: all; }
 .wm-temp-note { font-size: var(--wm-text-sm); }
@@ -46,4 +46,12 @@
 @media (max-width: 575.98px) {
   .wm-grant-row--tile { grid-template-columns: 1fr 1fr; }
   .wm-grant-row--tile > :first-child { grid-column: 1 / -1; }
+}
+
+/* Keep visually-hidden labels inside the table scroll box (no page overflow). */
+.wm-table-scroll { position: relative; }
+.wm-segmented .btn { min-width: 2.75rem; }
+@media (max-width: 575.98px) {
+  .wm-data-table:has(.wm-row-link) td { vertical-align: middle; }
+  .wm-data-table td a.wm-row-link { display: flex; align-items: center; min-height: 2.75rem; }
 }
