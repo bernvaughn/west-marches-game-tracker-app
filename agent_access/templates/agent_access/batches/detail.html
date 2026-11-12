@@ -21,8 +21,8 @@
 {% include "components/card_close.html" %}
 
 {% include "components/card_open.html" with title="Lines" %}
-  <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-    <thead><tr><th class="num">#</th><th>Character</th><th>Item</th><th class="num">Qty</th><th class="num">Coins</th><th>Note</th><th>Date</th></tr></thead>
+  <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
+    <thead><tr><th class="num">#</th><th>Character</th><th>Item</th><th class="num">Qty</th><th class="num">Coins</th><th class="wm-agent-note">Note</th><th>Date</th></tr></thead>
     <tbody>
     {% for row in rows %}
       <tr id="line-{{ row.line.pk }}">
@@ -31,7 +31,7 @@
         <td>{% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }} {% include "components/badge.html" with status="info" text="New item" %}{% else %}—{% endif %}</td>
         <td class="num">{% if row.line.quantity %}{{ row.line.quantity }}{% else %}—{% endif %}</td>
         <td class="num">{% if row.line.coins %}{% include "components/coins.html" with value=row.line.coins %}{% else %}—{% endif %}</td>
-        <td class="text-muted">{{ row.line.note|default:"—" }}</td>
+        <td class="text-muted wm-agent-note">{{ row.line.note|default:"—" }}</td>
         <td>{{ row.line.date|default:"—" }}</td>
       </tr>
     {% empty %}
@@ -45,7 +45,7 @@
 {% include "components/card_open.html" with title="Edit lines" subtitle="Open a line to change it. Nothing reaches the ledger until you confirm." %}
   {% for row in rows %}
   <details class="wm-agent-line-edit" id="edit-line-{{ row.line.pk }}"{% if row.form.errors %} open{% endif %}>
-    <summary><span>Line {{ row.n }} · {{ row.line.character.name }} · {% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }}{% else %}{{ row.line.coins|coins }}{% endif %}</span></summary>
+    <summary>{% include "components/icon.html" with name="chevron-down" %}<span>Line {{ row.n }} · {{ row.line.character.name }} · {% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }}{% else %}{{ row.line.coins|coins }}{% endif %}</span></summary>
     <form class="wm-form" method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
       {% csrf_token %}
       <div class="wm-agent-line-grid">{{ row.form }}</div>

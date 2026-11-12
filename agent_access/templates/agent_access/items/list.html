@@ -8,7 +8,7 @@
   <a class="nav-link{% if f == status %} active{% endif %}" href="?status={{ f }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>
 {% endfor %}
 </nav>
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
   <thead><tr><th>Name</th><th class="num">Value</th><th>Status</th><th>Proposed by</th><th>Created</th><th></th></tr></thead>
   <tbody>
   {% for row in rows %}

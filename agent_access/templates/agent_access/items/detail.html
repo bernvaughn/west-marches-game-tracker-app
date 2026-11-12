@@ -11,8 +11,8 @@
     {% csrf_token %}
     {{ form }}
     <div class="wm-form-actions">
-      <button class="btn btn-primary" type="submit" formaction="{% url 'agent_access:proposed_item_approve' club.slug p.pk %}">Approve</button>
       <button class="btn btn-outline-secondary" type="submit">Save changes</button>
+      <button class="btn btn-primary wm-agent-approve" type="submit" formaction="{% url 'agent_access:proposed_item_approve' club.slug p.pk %}">Approve</button>
       <button class="btn btn-outline-danger" type="submit" form="reject-form">Reject</button>
     </div>
   </form>

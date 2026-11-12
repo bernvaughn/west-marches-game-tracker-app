@@ -4,7 +4,7 @@
 <a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
 {% include "components/page_header.html" with title="Agent connections" subtitle="Tokens that let an agent propose changes for this club." %}
 {% if new_secret %}
-<div class="alert alert-warning wm-alert wm-alert--warning" role="alert">
+<div class="alert alert-warning wm-alert wm-alert--warning wm-agent-secret" role="alert">
   {% include "components/icon.html" with name="exclamation-triangle-fill" %}
   <div>
     <span class="wm-alert-title">Copy this token now. It will not be shown again.</span>
@@ -19,7 +19,7 @@
 {% include "components/card_close.html" %}
 
 {% include "components/card_open.html" with title="Connections" %}
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
   <thead>
     <tr><th>Label</th><th>Kind</th><th>Prefix</th><th>Created</th><th>Last used</th><th>Status</th><th></th></tr>
   </thead>
