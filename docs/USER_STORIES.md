@@ -343,6 +343,12 @@ From using the build after round 4 (U44–U53) landed. Kept as built: the keeper
 - The "Sell junk" modal (U47) already confirms, so it is unchanged.
 - Without JavaScript, the confirm step is a plain page.
 
+**U59 Compact inventory actions.** As a player, I want the actions on each inventory row to sit side by side as small icon buttons, so the inventory stays compact and easy to scan. *(player_characters)*
+- On the character sheet's inventory, the row actions ("Junk" and "Print card") sit side by side on one line, never stacked.
+- Each is a small icon button: for example a trash-can or tag icon for Junk, and a printer icon for Print card, from the app's existing icon set. Print card keeps its menu for "Full page" and "Grid spot".
+- Each button has a tooltip on hover and keyboard focus ("Mark as junk", "Print card"), and the same text as its accessible name for screen readers.
+- Any future row actions follow the same pattern.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
