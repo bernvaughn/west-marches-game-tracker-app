@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Card: {{ row.item.name }}{% endblock %}
+{% block content %}
+{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
+  {% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
+  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+</div>
+{% if layout == "full" %}
+<div class="wm-card-page">{% include "player_characters/characters/_item_card.html" with full=True %}</div>
+{% else %}
+<section class="wm-card-sheet">
+{% include "player_characters/characters/_item_card.html" %}
+{% for _ in empty_cells %}<div class="wm-card-cell" aria-hidden="true"></div>{% endfor %}
+</section>
+{% endif %}
+{% endblock %}

@@ -53,15 +53,19 @@
 .wm-ledger-lines { list-style: none; margin: 0; padding: 0; }
 .wm-history-pager { display: flex; gap: var(--wm-space-2); align-items: center; }
 
-/* Item cards: the same ruled boxes as the sheet. */
-.print-item { border: 1px solid var(--wm-text); border-radius: var(--wm-radius-sm); background: var(--wm-surface-raised); padding: var(--wm-space-2) var(--wm-space-3); margin-bottom: var(--wm-space-3); }
-.print-item h2 { font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); margin: 0 0 var(--wm-space-1); }
+/* Item cards: trading-card size (2.5 x 3.5 in). Inch sizes are physical paper sizes, not tokens. */
+.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; border: 1px solid var(--wm-text); background: var(--wm-surface-raised); padding: 0.1in 0.12in; }
+.wm-item-card h2 { font-family: var(--wm-font-heading); font-size: 1.3em; margin: 0 0 0.25em; }
+.wm-item-card p { margin: 0 0 0.4em; }
+.wm-item-card--full { width: 7.5in; height: 10.5in; font-size: 2.1rem; padding: 0.3in 0.36in; }
+.wm-card-sheet { display: grid; grid-template-columns: repeat(3, 2.5in); grid-auto-rows: 3.5in; width: 7.5in; margin-bottom: var(--wm-space-4); }
+.wm-card-cell { width: 2.5in; height: 3.5in; box-sizing: border-box; }
 
 @media print {
   @page { margin: 12mm; }
   body { background: white; color: black; font-size: 10pt; }
   .wm-sheet { max-width: none; }
-  .wm-sheet-header, .wm-sheet-box, .print-item { background: white; border-color: black; box-shadow: none; break-inside: avoid; }
+  .wm-sheet-header, .wm-sheet-box, .wm-item-card { background: white; border-color: black; box-shadow: none; break-inside: avoid; }
   .wm-sheet-header h1 { font-size: 24pt; }
   .wm-sheet-header p, .wm-sheet-box-title, .wm-sheet-note, .wm-sheet-date { color: black; }
   .wm-sheet-box-title { border-bottom-color: black; }

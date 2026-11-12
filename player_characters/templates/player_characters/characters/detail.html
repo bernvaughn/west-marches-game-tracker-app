@@ -51,7 +51,7 @@
       <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
       {% if rows %}
       <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
-        <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num">Held</th>{% endif %}<th class="num">Available</th></tr></thead>
+        <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num">Held</th>{% endif %}<th class="num">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         {% for r in rows %}
         <tr>
@@ -59,6 +59,15 @@
           <td class="num">{{ r.owned }}</td>
           {% if show_held %}<td class="num">{{ r.held }}</td>{% endif %}
           <td class="num">{{ r.available }}</td>
+          <td class="no-print">
+            <div class="dropdown">
+              <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{% url 'characters:print_item' club.slug character.pk r.item.pk %}" data-bs-toggle="dropdown" aria-expanded="false">Print card</a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'characters:print_item' club.slug character.pk r.item.pk %}?layout=full">Full page</a></li>
+                <li><a class="dropdown-item" href="{% url 'characters:print_item' club.slug character.pk r.item.pk %}?layout=grid">Grid spot</a></li>
+              </ul>
+            </div>
+          </td>
         </tr>
         {% endfor %}
         </tbody>

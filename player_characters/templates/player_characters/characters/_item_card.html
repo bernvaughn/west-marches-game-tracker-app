@@ -1,0 +1,7 @@
+<article class="wm-item-card{% if full %} wm-item-card--full{% endif %}">
+  <h2>{{ row.item.name }}{% if row.item.retired %} (Retired){% endif %}</h2>
+  <p>Quantity: {{ row.owned }}</p>
+  {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
+  {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}
+  {% if row.item.details %}<div><strong>Details</strong>{{ row.item.details|linebreaks }}</div>{% endif %}
+</article>
