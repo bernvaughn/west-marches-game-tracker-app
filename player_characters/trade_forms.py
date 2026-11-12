@@ -52,14 +52,12 @@ class TradeSideForm(forms.Form):
 
 
 class ProposeTradeForm(forms.Form):
-    sender = forms.ModelChoiceField(queryset=Character.objects.none())
     receiver = forms.ModelChoiceField(queryset=Character.objects.none())
     note = forms.CharField(widget=forms.Textarea, required=False)
 
     def __init__(self, user, club, data=None, initial=None):
         super().__init__(data=data, initial=initial)
         chars = Character.objects.for_club(club)
-        self.fields["sender"].queryset = chars.filter(owner__user=user)
         receivers = chars.exclude(owner__user=user).select_related("owner__user")
         self.fields["receiver"].queryset = receivers
         self.fields["receiver"].label_from_instance = lambda c: (

@@ -29,9 +29,9 @@ def msg(club, player):
 def test_send_without_character(club, player, login):
     new, _ = _urls(club)
     r = login(player).post(new, {"body": "Hello admins"})
-    assert r.status_code == 302
-    m = Message.objects.get()
-    assert m.character is None and m.status == "open" and m.club == club
+    assert r.status_code == 200
+    assert "You have no character in this club." in r.content.decode()
+    assert Message.objects.count() == 0
 
 
 @pytest.mark.story("U13")
@@ -45,7 +45,9 @@ def test_send_with_own_character_and_list_shows_status(club, player, character, 
 
 
 @pytest.mark.story("U13")
-def test_foreign_character_rejected(club, other_club, player, other_player, login, club_b_member):
+def test_foreign_character_ignored(
+    club, other_club, player, other_player, character, login, club_b_member
+):
     owner = _mem(other_player, club)
     theirs = Character.objects.create(club=club, owner=owner, name="Theirs")
     b_char = Character.objects.create(
@@ -54,10 +56,8 @@ def test_foreign_character_rejected(club, other_club, player, other_player, logi
     new, _ = _urls(club)
     c = login(player)
     for ch in (theirs, b_char):
-        r = c.post(new, {"body": "x", "character": ch.pk})
-        assert r.status_code == 200
-        assert r.context["form"].errors["character"]
-    assert Message.objects.count() == 0
+        assert c.post(new, {"body": "x", "character": ch.pk}).status_code == 302
+    assert {m.character for m in Message.objects.all()} == {character}
 
 
 @pytest.mark.story("U13")

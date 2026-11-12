@@ -8,7 +8,6 @@ from accounts.scoping import club_get_object_or_404
 from items.models import Item
 from ledger.coins import format_coins
 from ledger.services import InsufficientItems, available_items
-from player_characters.models import Character
 from player_characters.selection import selected_character
 from shops.forms.sell import SellForm
 from shops.models import Shop
@@ -23,39 +22,20 @@ def sell(request, club_slug, shop_id):
         raise Http404("Shop is closed.")
 
     club = request.club
-    membership = getattr(request, "membership", None)
-    if membership is None:
-        characters = Character.objects.none()
-    else:
-        characters = Character.objects.for_club(club).filter(owner=membership)
-
-    data = request.POST if request.method == "POST" else request.GET
-    character = None
-    raw = data.get("character")
-    if raw:
-        try:
-            character = characters.filter(pk=int(raw)).first()
-        except ValueError:
-            character = None
-        if character is None:
-            raise Http404("No such character.")
-    else:
-        chosen = selected_character(request)
-        if chosen is not None and characters.filter(pk=chosen.pk).exists():
-            character = chosen
+    character = selected_character(request)
 
     items = Item.objects.for_club(club)
 
     if request.method == "POST":
-        if character is None:
-            raise Http404("No such character.")
         item_id = request.POST.get("item", "")
         if not item_id.isdigit():
             raise Http404("No such item.")
         club_get_object_or_404(request, Item, pk=int(item_id))
-        form = SellForm(request.POST, characters=characters, items=items)
+        form = SellForm(request.POST, items=items)
         error = None
-        if form.is_valid():
+        if character is None:
+            error = "You have no character in this club."
+        elif form.is_valid():
             item = form.cleaned_data["item"]
             quantity = form.cleaned_data["quantity"]
             try:
@@ -76,7 +56,7 @@ def sell(request, club_slug, shop_id):
             )
         messages.error(request, error)
     else:
-        form = SellForm(initial={"character": character}, characters=characters, items=items)
+        form = SellForm(items=items)
 
     rows = []
     if character is not None:
@@ -95,7 +75,6 @@ def sell(request, club_slug, shop_id):
         "shops/sell/sell.html",
         {
             "shop": shop,
-            "characters": characters,
             "character": character,
             "rows": rows,
             "form": form,

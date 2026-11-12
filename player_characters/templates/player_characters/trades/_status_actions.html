@@ -1,12 +1,13 @@
 {% if can_act %}
 <div class="trade-actions">
-{% if side == "receiver" %}
+{% if side == "receiver" %}{% with who=trade.receiver.name %}
 {% if trade.status == "requested" %}
-<form method="post" action="{% url 'trades:accept' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Accept</button></form>
+<form method="post" action="{% url 'trades:accept' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Accept as {{ who }}</button></form>
 {% endif %}
-<form method="post" action="{% url 'trades:decline' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Decline</button></form>
-{% elif side == "sender" %}
-<form method="post" action="{% url 'trades:cancel' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Cancel trade</button></form>
-{% endif %}
+<form method="post" action="{% url 'trades:decline' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Decline as {{ who }}</button></form>
+{% endwith %}
+{% elif side == "sender" %}{% with who=trade.sender.name %}
+<form method="post" action="{% url 'trades:cancel' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Cancel trade as {{ who }}</button></form>
+{% endwith %}{% endif %}
 </div>
 {% endif %}

@@ -22,20 +22,22 @@ def message_new(request, club_slug):
         if request.method == "POST":
             raise PermissionDenied
         return render(request, "accounts/inbox/message_new.html", {"form": None, "sent": []})
-    form = MessageForm(
-        request.POST or None,
-        membership=membership,
-        initial={"character": selected_character(request)},
-    )
-    if request.method == "POST" and form.is_valid():
+    character = selected_character(request)
+    form = MessageForm(request.POST or None) if character is not None else None
+    if request.method == "POST" and form is not None and form.is_valid():
         msg = form.save(commit=False)
+        msg.character = character
         msg.club = request.club
         msg.sender = membership
         msg.save()
         flash.success(request, "Message sent to the club admins.")
         return redirect("accounts:message_new", club_slug=club_slug)
     sent = club_queryset(request, Message).filter(sender=membership).select_related("character")
-    return render(request, "accounts/inbox/message_new.html", {"form": form, "sent": sent})
+    return render(
+        request,
+        "accounts/inbox/message_new.html",
+        {"form": form, "sent": sent, "character": character, "is_member": True},
+    )
 
 
 @club_admin_required
