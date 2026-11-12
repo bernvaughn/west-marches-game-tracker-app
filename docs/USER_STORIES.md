@@ -331,7 +331,7 @@ From using the build after round 4 (U44–U53) landed. Kept as built: the keeper
 
 **U56 Clearer held coins.** As a player, I want the "held" coins line explained in plain words, so I know why some of my coins aren't available. *(player_characters, shops)*
 - "Held" means coins and items offered in an open trade that hasn't completed. Rename it everywhere to "In open trades", for example "In open trades: 1 gp · Available: 49 gp", and link it to the Trades page.
-- The line, and the item table's held column, only show when something is actually in an open trade. A line reading "0 cp" is never shown.
+- The line, and the item table's held column, are hidden unless the character has coins or items in an open trade right now. A line reading "0 cp" is never shown.
 - This applies to the character sheet, the shop "Your inventory" card, and the buy and sell modals.
 
 **U57 Leave the shop.** As a player, I want a "Leave" button on the shop page, next to "Sell to <keeper name>", so I can walk back to the street. *(shops)*
@@ -348,6 +348,14 @@ From using the build after round 4 (U44–U53) landed. Kept as built: the keeper
 - Each is a small icon button: for example a trash-can or tag icon for Junk, and a printer icon for Print card, from the app's existing icon set. Print card keeps its menu for "Full page" and "Grid spot".
 - Each button has a tooltip on hover and keyboard focus ("Mark as junk", "Print card"), and the same text as its accessible name for screen readers.
 - Any future row actions follow the same pattern.
+
+**U60 A tighter top bar with icon links.** As anyone in a club, I want the top bar to stay compact at every width, with my most-used pages as icon links that are always visible, so I can move around without opening a menu. *(site-wide)*
+- Character, Shops, Quests, Trades and Map are icon links in the top bar, each with its icon, a tooltip, and its name as the accessible name. At wide widths each shows its icon and its label; as the bar narrows, the labels drop first and the icons stay.
+- These links stay visible at every width and only move into the hamburger menu if they physically do not fit, for example on a very narrow phone.
+- Trades and Map move out of the More menu (U29). The More, Game master and Club admin menus stay as they are and collapse into the hamburger menu as today.
+- When the bar wraps to two rows, the rows sit tight together: no empty band beside the brand or the hamburger button, small even padding, and the hamburger button lines up with the other controls instead of sitting tall on its own. The whole bar is as short as it can be at each width.
+- The always-visible items from U34 (club, user, character, approvals, log out) stay visible, and nothing scrolls sideways.
+- This changes U29 and U34.
 
 ## Quests
 
