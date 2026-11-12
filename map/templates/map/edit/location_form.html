@@ -11,12 +11,12 @@
 {% csrf_token %}
 {{ form.non_field_errors }}
 {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-<fieldset class="map-checks"><legend>Location</legend>
+<fieldset class="wm-check-list"><legend>Location</legend>
 {% include "forms/field.html" with field=form.name %}
 <div class="map-short">{% include "forms/field.html" with field=form.color %}{% include "forms/field.html" with field=form.symbol %}</div>
 {% include "forms/field.html" with field=form.target_band %}
 </fieldset>
-<fieldset class="map-checks"><legend>Notes</legend>
+<fieldset class="wm-check-list"><legend>Notes</legend>
 {% include "forms/field.html" with field=form.player_notes %}
 {% include "forms/field.html" with field=form.gm_notes %}
 </fieldset>

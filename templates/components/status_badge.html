@@ -1,0 +1,7 @@
+{% comment %}status_badge: a badge whose tone comes from one shared status vocabulary.
+   Context: value (the raw status string, required), text (the display text, required).
+   Tones: warning = pending, open, requested, accepted; success = approved, confirmed, completed, handled;
+   danger = declined; info = reversed; neutral = anything else.
+   Example: {% include "components/status_badge.html" with value=batch.status text=batch.get_status_display %}
+{% endcomment %}
+{% if value == "pending" or value == "open" or value == "requested" or value == "accepted" %}{% include "components/badge.html" with status="warning" text=text %}{% elif value == "approved" or value == "confirmed" or value == "completed" or value == "handled" %}{% include "components/badge.html" with status="success" text=text %}{% elif value == "declined" %}{% include "components/badge.html" with status="danger" text=text %}{% elif value == "reversed" %}{% include "components/badge.html" with status="info" text=text %}{% else %}{% include "components/badge.html" with status="neutral" text=text %}{% endif %}

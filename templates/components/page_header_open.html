@@ -1,0 +1,10 @@
+{% comment %}page_header_open: the page title block when the actions are template markup (POST forms, partials, several buttons).
+   Close it with components/page_header_close.html. Put the action markup between the two includes.
+   Context: title (required), subtitle, back_url + back_label (a back link above the title), breadcrumbs (as page_header).
+   Example: {% include "components/page_header_open.html" with title="History" back_url=sheet_url back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a>{% include "components/page_header_close.html" %}
+{% endcomment %}
+<header class="wm-page-header">
+  {% if back_url and back_label %}{% include "components/back_link.html" with url=back_url label=back_label %}{% elif breadcrumbs %}<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>{% for b in breadcrumbs %}<li>{% if b.url %}<a href="{{ b.url }}">{{ b.label }}</a>{% else %}<span aria-current="page">{{ b.label }}</span>{% endif %}</li>{% endfor %}</ol></nav>{% endif %}
+  <div class="wm-page-header-row">
+    <div><h1>{{ title }}</h1>{% if subtitle %}<p class="wm-page-subtitle">{{ subtitle }}</p>{% endif %}</div>
+    <div class="wm-page-actions no-print">

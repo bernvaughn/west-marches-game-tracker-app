@@ -26,7 +26,7 @@
     <td>{{ m.created|date:"Y-m-d H:i" }}</td>
     <td>{{ m.character.name|default:"-" }}</td>
     <td class="wm-msg-col">{{ m.body|linebreaksbr }}</td>
-    <td>{% if m.status == "open" %}{% include "components/badge.html" with status="warning" text=m.get_status_display %}{% elif m.status == "handled" %}{% include "components/badge.html" with status="success" text=m.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=m.get_status_display %}{% endif %}</td>
+    <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
   </tr>
   {% empty %}
   {% include "components/data_table_empty.html" with cols=4 text="No messages yet." %}

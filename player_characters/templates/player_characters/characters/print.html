@@ -2,8 +2,8 @@
 {% load coins %}
 {% block title %}Items of {{ character.name }}{% endblock %}
 {% block content %}
-<div class="wm-sheet-actions no-print" role="toolbar" aria-label="Item card actions">
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:detail' club.slug character.pk %}">Back to sheet</a>
+{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
+  {% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
   <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
 <header class="wm-sheet-header">
@@ -12,7 +12,7 @@
 </header>
 {% for row in rows %}
 <article class="print-item">
-  <h2>{{ row.item.name }}{% if row.item.retired %} (retired){% endif %}</h2>
+  <h2>{{ row.item.name }}{% if row.item.retired %} (Retired){% endif %}</h2>
   <p>Quantity: {{ row.owned }}</p>
   {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
   {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}

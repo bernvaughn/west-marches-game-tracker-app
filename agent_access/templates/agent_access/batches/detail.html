@@ -2,12 +2,12 @@
 {% load coins %}
 {% block title %}Batch #{{ batch.pk }}{% endblock %}
 {% block content %}
-<a class="wm-agent-back" href="{% url 'agent_access:batches' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} All batches</a>
+{% url 'agent_access:batches' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="All batches" %}
 {% with n=batch.pk|stringformat:"s" %}{% include "components/page_header.html" with title="Batch #"|add:n subtitle="Proposed by "|add:batch.user.display_name|add:" through "|add:batch.connection.label %}{% endwith %}
 
 {% include "components/card_open.html" %}
   <div class="wm-agent-batch-head">{% include "agent_access/batches/_status_badge.html" %}</div>
-  <dl class="wm-dl wm-agent-meta">
+  <dl class="wm-dl wm-dl--grid wm-code-wrap">
     <div><dt>Date</dt><dd>{{ batch.date }}</dd></div>
     <div><dt>Created</dt><dd>{{ batch.created }}</dd></div>
     <div><dt>Lines</dt><dd>{{ rows|length }}</dd></div>
@@ -49,7 +49,7 @@
     <form class="wm-form" method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
       {% csrf_token %}
       <div class="wm-agent-line-grid">{{ row.form }}</div>
-      <div class="wm-agent-line-actions">
+      <div class="wm-toolbar">
         <button class="btn btn-sm btn-primary" type="submit">Save line</button>
         <button class="btn btn-sm btn-outline-danger" type="submit" formnovalidate formaction="{% url 'agent_access:batch_line_remove' club.slug batch.pk row.line.pk %}">Remove line</button>
       </div>

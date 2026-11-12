@@ -20,6 +20,10 @@ Mobile, Consistency.
 - The sandbox has no emoji font. Shop symbols show as empty boxes in the screenshots (A-37).
   Check this on a real device before you act on it.
 
+### Final run (story 8)
+
+The final run captured 167 screenshots at 1280 and 390 px: `OVERFLOW` count 0, 0 failed. 14 pages still print `CLIPPED`. All are intentional: visually-hidden labels, and `.wm-table-scroll` boxes that scroll sideways on a phone. Three pages (`quests-edit`, `agent-batch-detail`, `agent-proposed-item-detail`) list an `input.form-control` that is clipped by its own box, which is normal for a field.
+
 ## Cross-cutting problems
 
 ### Hierarchy
@@ -203,3 +207,46 @@ Screenshot names are the page name plus `@1280.png` and `@390.png`.
 8. **A-05** Headings use a fallback font and there is no type scale. The app has no voice.
 9. **A-23** Modals differ. Buy, tile and grant are the daily actions on a phone.
 10. **A-20** Tables clip columns at 390 px with no scroll cue. Players lose price and quantity.
+
+## Story 8: consistency pass
+
+The last story compared every area side by side and promoted what two or more areas had built alike.
+
+### Fixed
+
+| Item | What changed |
+| --- | --- |
+| A-01 residual | `page_header` takes `back_url` and `back_label`; `page_header_open` and `page_header_close` hold template-built actions. Ledger history and trade detail use them. |
+| Back links | One `back_link` component replaces four patterns: the agent link, the map `btn-link`, the plain `<p><a>` and the outline button. It has a gap after the arrow and a 44 px tap target on phones. |
+| Status badges | One `status_badge` component holds the status-to-tone map. Trades, batches, inbox, proposed items and map requests use it. A declined trade is now red. |
+| Shared layout classes | `.wm-toolbar`, `.wm-inline-form`, `.wm-card-grid`, `.wm-fieldset`, `.wm-form-row`, `.wm-check-list`, `.wm-filter-pills`, `.wm-section-bar`, `.wm-code-wrap` and `.wm-dl--grid` live in `components.css`. The area copies are gone. |
+| A-20 residual | `.wm-table-scroll` carries `position: relative` once, in `components.css`. |
+| Mobile targets | `.btn-close` and `.form-check` are 44 px high below sm. The map-local `.form-check` rule is gone. |
+| Sizes | New tokens `--wm-size-touch`, `--wm-size-form` and `--wm-size-narrow` replace every raw `44px`, `2.75rem`, `40rem` and `28rem`. |
+| Retired items | One badge text, "Retired", on the item pages, the shop manager and the sheet. |
+| Dead CSS | `static/css/app.css` is deleted. The live top-bar rules and `.donate` moved to `components.css`. `.notice`, `.temp-password`, the old map SVG block, `.area-nav`, `.map-toolbar` and the agent-local `:root` variables are gone. |
+| Dead templates | `accounts/index.html` and `accounts/stub.html` are deleted. |
+| Map | The "!" in an unexplored hex no longer has an underline. |
+
+### Left or explained
+
+- **A-32**: Buy stays active with too few coins. Fixing it changes behaviour; the view still rejects the purchase.
+- **A-11 residual**: The percent help text needs form `help_text`, which is Python.
+- **A-37**: The sandbox has no emoji font. Check shop symbols on a real device.
+- **Kept area-local** (one area uses each, so no promotion): the auth card, the temp-secret block, the soft shop banner with its figure slot, the silhouette radio grid, the decision bar, the line-edit disclosure, the map legend, the sheet box and grid, the trade sides, signed amounts, the agent line grid and the agent batch grid.
+- `main table { margin-bottom }` from `app.css` was dropped; tables sit in `.wm-table-scroll` or a card.
+
+### Top ten
+
+| # | Item | Status | Evidence |
+| --- | --- | --- | --- |
+| 1 | A-36 | Fixed | `agent-batch-detail` screenshots (story 7); line editor and decision bar. |
+| 2 | A-01 | Fixed | `page_header`, `page_header_open` and `back_link` on every page. |
+| 3 | A-13 | Fixed | Darkened accent token; a test enforces 4.5:1. |
+| 4 | A-17 | Fixed | Top bar: `narrow-menu` screenshots. |
+| 5 | A-11 | Fixed, one residual | `form_layout`, `.wm-fieldset` and `.wm-form-row`. Percent help text stays (see above). |
+| 6 | A-07 | Fixed | `data_table` classes and `data_table_empty` on every list. |
+| 7 | A-03 | Fixed | `.wm-main` and `.wm-main--narrow` containers. |
+| 8 | A-05 | Fixed | Vendored serif headings and the type scale in `tokens.css`. |
+| 9 | A-23 | Fixed | `modal_frame` for buy, tile and grant; `.btn-close` is 44 px on phones. |
+| 10 | A-20 | Fixed | `.wm-table-scroll` on every table; see the CLIPPED note below. |

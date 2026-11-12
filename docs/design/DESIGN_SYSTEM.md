@@ -41,6 +41,9 @@ Roles: `surface`, `surface-raised`, `surface-sunken`, `border`, `text`, `text-mu
 ### Focus ring
 `--wm-focus-ring` (a 3 px accent halo) plus `--wm-focus-outline` (a solid 2 px outline, kept for forced-colours mode). Never remove the focus indicator.
 
+### Sizes
+`--wm-size-touch` (2.75rem, the phone tap target), `--wm-size-form` (40rem, a form column) and `--wm-size-narrow` (28rem, a narrow card). Use them instead of raw `44px`, `40rem` or `28rem`.
+
 ## Components
 
 All live in `templates/components/`. Each file starts with a `{% comment %}` block that lists its context and an example.
@@ -53,6 +56,10 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **data_table**: CSS classes, not an include. Markup: `<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">`, numbers in `td.num`, buttons in `td.actions`, and `data_table_empty.html` in `{% empty %}`. Do: wrap in `wm-table-scroll`. Don't: clip columns.
 - **banner**: `banner_open.html` and `banner_close.html`. A full-width coloured band outside the card, tinted by a shop preset. Do: put it first in the page. Don't: fill a whole card with the preset colour.
 - **stat**: label and value. **definition_list**: `(term, value)` pairs.
+- **back_link**: the one "back to the parent" link: muted, arrow icon, a gap, a phone touch target. Pass `back_url` and `back_label` to `page_header` to render it above the title. Do: use it for every back link. Don't: use an outline button or a plain `<a>`.
+- **page_header_open / page_header_close**: a page header whose actions are template markup (POST forms, partials, several buttons). Put the markup between the two includes. They sit in `.wm-page-actions`, which hides itself when empty.
+- **status_badge**: a badge with the tone chosen from one status vocabulary. warning: pending, open, requested, accepted. success: approved, confirmed, completed, handled. danger: declined. info: reversed. Anything else is neutral. Do: use it for every status. Don't: write an if/elif chain.
+- **Shared layout classes** (in `components.css`; see the "Shared layout classes" section of `/site/design/`): `.wm-toolbar`, `.wm-inline-form`, `.wm-card-grid`, `.wm-fieldset` with `.wm-form-row`, `.wm-check-list` (`--inline`), `.wm-filter-pills`, `.wm-section-bar`, `.wm-code-wrap` and `.wm-dl--grid`. An area stylesheet must not repeat them.
 - **badge**: status pill; `text` is required. Don't: a coloured dot without a word.
 - **coins**: wraps the `coins` filter in `.wm-coins`. Don't recolour it.
 - **character_chip**: name with an initial avatar; optional link.

@@ -5,8 +5,8 @@
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% if show_gm %}{% include "components/page_header.html" with title=hex_map.name subtitle="Full map" %}
 {% else %}{% include "components/page_header.html" with title=hex_map.name subtitle="Players' view" %}{% if picked %}<p>Characters: {% for c in picked %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}{% endif %}
-<div class="map-toolbar no-print">
-<a class="btn btn-link" href="{% url 'map:detail' club.slug hex_map.pk %}{% if back_params %}?{{ back_params }}{% endif %}">{% include "components/icon.html" with name="arrow-left" %} Back to the map</a>
+<div class="wm-toolbar no-print">
+{% url "map:detail" club.slug hex_map.pk as detail_url %}{% if back_params %}{% include "components/back_link.html" with url=detail_url|add:"?"|add:back_params label="Back to the map" %}{% else %}{% include "components/back_link.html" with url=detail_url label="Back to the map" %}{% endif %}
 <span class="text-muted">Use your browser's print command to print this page.</span>
 </div>
 {% include "map/_hexmap.html" %}

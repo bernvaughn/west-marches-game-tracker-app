@@ -1,4 +1,4 @@
-.site-header, .area-nav, .messages, button { display: none !important; }
+.site-header, .messages, button { display: none !important; }
 
 /* Characters: print view */
 .no-print { display: none !important; }

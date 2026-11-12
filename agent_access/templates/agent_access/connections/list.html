@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Agent connections{% endblock %}
 {% block content %}
-<a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
+{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Agent access" %}
 {% include "components/page_header.html" with title="Agent connections" subtitle="Tokens that let an agent propose changes for this club." %}
 {% if new_secret %}
-<div class="alert alert-warning wm-alert wm-alert--warning wm-agent-secret" role="alert">
+<div class="alert alert-warning wm-alert wm-alert--warning wm-code-wrap" role="alert">
   {% include "components/icon.html" with name="exclamation-triangle-fill" %}
   <div>
     <span class="wm-alert-title">Copy this token now. It will not be shown again.</span>
@@ -15,7 +15,7 @@
 {% endif %}
 
 {% include "components/card_open.html" with title="MCP URL" %}
-  <p class="wm-agent-code"><code>{{ mcp_url }}</code></p>
+  <p class="wm-code-wrap m-0"><code>{{ mcp_url }}</code></p>
 {% include "components/card_close.html" %}
 
 {% include "components/card_open.html" with title="Connections" %}

@@ -13,7 +13,7 @@
   <tbody>
   {% for i in items %}
     <tr>
-      <td><a href="{% url 'items:detail' club.slug i.pk %}">{{ i.name }}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="(Retired)" %}{% endif %}</td>
+      <td><a href="{% url 'items:detail' club.slug i.pk %}">{{ i.name }}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}</td>
       <td class="num">{{ i.value_cp|coins }}</td>
       <td>{{ i.traits }}</td>
     </tr>

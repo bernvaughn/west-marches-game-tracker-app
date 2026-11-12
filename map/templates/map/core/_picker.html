@@ -12,7 +12,7 @@
 {% if view_param %}<input type="hidden" name="view" value="{{ view_param }}">{% endif %}
 <fieldset>
 <legend>Show the map for</legend>
-<div class="map-checks map-checks--inline">
+<div class="wm-check-list wm-check-list--inline">
 {% for c in choices %}<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="pick-{{ c.pk }}" name="characters" value="{{ c.pk }}"{% if c.pk in picked_ids %} checked{% endif %}><label class="form-check-label" for="pick-{{ c.pk }}">{{ c.name }}</label></div>{% endfor %}
 </div>
 </fieldset>

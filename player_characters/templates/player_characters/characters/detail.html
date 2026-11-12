@@ -7,7 +7,7 @@
   <li><span aria-current="page">{{ character.name }}</span></li>
 </ol></nav>
 {% if can_view %}
-<div class="wm-sheet-actions no-print" role="toolbar" aria-label="Sheet actions">
+<div class="wm-toolbar no-print" role="toolbar" aria-label="Sheet actions">
   {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}
   {% if can_adjust %}
     <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:adjust' club.slug character.pk %}">Adjust</a>
@@ -55,7 +55,7 @@
         <tbody>
         {% for r in rows %}
         <tr>
-          <td>{{ r.item.name }}{% if r.item.retired %} {% include "components/badge.html" with text="retired" %}{% endif %}</td>
+          <td>{{ r.item.name }}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
           <td class="num">{{ r.owned }}</td>
           {% if show_held %}<td class="num">{{ r.held }}</td>{% endif %}
           <td class="num">{{ r.available }}</td>

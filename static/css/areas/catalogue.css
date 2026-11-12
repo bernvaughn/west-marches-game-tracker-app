@@ -14,7 +14,7 @@
 .wm-shop-card { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wm-space-2) var(--wm-space-3); padding: var(--wm-space-4);
   background: var(--wm-shop-tint); color: var(--wm-text); border: 1px solid var(--wm-border); border-left: var(--wm-space-2) solid var(--wm-shop-edge);
   border-radius: var(--wm-radius-md); box-shadow: var(--wm-shadow-1); }
-.wm-shop-card-name { font-family: var(--wm-font-heading); font-size: var(--wm-text-xl); color: var(--wm-text); font-weight: 600; min-height: 44px; display: inline-flex; align-items: center; }
+.wm-shop-card-name { font-family: var(--wm-font-heading); font-size: var(--wm-text-xl); color: var(--wm-text); font-weight: 600; min-height: var(--wm-size-touch); display: inline-flex; align-items: center; }
 .wm-shop-card-keeper { flex-basis: 100%; color: var(--wm-text); font-size: var(--wm-text-sm); }
 .wm-shop-symbol { font-size: 1.4em; }
 
@@ -32,7 +32,7 @@
   background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); padding: var(--wm-space-1) var(--wm-space-3); box-shadow: var(--wm-shadow-1); }
 .wm-shop-sellbar { align-self: flex-end; margin: var(--wm-space-3) 0; }
 @media (min-width: 576px) { .wm-shop-sellbar { position: absolute; right: var(--wm-space-6); bottom: 0; margin: 0 0 var(--wm-space-3); } }
-.wm-shop-sellbar .btn { min-height: 44px; display: inline-flex; align-items: center; gap: var(--wm-space-2); }
+.wm-shop-sellbar .btn { min-height: var(--wm-size-touch); display: inline-flex; align-items: center; gap: var(--wm-space-2); }
 
 /* The counter: a wood-toned top band across the banner, then the table. */
 .wm-shop-counter { position: relative; margin: 0 calc(-1 * var(--wm-space-4)) var(--wm-space-5); padding: 0 var(--wm-space-4); }
@@ -40,25 +40,21 @@
 .wm-shop-counter::before { content: ""; display: block; height: 20px; margin: 0 calc(-1 * var(--wm-space-4)) var(--wm-space-3);
   background: linear-gradient(var(--wm-shop-parchment-deep), var(--wm-coin-cp)); box-shadow: var(--wm-shadow-1); }
 @media (min-width: 576px) { .wm-shop-counter::before { margin: 0 calc(-1 * var(--wm-space-6)) var(--wm-space-3); } }
-.wm-shop-stock .btn { min-height: 44px; display: inline-flex; align-items: center; }
+.wm-shop-stock .btn { min-height: var(--wm-size-touch); display: inline-flex; align-items: center; }
 .wm-shop-stock td.actions { white-space: nowrap; }
-.wm-shop-about, .wm-shop-keeper { max-width: 40rem; }
+.wm-shop-about, .wm-shop-keeper { max-width: var(--wm-size-form); }
 .wm-shop-keeper h2 { font-size: var(--wm-text-xl); }
 
 /* ---- Forms and tables in this area ---- */
-.wm-inline-form { display: inline-flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; margin: 0; }
-.wm-section-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--wm-space-3); margin-bottom: var(--wm-space-3); }
-.wm-section-bar h2 { margin: 0; }
 .wm-stock-section { margin-top: var(--wm-space-6); }
-.wm-item-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-3); align-items: center; }
 @media (max-width: 575.98px) {
-  .wm-inline-form .btn, .wm-item-actions .btn, .wm-quest-turnin .btn, td.actions .btn { min-height: 44px; }
+  .wm-inline-form .btn, .wm-quest-turnin .btn, td.actions .btn { min-height: var(--wm-size-touch); }
 }
 
 /* ---- Silhouette picker ---- */
 .wm-silhouette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: var(--wm-space-2); }
 .wm-silhouette-option { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--wm-space-1); padding: var(--wm-space-2);
-  min-height: 44px; border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); background: var(--wm-surface-raised); cursor: pointer; }
+  min-height: var(--wm-size-touch); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); background: var(--wm-surface-raised); cursor: pointer; }
 .wm-silhouette-option input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .wm-silhouette-swatch { display: flex; justify-content: center; width: 100%; background: var(--wm-shop-parchment-soft); border-radius: var(--wm-radius-sm); padding: var(--wm-space-1); }
 .wm-silhouette-swatch img { height: 64px; width: auto; }
@@ -71,5 +67,3 @@
 .wm-quest-row { border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); padding: var(--wm-space-3); margin-bottom: var(--wm-space-3); }
 .wm-quest-turnin { display: flex; flex-direction: column; gap: var(--wm-space-3); align-items: flex-start; }
 .wm-shop-stock td { vertical-align: middle; }
-/* A visually-hidden header label is absolutely positioned; keep it inside the scroll box. */
-.wm-table-scroll { position: relative; }

@@ -13,7 +13,7 @@
 <tbody>
 {% for row in rows %}
 <tr>
-<td>{{ row.stock.item.name }}{% if row.stock.quantity == 0 %} (Sold out){% endif %}{% if row.stock.item.retired %} (Retired){% endif %}</td>
+<td>{{ row.stock.item.name }}{% if row.stock.quantity == 0 %} (Sold out){% endif %}{% if row.stock.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
 <td class="num">{{ row.stock.item.value_cp|coins }}</td>
 <td class="num">{% if row.stock.quantity is None %}Unlimited{% else %}{{ row.stock.quantity }}{% endif %}</td>
 <td class="num">{% if row.stock.sell_percent is None %}default{% else %}{{ row.stock.sell_percent }}{% endif %}</td>

@@ -3,7 +3,7 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% url 'accounts:message_inbox' request.club.slug as inbox_url %}
-{% include "components/page_header.html" with title="Grant for message" subtitle="Record what this message earned." %}
+{% include "components/page_header.html" with title="Grant for message" subtitle="Record what this message earned." back_url=inbox_url|add:"?status="|add:filter back_label="Back to inbox" %}
 {% include "components/card_open.html" with title="The message" %}
 <p class="text-muted mb-1">Message #{{ msg.pk }}</p>
 <p class="mb-0">{{ msg.body|linebreaksbr }}</p>
@@ -12,7 +12,6 @@
   {% include "accounts/inbox/_grant_fields.html" %}
   <div class="wm-form-actions">
     <button class="btn btn-primary" type="submit">Grant</button>
-    <a class="btn btn-outline-secondary" href="{{ inbox_url }}?status={{ filter }}">Back to inbox</a>
   </div>
 </form>
 {% endblock %}

@@ -7,8 +7,8 @@
 {% elif view_param == "mine" %}{% include "components/page_header.html" with title=hex_map.name subtitle="My characters" %}
 {% elif players_view %}{% include "components/page_header.html" with title=hex_map.name subtitle="Players' view" %}
 {% else %}{% include "components/page_header.html" with title=hex_map.name subtitle="Full map" %}{% endif %}
-<div class="map-toolbar no-print">
-<a class="btn btn-link" href="{% url 'map:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} All maps</a>
+<div class="wm-toolbar no-print">
+{% url 'map:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="All maps" %}
 {% include "map/requests/_map_actions.html" %}
 {% include "map/edit/_map_actions.html" %}
 <a class="btn btn-outline-secondary print-link" href="{{ print_url }}">{% include "components/icon.html" with name="printer" %} Print</a>

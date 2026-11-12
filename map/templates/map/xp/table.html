@@ -5,8 +5,8 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% include "components/page_header.html" with title="XP table" %}
-<div class="map-toolbar">
-<a class="btn btn-link" href="{% url 'map:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Back to the maps</a>
+<div class="wm-toolbar">
+{% url 'map:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to the maps" %}
 </div>
 {% if can_edit %}<form method="post" class="wm-form">{% csrf_token %}
 {% if form.errors %}{% include "components/alert.html" with level="danger" text="Enter whole numbers of 0 or more." %}{% endif %}{% endif %}

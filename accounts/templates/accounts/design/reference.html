@@ -96,6 +96,48 @@
   <div class="d-flex flex-wrap gap-2">{% for s in badge_statuses %}{% include "components/badge.html" with status=s text=s|capfirst %}{% endfor %}</div>
 </section>
 
+<section id="component-back-link" class="wm-section">
+  <h3>back_link</h3>
+  <pre>{% verbatim %}{% include "components/back_link.html" with url=list_url label="All batches" %}{% endverbatim %}</pre>
+  {% include "components/back_link.html" with url="#" label="All batches" %}
+  <p class="wm-muted-line">page_header takes <code>back_url</code> and <code>back_label</code> and renders this above the title.</p>
+</section>
+
+<section id="component-status-badge" class="wm-section">
+  <h3>status_badge</h3>
+  <pre>{% verbatim %}{% include "components/status_badge.html" with value=obj.status text=obj.get_status_display %}{% endverbatim %}</pre>
+  <div class="wm-toolbar">{% for s in status_values %}{% include "components/status_badge.html" with value=s text=s|capfirst %}{% endfor %}</div>
+  <p class="wm-muted-line">One status-to-tone map: warning (pending, open, requested, accepted), success (approved, confirmed, completed, handled), danger (declined), info (reversed), neutral (the rest).</p>
+</section>
+
+<section id="component-page-header-pair" class="wm-section">
+  <h3>page_header_open and page_header_close</h3>
+  <pre>{% verbatim %}{% include "components/page_header_open.html" with title="History" back_url=u back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a>{% include "components/page_header_close.html" %}{% endverbatim %}</pre>
+  <div class="wm-card"><div class="wm-card-body">{% include "components/page_header_open.html" with title="History" back_url="#" back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a><button class="btn btn-outline-secondary" type="button">Export</button>{% include "components/page_header_close.html" %}</div></div>
+</section>
+
+<section id="component-layout-classes" class="wm-section">
+  <h3>Shared layout classes</h3>
+  <p class="wm-muted-line">Promoted from the area sweeps. Use these; do not add an area copy.</p>
+  <dl class="wm-dl wm-dl--grid">
+    <div><dt><code>.wm-toolbar</code></dt><dd>A wrapping row of buttons and links.</dd></div>
+    <div><dt><code>.wm-inline-form</code></dt><dd>A form that sits in a row.</dd></div>
+    <div><dt><code>.wm-card-grid</code></dt><dd>An auto-fill grid of cards or links.</dd></div>
+    <div><dt><code>.wm-fieldset</code> and <code>.wm-form-row</code></dt><dd>A grouped set of fields; the row is one column on phones.</dd></div>
+    <div><dt><code>.wm-check-list</code></dt><dd>A list of checkboxes (<code>--inline</code> for a row).</dd></div>
+    <div><dt><code>.wm-filter-pills</code></dt><dd>A row of filter buttons or tabs.</dd></div>
+    <div><dt><code>.wm-section-bar</code></dt><dd>An h2 with an action at the right.</dd></div>
+    <div><dt><code>.wm-code-wrap</code></dt><dd>Code and tokens that wrap instead of overflow.</dd></div>
+    <div><dt><code>.wm-dl--grid</code></dt><dd>A definition list laid out as a grid of facts.</dd></div>
+  </dl>
+  <div class="wm-toolbar"><button class="btn btn-primary" type="button">Save</button><button class="btn btn-outline-secondary" type="button">Cancel</button></div>
+  <ul class="wm-card-grid"><li class="wm-card wm-card-body">One</li><li class="wm-card wm-card-body">Two</li><li class="wm-card wm-card-body">Three</li></ul>
+  <fieldset class="wm-fieldset"><legend>Fieldset</legend>
+    <div class="wm-form-row"><div><label>First</label><input class="form-control"></div><div><label>Second</label><input class="form-control"></div></div>
+  </fieldset>
+  <div class="wm-section-bar"><h2>Section bar</h2><a class="btn btn-sm btn-outline-secondary" href="#">Action</a></div>
+</section>
+
 <section id="component-coins" class="wm-section">
   <h3>coins</h3>
   <pre>{% verbatim %}{% include "components/coins.html" with value=1250 %}{% endverbatim %}</pre>
