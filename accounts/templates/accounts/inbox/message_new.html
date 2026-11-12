@@ -6,10 +6,10 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Send</button>
+  <button class="btn btn-sm btn-primary" type="submit">Send</button>
 </form>
 <h2>Your messages</h2>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <tr><th>Date</th><th>Character</th><th>Message</th><th>Status</th></tr>
   {% for m in sent %}
   <tr>
@@ -21,7 +21,7 @@
   {% empty %}
   <tr><td colspan="4">No messages yet.</td></tr>
   {% endfor %}
-</table>
+</table></div>
 {% else %}
 <p>Only club members can send messages.</p>
 {% endif %}

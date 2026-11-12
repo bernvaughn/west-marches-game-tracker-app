@@ -8,12 +8,12 @@
 {% elif not sender %}
 <form method="get">
   <label>Trade from
-    <select name="from">
+    <select class="form-select form-select-sm w-auto d-inline-block" name="from">
       {% for c in choices %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
     </select>
   </label>
   {% if to %}<input type="hidden" name="to" value="{{ to.pk }}">{% endif %}
-  <button type="submit">Choose</button>
+  <button class="btn btn-sm btn-outline-secondary" type="submit">Choose</button>
 </form>
 {% else %}
 <p>From <strong>{{ sender.name }}</strong>
@@ -29,7 +29,7 @@
   {% for field in side_form %}
   <p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>
   {% endfor %}
-  <button type="submit">Propose trade</button>
+  <button class="btn btn-sm btn-primary" type="submit">Propose trade</button>
 </form>
 {% endif %}
 {% endblock %}

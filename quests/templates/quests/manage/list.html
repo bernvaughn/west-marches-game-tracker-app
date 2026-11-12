@@ -5,7 +5,7 @@
 <h1>Manage quests</h1>
 <p><a href="{% url 'quests:create' club.slug %}">New quest</a></p>
 {% if rows %}
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Max total</th><th>Max per character</th><th>Status</th><th>Completions</th><th></th></tr></thead>
   <tbody>
   {% for row in rows %}
@@ -21,14 +21,14 @@
         <a href="{% url 'quests:edit' club.slug row.quest.pk %}">Edit</a>
         {% if not row.count %}
         <form method="post" action="{% url 'quests:delete' club.slug row.quest.pk %}" style="display:inline">{% csrf_token %}
-          <button>Delete</button>
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
         </form>
         {% endif %}
       </td>
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% else %}
 <p>No quests yet.</p>
 {% endif %}

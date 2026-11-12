@@ -8,12 +8,12 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Save changes</button>
-  <button type="submit" formaction="{% url 'agent_access:proposed_item_approve' club.slug p.pk %}">Approve</button>
+  <button class="btn btn-sm btn-primary" type="submit">Save changes</button>
+  <button class="btn btn-sm btn-primary" type="submit" formaction="{% url 'agent_access:proposed_item_approve' club.slug p.pk %}">Approve</button>
 </form>
 <form method="post" action="{% url 'agent_access:proposed_item_reject' club.slug p.pk %}">
   {% csrf_token %}
-  <button type="submit">Reject</button>
+  <button class="btn btn-sm btn-outline-danger" type="submit">Reject</button>
 </form>
 {% else %}
 <dl>

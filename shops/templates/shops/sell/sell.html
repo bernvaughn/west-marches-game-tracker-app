@@ -8,17 +8,17 @@
 {% else %}
 <form method="get">
   <label>Character
-    <select name="character">
+    <select class="form-select form-select-sm w-auto d-inline-block" name="character">
       {% for c in characters %}
       <option value="{{ c.id }}" {% if character and c.id == character.id %}selected{% endif %}>{{ c.name }}</option>
       {% endfor %}
     </select>
   </label>
-  <button type="submit">Show items</button>
+  <button class="btn btn-sm btn-outline-secondary" type="submit">Show items</button>
 </form>
 {% if character %}
 {% if rows %}
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <thead><tr><th>Item</th><th>Available</th><th>Buy price (each)</th><th></th></tr></thead>
   <tbody>
   {% for row in rows %}
@@ -31,14 +31,14 @@
         {% csrf_token %}
         <input type="hidden" name="character" value="{{ character.id }}">
         <input type="hidden" name="item" value="{{ row.item.id }}">
-        <input type="number" name="quantity" value="1" min="1" max="{{ row.quantity }}" aria-label="Quantity">
-        <button type="submit">Sell</button>
+        <input class="form-control form-control-sm w-auto d-inline-block" type="number" name="quantity" value="1" min="1" max="{{ row.quantity }}" aria-label="Quantity">
+        <button class="btn btn-sm btn-primary" type="submit">Sell</button>
       </form>
     </td>
   </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% else %}
 <p>No items to sell.</p>
 {% endif %}

@@ -8,7 +8,7 @@
   {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
 {% endfor %}
 </p>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <thead><tr><th>Name</th><th>Value</th><th>Status</th><th>Proposed by</th><th>Created</th><th></th></tr></thead>
   <tbody>
   {% for row in rows %}
@@ -24,5 +24,5 @@
     <tr><td colspan="6">No proposed items.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

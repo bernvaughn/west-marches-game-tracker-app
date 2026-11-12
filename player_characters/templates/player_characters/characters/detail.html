@@ -26,7 +26,7 @@
 {% endif %}
 <h2>Items</h2>
 {% if rows %}
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <tr><th>Item</th><th>Owned</th>{% if show_held %}<th>Held</th>{% endif %}<th>Available</th></tr>
   {% for r in rows %}
   <tr>
@@ -36,7 +36,7 @@
     <td>{{ r.available }}</td>
   </tr>
   {% endfor %}
-</table>
+</table></div>
 {% else %}
 <p>No items.</p>
 {% endif %}

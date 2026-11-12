@@ -4,7 +4,7 @@
 <h1>Agent batches</h1>
 {% include "agent_access/_nav.html" %}
 <h2>Pending</h2>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <thead><tr><th>Batch</th><th>Proposed by</th><th>Connection</th><th>Created</th><th>Lines</th></tr></thead>
   <tbody>
   {% for b in pending %}
@@ -19,9 +19,9 @@
     <tr><td colspan="5">No pending batches.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 <h2>Recent</h2>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <thead><tr><th>Batch</th><th>Proposed by</th><th>Connection</th><th>Created</th><th>Lines</th><th>Status</th></tr></thead>
   <tbody>
   {% for b in recent %}
@@ -37,5 +37,5 @@
     <tr><td colspan="6">Nothing confirmed yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

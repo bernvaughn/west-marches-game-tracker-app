@@ -20,7 +20,7 @@
   {% for row in formset %}
     <div>{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
   {% endfor %}
-  <button type="submit">Move loot</button>
+  <button class="btn btn-sm btn-primary" type="submit">Move loot</button>
   <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
 </form>
 {% endif %}

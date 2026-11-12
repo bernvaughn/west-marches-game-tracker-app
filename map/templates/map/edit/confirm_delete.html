@@ -6,7 +6,7 @@
 <h1>Delete {{ object_name }}?</h1>
 <form method="post">
 {% csrf_token %}
-<button type="submit">Yes, delete</button>
+<button class="btn btn-sm btn-outline-danger" type="submit">Yes, delete</button>
 <a href="{{ back }}">Cancel</a>
 </form>
 {% endblock %}

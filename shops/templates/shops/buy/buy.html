@@ -14,7 +14,7 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Buy</button>
+  <button class="btn btn-sm btn-primary" type="submit">Buy</button>
 </form>
 {% endif %}
 <p><a href="{% url 'shops:detail' request.club.slug shop.pk %}">Back to {{ shop.name }}</a></p>

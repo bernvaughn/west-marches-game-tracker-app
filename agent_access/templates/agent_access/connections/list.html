@@ -12,7 +12,7 @@
 {% endif %}
 <p>MCP URL: <code>{{ mcp_url }}</code></p>
 
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <thead>
     <tr><th>Label</th><th>Kind</th><th>Prefix</th><th>Created</th><th>Last used</th><th>Status</th><th></th></tr>
   </thead>
@@ -29,7 +29,7 @@
         {% if not c.revoked_at %}
         <form method="post" action="{% url 'agent_access:connection_revoke' club.slug c.pk %}">
           {% csrf_token %}
-          <button type="submit">Revoke</button>
+          <button class="btn btn-sm btn-outline-danger" type="submit">Revoke</button>
         </form>
         {% endif %}
       </td>
@@ -38,12 +38,12 @@
     <tr><td colspan="7">No connections yet.</td></tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 
 <h2>New token</h2>
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Create token</button>
+  <button class="btn btn-sm btn-primary" type="submit">Create token</button>
 </form>
 {% endblock %}

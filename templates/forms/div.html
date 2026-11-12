@@ -1,0 +1,3 @@
+{{ errors }}
+{% for field in hidden_fields %}{{ field }}{% endfor %}
+{% for field, field_errors in fields %}{% include "forms/field.html" with field=field errors=field_errors %}{% endfor %}

@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 <h1>Map requests</h1>
 <p><a href="{% url 'map:index' club.slug %}">Back to maps</a></p>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
 <thead><tr><th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th>Requested by</th><th>Status</th><th>Decided</th>{% if is_editor %}<th></th>{% endif %}</tr></thead>
 <tbody>
 {% for req in requests %}
@@ -20,11 +20,11 @@
 <td>{{ req.get_status_display }}</td>
 <td>{% if req.decided_at %}{{ req.decided_by.user.display_name|default:"" }} {{ req.decided_at|date:"Y-m-d H:i" }}{% endif %}</td>
 {% if is_editor %}<td>{% if req.status == "requested" %}
-{% if req.can_approve %}<form method="post" action="{% url 'map:request_approve' club.slug req.pk %}">{% csrf_token %}<button type="submit">Approve</button></form>{% endif %}
-<form method="post" action="{% url 'map:request_decline' club.slug req.pk %}">{% csrf_token %}<button type="submit">Decline</button></form>
+{% if req.can_approve %}<form method="post" action="{% url 'map:request_approve' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Approve</button></form>{% endif %}
+<form method="post" action="{% url 'map:request_decline' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Decline</button></form>
 {% endif %}</td>{% endif %}
 </tr>
 {% empty %}<tr><td colspan="10">No requests.</td></tr>{% endfor %}
 </tbody>
-</table>
+</table></div>
 {% endblock %}

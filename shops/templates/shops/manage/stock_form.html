@@ -3,7 +3,7 @@
 <h1>{% if stock %}Edit stock: {{ stock.item.name }}{% else %}Add item to {{ shop.name }}{% endif %}</h1>
 <form method="post">{% csrf_token %}
 {{ form.as_p }}
-<button type="submit">Save</button>
+<button class="btn btn-sm btn-primary" type="submit">Save</button>
 </form>
 <p><a href="{% url 'shops:manage_edit' club.slug shop.pk %}">Back to {{ shop.name }}</a></p>
 {% endblock %}
