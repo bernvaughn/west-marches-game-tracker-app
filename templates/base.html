@@ -17,7 +17,7 @@
 <nav class="site-header navbar navbar-expand-lg bg-body-tertiary py-1">
   <div class="container-fluid flex-wrap">
     <a class="navbar-brand" href="{% url 'home' %}">West Marches</a>
-    <div class="site-header-fixed d-flex align-items-center gap-2 flex-nowrap order-lg-last ms-auto">
+    <div class="site-header-fixed d-flex align-items-center gap-2 order-lg-last ms-auto">
       <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
       {% if user.is_authenticated and club %}
       <div class="dropdown club-switcher no-print">
@@ -31,7 +31,7 @@
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="logout">
-        {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><span class="d-sm-none" aria-hidden="true">⏻</span></button>
+        {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><svg class="d-sm-none" aria-hidden="true" focusable="false" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 1.5v6"/><path d="M4.4 3.6a5.5 5.5 0 1 0 7.2 0"/></svg></button>
       </form>
       {% endif %}
     </div>
