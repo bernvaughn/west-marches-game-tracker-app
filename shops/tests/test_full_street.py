@@ -91,3 +91,10 @@ def test_deterministic(login, player, club):
 def test_css_columns():
     css = CSS.read_text()
     assert "repeat(4, minmax(0, 1fr))" in css and "repeat(8, minmax(0, 1fr))" in css
+
+
+def test_signs_fit_narrow_lots():
+    css = CSS.read_text()
+    assert "overflow-wrap: anywhere" not in css
+    narrow = css[css.index("@media (max-width: 1199px)") :]
+    assert "position: static" in narrow[: narrow.index("\n}\n")]
