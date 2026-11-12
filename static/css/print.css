@@ -3,7 +3,9 @@
 /* Characters: print view */
 .no-print { display: none !important; }
 .wm-item-card { break-inside: avoid; page-break-inside: avoid; background: white; color: black; border-color: black; box-shadow: none; }
-@page cards { size: portrait; margin: 0.25in 0.35in; }
+@page cards { size: portrait; margin: 0.2in 0.35in; }
+.wm-card-print { padding: 0 !important; max-width: none; }
+body:has(.wm-card-print) { margin: 0; padding: 0; }
 .wm-card-page, .wm-card-sheet { page: cards; margin: 0; }
 .wm-card-sheet { break-after: page; }
 .wm-card-sheet:last-child { break-after: auto; }
