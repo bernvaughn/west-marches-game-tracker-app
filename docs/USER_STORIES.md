@@ -133,7 +133,7 @@ From using the build after the first-look stories landed.
 - A card shows only what any member of that club may see: no emails and no inventories.
 
 **U29 Grouped navigation.** As anyone in a club, I want the navigation under the top bar grouped into a few menus, with the pages players use most kept as plain links, so I can find things without scanning a long row of links. *(site-wide)*
-- Plain links: Character, Shops, and Quests. Character opens the selected character's sheet, and the full list moves to "All characters" in the Game master menu (U41).
+- Plain links: Character, Shops, and Quests. Character opens the selected character's sheet. A basic "Character directory" is in the More menu, and the full list is "All characters" in the Game master menu (U41).
 - "More" menu for everyone: Map, Trades, Ledger, and Message the admins.
 - "Game master" menu, for game masters and club admins: awards and adjustments, map editing, map requests, agent batches, proposed items, and agent connections.
 - "Club admin" menu, for club admins only: members, inbox, item catalogue, shops and stock, rotations, and the XP table.
@@ -195,7 +195,7 @@ From using the build after the first-look stories landed.
 - The sheet is compact, with little white space. At desktop width, the boxes sit in a multi-column grid, each only as wide as its content needs. A typical character fits on one screen with little or no scrolling.
 - Coins show once, with held and available on one line, and zero denominations are never listed. Empty boxes are hidden or show a one-line empty state. The inventory table is narrow, with small right-aligned number columns.
 - On a phone, the boxes stack in one column. Privacy is unchanged (U19).
-- Item cards print one at a time (U40).
+- Item cards print all at once in a nine-per-page grid, or one at a time (U40).
 
 ## Round 3: stories from the third look (2026-11-12)
 
@@ -220,15 +220,17 @@ From using the build after the design overhaul (U27–U37, M17) landed. Kept as 
 - On a phone, the silhouette shrinks and stays on the left, and nothing scrolls sideways.
 - This changes the silhouette placement in U36.
 
-**U40 Print one item card at a time.** As a player, I want to print the card for a single item, instead of every item at once, so I print only what I need to bring to the table. *(player_characters, items)*
-- Each item on the character sheet's inventory has a "Print card" action that prints just that item's card.
-- The "Print item cards" button that prints the whole inventory is removed. "Print sheet" (U37) stays.
-- The card prints in black and white at a playing-card-like size, without the navigation. Privacy is unchanged (U19).
+**U40 Print item cards, one or all.** As a player, I want to print all my item cards on card sheets, or print a single card, so I print only what I need to bring to the table. *(player_characters, items)*
+- "Print item cards" stays on the character sheet and prints every item's card in a 3 by 3 grid, nine cards per portrait Letter or A4 page, like a nine-pocket card sheet. Extra cards continue on more pages.
+- Each item in the inventory also has a "Print card" action. It asks for one of two layouts: "Full page", with the card enlarged to fill a portrait page, or "Grid spot", with the card in the top-left spot of the same 3 by 3 grid and the rest of the page left blank, so it fits the same card sheets.
+- Cards print in black and white without the navigation. A card in the grid is the same size whether it is printed alone or with the others.
+- Privacy is unchanged (U19).
 
 **U41 "Character" means my character.** As a player, I want the Character link to open the sheet of the character selected in the top bar, so it goes straight to the character I am playing. *(player_characters, site-wide)*
 - For a player with a selected character, Character opens that character's sheet (U37). A player with no character in the club sees a short empty state with "Create a character".
-- The list of every character in the club moves to a link named "All characters" in the Game master menu (U29), for game masters and club admins. Players no longer see that list.
-- A game master or club admin who also plays a character gets both: Character opens their own selected character, and All characters lists everyone.
+- Everyone gets a read-only "Character directory" in the More menu (U29). It lists every character in the club with only basic details: name and player name. It has no inventories, coins, ledgers, or emails, and each name links to the same basic view, not the sheet, unless the viewer may see that sheet (U19). Players use it to check spelling or to look up who plays whom. We may add more to it later.
+- Game masters and club admins also get "All characters" in the Game master menu: today's full list, with links to each character's full sheet.
+- A game master or club admin who also plays a character gets all three: Character opens their own selected character, Character directory is the basic list, and All characters is the full list.
 - This changes the Character link in U29.
 
 **U42 Switching character follows the page.** As a player, I want switching characters in the top bar to show the same page for the new character, so I'm never left looking at the character I just switched away from. *(player_characters, accounts)*
