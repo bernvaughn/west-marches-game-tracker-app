@@ -140,3 +140,14 @@
   --bs-focus-ring-opacity: .4;
   --bs-focus-ring-color: rgba(184, 50, 46, .4);
 }
+
+/* Quest board */
+:root {
+  --wm-board-cork: #b98b5a;
+  --wm-board-cork-dot: #a67847;
+  --wm-board-frame: #5e3d22;
+  --wm-notice-paper: #fffaf0;
+  --wm-notice-pin: #b8322e;
+  --wm-stamp-ready: #1e7a3c;
+  --wm-stamp-done: #1f5d8a;
+}

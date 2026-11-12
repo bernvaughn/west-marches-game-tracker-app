@@ -1,9 +1,0 @@
-{% load coins %}
-{% if quest.description %}<p>{{ quest.description }}</p>{% endif %}
-<dl class="wm-dl wm-quest-info">
-  <dt>Needs</dt>
-  <dd>{% for r in requirements %}{{ r.quantity }} x {{ r.item }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
-  <dt>Reward</dt>
-  <dd>{% for rw in rewards %}{% if rw.item %}{{ rw.quantity }} x {{ rw.item }}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
-  {% if quest.end_date %}<dt>Ends</dt><dd>{{ quest.end_date }}</dd>{% endif %}
-</dl>

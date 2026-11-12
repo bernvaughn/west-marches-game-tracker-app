@@ -20,8 +20,11 @@ def test_index_lists_live_only(login, player, quest, upcoming_quest, ended_quest
     body = r.content.decode()
     assert quest.name in body
     assert format_coins(1000) in body
+    board = body.split("wm-taken-down")[0]  # ended quests now sit under Taken down (U48)
     for q in (upcoming_quest, ended_quest, other_club_quest):
-        assert q.name not in body
+        assert q.name not in board
+    assert upcoming_quest.name not in body
+    assert other_club_quest.name not in body
 
 
 @pytest.mark.story("Q2")
