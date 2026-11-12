@@ -66,7 +66,7 @@ A player's email is shown only to club admins (U17).
 
 ### player_characters
 
-- **Character**: belongs to a club and is owned by a membership. Name plus notes, stats, and other details the player keeps (U2). Handing a character to another player changes the owner (U18).
+- **Character**: belongs to a club and is owned by a membership. Name plus notes, stats, and other details the player keeps (U2), and an optional level from 1 (U52, not tied to XP). Handing a character to another player changes the owner (U18).
 - **Inventory entry**: a character, an item, and a quantity. Visible only to the owner, game masters, and club admins (U19).
 - **Trade**: a sending character, a receiving character, a status (requested, accepted, completed, declined, cancelled), the sender's note, and one approval for each side (U16).
 - **Trade line**: one side of a trade offering either an item and quantity, or an amount of coins.

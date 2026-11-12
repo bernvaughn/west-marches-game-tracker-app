@@ -23,7 +23,7 @@
 <article class="wm-sheet">
   <header class="wm-sheet-header">
     <h1>{{ character.name }}</h1>
-    <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
+    <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %} &middot; Played by {{ owner_name }} &middot; {{ club.name }}</p>
   </header>
   {% if can_view %}
   <div class="wm-sheet-grid">

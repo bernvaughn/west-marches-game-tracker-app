@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
 
 from accounts.scoping import ClubScopedManager
@@ -15,6 +16,12 @@ class Character(models.Model):
     notes = models.TextField(blank=True)
     stats = models.TextField(blank=True)
     details = models.TextField(blank=True)
+    level = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1)],
+        help_text="Optional. Whole number from 1.",
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     objects = ClubScopedManager()

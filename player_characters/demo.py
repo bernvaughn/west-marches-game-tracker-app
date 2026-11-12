@@ -7,9 +7,9 @@ from ledger.services import Line, record
 from .models import Character
 
 CHARACTERS = [
-    ("alice@example.com", "Aria Windrunner"),
-    ("alice@example.com", "Wren Thistledown"),
-    ("bob@example.com", "Borin Stonefist"),
+    ("alice@example.com", "Aria Windrunner", 5),
+    ("alice@example.com", "Wren Thistledown", 2),
+    ("bob@example.com", "Borin Stonefist", 4),
 ]
 GEAR_NOTE = "Demo: starting gear"
 GEAR = {
@@ -19,9 +19,14 @@ GEAR = {
 
 
 def seed(club):
-    for email, name in CHARACTERS:
+    for email, name, level in CHARACTERS:
         owner = Membership.objects.get(club=club, user__email=email)
-        Character.objects.get_or_create(club=club, owner=owner, name=name)
+        character, _ = Character.objects.get_or_create(
+            club=club, owner=owner, name=name, defaults={"level": level}
+        )
+        if character.level is None:
+            character.level = level
+            character.save(update_fields=["level"])
     _give_gear(club)
 
 
