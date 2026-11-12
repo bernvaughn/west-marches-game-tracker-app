@@ -1,14 +1,23 @@
 <div class="map-picker">
 {% if is_editor %}
-<p class="view-switch"><a href="{{ full_url }}">Full map</a> | <a href="{{ players_url }}">Players' view</a>{% if can_pick_own %} | <a href="{{ mine_url }}">My characters</a>{% endif %}{% if view_param == "mine" %} (my characters showing){% elif players_view %} (players' view showing){% else %} (full map showing){% endif %}</p>
+<nav class="nav nav-pills view-switch" aria-label="Map view">
+<a class="nav-link{% if not players_view %} active{% endif %}" href="{{ full_url }}"{% if not players_view %} aria-current="page"{% endif %}>Full map</a>
+<a class="nav-link{% if players_view and view_param != "mine" %} active{% endif %}" href="{{ players_url }}"{% if players_view and view_param != "mine" %} aria-current="page"{% endif %}>Players' view</a>
+{% if can_pick_own %}<a class="nav-link{% if view_param == "mine" %} active{% endif %}" href="{{ mine_url }}"{% if view_param == "mine" %} aria-current="page"{% endif %}>My characters</a>{% endif %}
+</nav>
 {% endif %}
 {% if players_view %}
-<form method="get">
+<form method="get" class="map-picker-form">
 {% if hex_map and radius %}<input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="r" value="{{ r }}"><input type="hidden" name="radius" value="{{ radius }}">{% endif %}
 {% if view_param %}<input type="hidden" name="view" value="{{ view_param }}">{% endif %}
-{% for c in choices %}<label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"{% if c.pk in picked_ids %} checked{% endif %}> {{ c.name }}</label> {% endfor %}
-<button class="btn btn-sm btn-outline-secondary" type="submit">Show</button>
-{% if view_param != "players" %}<small class="text-muted">Starts with the character you act as. Changing it here changes only the map.</small>{% endif %}
+<fieldset>
+<legend>Show the map for</legend>
+<div class="map-checks map-checks--inline">
+{% for c in choices %}<div class="form-check form-check-inline"><input class="form-check-input" type="checkbox" id="pick-{{ c.pk }}" name="characters" value="{{ c.pk }}"{% if c.pk in picked_ids %} checked{% endif %}><label class="form-check-label" for="pick-{{ c.pk }}">{{ c.name }}</label></div>{% endfor %}
+</div>
+</fieldset>
+<button class="btn btn-outline-secondary" type="submit">Show</button>
+{% if view_param != "players" %}<small class="form-text">Starts with the character you act as. Changing it here changes only the map.</small>{% endif %}
 </form>
 {% endif %}
 </div>

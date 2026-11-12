@@ -1,29 +1,38 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Visits: {{ hex_map.name }} ({{ q }}, {{ r }}){% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>Visits: {{ hex_map.name }} ({{ q }}, {{ r }})</h1>
-<p><a href="{% url 'map:tile' club.slug hex_map.pk q r %}">Back to the tile</a></p>
-<h2>Who visited</h2>
-<ul>
+{% with qs=q|stringformat:"s" rs=r|stringformat:"s" %}{% with t="Visits: "|add:hex_map.name|add:" ("|add:qs|add:", "|add:rs|add:")" %}{% include "components/page_header.html" with title=t %}{% endwith %}{% endwith %}
+<div class="map-toolbar">
+<a class="btn btn-link" href="{% url 'map:tile' club.slug hex_map.pk q r %}">{% include "components/icon.html" with name="arrow-left" %} Back to the tile</a>
+</div>
+{% include "components/card_open.html" with title="Who visited" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+<thead><tr><th>Character</th><th>Date</th><th></th></tr></thead>
+<tbody>
 {% for v in visits %}
-  <li>{{ v.character.name }}{% if v.date %} ({{ v.date }}){% endif %}
-    <form method="post" style="display:inline">{% csrf_token %}
-      <input type="hidden" name="action" value="remove">
-      <input type="hidden" name="visit_id" value="{{ v.pk }}">
-      <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
-    </form></li>
-{% empty %}<li>Nobody yet.</li>{% endfor %}
-</ul>
-<h2>Record visits</h2>
-<form method="post">{% csrf_token %}
+<tr><td>{{ v.character.name }}</td><td>{{ v.date|default:"" }}</td>
+<td class="actions"><form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="remove">
+  <input type="hidden" name="visit_id" value="{{ v.pk }}">
+  <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+</form></td></tr>
+{% empty %}{% include "components/data_table_empty.html" with cols=3 text="Nobody yet." %}{% endfor %}
+</tbody></table></div>
+{% include "components/card_close.html" %}
+{% include "components/card_open.html" with title="Record visits" %}
+<form method="post" class="wm-form">{% csrf_token %}
   <input type="hidden" name="action" value="add">
   {{ form.non_field_errors }}
+  <fieldset class="map-checks"><legend class="visually-hidden">Characters who visited</legend>
   {% for c in characters %}
-  <label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  <div class="form-check"><input class="form-check-input" type="checkbox" id="vis-{{ c.pk }}" name="characters" value="{{ c.pk }}"><label class="form-check-label" for="vis-{{ c.pk }}">{{ c.name }}</label></div>
   {% endfor %}
-  <p>{{ form.date.errors }}<label>Date {{ form.date }}</label></p>
-  <button class="btn btn-sm btn-primary" type="submit">Record visits</button>
+  </fieldset>
+  <div class="map-short">{% include "forms/field.html" with field=form.date %}</div>
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Record visits</button></div>
 </form>
+{% include "components/card_close.html" %}
 {% endblock %}

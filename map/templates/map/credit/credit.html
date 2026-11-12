@@ -1,30 +1,39 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ kind|capfirst }}: {{ location.name }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>{{ kind|capfirst }} by: {{ location.name }}</h1>
-<p><a href="{% url 'map:tile' club.slug hex_map.pk q r %}">Back to the tile</a> ·
-<a href="{% url 'map:credit' club.slug location.pk other_kind %}">Edit {{ other_kind }}</a></p>
-<h2>Credited characters</h2>
+{% with t=kind|capfirst|add:" by: "|add:location.name %}{% include "components/page_header.html" with title=t %}{% endwith %}
+<div class="map-toolbar">
+<a class="btn btn-link" href="{% url 'map:tile' club.slug hex_map.pk q r %}">{% include "components/icon.html" with name="arrow-left" %} Back to the tile</a>
+<a class="btn btn-outline-secondary" href="{% url 'map:credit' club.slug location.pk other_kind %}">Edit {{ other_kind }}</a>
+</div>
+{% include "components/card_open.html" with title="Credited characters" %}
 {% if credited %}
-<form method="post">{% csrf_token %}
+<form method="post" class="wm-form">{% csrf_token %}
   <input type="hidden" name="action" value="remove">
+  <fieldset class="map-checks"><legend class="visually-hidden">Characters to remove</legend>
   {% for c in credited %}
-  <label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  <div class="form-check"><input class="form-check-input" type="checkbox" id="rm-{{ c.pk }}" name="characters" value="{{ c.pk }}"><label class="form-check-label" for="rm-{{ c.pk }}">{{ c.name }}</label></div>
   {% endfor %}
-  {% if credit.date %}<p>Date: {{ credit.date }}</p>{% endif %}
-  <button class="btn btn-sm btn-outline-danger" type="submit">Remove selected</button>
+  </fieldset>
+  {% if credit.date %}<p class="form-text">Date: {{ credit.date }}</p>{% endif %}
+  <div class="wm-form-actions"><button class="btn btn-outline-danger" type="submit">Remove selected</button></div>
 </form>
-{% else %}<p>Nobody yet.</p>{% endif %}
-<h2>Add characters</h2>
-<form method="post">{% csrf_token %}
+{% else %}<p class="mb-0">Nobody yet.</p>{% endif %}
+{% include "components/card_close.html" %}
+{% include "components/card_open.html" with title="Add characters" %}
+<form method="post" class="wm-form">{% csrf_token %}
   <input type="hidden" name="action" value="add">
   {{ form.non_field_errors }}
+  <fieldset class="map-checks"><legend class="visually-hidden">Characters to add</legend>
   {% for c in available %}
-  <label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  <div class="form-check"><input class="form-check-input" type="checkbox" id="add-{{ c.pk }}" name="characters" value="{{ c.pk }}"><label class="form-check-label" for="add-{{ c.pk }}">{{ c.name }}</label></div>
   {% endfor %}
-  <p>{{ form.date.errors }}<label>Date {{ form.date }}</label></p>
-  <button class="btn btn-sm btn-primary" type="submit">Add</button>
+  </fieldset>
+  <div class="map-short">{% include "forms/field.html" with field=form.date %}</div>
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Add</button></div>
 </form>
+{% include "components/card_close.html" %}
 {% endblock %}

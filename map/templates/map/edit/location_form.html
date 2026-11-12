@@ -1,13 +1,29 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ title }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>{{ title }}</h1>
-<form method="post">
+{% include "components/page_header.html" with title=title %}
+{% url 'map:index' club.slug as index_url %}
+{% include "components/card_open.html" %}
+<form method="post" class="wm-form">
 {% csrf_token %}
-{{ form.as_p }}
-<button class="btn btn-sm btn-primary" type="submit">Save</button>
-<a href="{% if back %}{{ back }}{% else %}{% url 'map:index' club.slug %}{% endif %}">Cancel</a>
+{{ form.non_field_errors }}
+{% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+<fieldset class="map-checks"><legend>Location</legend>
+{% include "forms/field.html" with field=form.name %}
+<div class="map-short">{% include "forms/field.html" with field=form.color %}{% include "forms/field.html" with field=form.symbol %}</div>
+{% include "forms/field.html" with field=form.target_band %}
+</fieldset>
+<fieldset class="map-checks"><legend>Notes</legend>
+{% include "forms/field.html" with field=form.player_notes %}
+{% include "forms/field.html" with field=form.gm_notes %}
+</fieldset>
+<div class="wm-form-actions">
+<button type="submit" class="btn btn-primary">Save</button>
+<a class="btn btn-outline-secondary" href="{{ back|default:index_url }}">Cancel</a>
+</div>
 </form>
+{% include "components/card_close.html" %}
 {% endblock %}

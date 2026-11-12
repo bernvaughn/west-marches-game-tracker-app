@@ -3,17 +3,27 @@
 {% block title %}{{ hex_map.name }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>{{ hex_map.name }}</h1>
-<p><a href="{% url 'map:index' club.slug %}">All maps</a></p>
-<div class="map-actions">
-{% include "map/edit/_map_actions.html" %}
+{% if not is_editor %}{% include "components/page_header.html" with title=hex_map.name %}
+{% elif view_param == "mine" %}{% include "components/page_header.html" with title=hex_map.name subtitle="My characters" %}
+{% elif players_view %}{% include "components/page_header.html" with title=hex_map.name subtitle="Players' view" %}
+{% else %}{% include "components/page_header.html" with title=hex_map.name subtitle="Full map" %}{% endif %}
+<div class="map-toolbar no-print">
+<a class="btn btn-link" href="{% url 'map:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} All maps</a>
 {% include "map/requests/_map_actions.html" %}
+{% include "map/edit/_map_actions.html" %}
+<a class="btn btn-outline-secondary print-link" href="{{ print_url }}">{% include "components/icon.html" with name="printer" %} Print</a>
 </div>
-{% if not is_editor and not has_characters %}<p>You have no characters yet, so only the safe town is shown.</p>{% endif %}
+{% if not is_editor and not has_characters %}{% include "components/alert.html" with level="info" text="You have no characters yet, so only the safe town is shown." %}{% endif %}
+<div class="wm-card map-frame">
+<div class="wm-card-body">
+<div class="map-controls">
 {% include "map/core/_picker.html" %}
-<p><a class="print-link" href="{{ print_url }}">Print</a></p>
 <nav class="pan-links" aria-label="Pan">
-{% for link in pan %}<a href="{{ link.url }}">{{ link.name }}</a> {% endfor %}
+{% for link in pan %}<a class="btn btn-sm btn-outline-secondary pan-{{ link.name|lower }}" href="{{ link.url }}">{{ link.name }}</a>{% endfor %}
 </nav>
+</div>
 {% include "map/_hexmap.html" %}
+</div>
+<div class="wm-card-body">{% include "map/_legend.html" %}</div>
+</div>
 {% endblock %}

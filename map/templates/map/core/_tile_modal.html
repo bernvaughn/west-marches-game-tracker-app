@@ -1,10 +1,5 @@
-<div class="modal-header">
-  <h2 class="modal-title fs-5">{{ hex_map.name }}: ({{ q }}, {{ r }})</h2>
-  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
-<div class="modal-body">
-{% include "map/core/_tile_body.html" %}
-</div>
-<div class="modal-footer">
-  <a href="{{ tile_page_url }}">Open full page</a>
-</div>
+{% extends "components/modal_frame.html" %}
+{% block title %}{{ hex_map.name }}: ({{ q }}, {{ r }}){% endblock %}
+{% block body %}{% include "map/core/_tile_body.html" %}{% endblock %}
+{% block footer %}<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+<a class="btn btn-primary" href="{{ tile_page_url }}">Open full page</a>{% endblock %}

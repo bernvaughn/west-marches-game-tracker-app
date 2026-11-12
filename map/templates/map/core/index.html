@@ -1,23 +1,28 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Maps{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>Maps</h1>
-<div class="map-actions">
-{% include "map/edit/_index_actions.html" %}
+{% if is_editor %}{% url 'map:map_create' club.slug as new_url %}{% include "components/page_header.html" with title="Maps" action_url=new_url action_label="New map" action_icon="plus-lg" %}
+{% else %}{% include "components/page_header.html" with title="Maps" %}{% endif %}
+<div class="map-toolbar">
 {% include "map/xp/_index_actions.html" %}
 {% include "map/requests/_index_actions.html" %}
 </div>
-<ul>
-{% for m in maps %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{{ m.name }}</a></li>
-{% empty %}<li>No maps yet.</li>{% endfor %}
+{% if maps %}
+<ul class="map-grid">
+{% for m in maps %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{% include "components/icon.html" with name="map" %} {{ m.name }}</a></li>{% endfor %}
 </ul>
+{% elif is_editor %}{% url 'map:map_create' club.slug as new_url %}{% include "components/empty_state.html" with text="No maps yet." icon="map" action_url=new_url action_label="New map" %}
+{% else %}{% include "components/empty_state.html" with text="No maps yet." icon="map" %}{% endif %}
 {% if is_editor %}
-<h2>Archived maps</h2>
-<ul>
-{% for m in archived %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{{ m.name }}</a></li>
-{% empty %}<li>No archived maps.</li>{% endfor %}
+{% include "components/section_open.html" with title="Archived maps" %}
+{% if archived %}
+<ul class="map-grid map-grid--muted">
+{% for m in archived %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{% include "components/icon.html" with name="map" %} {{ m.name }}</a></li>{% endfor %}
 </ul>
+{% else %}{% include "components/empty_state.html" with text="No archived maps." icon="archive" %}{% endif %}
+{% include "components/section_close.html" %}
 {% endif %}
 {% endblock %}

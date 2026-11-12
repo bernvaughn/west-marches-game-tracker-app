@@ -1,1 +1,1 @@
-{% if is_editor %}<a href="{% url "map:location_create" club.slug hex_map.pk q r %}">Add a location here</a>{% endif %}
+{% if is_editor %}<a class="btn btn-outline-secondary" href="{% url "map:location_create" club.slug hex_map.pk q r %}">{% include "components/icon.html" with name="plus-lg" %} Add a location here</a>{% endif %}
