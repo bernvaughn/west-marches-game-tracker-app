@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -36,7 +38,7 @@ def test_visible(request, login, club, trade, who):
 
 def test_content_and_poll(login, club, trade, player):
     html = login(player).get(url(club, trade)).content.decode()
-    assert "Rope" in html and "2 gp 5 sp" in html
+    assert "Rope" in html and "2 gp 5 sp" in re.sub(r"<[^>]+>", "", html)
     assert "Secret Lamp" not in html
     assert 'id="trade-live"' in html and "every 5s" in html
     assert "Hello<br>there" in html

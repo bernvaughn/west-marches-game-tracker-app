@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block title %}{{ p.name }}{% endblock %}
 {% block content %}
 <h1>{{ p.name }}</h1>
@@ -19,7 +20,7 @@
   <dt>Description</dt><dd>{{ p.description }}</dd>
   <dt>Traits</dt><dd>{{ p.traits }}</dd>
   <dt>Details</dt><dd>{{ p.details }}</dd>
-  <dt>Value</dt><dd>{{ value_text }}</dd>
+  <dt>Value</dt><dd>{% if p.value_cp %}{{ p.value_cp|coins }}{% endif %}</dd>
 </dl>
 {% if p.approved_item %}<p>Catalogue item: {{ p.approved_item.name }}</p>{% endif %}
 {% endif %}

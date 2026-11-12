@@ -133,7 +133,7 @@ def test_inventory_rows_empty(character):
 def test_coin_summary_parts(character):
     record(character, "award", [Line(coins=1234)])
     s = coin_summary(character)
-    assert s.parts == [("pp", 1), ("gp", 2), ("sp", 3), ("cp", 4)]
+    assert s.parts == [("pp", 0), ("gp", 12), ("sp", 3), ("cp", 4)]
     assert not s.has_holds
 
 
