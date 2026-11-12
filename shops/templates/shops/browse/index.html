@@ -3,15 +3,7 @@
 {% block content %}
 {% include "components/page_header.html" with title="Shops" %}
 {% if shops %}
-<ul class="wm-shop-list">
-{% for shop in shops %}
-  <li class="wm-shop-card wm-shop-card--{{ shop.color }}">
-    <span class="wm-shop-symbol" aria-hidden="true">{{ shop.symbol }}</span>
-    <a class="wm-shop-card-name" href="{% url 'shops:detail' club.slug shop.id %}">{{ shop.name }}</a>
-    {% if shop.keeper_name %}<span class="wm-shop-card-keeper">Keeper: {{ shop.keeper_name }}</span>{% endif %}
-  </li>
-{% endfor %}
-</ul>
+{% include "shops/browse/_street.html" %}
 {% else %}
 {% include "components/empty_state.html" with text="No shops are open today." icon="shop" %}
 {% endif %}

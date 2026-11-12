@@ -1,0 +1,1 @@
+<label class="wm-silhouette-option wm-building-option"{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>{% include "django/forms/widgets/input.html" %}<span class="wm-silhouette-swatch wm-building-swatch">{% include "shops/_building.html" with key=widget.value %}</span><span class="wm-silhouette-label">{{ widget.label }}</span></label>

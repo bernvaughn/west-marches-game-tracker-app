@@ -14,23 +14,35 @@ class SilhouetteSelect(forms.RadioSelect):
     option_template_name = "shops/widgets/silhouette_option.html"
 
 
+class BuildingSelect(forms.RadioSelect):
+    """Radio buttons, each with a small preview of the building."""
+
+    template_name = "shops/widgets/building_radios.html"
+    option_template_name = "shops/widgets/building_option.html"
+
+
 class ShopForm(forms.ModelForm):
     class Meta:
         model = Shop
         fields = [
             "name", "description", "keeper_name", "keeper_description",
-            "color", "silhouette", "symbol", "sell_percent", "buy_percent",
+            "color", "silhouette", "building", "street_position", "symbol",
+            "sell_percent", "buy_percent",
         ]  # fmt: skip
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
             "keeper_description": forms.Textarea(attrs={"rows": 3}),
             "silhouette": SilhouetteSelect,
+            "building": BuildingSelect,
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name in ("sell_percent", "buy_percent"):
             self.fields[name].validators.extend(PERCENT)
+        # Left out of a post, these keep their model defaults.
+        self.fields["building"].required = False
+        self.fields["street_position"].required = False
 
 
 class _StockPercentMixin:

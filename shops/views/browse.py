@@ -31,7 +31,7 @@ def _visible_rows(shop):
 
 @club_member_required
 def index(request, club_slug):
-    shops = open_shops(request.club, timezone.localdate())
+    shops = open_shops(request.club, timezone.localdate()).order_by("street_position", "name", "id")
     return render(request, "shops/browse/index.html", {"shops": shops})
 
 
