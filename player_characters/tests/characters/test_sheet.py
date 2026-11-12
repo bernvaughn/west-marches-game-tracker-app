@@ -21,7 +21,7 @@ def sheet(funded):
 @pytest.mark.story("U8")
 def test_coins_split(club, login, player, sheet):
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    for label in ("pp: 1", "gp: 0", "sp: 0", "cp: 0"):
+    for label in ("pp: 0", "gp: 10", "sp: 0", "cp: 0"):
         assert label in html
     assert "Rope" in html
     assert "Held" not in html

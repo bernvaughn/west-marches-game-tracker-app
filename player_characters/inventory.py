@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from items.models import Item
-from ledger.coins import split_copper
+from ledger.coins import display_parts
 from ledger.services import coin_balance, held_coins, held_items, item_quantities
 
 
@@ -27,7 +27,7 @@ class CoinSummary:
 
     @property
     def parts(self):
-        return list(zip(("pp", "gp", "sp", "cp"), split_copper(self.owned), strict=True))
+        return list(zip(("pp", "gp", "sp", "cp"), display_parts(self.owned), strict=True))
 
     @property
     def has_holds(self):

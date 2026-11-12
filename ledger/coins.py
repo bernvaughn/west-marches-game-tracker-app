@@ -16,20 +16,34 @@ def split_copper(cp):
     return (sign * pp, sign * gp, sign * sp, sign * copper)
 
 
+UNITS = ("pp", "gp", "sp", "cp")
+
+
+def display_parts(cp):
+    """(pp, gp, sp, cp) for display. Under 10,000 gp, gold holds everything above silver."""
+    if abs(cp) >= 10_000 * CP_PER_GP:
+        return split_copper(cp)
+    sign = -1 if cp < 0 else 1
+    gp, rest = divmod(abs(cp), CP_PER_GP)
+    sp, copper = divmod(rest, CP_PER_SP)
+    return (0, sign * gp, sign * sp, sign * copper)
+
+
+def coin_items(cp):
+    """(amount, unit) for each non-zero part of abs(cp); zero gives [(0, "cp")]."""
+    items = [(n, u) for n, u in zip(display_parts(abs(cp)), UNITS, strict=True) if n]
+    return items or [(0, "cp")]
+
+
 def format_coins(cp):
     if cp is None:
         return ""
-    parts = split_copper(abs(cp))
-    text = " ".join(
-        f"{n} {unit}" for n, unit in zip(parts, ("pp", "gp", "sp", "cp"), strict=True) if n
-    )
-    if not text:
-        return "0 cp"
+    text = " ".join(f"{n:,} {unit}" for n, unit in coin_items(cp))
     return f"-{text}" if cp < 0 else text
 
 
 class CoinsWidget(forms.MultiWidget):
-    template_name = "django/forms/widgets/multiwidget.html"
+    template_name = "ledger/widgets/coins.html"
 
     def __init__(self, attrs=None):
         widgets = {
@@ -40,7 +54,7 @@ class CoinsWidget(forms.MultiWidget):
     def decompress(self, value):
         if value is None or value == "":
             return [None] * 4
-        return list(split_copper(abs(value)))
+        return list(display_parts(abs(value)))
 
 
 class CoinsField(forms.MultiValueField):

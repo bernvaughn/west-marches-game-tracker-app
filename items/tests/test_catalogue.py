@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -42,7 +44,7 @@ def test_members_see_active_catalogue(login, player, game_master, club, item, re
 
 def test_value_uses_coins_filter(login, player, club):
     Item.objects.create(club=club, name="Gem", value_cp=1500)
-    assert b"1 pp 5 gp" in login(player).get(url("index", club)).content
+    assert b"15 gp" in re.sub(rb"<[^>]+>", b"", login(player).get(url("index", club)).content)
 
 
 @pytest.mark.parametrize("who", ["player", "game_master"])

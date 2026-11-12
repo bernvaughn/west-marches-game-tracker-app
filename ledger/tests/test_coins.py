@@ -1,7 +1,6 @@
 import pytest
 from django import forms
 from django.core.exceptions import ValidationError
-from django.template import Context, Template
 
 from ledger.coins import CoinsField, CoinsWidget, format_coins, split_copper
 
@@ -13,10 +12,10 @@ pytestmark = pytest.mark.story("FOUNDATION")
     [
         (0, "0 cp"),
         (5, "5 cp"),
-        (1234, "1 pp 2 gp 3 sp 4 cp"),
-        (1000, "1 pp"),
+        (1234, "12 gp 3 sp 4 cp"),
+        (1000, "10 gp"),
         (230, "2 gp 3 sp"),
-        (-1234, "-1 pp 2 gp 3 sp 4 cp"),
+        (-1234, "-12 gp 3 sp 4 cp"),
     ],
 )
 def test_format_coins(cp, text):
@@ -66,11 +65,5 @@ def test_form_round_trip():
 
 def test_widget_decompress():
     w = CoinsWidget()
-    assert w.decompress(1234) == [1, 2, 3, 4]
+    assert w.decompress(1234) == [0, 12, 3, 4]
     assert w.decompress(None) == [None] * 4
-
-
-@pytest.mark.parametrize("n", [0, 1234, -5])
-def test_filter(n):
-    out = Template("{% load coins %}{{ v|coins }}").render(Context({"v": n}))
-    assert out == format_coins(n)

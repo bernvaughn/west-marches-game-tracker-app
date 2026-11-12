@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block title %}Batch #{{ batch.pk }}{% endblock %}
 {% block content %}
 <h1>Batch #{{ batch.pk }}</h1>
@@ -30,7 +31,7 @@
     <p>{{ row.line.character }}:
       {% if row.line.item %}{{ row.line.quantity }} × {{ row.line.item }}
       {% elif row.line.proposed_item %}{{ row.line.quantity }} × {{ row.line.proposed_item }} (proposed)
-      {% else %}{{ row.line.coins }} cp{% endif %}
+      {% else %}{{ row.line.coins|coins }}{% endif %}
       {% if row.line.note %}— {{ row.line.note }}{% endif %}</p>
     {% endif %}
   </section>

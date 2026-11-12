@@ -1,4 +1,5 @@
 import datetime
+import re
 
 import pytest
 from django.urls import reverse
@@ -38,7 +39,8 @@ def test_row_content_and_gm_name(login, player, game_master, club, character, it
         actor=game_master,
     )
     html = login(player).get(hist(club, character)).content.decode()
-    for s in ("2025-01-02", "Award", "Dragon hoard", "+3 Rope", "+1 pp 2 gp 5 sp", "GM"):
+    html = re.sub(r"<[^>]+>", "", html)
+    for s in ("2025-01-02", "Award", "Dragon hoard", "+3 Rope", "+12 gp 5 sp", "GM"):
         assert s in html
 
 
@@ -46,7 +48,7 @@ def test_negative_coins_show_sign_once(login, player, club, character):
     record(character, "award", [Line(coins=500)])
     record(character, "adjustment", [Line(coins=-200)], note="fee")
     html = login(player).get(hist(club, character)).content.decode()
-    assert "-2 gp" in html and "--" not in html
+    assert "-2 gp" in re.sub(r"<[^>]+>", "", html) and "--" not in html
 
 
 def test_system_agent_and_reverses(login, player, club, character, item):
