@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Design system - West Marches{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Design system" subtitle="Every token and component, with live examples. Site admins only." breadcrumbs=breadcrumbs %}
+
+<nav class="mb-4" aria-label="On this page"><ul class="list-inline">
+  {% for gid, title, rows in groups %}<li class="list-inline-item"><a href="#token-{{ gid }}">{{ title }}</a></li>{% endfor %}
+  <li class="list-inline-item"><a href="#component-page-header">Components</a></li>
+</ul></nav>
+
+<h2 class="h2">Tokens</h2>
+{% for gid, title, rows in groups %}
+<section id="token-{{ gid }}" class="wm-section">
+  <h3>{{ title }}</h3>
+  <div class="wm-table-scroll"><table class="table table-sm wm-data-table">
+    <thead><tr><th>Token</th><th>Value</th><th>Preview</th></tr></thead>
+    <tbody>
+    {% for t in rows %}<tr>
+      <td><code>{{ t.name }}</code></td><td><code>{{ t.value }}</code></td>
+      <td>
+        {% if gid == "spacing" %}<span style="display:inline-block;height:12px;background:var(--wm-accent);width:var({{ t.name }})"></span>
+        {% elif gid == "colour" %}<span style="display:inline-block;width:3rem;height:1.5rem;border:1px solid var(--wm-border);border-radius:var(--wm-radius-sm);background:var({{ t.name }})"></span> {% if t.contrast %}<small class="text-muted">{{ t.contrast }}:1 on surface</small>{% endif %}
+        {% elif gid == "coins" %}<span style="color:var({{ t.name }})">1,234 coins</span>
+        {% elif gid == "radius" %}<span style="display:inline-block;width:3rem;height:1.5rem;border:2px solid var(--wm-text-muted);border-radius:var({{ t.name }})"></span>
+        {% elif gid == "shadow" %}<span style="display:inline-block;width:3rem;height:1.5rem;background:var(--wm-surface-raised);box-shadow:var({{ t.name }})"></span>
+        {% elif gid == "focus" %}{% if "ring" in t.name %}<input class="form-control form-control-sm" style="max-width:8rem;box-shadow:var({{ t.name }})" aria-label="Focus ring sample" value="Focused">{% endif %}
+        {% elif gid == "type" %}{% if "font-heading" in t.name %}<span style="font-family:var({{ t.name }});font-weight:700">Heading font</span>{% elif "font-body" in t.name %}<span style="font-family:var({{ t.name }})">Body font</span>{% elif "-text-" in t.name %}<span style="font-size:var({{ t.name }})">Aa Sample</span>{% endif %}
+        {% endif %}
+      </td>
+    </tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+{% endfor %}
+
+<h2 class="h2">Components</h2>
+
+<section id="component-page-header" class="wm-section">
+  <h3>page_header</h3>
+  <pre>{% verbatim %}{% include "components/page_header.html" with title="Shops" subtitle="..." action_url=u action_label="New shop" action_icon="plus-lg" %}{% endverbatim %}</pre>
+  <div class="wm-card"><div class="wm-card-body">{% include "components/page_header.html" with title="Shops" subtitle="Where to spend coin" action_url="#" action_label="New shop" action_icon="plus-lg" secondary=secondary %}</div></div>
+</section>
+
+<section id="component-card" class="wm-section">
+  <h3>card (card_open, card_footer, card_close)</h3>
+  <pre>{% verbatim %}{% include "components/card_open.html" with title="Inventory" %} ... {% include "components/card_footer.html" %} ... {% include "components/card_footer_close.html" %}{% endverbatim %}</pre>
+  {% include "components/card_open.html" with title="Inventory" subtitle="What Alice carries" %}
+  <p class="mb-0">Card body text.</p>
+  {% include "components/card_footer.html" %}<button class="btn btn-primary btn-sm">Save</button><button class="btn btn-outline-secondary btn-sm">Cancel</button>{% include "components/card_footer_close.html" %}
+</section>
+
+<section id="component-section" class="wm-section">
+  <h3>section (section_open, section_close)</h3>
+  <pre>{% verbatim %}{% include "components/section_open.html" with title="Quests" lead="Open work" %} ... {% include "components/section_close.html" %}{% endverbatim %}</pre>
+  {% include "components/section_open.html" with title="Quests" lead="Open work for the party." %}<p>Section content.</p>{% include "components/section_close.html" %}
+</section>
+
+<section id="component-data-table" class="wm-section">
+  <h3>data_table (CSS classes, plus data_table_empty)</h3>
+  <pre>&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="actions"&gt;
+{% verbatim %}{% empty %}{% include "components/data_table_empty.html" with cols=3 text="No lines." %}{% endverbatim %}</pre>
+  <p class="wm-scroll-hint">Scroll for more &rarr;</p>
+  <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+    <thead><tr><th>Character</th><th class="num">Qty</th><th class="num">Price</th><th class="actions">Actions</th></tr></thead>
+    <tbody>
+    {% for c in characters %}<tr><td>{{ c }}</td><td class="num">{{ forloop.counter }}</td><td class="num">{% include "components/coins.html" with value=1250 %}</td><td class="actions"><a href="#">Edit</a></td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+  <div class="wm-table-scroll"><table class="table table-sm wm-data-table"><tbody>{% include "components/data_table_empty.html" with cols=4 text="No lines yet." action_url="#" action_label="Add one" %}</tbody></table></div>
+</section>
+
+<section id="component-banner" class="wm-section">
+  <h3>banner (banner_open, banner_close)</h3>
+  <pre>{% verbatim %}{% include "components/banner_open.html" with color="forest" title=shop.name subtitle="Keeper: Mira" %}{% include "components/banner_close.html" %}{% endverbatim %}</pre>
+  <p class="text-muted">The band sits outside the card and bleeds to the page edges. Deep colour with light text, or <code>soft=1</code> for a light tint with dark text.</p>
+  <div class="row g-2">{% for c in banner_colors %}<div class="col-6 col-md-4"><div class="wm-banner wm-banner--{{ c }}" style="margin:0"><h4 class="mb-0 text-reset">{{ c|capfirst }}</h4></div><div class="wm-banner wm-banner--soft wm-banner--{{ c }}" style="margin:0"><h4 class="mb-0 text-reset">{{ c|capfirst }} soft</h4></div></div>{% endfor %}</div>
+</section>
+
+<section id="component-stat" class="wm-section">
+  <h3>stat</h3>
+  <pre>{% verbatim %}{% include "components/stat.html" with label="Level" value=5 %}{% endverbatim %}</pre>
+  <div class="d-flex flex-wrap gap-3">{% include "components/stat.html" with label="Level" value=5 %}{% include "components/stat.html" with label="Quests" value=12 %}</div>
+</section>
+
+<section id="component-definition-list" class="wm-section">
+  <h3>definition_list</h3>
+  <pre>{% verbatim %}{% include "components/definition_list.html" with items=pairs %}{% endverbatim %}</pre>
+  {% include "components/definition_list.html" with items=dl_items %}
+</section>
+
+<section id="component-badge" class="wm-section">
+  <h3>badge</h3>
+  <pre>{% verbatim %}{% include "components/badge.html" with status="warning" text="Pending" %}{% endverbatim %}</pre>
+  <div class="d-flex flex-wrap gap-2">{% for s in badge_statuses %}{% include "components/badge.html" with status=s text=s|capfirst %}{% endfor %}</div>
+</section>
+
+<section id="component-coins" class="wm-section">
+  <h3>coins</h3>
+  <pre>{% verbatim %}{% include "components/coins.html" with value=1250 %}{% endverbatim %}</pre>
+  <div class="d-flex flex-wrap gap-3">{% for v in coin_values %}{% include "components/coins.html" with value=v %}{% endfor %}</div>
+</section>
+
+<section id="component-character-chip" class="wm-section">
+  <h3>character_chip</h3>
+  <pre>{% verbatim %}{% include "components/character_chip.html" with name=c.name url=c.get_absolute_url %}{% endverbatim %}</pre>
+  <div class="d-flex flex-wrap gap-3">{% for c in characters %}{% include "components/character_chip.html" with name=c url="#" %}{% endfor %}</div>
+</section>
+
+<section id="component-empty-state" class="wm-section">
+  <h3>empty_state</h3>
+  <pre>{% verbatim %}{% include "components/empty_state.html" with text="No quests yet." action_url=u action_label="Add a quest" %}{% endverbatim %}</pre>
+  {% include "components/empty_state.html" with text="No quests yet." action_url="#" action_label="Add a quest" %}
+</section>
+
+<section id="component-alert" class="wm-section">
+  <h3>alert</h3>
+  <pre>{% verbatim %}{% include "components/alert.html" with level="danger" text="Could not save." %}{% endverbatim %}</pre>
+  {% include "components/alert.html" with level="success" text="Saved." %}
+  {% include "components/alert.html" with level="info" title="Heads up" text="Prices change on market day." %}
+  {% include "components/alert.html" with level="warning" text="Two items are out of stock." %}
+  {% include "components/alert.html" with level="danger" text="Could not save." %}
+</section>
+
+<section id="component-icon" class="wm-section">
+  <h3>icon</h3>
+  <pre>{% verbatim %}{% include "components/icon.html" with name="plus-lg" label="Add" %}{% endverbatim %}</pre>
+  <div class="d-flex flex-wrap gap-3 fs-4">{% for n in sprite_icons %}<span title="{{ n }}">{% include "components/icon.html" with name=n %}</span>{% endfor %}</div>
+</section>
+
+<section id="component-form-layout" class="wm-section">
+  <h3>form_layout</h3>
+  <pre>{% verbatim %}{% include "components/form_layout.html" with form=form submit_label="Create" cancel_url=back %}{% endverbatim %}</pre>
+  {% include "components/form_layout.html" with form=form submit_label="Create" cancel_url="#" %}
+</section>
+
+<section id="component-modal-frame" class="wm-section">
+  <h3>modal_frame</h3>
+  <pre>{% verbatim %}{% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% endverbatim %}</pre>
+  <div class="modal-content" style="max-width:32rem">{% include "accounts/design/_modal_sample.html" %}</div>
+</section>
+{% endblock %}

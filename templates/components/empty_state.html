@@ -1,0 +1,4 @@
+{% comment %}empty_state: shown instead of an empty list. Context: text (required, one line), icon (sprite id, default "inbox"), action_url + action_label (optional).
+   Example: {% include "components/empty_state.html" with text="No quests yet." action_url=u action_label="Add a quest" %}
+{% endcomment %}
+<div class="wm-empty">{% include "components/icon.html" with name=icon|default:"inbox" %}<p>{{ text }}</p>{% if action_url %}<a class="btn btn-primary" href="{{ action_url }}">{{ action_label }}</a>{% endif %}</div>

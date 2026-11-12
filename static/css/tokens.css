@@ -1,0 +1,139 @@
+/* Design tokens (U35). Parchment and ink, light only. Loaded after Journal.
+   Every text colour pair here is tested for WCAG 2.2 AA (4.5:1) in accounts/tests/test_design_system.py. */
+@font-face {
+  font-family: "Source Serif 4"; font-style: normal; font-weight: 600; font-display: swap;
+  src: url("../vendor/source-serif-4/source-serif-4-latin-600-normal.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Source Serif 4"; font-style: normal; font-weight: 700; font-display: swap;
+  src: url("../vendor/source-serif-4/source-serif-4-latin-700-normal.woff2") format("woff2");
+}
+
+:root {
+  /* Spacing: 4 px scale */
+  --wm-space-1: 4px;
+  --wm-space-2: 8px;
+  --wm-space-3: 12px;
+  --wm-space-4: 16px;
+  --wm-space-5: 24px;
+  --wm-space-6: 32px;
+  --wm-space-7: 48px;
+
+  /* Type */
+  --wm-font-heading: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --wm-font-body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --wm-text-xs: 0.75rem;
+  --wm-text-sm: 0.875rem;
+  --wm-text-md: 1rem;
+  --wm-text-lg: 1.25rem;
+  --wm-text-xl: 1.5rem;
+  --wm-text-2xl: 1.875rem;
+  --wm-text-3xl: 2.25rem;
+  --wm-leading-tight: 1.2;
+  --wm-leading-normal: 1.5;
+
+  /* Colour roles */
+  --wm-surface: #fbf8f3;
+  --wm-surface-raised: #ffffff;
+  --wm-surface-sunken: #f3ede3;
+  --wm-border: #e2d9cc;
+  --wm-text: #2b2622;
+  --wm-text-muted: #6b625a;
+  --wm-accent: #b8322e;
+  --wm-accent-hover: #932825;
+  --wm-accent-rgb: 184, 50, 46;
+  --wm-on-accent: #ffffff;
+  --wm-success: #1e7a3c;
+  --wm-success-bg: #e6f3ea;
+  --wm-warning: #8a5a00;
+  --wm-warning-bg: #fbf0d9;
+  --wm-danger: #9e1f1f;
+  --wm-danger-bg: #f9e4e2;
+  --wm-info: #1f5d8a;
+  --wm-info-bg: #e3eef7;
+  --wm-neutral-bg: #ece6dc;
+
+  /* Coins (U31, U32): values unchanged */
+  --wm-coin-cp: #8b4513;
+  --wm-coin-sp: #5f6368;
+  --wm-coin-gp: #7a5c00;
+  --wm-coin-pp: #eef4ff;
+  --wm-coin-pp-bg: #3d4b5c;
+
+  /* Coin metal dots (decorative; the text label carries the meaning) */
+  --wm-coin-dot-cp: #b87333;
+  --wm-coin-dot-sp: #b8bcc4;
+  --wm-coin-dot-gp: #e0a800;
+  --wm-coin-dot-pp: #9fb4d0;
+
+  /* Shop presets: -deep reads with light text, -soft reads with dark text (--wm-text) */
+  --wm-shop-parchment-deep: #6f5320;
+  --wm-shop-parchment-soft: #f5ecd6;
+  --wm-shop-forest-deep: #2f6b3a;
+  --wm-shop-forest-soft: #e1efe0;
+  --wm-shop-ember-deep: #a23d12;
+  --wm-shop-ember-soft: #fbe3d6;
+  --wm-shop-ocean-deep: #1f5f93;
+  --wm-shop-ocean-soft: #dcecf7;
+  --wm-shop-violet-deep: #6a3f9a;
+  --wm-shop-violet-soft: #ece3f6;
+  --wm-shop-slate-deep: #46505c;
+  --wm-shop-slate-soft: #e4e8ec;
+
+  /* Radii and shadows */
+  --wm-radius-sm: 4px;
+  --wm-radius-md: 8px;
+  --wm-radius-lg: 12px;
+  --wm-shadow-1: 0 1px 2px rgba(43, 38, 34, .08);
+  --wm-shadow-2: 0 4px 16px rgba(43, 38, 34, .14);
+
+  /* Focus ring: soft accent halo plus a solid outline for forced-colours users */
+  --wm-focus-ring: 0 0 0 3px rgba(184, 50, 46, .4);
+  --wm-focus-outline: 2px solid var(--wm-accent);
+
+  /* Bootstrap bridge */
+  --bs-body-bg: var(--wm-surface);
+  --bs-body-color: var(--wm-text);
+  --bs-body-color-rgb: 43, 38, 34;
+  --bs-body-font-family: var(--wm-font-body);
+  --bs-heading-color: var(--wm-text);
+  --bs-secondary-color: var(--wm-text-muted);
+  --bs-secondary-bg: var(--wm-surface-sunken);
+  --bs-tertiary-bg: var(--wm-surface-raised);
+  --bs-border-color: var(--wm-border);
+  --bs-primary: var(--wm-accent);
+  --bs-primary-rgb: 184, 50, 46;
+  --bs-link-color: var(--wm-accent);
+  --bs-link-color-rgb: 184, 50, 46;
+  --bs-link-hover-color: var(--wm-accent-hover);
+  --bs-link-hover-color-rgb: 147, 40, 37;
+  --bs-success: var(--wm-success);
+  --bs-success-rgb: 30, 122, 60;
+  --bs-success-text-emphasis: var(--wm-success);
+  --bs-success-bg-subtle: var(--wm-success-bg);
+  --bs-success-border-subtle: #b9dcc4;
+  --bs-danger: var(--wm-danger);
+  --bs-danger-rgb: 158, 31, 31;
+  --bs-danger-text-emphasis: var(--wm-danger);
+  --bs-danger-bg-subtle: var(--wm-danger-bg);
+  --bs-danger-border-subtle: #eab9b5;
+  --bs-warning: var(--wm-warning);
+  --bs-warning-rgb: 138, 90, 0;
+  --bs-warning-text-emphasis: var(--wm-warning);
+  --bs-warning-bg-subtle: var(--wm-warning-bg);
+  --bs-warning-border-subtle: #ecd49b;
+  --bs-info: var(--wm-info);
+  --bs-info-rgb: 31, 93, 138;
+  --bs-info-text-emphasis: var(--wm-info);
+  --bs-info-bg-subtle: var(--wm-info-bg);
+  --bs-info-border-subtle: #b5cfe3;
+  --bs-border-radius: var(--wm-radius-md);
+  --bs-border-radius-sm: var(--wm-radius-sm);
+  --bs-border-radius-lg: var(--wm-radius-lg);
+  --bs-box-shadow: var(--wm-shadow-2);
+  --bs-box-shadow-sm: var(--wm-shadow-1);
+  --bs-box-shadow-lg: var(--wm-shadow-2);
+  --bs-focus-ring-width: 3px;
+  --bs-focus-ring-opacity: .4;
+  --bs-focus-ring-color: rgba(184, 50, 46, .4);
+}

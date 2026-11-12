@@ -1,0 +1,4 @@
+{% comment %}alert: a message with an icon per level. Context: text (required), level (success, warning, danger, info; default info), title (optional).
+   Example: {% include "components/alert.html" with level="danger" text="Could not save." %}
+{% endcomment %}
+<div class="alert alert-{{ level|default:'info' }} wm-alert wm-alert--{{ level|default:'info' }}" role="{% if level == 'danger' or level == 'warning' %}alert{% else %}status{% endif %}">{% if level == "success" %}{% include "components/icon.html" with name="check-circle-fill" %}{% elif level == "warning" %}{% include "components/icon.html" with name="exclamation-triangle-fill" %}{% elif level == "danger" %}{% include "components/icon.html" with name="x-octagon-fill" %}{% else %}{% include "components/icon.html" with name="info-circle-fill" %}{% endif %}<div>{% if title %}<span class="wm-alert-title">{{ title }}</span>{% endif %}{{ text }}</div></div>
