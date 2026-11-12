@@ -2,12 +2,14 @@
 .wm-street {
   --wm-street-road: var(--wm-border);
   --wm-street-road-edge: var(--wm-text-muted);
-  --wm-street-lot-min: 10rem;
   --wm-street-road-height: 1.25rem;
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--wm-street-lot-min), 45%), 1fr));
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
   column-gap: 0; row-gap: var(--wm-space-4);
 }
+.wm-street-lot--filler .wm-street-link { color: var(--wm-shop-slate-deep); }
+.wm-street-lot--filler .wm-street-link:hover { transform: none; }
+@media (min-width: 768px) { .wm-street { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
 .wm-street-lot { position: relative; margin: 0; padding: 0; min-width: 0; }
 /* Each lot paints its own road segment; with no column gap they join into one band per row. */
 .wm-street-lot::after {
@@ -35,8 +37,9 @@
 .wm-street-name { overflow-wrap: anywhere; }
 .wm-building-swatch .wm-building { width: 64px; height: 64px; color: var(--wm-shop-parchment-deep); }
 @media (prefers-reduced-motion: reduce) { .wm-street-link { transition: none; } .wm-street-link:hover { transform: none; } }
-@media (max-width: 575px) { .wm-street-sign { font-size: .75rem; } }
+@media (max-width: 991px) { .wm-street-sign { font-size: .75rem; } }
 @media print {
+  .wm-street-lot--filler { display: none; }
   .wm-street { display: block; }
   .wm-street-lot::after, .wm-building { display: none; }
   .wm-street-link { padding: 0; }

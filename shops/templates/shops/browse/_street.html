@@ -1,10 +1,10 @@
 <ul class="wm-street" aria-label="Shops">
-{% for shop in shops %}
+{% for lot in lots %}{% if lot.shop %}{% with shop=lot.shop %}
   <li class="wm-street-lot wm-shop-card--{{ shop.color }}">
     <a class="wm-street-link" href="{% url 'shops:detail' club.slug shop.id %}">
       {% include "shops/_building.html" with key=shop.building %}
       <span class="wm-street-sign">{% if shop.symbol %}<span class="wm-street-symbol" aria-hidden="true">{{ shop.symbol }}</span>{% endif %}<span class="wm-street-name">{{ shop.name }}</span></span>
     </a>
   </li>
-{% endfor %}
+{% endwith %}{% else %}{% include "shops/browse/_street_filler.html" with key=lot.shape %}{% endif %}{% endfor %}
 </ul>
