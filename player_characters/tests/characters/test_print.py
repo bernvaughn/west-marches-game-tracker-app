@@ -160,3 +160,13 @@ def test_sheet_has_print_card_links(login, club, player, funded, item):
     base = item_url(club, funded, item)
     assert "Print card" in body
     assert f"{base}?layout=full" in body and f"{base}?layout=grid" in body
+
+
+@pytest.mark.story("U40")
+def test_card_pages_drop_main_padding_in_print(login, club, player, funded, item):
+    # Letter's page area is about 10.5 in, the sheet height: padding pushes row 3 over.
+    c = login(player)
+    for r in (c.get(url(club, funded)), c.get(item_url(club, funded, item), {"layout": "grid"})):
+        assert 'class="wm-main wm-card-print"' in r.content.decode()
+    css = (Path(settings.BASE_DIR) / "static/css/print.css").read_text()
+    assert ".wm-card-print { padding: 0" in css

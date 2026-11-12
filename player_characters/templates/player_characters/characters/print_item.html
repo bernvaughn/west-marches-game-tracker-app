@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Card: {{ row.item.name }}{% endblock %}
+{% block main_class %}wm-card-print{% endblock %}
 {% block content %}
 {% url "characters:detail" club.slug character.pk as sheet_url %}<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
   {% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
