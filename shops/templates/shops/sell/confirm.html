@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Sell to {{ shop.name }}{% endblock %}
+{% block content %}
+{% url "shops:sell" request.club.slug shop.pk as back_url %}{% include "components/page_header.html" with title="Sell "|add:item.name back_url=back_url back_label="Back to selling" %}
+{% include "components/card_open.html" %}
+<form method="post" action="{{ back_url }}" class="wm-form">
+  {% csrf_token %}
+  {% include "shops/sell/_confirm_body.html" %}
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Sell as {{ character.name }}</button> <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a></div>
+</form>
+{% include "components/card_close.html" %}
+{% endblock %}
