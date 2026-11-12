@@ -9,7 +9,7 @@ pytestmark = pytest.mark.story("FOUNDATION")
 ROUTES = [
     "club_home",
     "accounts:index",
-    "characters:index",
+    "characters:directory",
     "trades:index",
     "items:index",
     "shops:index",

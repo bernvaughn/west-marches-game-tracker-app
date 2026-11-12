@@ -25,7 +25,7 @@ def detail(client, club, shop):
 
 
 def banner(body):
-    return body[body.index('class="wm-shop-banner '):body.index('id="stock"')]
+    return body[body.index('class="wm-shop-banner ') : body.index('id="stock"')]
 
 
 @pytest.mark.story("U39")
@@ -33,7 +33,7 @@ def test_silhouette_and_name_in_left_slot(login, player, club, open_shop):
     b = banner(detail(login(player), club, open_shop))
     fig = b.index("wm-shop-keeper-figure")
     assert fig < b.index("wm-shop-sellbar")
-    figure = b[fig:b.index("</figure>")]
+    figure = b[fig : b.index("</figure>")]
     assert "wm-shop-silhouette" in figure
     assert f"{open_shop.silhouette}.svg" in figure
     assert f'wm-shop-keeper-name">{open_shop.keeper_name}<' in figure
@@ -61,7 +61,7 @@ def test_short_description_not_repeated_and_empty_plain(login, player, club, ope
 @pytest.mark.story("U39")
 def test_sell_button_keeps_place(login, player, club, open_shop):
     b = banner(detail(login(player), club, open_shop))
-    sell = b[b.index("wm-shop-sellbar"):]
+    sell = b[b.index("wm-shop-sellbar") :]
     assert f"Sell to {open_shop.keeper_name}" in sell
 
 
@@ -86,9 +86,11 @@ def test_svg_one_style(key):
 
 @pytest.mark.story("U39")
 def test_picker_lists_all_ten(login, club_admin, club, shop):
-    body = login(club_admin).get(
-        reverse("shops:manage_edit", args=[club.slug, shop.pk])
-    ).content.decode()
+    body = (
+        login(club_admin)
+        .get(reverse("shops:manage_edit", args=[club.slug, shop.pk]))
+        .content.decode()
+    )
     for key in Shop.Silhouette.values:
         assert f'value="{key}"' in body and f"shops/silhouettes/{key}.svg" in body
 

@@ -25,6 +25,7 @@ PK_ROUTES = {
 PLAIN_ROUTES = {
     "characters:index": "player_characters.views.characters",
     "characters:create": "player_characters.views.characters",
+    "characters:directory": "player_characters.views.characters",
 }
 
 
@@ -45,9 +46,12 @@ def test_routes_resolve_to_module(club, name, module):
 MATRIX = [
     *[
         (n, u, 200)
-        for n in ("characters:index", "characters:create")
+        for n in ("characters:directory", "characters:create")
         for u in ("player", "game_master", "site_admin")
     ],
+    ("characters:index", "player", 403),
+    ("characters:index", "game_master", 200),
+    ("characters:index", "site_admin", 200),
     ("characters:detail", "player", 200),
     ("characters:detail", "other_player", 200),
     *[("characters:edit", u, 200) for u in ("player", "game_master", "club_admin", "site_admin")],

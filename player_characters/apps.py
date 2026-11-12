@@ -6,9 +6,12 @@ class PlayerCharactersConfig(AppConfig):
 
     def ready(self):
         from accounts import navigation
+        from accounts.apps import is_gm_or_admin
 
         reg = navigation.register
-        reg("primary", "Character", "characters:index", None, 10)
+        reg("primary", "Character", "characters:mine", None, 10)
+        reg("more", "Character directory", "characters:directory", None, 15)
+        reg("gm", "All characters", "characters:index", is_gm_or_admin, 60)
         reg("more", "Trades", "trades:index", None, 20)
         reg("more", "Propose trade", "trades:propose", None, 30)
         reg("more", "New character", "characters:create", None, 50)

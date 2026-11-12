@@ -96,7 +96,8 @@ def test_old_nav_links_still_reachable(login, club, player, club_admin, game_mas
         "player": [
             "accounts:index",
             "accounts:message_new",
-            "characters:index",
+            "characters:mine",
+            "characters:directory",
             "characters:create",
             "characters:transfer_start",
             "trades:index",
@@ -118,12 +119,14 @@ def test_old_nav_links_still_reachable(login, club, player, club_admin, game_mas
             "agent_access:index",
             "items:index",
             "accounts:index",
+            "characters:index",
         ],
         "gm": [
             "agent_access:index",
             "agent_access:connections",
             "agent_access:batches",
             "agent_access:proposed_items",
+            "characters:index",
         ],
     }
     users = {"player": player, "admin": club_admin, "gm": game_master}

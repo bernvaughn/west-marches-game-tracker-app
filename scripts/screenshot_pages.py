@@ -143,7 +143,7 @@ def _build_pages() -> list[Page]:
         P("site-settings", "site_admin", lambda d: reverse("site_settings")),
         P("site-design", "site_admin", lambda d: reverse("site_design")),
         # characters
-        P("characters-index-alice", "alice", _c("characters:index")),
+        P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
         P("characters-create", "alice", _c("characters:create")),
         P("characters-detail-alice", "alice", _c("characters:detail", "aria.pk")),

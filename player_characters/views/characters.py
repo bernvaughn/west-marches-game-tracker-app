@@ -1,9 +1,12 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Prefetch
+from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 from accounts.permissions import (
+    admin_or_gm_required,
     can_view_inventory,
     club_admin_required,
     club_member_required,
@@ -17,9 +20,34 @@ from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
 from ..inventory import coin_summary, inventory_rows
 from ..models import Character
+from ..selection import selected_character
 
 
 @club_member_required
+def mine(request, club_slug):
+    character = selected_character(request)
+    if character:
+        return redirect("characters:detail", club_slug=request.club.slug, pk=character.pk)
+    return render(request, "player_characters/characters/mine_empty.html")
+
+
+@club_member_required
+def directory(request, club_slug):
+    sees_all = is_club_admin(request.user, request.club) or is_game_master(
+        request.user, request.club
+    )
+    characters = (
+        club_queryset(request, Character).select_related("owner__user").order_by(Lower("name"))
+    )
+    rows = []
+    for c in characters:
+        allowed = sees_all or c.owner_id == getattr(request.membership, "pk", None)
+        url = reverse("characters:detail", args=[request.club.slug, c.pk]) if allowed else None
+        rows.append((c, url))
+    return render(request, "player_characters/characters/directory.html", {"rows": rows})
+
+
+@admin_or_gm_required
 def index(request, club_slug):
     characters = club_queryset(request, Character).select_related("owner__user")
     return render(request, "player_characters/characters/index.html", {"characters": characters})
@@ -53,6 +81,12 @@ def detail(request, club_slug, pk):
     admin = is_club_admin(request.user, request.club)
     ctx = {
         "character": character,
+        "characters_url": reverse(
+            "characters:index"
+            if admin or is_game_master(request.user, request.club)
+            else "characters:directory",
+            args=[request.club.slug],
+        ),
         "owner_name": character.owner.user.display_name,
         "can_view": can_view,
         "can_edit": can_view,
