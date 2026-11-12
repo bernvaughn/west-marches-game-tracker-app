@@ -1,6 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Logged out{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>You are logged out</h1>
-<p><a href="{% url 'login' %}">Log in again</a></p>
+<div class="wm-auth-card">
+  <p class="wm-auth-brand">West Marches</p>
+  <h1>You are logged out</h1>
+  <p>See you at the next session.</p>
+  <a class="btn btn-primary w-100" href="{% url 'login' %}">Log in again</a>
+</div>
 {% endblock %}

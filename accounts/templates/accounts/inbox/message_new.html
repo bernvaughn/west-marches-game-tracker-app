@@ -1,33 +1,40 @@
 {% extends "base.html" %}
 {% block title %}Message admins{% endblock %}
 {% block content %}
-<h1>Message the club admins</h1>
+{% include "components/page_header.html" with title="Message the club admins" subtitle="Ask for a reward, a correction or a ruling." %}
 {% if is_member %}
 {% if form %}
-<p>Message as <strong>{{ character.name }}</strong></p>
-<form method="post">
+<div class="wm-narrow-block">
+{% include "components/card_open.html" with title="New message" %}
+<p class="text-muted">Message as <strong>{{ character.name }}</strong></p>
+<form method="post" class="wm-form">
   {% csrf_token %}
-  {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Send as {{ character.name }}</button>
+  {{ form }}
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Send as {{ character.name }}</button></div>
 </form>
+{% include "components/card_close.html" %}
+</div>
 {% else %}
-<p>You have no character in this club.</p>
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
 {% endif %}
-<h2>Your messages</h2>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <tr><th>Date</th><th>Character</th><th>Message</th><th>Status</th></tr>
+{% include "components/section_open.html" with title="Your messages" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Date</th><th>Character</th><th class="wm-msg-col">Message</th><th>Status</th></tr></thead>
+  <tbody>
   {% for m in sent %}
   <tr>
     <td>{{ m.created|date:"Y-m-d H:i" }}</td>
     <td>{{ m.character.name|default:"-" }}</td>
-    <td>{{ m.body|linebreaksbr }}</td>
-    <td>{{ m.get_status_display }}</td>
+    <td class="wm-msg-col">{{ m.body|linebreaksbr }}</td>
+    <td>{% if m.status == "open" %}{% include "components/badge.html" with status="warning" text=m.get_status_display %}{% elif m.status == "handled" %}{% include "components/badge.html" with status="success" text=m.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=m.get_status_display %}{% endif %}</td>
   </tr>
   {% empty %}
-  <tr><td colspan="4">No messages yet.</td></tr>
+  {% include "components/data_table_empty.html" with cols=4 text="No messages yet." %}
   {% endfor %}
+  </tbody>
 </table></div>
+{% include "components/section_close.html" %}
 {% else %}
-<p>Only club members can send messages.</p>
+{% include "components/empty_state.html" with text="Only club members can send messages." icon="lock" %}
 {% endif %}
 {% endblock %}

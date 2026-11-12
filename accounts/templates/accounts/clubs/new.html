@@ -1,11 +1,10 @@
 {% extends "base.html" %}
 {% block title %}New club{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>New club</h1>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Create club</button>
-</form>
-<p><a href="{% url 'site_clubs' %}">Back to clubs</a></p>
+{% url 'site_clubs' as clubs_url %}
+{% include "components/page_header.html" with title="New club" subtitle="Create a club and its first admin." %}
+{% include "components/card_open.html" %}
+{% include "components/form_layout.html" with form=form submit_label="Create club" cancel_url=clubs_url %}
+{% include "components/card_close.html" %}
 {% endblock %}

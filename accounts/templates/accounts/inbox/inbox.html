@@ -2,24 +2,22 @@
 {% load accounts_tags coins %}
 {% block title %}Inbox{% endblock %}
 {% block content %}
-<h1>Inbox</h1>
-<p>
-  {% for f in filters %}
-    {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
-  {% endfor %}
-</p>
+{% include "components/page_header.html" with title="Inbox" subtitle="Messages from players to the club admins." %}
+<nav class="wm-segmented" aria-label="Filter by status">
+  {% for f in filters %}<a class="btn btn-sm {% if f == status %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?status={{ f }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>{% endfor %}
+</nav>
 <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <tr><th>From</th><th>Email</th><th>Character</th><th>Message</th><th>Date</th><th>Status</th></tr>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>From</th><th>Character</th><th class="wm-msg-col">Message</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
   {% for m in messages_list %}
   <tr>
-    <td>{{ m.sender.user.display_name }}</td>
-    <td>{% member_email m.sender.user %}</td>
+    <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div></td>
     <td>{{ m.character.name|default:"-" }}</td>
-    <td>{{ m.body|linebreaksbr }}
+    <td class="wm-msg-col">{{ m.body|linebreaksbr }}
       {% if m.granted_entries.all or m.granted_visits.all or m.granted_credits.all or m.granted_found_marks.all %}
-      <div class="small mt-1"><strong>Granted</strong>
-        <ul class="mb-0">
+      <div class="wm-granted"><strong>Granted</strong>
+        <ul>
           {% for e in m.granted_entries.all %}{% for l in e.lines.all %}
           <li>{{ e.character.name }}: {% if l.item %}{{ l.item.name }} × {{ l.quantity }}{% else %}{{ l.coins|coins }}{% endif %}</li>
           {% endfor %}{% endfor %}
@@ -30,12 +28,13 @@
       {% endif %}
     </td>
     <td>{{ m.created|date:"Y-m-d H:i" }}</td>
-    <td>
-      {{ m.get_status_display }}
-      <form method="post" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
+    <td>{% if m.status == "open" %}{% include "components/badge.html" with status="warning" text=m.get_status_display %}{% elif m.status == "handled" %}{% include "components/badge.html" with status="success" text=m.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=m.get_status_display %}{% endif %}</td>
+    <td class="actions">
+      <form method="post" class="wm-status-form" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
         {% csrf_token %}
         <input type="hidden" name="filter" value="{{ status }}">
-        <select class="form-select form-select-sm w-auto d-inline-block" name="status">
+        <label class="visually-hidden" for="status-{{ m.pk }}">Status for message {{ m.pk }}</label>
+        <select class="form-select form-select-sm" id="status-{{ m.pk }}" name="status">
           {% for value, label in statuses %}
           <option value="{{ value }}"{% if value == m.status %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -43,12 +42,13 @@
         <button class="btn btn-sm btn-primary" type="submit">Set</button>
       </form>
       {% url 'accounts:message_grant' request.club.slug m.pk as grant_url %}
-      <a class="btn btn-sm btn-outline-primary mt-1" href="{{ grant_url }}?filter={{ status }}" hx-get="{{ grant_url }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Grant</a>
+      <a class="btn btn-sm btn-outline-primary" href="{{ grant_url }}?filter={{ status }}" hx-get="{{ grant_url }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Grant</a>
     </td>
   </tr>
   {% empty %}
-  <tr><td colspan="6">No messages.</td></tr>
+  {% include "components/data_table_empty.html" with cols=6 text="No messages." %}
   {% endfor %}
+  </tbody>
 </table></div>
 </div>
 {% endblock %}

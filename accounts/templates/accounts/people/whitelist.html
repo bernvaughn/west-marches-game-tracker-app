@@ -1,15 +1,24 @@
 {% extends "base.html" %}
 {% block title %}Whitelist{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>Whitelist</h1>
+{% include "components/page_header.html" with title="Whitelist" subtitle="Emails that may sign in to this club." %}
 {% if temp_password %}{% include "accounts/_temp_password.html" %}{% endif %}
-<form method="post">
+{% include "components/card_open.html" with title="Add an email" %}
+<form method="post" class="wm-form">
   {% csrf_token %}
-  {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Add</button>
+  {{ form }}
+  <div class="wm-form-actions"><button type="submit" class="btn btn-primary">Add</button></div>
 </form>
-<h2>Whitelisted emails</h2>
-<ul>
-  {% for e in entries %}<li>{{ e.email }}</li>{% empty %}<li>None yet.</li>{% endfor %}
-</ul>
+{% include "components/card_close.html" %}
+{% include "components/section_open.html" with title="Whitelisted emails" %}
+{% if entries %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Email</th></tr></thead>
+  <tbody>{% for e in entries %}<tr><td>{{ e.email }}</td></tr>{% endfor %}</tbody>
+</table></div>
+{% else %}
+{% include "components/empty_state.html" with text="None yet." icon="envelope" %}
+{% endif %}
+{% include "components/section_close.html" %}
 {% endblock %}

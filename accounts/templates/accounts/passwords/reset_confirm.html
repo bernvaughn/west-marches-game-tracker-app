@@ -1,11 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Reset password{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>Reset password</h1>
-<p>Reset the password for {{ target.display_name|default:"this member" }}? They are signed out and must choose a new password.</p>
-<form method="post">
+{% url 'accounts:index' club.slug as people_url %}
+{% include "components/page_header.html" with title="Reset password" subtitle="Confirm the reset." %}
+<form method="post" class="wm-form">
   {% csrf_token %}
-  <button class="btn btn-sm btn-primary" type="submit">Reset password</button>
-  <a href="{% url 'accounts:index' club.slug %}">Cancel</a>
+  <div class="wm-alert-wrap">{% include "components/alert.html" with level="warning" text="They are signed out and must choose a new password." title=target.display_name|default:"this member" %}</div>
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-danger">Reset password</button>
+    <a class="btn btn-outline-secondary" href="{{ people_url }}">Cancel</a>
+  </div>
 </form>
 {% endblock %}
