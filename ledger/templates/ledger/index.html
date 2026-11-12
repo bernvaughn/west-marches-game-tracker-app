@@ -1,16 +1,60 @@
 {% extends "base.html" %}
-{% block title %}Ledger{% endblock %}
+{% load coins %}
+{% block title %}{% if no_character %}Ledger{% else %}Club ledger{% endif %}{% endblock %}
 {% block content %}
+{% if no_character %}
 {% include "components/page_header.html" with title="Ledger" %}
+{% include "components/empty_state.html" with text="You have no character in this club." %}
+{% else %}
+{% include "components/page_header.html" with title="Club ledger" %}
+<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3 no-print">
+  {% for field in form %}
+  <div><label class="form-label small mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  {{ field }}</div>
+  {% endfor %}
+  <button class="btn btn-primary" type="submit">Filter</button>
+  <a class="btn btn-outline-secondary" href="{% url 'ledger:index' club.slug %}">Clear</a>
+</form>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Character</th><th>Owner</th></tr></thead>
+  <thead><tr><th>Date</th><th>Character</th><th>Player</th><th>Changes</th><th>Kind</th><th>Note</th><th>Recorded by</th><th>Source</th></tr></thead>
   <tbody>
-  {% for c in characters %}
-  {% url 'ledger:character_history' club.slug c.pk as history_url %}
-  <tr><td>{% include "components/character_chip.html" with name=c.name url=history_url %}</td><td>{{ c.owner.user.display_name }}</td></tr>
+  {% for e in entries %}
+  <tr>
+    <td>{{ e.date|date:"Y-m-d" }}</td>
+    <td>{% url 'characters:detail' club.slug e.character_id as sheet_url %}{% include "components/character_chip.html" with name=e.character.name url=sheet_url %}
+      <a class="small" href="{% url 'ledger:character_history' club.slug e.character_id %}?from=ledger{% if filter_qs %}&amp;{{ filter_qs }}{% endif %}{% if page_obj.number > 1 %}&amp;ledger_page={{ page_obj.number }}{% endif %}">History</a></td>
+    <td>{{ e.character.owner.user.display_name }}</td>
+    <td>
+      <ul class="wm-ledger-lines">
+        {% for line in e.lines.all %}
+        <li>
+          {% if line.item %}<span class="{% if line.quantity > 0 %}wm-credit{% else %}wm-debit{% endif %}">{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}</span>{% endif %}
+          {% if line.coins %}<span class="{% if line.coins > 0 %}wm-credit{% else %}wm-debit{% endif %}">{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </td>
+    <td>{{ e.get_kind_display }} (#{{ e.id }}){% if e.reverses_id %} <span class="wm-badge wm-badge--neutral">reverses #{{ e.reverses_id }}</span>{% endif %}</td>
+    <td>{{ e.note }}</td>
+    <td>{% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}{% if e.via_agent %} {% include "components/badge.html" with text="agent" %}{% endif %}</td>
+    <td>
+      {% if e.shop_id %}<a href="{% url 'shops:detail' club.slug e.shop_id %}">{{ e.shop.name }}</a>{% endif %}
+      {% if e.agent_batch_id %}{% if is_gm %}<a href="{% url 'agent_access:batch_detail' club.slug e.agent_batch_id %}">Batch #{{ e.agent_batch_id }}</a>{% else %}Batch #{{ e.agent_batch_id }}{% endif %}{% endif %}
+      {% if e.source_message_id %}{% if is_admin %}<a href="{% url 'accounts:message_inbox' club.slug %}?status=all">Message</a>{% else %}Message{% endif %}{% endif %}
+      {% if e.reverses_id %}Reverses #{{ e.reverses_id }}{% endif %}
+    </td>
+  </tr>
   {% empty %}
-  {% include "components/data_table_empty.html" with cols=2 text="No characters to show." %}
+  {% include "components/data_table_empty.html" with cols=8 text="No entries match these filters." %}
   {% endfor %}
   </tbody>
 </table></div>
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="wm-history-pager" aria-label="Pages">
+  {% if page_obj.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring page=page_obj.previous_page_number %}">Previous</a>{% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endif %}
 {% endblock %}
