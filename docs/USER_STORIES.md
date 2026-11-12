@@ -311,6 +311,38 @@ From using the build after round 3 (U38–U43, M18) landed.
 - The map request page shows "Map: … Tile: … Location: …" once, not in both the page header and the card header.
 - In the character directory, names that link to a sheet look like links; names without a link look like plain text.
 
+## Round 5: stories from the fifth look (2026-11-12)
+
+From using the build after round 4 (U44–U53) landed. Kept as built: the keeper's name placement in the shop banner (U45) and the quest notice board style (U48).
+
+**U54 A full street.** As a player, I want the shop street to fill the width of the page with buildings, so it looks like a real town street and not two houses on an empty road. *(shops)*
+- Each street row has a fixed number of building lots for the screen width, for example 8 at desktop width and 4 on a phone. Every lot holds either a real shop or a filler building.
+- Filler buildings are plain dark silhouettes, using the same building shapes, with no sign, no symbol and no link. Screen readers skip them.
+- A shop's street position (U49) picks its lot, so gaps between positions become filler. For example, shops at positions 1 and 4 leave filler in lots 0, 2 and 3. Shops without a distinct position fill the next free lots in name order.
+- Filler is deterministic: the same shops always give the same street, with the same filler shapes, on every load.
+- When the open shops need more lots than one row holds, the street continues on another row, and that row is filled with filler to the full width too.
+- On a phone, rows have fewer lots, and nothing scrolls sideways.
+
+**U55 A blocky turn-in section.** As a player, I want the turn-in part of a quest page to be a solid card, like "Your inventory" on a shop page, so it is clear what my character has and what it still needs. *(quests)*
+- Below the enlarged notice, a "Turn in" card names the selected character and lists each item the quest asks for, with its icon, how many are needed, and how many the character has, marking what is missing.
+- The card shows whether the character can turn in now. The "Turn in" button sits at the bottom of the card and is disabled, with the reason, when it can't (missing items, quest full, or the character's limit reached).
+- With no selected character, the card says so.
+- Quest notices on the board and the quest page show item icons (U44) next to item names.
+
+**U56 Clearer held coins.** As a player, I want the "held" coins line explained in plain words, so I know why some of my coins aren't available. *(player_characters, shops)*
+- "Held" means coins and items offered in an open trade that hasn't completed. Rename it everywhere to "In open trades", for example "In open trades: 1 gp · Available: 49 gp", and link it to the Trades page.
+- The line, and the item table's held column, only show when something is actually in an open trade. A line reading "0 cp" is never shown.
+- This applies to the character sheet, the shop "Your inventory" card, and the buy and sell modals.
+
+**U57 Leave the shop.** As a player, I want a "Leave" button on the shop page, next to "Sell to <keeper name>", so I can walk back to the street. *(shops)*
+- "Leave" goes back to the shop street (U49). It is a secondary button, so Sell stays the main action.
+
+**U58 Confirm before selling a keeper.** As a player, I want to confirm before selling an item I haven't marked as junk, so I don't sell something I meant to keep by mistake. *(shops)*
+- Selling an item that isn't marked as junk (U47) opens a confirm modal: the item, quantity, price, the character, and a note that the item isn't marked as junk. Confirming sells it; cancelling sells nothing.
+- Selling an item that is marked as junk, up to its junk quantity, needs no extra confirm. Selling more than the junk quantity asks for confirmation, like a non-junk item.
+- The "Sell junk" modal (U47) already confirms, so it is unchanged.
+- Without JavaScript, the confirm step is a plain page.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
