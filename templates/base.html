@@ -21,7 +21,7 @@
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <nav class="site-header navbar navbar-expand-lg py-1">
-  <div class="container-fluid flex-wrap">
+  <div class="container-fluid">
     <a class="navbar-brand order-1" href="{% url 'home' %}">West Marches</a>
     <div class="site-header-fixed d-flex align-items-center gap-2 order-3 order-lg-last ms-lg-auto">
       <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
@@ -33,7 +33,7 @@
         </ul>
       </div>
       {% endif %}
-      {% if user.is_authenticated %}<span class="navbar-text user-name d-none d-sm-inline">{{ user.display_name|default:user.email }}</span>{% endif %}
+      {% if user.is_authenticated %}<span class="navbar-text user-name d-none d-xxl-inline">{{ user.display_name|default:user.email }}</span>{% endif %}
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="logout">
