@@ -227,6 +227,8 @@ The last story compared every area side by side and promoted what two or more ar
 | Dead CSS | `static/css/app.css` is deleted. The live top-bar rules and `.donate` moved to `components.css`. `.notice`, `.temp-password`, the old map SVG block, `.area-nav`, `.map-toolbar` and the agent-local `:root` variables are gone. |
 | Dead templates | `accounts/index.html` and `accounts/stub.html` are deleted. |
 | Map | The "!" in an unexplored hex no longer has an underline. |
+| Map headers | The map pages (requests, XP, credit, found, visits, map detail, print) pass `back_url` to `page_header`. The back link now sits above the title, as in every other area. |
+| Back links | Every back link reads "Back to <parent>". The transfer page and the password-reset page use the page header back link instead of a button. |
 
 ### Left or explained
 

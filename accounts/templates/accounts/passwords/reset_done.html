@@ -2,7 +2,6 @@
 {% block title %}Password reset{% endblock %}
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title="Password reset" %}
+{% url "accounts:index" club.slug as people_url %}{% include "components/page_header.html" with title="Password reset" back_url=people_url back_label="Back to people" %}
 {% include "accounts/_temp_password.html" %}
-<p><a class="btn btn-primary" href="{% url 'accounts:index' club.slug %}">Back to people</a></p>
 {% endblock %}

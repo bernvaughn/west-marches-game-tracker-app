@@ -4,10 +4,8 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% include "components/page_header.html" with title="XP table" %}
-<div class="wm-toolbar">
-{% url 'map:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to the maps" %}
-</div>
+{% url 'map:index' club.slug as back_url %}
+{% include "components/page_header.html" with title="XP table" back_url=back_url back_label="Back to maps" %}
 {% if can_edit %}<form method="post" class="wm-form">{% csrf_token %}
 {% if form.errors %}{% include "components/alert.html" with level="danger" text="Enter whole numbers of 0 or more." %}{% endif %}{% endif %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">

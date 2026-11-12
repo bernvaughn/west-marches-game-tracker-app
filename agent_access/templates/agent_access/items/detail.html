@@ -2,7 +2,7 @@
 {% load coins %}
 {% block title %}{{ p.name }}{% endblock %}
 {% block content %}
-{% url 'agent_access:proposed_items' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to list" %}
+{% url 'agent_access:proposed_items' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to proposed items" %}
 {% with who=p.connection.label|default:"unknown" when=p.created|date:"Y-m-d H:i" %}{% include "components/page_header.html" with title=p.name subtitle="Proposed by "|add:who|add:" on "|add:when %}{% endwith %}
 <p>{% include "components/status_badge.html" with value=p.status text=p.get_status_display %}</p>
 {% if form %}

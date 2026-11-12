@@ -4,9 +4,9 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% with t="Found by: "|add:location.name %}{% include "components/page_header.html" with title=t subtitle="Characters credited as discovered or explored already count as found. A found mark does not give credit." %}{% endwith %}
+{% url 'map:tile' club.slug hex_map.pk q r as back_url %}
+{% with t="Found by: "|add:location.name %}{% include "components/page_header.html" with title=t subtitle="Characters credited as discovered or explored already count as found. A found mark does not give credit." back_url=back_url back_label="Back to the tile" %}{% endwith %}
 <div class="wm-toolbar">
-{% url 'map:tile' club.slug hex_map.pk q r as back_url %}{% include "components/back_link.html" with url=back_url label="Back to the tile" %}
 <a class="btn btn-outline-secondary" href="{% url 'map:credit' club.slug location.pk 'discovered' %}">Edit discovered</a>
 <a class="btn btn-outline-secondary" href="{% url 'map:credit' club.slug location.pk 'explored' %}">Edit explored</a>
 </div>

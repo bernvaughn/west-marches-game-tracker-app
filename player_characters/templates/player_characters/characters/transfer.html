@@ -7,7 +7,7 @@
 {% include "components/page_header.html" with title="Move items" %}
 {% include "components/empty_state.html" with text="You have no character in this club." %}
 {% else %}
-{% include "components/page_header.html" with title="Move loot from "|add:character.name %}
+{% url "characters:detail" club_slug=request.club.slug pk=character.pk as sheet_url %}{% include "components/page_header.html" with title="Move loot from "|add:character.name back_url=sheet_url back_label="Back to sheet" %}
 <form method="get" action="{% url 'characters:transfer_start' request.club.slug %}" class="d-flex flex-wrap gap-2 align-items-end mb-3">
   <div>
     <label class="form-label" for="transfer-from">Move from</label>
@@ -19,7 +19,6 @@
 </form>
 {% if not destinations %}
 {% include "components/empty_state.html" with text="You have no other character in this club." %}
-<a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back</a>
 {% else %}
 <p>Available coins: {{ coins_available|coins }}</p>
 <ul class="wm-compact-list">

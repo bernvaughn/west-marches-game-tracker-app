@@ -2,7 +2,7 @@
 {% load coins %}
 {% block title %}Batch #{{ batch.pk }}{% endblock %}
 {% block content %}
-{% url 'agent_access:batches' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="All batches" %}
+{% url 'agent_access:batches' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to batches" %}
 {% with n=batch.pk|stringformat:"s" %}{% include "components/page_header.html" with title="Batch #"|add:n subtitle="Proposed by "|add:batch.user.display_name|add:" through "|add:batch.connection.label %}{% endwith %}
 
 {% include "components/card_open.html" %}

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Agent batches{% endblock %}
 {% block content %}
-{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Agent access" %}
+{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to agent access" %}
 {% include "components/page_header.html" with title="Agent batches" subtitle="Review what agents propose before it reaches the ledger." %}
 
 <h2 class="wm-agent-section">Pending</h2>

@@ -4,10 +4,8 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% with qs=q|stringformat:"s" rs=r|stringformat:"s" %}{% with t="Visits: "|add:hex_map.name|add:" ("|add:qs|add:", "|add:rs|add:")" %}{% include "components/page_header.html" with title=t %}{% endwith %}{% endwith %}
-<div class="wm-toolbar">
-{% url 'map:tile' club.slug hex_map.pk q r as back_url %}{% include "components/back_link.html" with url=back_url label="Back to the tile" %}
-</div>
+{% url 'map:tile' club.slug hex_map.pk q r as back_url %}
+{% with qs=q|stringformat:"s" rs=r|stringformat:"s" %}{% with t="Visits: "|add:hex_map.name|add:" ("|add:qs|add:", "|add:rs|add:")" %}{% include "components/page_header.html" with title=t back_url=back_url back_label="Back to the tile" %}{% endwith %}{% endwith %}
 {% include "components/card_open.html" with title="Who visited" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
 <thead><tr><th>Character</th><th>Date</th><th></th></tr></thead>
