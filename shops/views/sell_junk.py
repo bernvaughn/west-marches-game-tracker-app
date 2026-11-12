@@ -1,8 +1,7 @@
-import json
-
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.htmx import is_htmx, render_modal_or_page
@@ -49,13 +48,13 @@ def _rows(character, shop, posted=None):
     return out
 
 
-def _parse(request, character):
-    """Return (lines, error, posted) from the POST. A bad id or quantity refuses the sale."""
+def _parse(data, character):
+    """Return (lines, error, posted) from form data. A bad id or quantity refuses the sale."""
     junk = {r.item.pk: r for r in junk_rows(character)}
-    ticked = request.POST.getlist("item")
+    ticked = data.getlist("item")
     quantities = {}
     for pk in junk:
-        raw = request.POST.get(f"qty_{pk}", "")
+        raw = data.get(f"qty_{pk}", "")
         if raw.strip().lstrip("-").isdigit():
             quantities[pk] = int(raw)
     posted = {"ticked": set(ticked), "quantities": quantities}
@@ -82,7 +81,7 @@ def sell_junk(request, club_slug, shop_id):
     character = selected_character(request)
     error, posted = None, None
     if request.method == "POST" and character is not None:
-        lines, error, posted = _parse(request, character)
+        lines, error, posted = _parse(request.POST, character)
         if error is None:
             try:
                 entries = sell_many(character, shop, lines, actor=request.user)
@@ -93,13 +92,16 @@ def sell_junk(request, club_slug, shop_id):
                     line.coins for entry in entries for line in entry.lines.all() if line.coins
                 )
                 messages.success(request, f"Sold junk to {shop} for {format_coins(total)}.")
+                shop_url = reverse("shops:detail", args=[club_slug, shop.pk])
                 if is_htmx(request):
+                    # A full reload shows the "Sold junk" message with the total.
                     response = HttpResponse(status=204)
-                    response["HX-Trigger"] = json.dumps(
-                        {"appModalClose": None, "shopStockChanged": None}
-                    )
+                    response["HX-Redirect"] = shop_url
                     return response
-                return redirect("shops:detail", club_slug=club_slug, shop_id=shop.pk)
+                return redirect(shop_url)
+    elif request.GET.get("recalc") and character is not None:
+        # htmx asks again as ticks and quantities change, so the total follows them.
+        _, _, posted = _parse(request.GET, character)
     rows = _rows(character, shop, posted) if character is not None else []
     return render_modal_or_page(
         request,
@@ -110,6 +112,10 @@ def sell_junk(request, club_slug, shop_id):
             "character": character,
             "rows": rows,
             "error": error,
-            "total": sum(r["price"] * r["quantity"] for r in rows if r["ticked"]),
+            "total": sum(
+                r["price"] * r["quantity"]
+                for r in rows
+                if r["ticked"] and 1 <= r["quantity"] <= r["junk"]
+            ),
         },
     )
