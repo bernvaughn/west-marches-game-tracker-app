@@ -44,6 +44,13 @@ class ShopForm(forms.ModelForm):
         self.fields["building"].required = False
         self.fields["street_position"].required = False
 
+    def clean_building(self):
+        return self.cleaned_data.get("building") or Shop.Building.GENERAL_STORE
+
+    def clean_street_position(self):
+        value = self.cleaned_data.get("street_position")
+        return 0 if value is None else value
+
 
 class _StockPercentMixin:
     def _setup_percent(self):

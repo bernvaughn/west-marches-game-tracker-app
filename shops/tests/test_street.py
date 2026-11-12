@@ -100,6 +100,18 @@ def test_picker_and_save(login, club_admin, club, shop):
     assert (shop.building, shop.street_position) == ("tower", 7)
 
 
+def test_empty_building_and_position_save_defaults(login, club_admin, club, shop):
+    shop.building, shop.street_position = "tower", 5
+    shop.save()
+    url = reverse("shops:manage_edit", kwargs={"club_slug": club.slug, "shop_id": shop.pk})
+    data = {"name": "Lantern", "color": "parchment", "silhouette": "hooded_trader",
+            "building": "", "street_position": "", "symbol": "",
+            "sell_percent": "100", "buy_percent": "50"}  # fmt: skip
+    assert login(club_admin).post(url, data).status_code == 302
+    shop.refresh_from_db()
+    assert (shop.building, shop.street_position) == ("general_store", 0)
+
+
 def test_base_links_shops_css_after_agent_css(login, player, club):
     body = login(player).get(street_url(club)).content.decode()
     assert body.index("css/areas/agent.css") < body.index("css/areas/shops.css")
