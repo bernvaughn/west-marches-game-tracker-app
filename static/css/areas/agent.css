@@ -1,1 +1,47 @@
-/* Area styles: owned by the agent sweep story (U35). Use tokens only. */
+/* Area styles: agent access sweep (U35). Tokens only. */
+.wm-agent-back { display: inline-flex; align-items: center; gap: var(--wm-space-1); min-height: 2.75rem; color: var(--wm-text-muted); text-decoration: none; }
+.wm-agent-back:hover { color: var(--wm-accent); text-decoration: underline; }
+.wm-agent-section { font-size: var(--wm-text-lg); margin: var(--wm-space-5) 0 var(--wm-space-3); }
+.wm-agent-batch-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--wm-space-2); margin-bottom: var(--wm-space-3); }
+.wm-agent-batch-head h3 { margin: 0; font-size: var(--wm-text-lg); }
+.wm-agent-meta { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: var(--wm-space-3) var(--wm-space-4); }
+.wm-agent-meta > div { min-width: 0; overflow-wrap: anywhere; }
+.wm-agent-meta dd { margin: 0; }
+.wm-agent-meta { display: grid; }
+@media (max-width: 575.98px) { .wm-agent-meta { grid-template-columns: 1fr; gap: var(--wm-space-2); } }
+.wm-agent-notes-title { font-size: var(--wm-text-md); margin: var(--wm-space-4) 0 var(--wm-space-2); }
+.wm-agent-notes { font-family: var(--wm-font-body); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--wm-surface-sunken); border-left: 4px solid var(--wm-accent); border-radius: var(--wm-radius-sm); padding: var(--wm-space-3) var(--wm-space-4); margin: 0; }
+.wm-agent-snippet { color: var(--wm-text-muted); overflow-wrap: anywhere; margin: var(--wm-space-3) 0; }
+.wm-agent-batch-grid { display: grid; gap: var(--wm-space-4); grid-template-columns: 1fr; margin-bottom: var(--wm-space-4); }
+@media (min-width: 768px) { .wm-agent-batch-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1200px) { .wm-agent-batch-grid { grid-template-columns: repeat(3, 1fr); } }
+.wm-agent-batch-card { margin-bottom: 0; }
+.wm-agent-line-edit { border-top: 1px solid var(--wm-border); }
+.wm-agent-line-edit:first-child { border-top: 0; }
+.wm-agent-line-edit > summary { cursor: pointer; display: flex; align-items: center; min-height: 2.75rem; font-weight: 600; overflow-wrap: anywhere; }
+.wm-agent-line-edit[open] > summary { color: var(--wm-accent); }
+.wm-agent-line-grid { display: grid; grid-template-columns: 1fr; gap: var(--wm-space-3); }
+@media (min-width: 576px) { .wm-agent-line-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 992px) { .wm-agent-line-grid { grid-template-columns: repeat(4, 1fr); } }
+.wm-agent-line-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin: var(--wm-space-3) 0 var(--wm-space-4); }
+.wm-agent-decision { border-color: var(--wm-border); background: var(--wm-surface-sunken); }
+.wm-agent-decision-lead { margin-bottom: var(--wm-space-3); }
+.wm-agent-decision-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--wm-space-3); }
+.wm-agent-links { display: grid; gap: var(--wm-space-4); grid-template-columns: 1fr; }
+@media (min-width: 768px) { .wm-agent-links { grid-template-columns: repeat(3, 1fr); } }
+.wm-agent-link { display: flex; flex-direction: column; gap: var(--wm-space-1); padding: var(--wm-space-4); text-decoration: none; color: var(--wm-text); min-height: 2.75rem; }
+.wm-agent-link:hover { border-color: var(--wm-accent); }
+.wm-agent-link span { color: var(--wm-text-muted); }
+.wm-agent-filters { margin-bottom: var(--wm-space-4); gap: var(--wm-space-1); }
+.wm-agent-filters .nav-link { min-height: 2.75rem; display: inline-flex; align-items: center; }
+.wm-agent-consent { max-width: 32rem; }
+.wm-agent-scopes { list-style: none; padding: 0; }
+.wm-agent-scopes .wm-icon { color: var(--wm-success); }
+.wm-alert code, .wm-agent-code code, .wm-agent-meta code { overflow-wrap: anywhere; word-break: break-all; }
+.wm-agent-code { margin: 0; }
+@media (max-width: 575.98px) {
+  .wm-agent-line-actions .btn, .wm-agent-decision-actions, .wm-agent-decision-actions form, .wm-agent-decision-actions .btn, .wm-agent-consent .wm-form-actions .btn, .wm-agent-batch-card .btn { width: 100%; min-height: 2.75rem; }
+  .wm-agent-decision-actions { flex-direction: column; }
+}
+.wm-agent-decision .btn, .wm-agent-line-actions .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--wm-space-1); }
+.wm-agent-code code, .wm-alert code, .wm-agent-notes code, .wm-data-table code { color: var(--wm-text); }

@@ -1,39 +1,48 @@
 {% extends "base.html" %}
 {% block title %}Agent batches{% endblock %}
 {% block content %}
-<h1>Agent batches</h1>
-<h2>Pending</h2>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Batch</th><th>Proposed by</th><th>Connection</th><th>Created</th><th>Lines</th></tr></thead>
-  <tbody>
+<a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
+{% include "components/page_header.html" with title="Agent batches" subtitle="Review what agents propose before it reaches the ledger." %}
+
+<h2 class="wm-agent-section">Pending</h2>
+{% if pending %}
+<div class="wm-agent-batch-grid">
   {% for b in pending %}
-    <tr>
-      <td><a href="{% url 'agent_access:batch_detail' club.slug b.pk %}">#{{ b.pk }}</a></td>
-      <td>{{ b.user.display_name }}</td>
-      <td>{{ b.connection.label }}</td>
-      <td>{{ b.created }}</td>
-      <td>{{ b.line_count }}</td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="5">No pending batches.</td></tr>
+  <div class="wm-card wm-agent-batch-card"><div class="wm-card-body">
+    <div class="wm-agent-batch-head">
+      <h3><a href="{% url 'agent_access:batch_detail' club.slug b.pk %}">Batch #{{ b.pk }}</a></h3>
+      {% include "agent_access/batches/_status_badge.html" with batch=b %}
+    </div>
+    <dl class="wm-dl wm-agent-meta">
+      <div><dt>Date</dt><dd>{{ b.date }}</dd></div>
+      <div><dt>Proposed by</dt><dd>{{ b.user.display_name }}</dd></div>
+      <div><dt>Connection</dt><dd>{{ b.connection.label }}</dd></div>
+      <div><dt>Lines</dt><dd>{{ b.line_count }}</dd></div>
+    </dl>
+    {% if b.source_notes %}<p class="wm-agent-snippet">{{ b.source_notes|truncatechars:160 }}</p>{% endif %}
+    <a class="btn btn-sm btn-primary" href="{% url 'agent_access:batch_detail' club.slug b.pk %}">Review</a>
+  </div></div>
   {% endfor %}
-  </tbody>
-</table></div>
-<h2>Recent</h2>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Batch</th><th>Proposed by</th><th>Connection</th><th>Created</th><th>Lines</th><th>Status</th></tr></thead>
+</div>
+{% else %}
+{% include "components/empty_state.html" with icon="inbox" text="No pending batches." %}
+{% endif %}
+
+<h2 class="wm-agent-section">Recent</h2>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Batch</th><th>Date</th><th>Proposed by</th><th>Connection</th><th class="num">Lines</th><th>Status</th></tr></thead>
   <tbody>
   {% for b in recent %}
     <tr>
-      <td><a href="{% url 'agent_access:batch_detail' club.slug b.pk %}">#{{ b.pk }}</a></td>
+      <td><a href="{% url 'agent_access:batch_detail' club.slug b.pk %}">Batch #{{ b.pk }}</a></td>
+      <td>{{ b.date }}</td>
       <td>{{ b.user.display_name }}</td>
       <td>{{ b.connection.label }}</td>
-      <td>{{ b.created }}</td>
-      <td>{{ b.line_count }}</td>
-      <td>{{ b.get_status_display }}</td>
+      <td class="num">{{ b.line_count }}</td>
+      <td>{% include "agent_access/batches/_status_badge.html" with batch=b %}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="6">Nothing confirmed yet.</td></tr>
+    {% include "components/data_table_empty.html" with cols=6 text="No confirmed or reversed batches yet." %}
   {% endfor %}
   </tbody>
 </table></div>
