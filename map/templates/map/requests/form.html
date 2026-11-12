@@ -6,7 +6,7 @@
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% include "components/page_header.html" with title=title subtitle=subtitle %}
 {% if not has_characters %}{% include "components/alert.html" with level="info" text="You have no characters in this club, so you cannot make a request." %}{% endif %}
-{% include "components/card_open.html" %}
+{% include "components/card_open.html" only %}
 <form method="post" class="wm-form">{% csrf_token %}
 {{ form }}
 <div class="wm-form-actions">
