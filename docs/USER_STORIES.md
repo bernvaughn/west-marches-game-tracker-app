@@ -365,6 +365,42 @@ From using the build after round 4 (U44–U53) landed. Kept as built: the keeper
 - Log out moves into the Menu's Account group. The other always-visible items from U34 (club, user, character, approvals) stay visible, and nothing scrolls sideways.
 - This changes U29 and U34.
 
+## Round 6: stories from the sixth look (2026-11-12)
+
+From using the build after round 5 (U54–U60) landed. Kept as built: a phone street whose second row is all filler buildings is fine (U54).
+
+**U61 A one-row top bar with a side menu.** As anyone in a club, I want the top bar to always be one row, with a hamburger button on the far left that opens a menu from the side, so the bar never wastes space and every page is one tap away. *(site-wide)*
+- The top bar is always one row, at every width.
+- The hamburger button is always shown, on the far left. It replaces the "Menu" dropdown (U60). It opens a panel that slides in from the left side of the screen, holding the same groups as the Menu: Character, Town, Trades, Map, Club and Account, plus the Game master and Club admin groups for those roles.
+- The "West Marches" brand is removed from the top bar. The current club's name takes its place, next to the hamburger button, and still opens the club switcher. The app name can stay in the page title and in the side panel's header.
+- As the bar gets narrower, items leave the bar in a fixed order and are reached through the side panel instead, which always lists every page. The order: shortcut labels first (icons stay), then the shortcut icons from the right (Map, Trades, Quests, Shops, Character), then the user's name shrinks to their initials chip. The hamburger button, the club name (shortened with an ellipsis if needed), the selected character and the approvals indicator stay in the bar at every width.
+- The Game master and Club admin dropdowns leave the top bar; their links live in the side panel.
+- This changes U29, U34 and U60.
+
+**U62 Short gaps on the street.** As a player, I want at most two empty buildings between shops, so a big gap in street positions doesn't leave a long empty street. *(shops)*
+- Between two shops in a row, and before the first shop, at most two filler buildings appear, however far apart their street positions are. Shops keep their order by position.
+- Filler after the last shop still fills the rest of the row (U54), and a second row that is all filler is fine.
+- Ties in street position are broken by shop name, then by shopkeeper name (U64).
+- This changes how U54 places shops.
+
+**U63 A simpler shop page.** As a player, I want to sell from my inventory card right on the shop page and keep the banner tidy, so shopping is one page and the banner is all about the shopkeeper. *(shops)*
+- The shop's symbol sits at the far left of the title row; the shop name stays centred on the page.
+- The "Sell to <keeper name>" button and the separate sell page are removed. Each item in the "Your inventory" card (U46) gets its own Sell button, with the price this shop pays, using the same confirm rule as U58: items not marked as junk, or more than the junk quantity, ask to confirm. "Sell junk" (U47) stays on the card.
+- "Show description" and "Leave" become icon buttons, each with a tooltip ("Shop description", "Leave the shop") and the same text as its accessible name.
+- The shopkeeper's name label (U45) becomes a button. Pressing it shows the keeper's description. The description icon button shows only the shop's description.
+- Both open a box in the same spot in the middle of the banner (U45). Only one box shows at a time: opening one closes the other, and pressing the same button again closes it.
+- Without JavaScript, both descriptions show in the banner.
+- This changes U36, U45, U46, U57 and U58.
+
+**U64 Shop tie-break order.** As a club admin, I want shops with the same street position listed in a predictable order, so the street and shop lists don't depend on hidden details. *(shops)*
+- When shops tie, order them by shop name, then by shopkeeper name. Use the same order everywhere shops are listed in order: the street, the shop list for admins, and rotations.
+- The shop's internal id is used only as a last resort when name and shopkeeper name are both the same.
+
+**S3 Create an item while adding stock.** As a club admin, I want to create a new catalogue item while I'm adding stock to a shop, so I don't have to leave the stock page to make the item first. *(shops, items)*
+- On the add-stock form, next to the item picker, a "New item" button opens a modal with the item form (U44 fields, including the icon). Saving creates the item in the club's catalogue and selects it in the stock form, with nothing else on the form lost.
+- The modal follows the same rules as creating an item from the catalogue page. Only club admins can use it.
+- Without JavaScript, the button links to the new item page and returns to the stock form after saving.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
