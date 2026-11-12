@@ -32,7 +32,7 @@ def test_coins_split(club, login, player, sheet):
 def test_holds_shown(club, login, player, sheet, make_open_trade):
     make_open_trade(coins=100)
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "Held" in html and "Available" in html
+    assert "In open trades" in html and "Available" in html
 
 
 @pytest.mark.story("U19")

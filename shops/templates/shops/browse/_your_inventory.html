@@ -4,7 +4,7 @@
   {% if inventory_character %}
   <p class="wm-your-inventory-name"><strong>{{ inventory_character.name }}</strong></p>
   <p class="wm-your-inventory-coins">{{ inventory_coins.owned|coins }}</p>
-  <p class="wm-sheet-note">Held {{ inventory_coins.held|coins }} &middot; Available {{ inventory_coins.available|coins }}</p>
+  {% if inventory_coins.has_holds %}<p class="wm-sheet-note"><a href="{% url 'trades:index' club.slug %}">In open trades</a>: {{ inventory_coins.held|coins }} &middot; Available: {{ inventory_coins.available|coins }}</p>{% endif %}
   <div class="wm-your-inventory-junk" data-slot="junk">{% if inventory_has_junk %}
     <p class="wm-sheet-note">Junk: {{ inventory_junk_value|coins }} &middot; sells here for {{ inventory_junk_value_at|coins }}</p>
     {% if is_open %}{% url 'shops:sell_junk' club.slug shop.id as junk_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" hx-select="unset" hx-swap="innerHTML" hx-trigger="click" data-app-modal>Sell junk</a>{% endif %}
