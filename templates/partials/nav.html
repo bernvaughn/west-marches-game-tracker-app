@@ -1,14 +1,22 @@
 {% load accounts_tags %}{% nav_entries as nav %}
 <ul class="navbar-nav me-auto">
-  {% for l in nav.primary %}<li class="nav-item"><a class="nav-link{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
-  <li class="nav-item dropdown nav-more">
-    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
-    <ul class="dropdown-menu">
-      {% for l in nav.more %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="{% url 'home' %}">Your clubs ({{ club.name }})</a></li>
-      <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
-    </ul>
+  <li class="nav-item dropdown nav-menu">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Menu</a>
+    <div class="dropdown-menu dropdown-menu-end wm-menu-panel">
+      {% for key, heading, links in nav|menu_sections %}
+      <section class="wm-menu-group wm-menu-group-{{ key }}">
+        <h6 class="dropdown-header">{{ heading }}</h6>
+        {% for l in links %}<a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a>{% endfor %}
+      </section>
+      {% endfor %}
+      <section class="wm-menu-group wm-menu-group-account">
+        <h6 class="dropdown-header">Account</h6>
+        <a class="dropdown-item" href="{% url 'home' %}">Your clubs</a>
+        <a class="dropdown-item" href="{% url 'password_change' %}">Change password</a>
+        <hr class="dropdown-divider">
+        <form method="post" action="{% url 'logout' %}" class="logout">{% csrf_token %}<button type="submit" class="dropdown-item">Log out</button></form>
+      </section>
+    </div>
   </li>
   {% if nav.gm %}
   <li class="nav-item dropdown nav-gm">

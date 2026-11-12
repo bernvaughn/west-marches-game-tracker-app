@@ -26,6 +26,14 @@ def nav_entries(context):
 
 
 @register.filter
+def menu_sections(nav):
+    """Non-empty Menu groups as (key, heading, links), in display order (U60)."""
+    from .. import navigation
+
+    return [(k, h, nav[k]) for k, h in navigation.MENU_GROUPS if nav.get(k)]
+
+
+@register.filter
 def initials(value):
     """Up to two capital initials: 'Gwen the GM' -> 'GG', 'Alice' -> 'A'."""
     words = [w for w in str(value or "").replace("@", " ").split() if w]

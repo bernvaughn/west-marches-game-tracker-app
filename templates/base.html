@@ -25,6 +25,9 @@
 <nav class="site-header navbar navbar-expand-lg py-1">
   <div class="container-fluid">
     <a class="navbar-brand order-1" href="{% url 'home' %}">West Marches</a>
+    {% if club %}{% nav_entries as nav %}<ul class="navbar-nav wm-shortcuts flex-row order-1 no-print">
+      {% for l in nav.primary %}<li class="nav-item"><a class="nav-link wm-shortcut{% if l.active %} active{% endif %}" href="{{ l.url }}" aria-label="{{ l.label }}" title="{{ l.label }}" data-wm-tooltip{% if l.active %} aria-current="page"{% endif %}>{% if l.icon %}{% include "components/icon.html" with name=l.icon %}{% endif %}<span class="wm-shortcut-label">{{ l.label }}</span></a></li>{% endfor %}
+    </ul>{% endif %}
     <div class="site-header-fixed d-flex align-items-center gap-2 order-3 order-lg-last ms-lg-auto">
       <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
       {% if user.is_authenticated and club %}
@@ -37,7 +40,7 @@
       {% endif %}
       {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}"><span class="wm-avatar wm-avatar-sm d-xxl-none" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden d-xxl-none">{{ who }}</span><span class="d-none d-xxl-inline">{{ who }}</span></span>{% endwith %}{% endif %}
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
-      {% if user.is_authenticated %}
+      {% if user.is_authenticated and not club %}
       <form method="post" action="{% url 'logout' %}" class="logout">
         {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><span class="d-sm-none">{% include "components/icon.html" with name="box-arrow-right" %}</span></button>
       </form>

@@ -37,8 +37,8 @@ class AccountsConfig(AppConfig):
 
         approvals.register(open_messages)
         reg = navigation.register
-        reg("more", "People", "accounts:index", not_admin, 100)
-        reg("more", "Message admins", "accounts:message_new", is_member, 60)
+        reg("club", "People", "accounts:index", not_admin, 100)
+        reg("club", "Message the admins", "accounts:message_new", is_member, 60)
         reg("admin", "Members", "accounts:index", is_admin, 10)
         reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20)
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)

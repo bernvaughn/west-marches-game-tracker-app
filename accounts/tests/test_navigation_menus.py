@@ -33,10 +33,9 @@ GM_ONLY = ("agent_access:batches", "agent_access:connections")
 
 
 @pytest.mark.story("U29")
-def test_player_sees_primary_and_more_only(login, club, player):
+def test_player_sees_menu_only(login, club, player):
     nav = nav_html(page(login, player, club))
-    for label in ("Character", "Shops", "Quests", "More"):
-        assert f">{label}</a>" in nav
+    assert ">Menu</a>" in nav
     assert "Game master" not in nav and "Club admin" not in nav
     for name in (
         "accounts:whitelist",
@@ -155,7 +154,7 @@ class _Tree(HTMLParser):
             "character-name",
             "approvals-menu",
             "logout",
-            "nav-more",
+            "nav-menu",
             "nav-gm",
         ):
             if key in classes:
@@ -180,9 +179,10 @@ def test_always_visible_items_outside_collapse(login, club, game_master, charact
     ]
     tree = _Tree()
     tree.feed(header)
-    for key in ("user-name", "club-name", "character-name", "logout"):
+    for key in ("user-name", "club-name", "character-name"):
         assert tree.inside.get(key) is False, key
-    assert tree.inside["nav-more"] is True and tree.inside["nav-gm"] is True
+    assert tree.inside["logout"] is True  # U60: Log out lives in the Menu
+    assert tree.inside["nav-menu"] is True and tree.inside["nav-gm"] is True
 
 
 @pytest.mark.story("U34")
@@ -202,11 +202,9 @@ def test_busy_header_keeps_everything_outside_collapse(login, club, club_admin, 
     header = body[: body.index("</nav>", body.index('<nav class="site-header'))]
     tree = _Tree()
     tree.feed(header)
-    for key in ("user-name", "club-name", "character-selector", "approvals-menu", "logout"):
+    for key in ("user-name", "club-name", "character-selector", "approvals-menu"):
         assert tree.inside.get(key) is False, key
-    assert 'aria-label="Log out"' in header
-    # The narrow-screen log out icon is an inline SVG, not a font glyph.
-    assert "<svg" in header[header.index('aria-label="Log out"') :]
+    assert ">Log out</button>" in header  # U60: in the Menu's Account group
 
 
 @pytest.mark.story("U29")

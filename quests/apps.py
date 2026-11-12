@@ -9,5 +9,5 @@ class QuestsConfig(AppConfig):
         from accounts.apps import is_admin
 
         reg = navigation.register
-        reg("primary", "Quests", "quests:index", None, 30)
+        reg("town", "Quests", "quests:index", None, 30, icon="journal-text", shortcut_order=30)
         reg("admin", "Manage quests", "quests:manage", is_admin, 60)
