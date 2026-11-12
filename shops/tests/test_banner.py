@@ -80,7 +80,8 @@ def test_svg_one_style(key):
     root = ET.fromstring(text)
     assert root.get("viewBox") == "0 0 120 160" and root.get("fill") == "#2b2622"
     assert not re.findall(r'\b(?:stroke|style|class)=|fill="(?!#2b2622")', text)
-    assert len(root) >= 2
+    # Solid shapes with detail cut-outs: at least two subpaths in all.
+    assert text.count("Z") >= 2
 
 
 @pytest.mark.story("U39")
