@@ -4,7 +4,7 @@
 <h1>Sell to {{ shop.name }}</h1>
 <p><a href="{% url 'shops:detail' club.slug shop.id %}">Back to {{ shop.name }}</a></p>
 {% if not characters %}
-<p>You have no characters in this club.</p>
+<p>You have no character in this club.</p>
 {% else %}
 <form method="get">
   <label>Character

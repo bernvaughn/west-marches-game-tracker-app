@@ -9,6 +9,7 @@ from accounts.permissions import club_member_required, is_club_admin, is_game_ma
 from accounts.scoping import club_queryset
 
 from ..models import Trade
+from ..selection import selected_character
 from ..trade_forms import ProposeTradeForm, TradeSideForm
 from ..trade_services import OPEN, TradeError, propose_trade
 
@@ -50,7 +51,13 @@ def propose(request, club_slug):
     form = ProposeTradeForm(request.user, club)
     senders = form.fields["sender"].queryset
     receivers = form.fields["receiver"].queryset
-    ctx = {"form": None, "side_form": None, "sender": None, "choices": senders}
+    ctx = {
+        "form": None,
+        "side_form": None,
+        "sender": None,
+        "choices": senders,
+        "default_sender": selected_character(request),
+    }
     template = "player_characters/trades/propose.html"
     if not senders.exists():
         return render(request, template, ctx)
@@ -61,8 +68,14 @@ def propose(request, club_slug):
         sender = _pick(senders, request.POST.get("sender"))
     elif source.get("from"):
         sender = _pick(senders, source.get("from"))
-    elif senders.count() == 1:
-        sender = senders.first()
+    elif source.get("choose"):
+        pass
+    else:
+        chosen = selected_character(request)
+        if chosen is not None:
+            sender = senders.filter(pk=chosen.pk).first()
+        if sender is None and senders.count() == 1:
+            sender = senders.first()
 
     to = None
     if request.method == "GET" and source.get("to"):

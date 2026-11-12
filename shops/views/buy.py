@@ -8,6 +8,7 @@ from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
 from player_characters.models import Character
+from player_characters.selection import selected_character
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import Shop, ShopStock
@@ -45,7 +46,11 @@ def buy(request, club_slug, shop_id, stock_id):
                 messages.success(request, entry.note)
                 return redirect("shops:detail", club_slug=club_slug, shop_id=shop.pk)
     else:
-        form = BuyForm(characters=characters, max_quantity=stock.quantity)
+        form = BuyForm(
+            initial={"character": selected_character(request)},
+            characters=characters,
+            max_quantity=stock.quantity,
+        )
 
     stock.refresh_from_db()
     return render(

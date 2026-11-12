@@ -5,6 +5,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
+from player_characters.selection import selected_character
+
 from ..forms.inbox import MessageForm, StatusForm
 from ..models import Message
 from ..permissions import club_admin_required, club_member_required
@@ -20,7 +22,11 @@ def message_new(request, club_slug):
         if request.method == "POST":
             raise PermissionDenied
         return render(request, "accounts/inbox/message_new.html", {"form": None, "sent": []})
-    form = MessageForm(request.POST or None, membership=membership)
+    form = MessageForm(
+        request.POST or None,
+        membership=membership,
+        initial={"character": selected_character(request)},
+    )
     if request.method == "POST" and form.is_valid():
         msg = form.save(commit=False)
         msg.club = request.club
