@@ -12,6 +12,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "playwright>=1.65.1",
     "pytest",
     "pytest-django",
     "ruff",
