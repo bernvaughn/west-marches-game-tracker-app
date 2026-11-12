@@ -69,7 +69,7 @@ def test_main_pages_render_themed(club, player, character, login):
         reverse("map:index", args=[club.slug]),
     ]
     for url in pages:
-        r = client.get(url)
+        r = client.get(url, follow=True)
         assert r.status_code == 200, url
         html = r.content.decode()
         assert CSS in html
