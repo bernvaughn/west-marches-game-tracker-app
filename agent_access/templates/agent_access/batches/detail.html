@@ -2,7 +2,6 @@
 {% block title %}Batch #{{ batch.pk }}{% endblock %}
 {% block content %}
 <h1>Batch #{{ batch.pk }}</h1>
-{% include "agent_access/_nav.html" %}
 <p>Status: <strong>{{ batch.get_status_display }}</strong>. Date: {{ batch.date }}.
   Proposed by {{ batch.user.display_name }} through {{ batch.connection.label }} on {{ batch.created }}.</p>
 {% if batch.confirmed_at %}<p>Confirmed by {{ batch.confirmed_by.display_name }} on {{ batch.confirmed_at }}.</p>{% endif %}

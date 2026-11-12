@@ -1,0 +1,31 @@
+{% load accounts_tags %}{% nav_entries as nav %}
+<ul class="navbar-nav me-auto">
+  {% for l in nav.primary %}<li class="nav-item"><a class="nav-link{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
+  <li class="nav-item dropdown nav-more">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">More</a>
+    <ul class="dropdown-menu">
+      {% for l in nav.more %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
+      <li><a class="dropdown-item" href="{% url 'password_change' %}">Change password</a></li>
+    </ul>
+  </li>
+  {% if nav.gm %}
+  <li class="nav-item dropdown nav-gm">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Game master</a>
+    <ul class="dropdown-menu">
+      {% for l in nav.gm %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
+    </ul>
+  </li>
+  {% endif %}
+  {% if nav.admin or user.is_superuser %}
+  <li class="nav-item dropdown nav-admin">
+    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Club admin</a>
+    <ul class="dropdown-menu">
+      {% for l in nav.admin %}<li><a class="dropdown-item{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a></li>{% endfor %}
+      {% if user.is_superuser %}
+      <li><a class="dropdown-item" href="{% url 'site_clubs' %}">Clubs</a></li>
+      <li><a class="dropdown-item" href="{% url 'site_settings' %}">Site settings</a></li>
+      {% endif %}
+    </ul>
+  </li>
+  {% endif %}
+</ul>

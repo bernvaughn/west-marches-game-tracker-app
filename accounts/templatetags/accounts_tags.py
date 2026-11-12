@@ -16,3 +16,10 @@ def member_email(context, user_obj):
 @register.filter
 def can_reset(target, actor):
     return can_reset_password(actor, target)
+
+
+@register.simple_tag(takes_context=True)
+def nav_entries(context):
+    from .. import navigation
+
+    return navigation.entries_for(context["request"])

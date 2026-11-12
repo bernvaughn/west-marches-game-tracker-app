@@ -1,4 +1,0 @@
-{% if club %}
-<a class="nav-link" href="{% url 'quests:index' club.slug %}">Quests</a>
-{% if user.is_superuser or request.membership.is_club_admin %}<a class="nav-link" href="{% url 'quests:manage' club.slug %}">Manage quests</a>{% endif %}
-{% endif %}
