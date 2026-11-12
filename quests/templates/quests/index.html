@@ -3,13 +3,27 @@
 {% block content %}
 {% url 'quests:manage' club.slug as manage_url %}
 {% if is_admin %}{% include "components/page_header.html" with title="Quests" action_url=manage_url action_label="Manage quests" %}{% else %}{% include "components/page_header.html" with title="Quests" %}{% endif %}
-{% for quest in quests %}
-{% include "components/card_open.html" %}
-  <h2 class="wm-card-title"><a href="{% url 'quests:detail' club.slug quest.pk %}">{{ quest.name }}</a></h2>
-  {% include "quests/_info.html" with requirements=quest.requirements.all rewards=quest.rewards.all %}
-  {% if quest.left is not None %}<p>{% include "components/badge.html" with status="info" text=quest.left|stringformat:"s"|add:" left" %}</p>{% endif %}
-{% include "components/card_close.html" %}
-{% empty %}
-{% include "components/empty_state.html" with text="No quests are live right now." icon="compass" %}
-{% endfor %}
+<div class="wm-board">
+  {% if board %}
+  <ul class="wm-board-grid">
+    {% for quest in board %}
+    <li>{% url 'quests:detail' club.slug quest.pk as detail_url %}{% include "quests/_notice.html" with link_url=detail_url stamp=quest.stamp heading="h2" %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="wm-board-empty">No quests are posted right now.</p>
+  {% endif %}
+</div>
+{% if taken_down %}
+<details class="wm-taken-down">
+  <summary>Taken down ({{ taken_down|length }})</summary>
+  <ul class="wm-board-grid">
+    {% for quest in taken_down %}
+    <li>
+      {% include "quests/_notice.html" with link_url=quest.notice_url stamp=quest.stamp faded=True label=quest.notice_label heading="h3" %}
+    </li>
+    {% endfor %}
+  </ul>
+</details>
+{% endif %}
 {% endblock %}

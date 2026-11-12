@@ -1,12 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ quest.name }}{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title=quest.name %}
-<p><a href="{% url 'quests:index' club.slug %}">All quests</a></p>
-{% include "components/card_open.html" %}
-{% include "quests/_info.html" %}
-{% if club_left is not None %}<p>{{ club_left }} left</p>{% endif %}
-{% include "components/card_close.html" %}
+<p><a href="{% url 'quests:index' club.slug %}">All quests</a>{% if is_admin %} · <a href="{% url 'quests:edit' club.slug quest.pk %}">Edit quest</a>{% endif %}</p>
+{% include "quests/_notice.html" with large=True heading="h1" %}
 {% include "components/section_open.html" with title="Turn in" %}
 {% if character %}
 <form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}" class="wm-quest-turnin">

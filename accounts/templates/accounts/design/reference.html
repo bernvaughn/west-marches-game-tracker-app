@@ -182,4 +182,15 @@
   <pre>{% verbatim %}{% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% endverbatim %}</pre>
   <div class="modal-content" style="max-width:32rem">{% include "accounts/design/_modal_sample.html" %}</div>
 </section>
+<section id="quest-board" class="wm-section">
+  <h3>Quest board</h3>
+  <p>The quest list is a board of pinned notices. Stamps follow the selected character. Notices that are over sit under "Taken down", faded.</p>
+  <div class="wm-board">
+    <ul class="wm-board-grid">
+      <li><article class="wm-notice wm-notice--tilt-1"><span class="wm-notice-pin" aria-hidden="true"></span><span class="wm-stamp wm-stamp--ready">Ready to turn in</span><h4 class="wm-notice-title">Pelts for the Tanner</h4><p class="wm-notice-desc">Bring two wolf pelts to the tanner by the north gate.</p><dl class="wm-notice-info"><dt>Reward</dt><dd>10 gp</dd><dt>Bring</dt><dd>2 x Wolf pelt</dd><dt>Ends</dt><dd>Dec. 1, 2026</dd></dl></article></li>
+      <li><article class="wm-notice wm-notice--tilt-3"><span class="wm-notice-pin" aria-hidden="true"></span><span class="wm-stamp wm-stamp--done">Done</span><h4 class="wm-notice-title">Rope for the Bridge</h4><p class="wm-notice-desc">The bridge needs new rope.</p><dl class="wm-notice-info"><dt>Reward</dt><dd>5 gp</dd><dt>Bring</dt><dd>3 x Rope</dd></dl></article></li>
+      <li><article class="wm-notice wm-notice--tilt-0 wm-notice--faded"><span class="wm-notice-pin" aria-hidden="true"></span><p class="wm-notice-label"><span class="wm-badge wm-badge--neutral">Not posted yet</span></p><h4 class="wm-notice-title">Lanterns for the Fair</h4><dl class="wm-notice-info"><dt>Reward</dt><dd>2 gp</dd><dt>Bring</dt><dd>4 x Lantern</dd></dl></article></li>
+    </ul>
+  </div>
+</section>
 {% endblock %}
