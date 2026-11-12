@@ -20,6 +20,10 @@ Mobile, Consistency.
 - The sandbox has no emoji font. Shop symbols show as empty boxes in the screenshots (A-37).
   Check this on a real device before you act on it.
 
+### Final run (story 8)
+
+The final run captured 167 screenshots at 1280 and 390 px: `OVERFLOW` count 0, 0 failed. 14 pages still print `CLIPPED`. All are intentional: visually-hidden labels, and `.wm-table-scroll` boxes that scroll sideways on a phone. Three pages (`quests-edit`, `agent-batch-detail`, `agent-proposed-item-detail`) list an `input.form-control` that is clipped by its own box, which is normal for a field.
+
 ## Cross-cutting problems
 
 ### Hierarchy

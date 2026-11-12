@@ -247,6 +247,7 @@ a.wm-chip:hover { color: var(--wm-accent); }
 /* ---- Shared layout classes (promoted from the area sweeps, story 8) ---- */
 .wm-toolbar { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; margin-bottom: var(--wm-space-3); }
 .wm-toolbar:empty { display: none; }
+.wm-toolbar .wm-back-link { margin-bottom: 0; }
 .wm-toolbar form, .wm-toolbar .wm-inline-form { margin: 0; }
 .wm-inline-form { display: inline-flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; margin: 0; }
 .wm-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--wm-space-3); list-style: none; padding: 0; margin: 0 0 var(--wm-space-4); }

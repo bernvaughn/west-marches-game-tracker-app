@@ -4,7 +4,7 @@
    Example: {% include "components/page_header_open.html" with title="History" back_url=sheet_url back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a>{% include "components/page_header_close.html" %}
 {% endcomment %}
 <header class="wm-page-header">
-  {% if back_url %}{% include "components/back_link.html" with url=back_url label=back_label %}{% elif breadcrumbs %}<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>{% for b in breadcrumbs %}<li>{% if b.url %}<a href="{{ b.url }}">{{ b.label }}</a>{% else %}<span aria-current="page">{{ b.label }}</span>{% endif %}</li>{% endfor %}</ol></nav>{% endif %}
+  {% if back_url and back_label %}{% include "components/back_link.html" with url=back_url label=back_label %}{% elif breadcrumbs %}<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>{% for b in breadcrumbs %}<li>{% if b.url %}<a href="{{ b.url }}">{{ b.label }}</a>{% else %}<span aria-current="page">{{ b.label }}</span>{% endif %}</li>{% endfor %}</ol></nav>{% endif %}
   <div class="wm-page-header-row">
     <div><h1>{{ title }}</h1>{% if subtitle %}<p class="wm-page-subtitle">{{ subtitle }}</p>{% endif %}</div>
     <div class="wm-page-actions no-print">
