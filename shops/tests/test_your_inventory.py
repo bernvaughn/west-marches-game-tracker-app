@@ -31,7 +31,7 @@ def test_card_shows_character_coins_items_and_prices(
     record(character, "award", [Line(item=gem, quantity=1)])
     ShopStock.objects.create(shop=open_shop, item=gem, quantity=1, buy_percent=80)
     c = card(login(player), club, open_shop)
-    assert "Aria" in c and "Held" in c and "Available" in c
+    assert "Aria" in c and "In open trades" not in c
     assert "Rope" in c and "Gem" in c
     assert buy_price(open_shop, gem) == 333 * 80 // 100
     assert buy_price(open_shop, item) == 50

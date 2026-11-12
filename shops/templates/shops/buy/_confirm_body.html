@@ -9,6 +9,7 @@
 <p>You have no character in this club.</p>
 {% else %}
 <p>Buying as <strong>{{ character.name }}</strong></p>
+{% if coins.has_holds %}<p class="wm-sheet-note"><a href="{% url 'trades:index' request.club.slug %}">In open trades</a>: {{ coins.held|coins }} &middot; Available: {{ coins.available|coins }}</p>{% endif %}
 {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
 {% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
 <p>

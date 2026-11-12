@@ -79,3 +79,7 @@
   .wm-sheet-table tr { background: white; }
   .wm-badge { border: 1px solid black; background: white; color: black; }
 }
+
+/* U59: inventory row actions stay on one line */
+.wm-row-actions-cell { white-space: nowrap; width: 1%; }
+.wm-row-actions { flex-wrap: nowrap; white-space: nowrap; }
