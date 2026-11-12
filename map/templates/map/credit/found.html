@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Found marks: {{ location.name }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+<h1>Found by: {{ location.name }}</h1>
+<p><a href="{% url 'map:tile' club.slug hex_map.pk q r %}">Back to the tile</a> ·
+<a href="{% url 'map:credit' club.slug location.pk 'discovered' %}">Edit discovered</a> ·
+<a href="{% url 'map:credit' club.slug location.pk 'explored' %}">Edit explored</a></p>
+<p>Characters credited as discovered or explored already count as found. A found mark does not give credit.</p>
+<h2>Marked characters</h2>
+{% if marks %}
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="remove">
+  <fieldset>
+  <legend class="visually-hidden">Characters to remove</legend>
+  {% for m in marks %}
+  <label><input class="form-check-input" type="checkbox" name="characters" value="{{ m.character.pk }}"> {{ m.character.name }}</label>
+  <small>{% if m.date %}{{ m.date }}{% endif %}{% if m.created_by %} by {{ m.created_by.user.display_name }}{% endif %}</small><br>
+  {% endfor %}
+  </fieldset>
+  <button class="btn btn-sm btn-outline-danger" type="submit">Remove selected</button>
+</form>
+{% else %}<p>Nobody yet.</p>{% endif %}
+<h2>Add characters</h2>
+<form method="post">{% csrf_token %}
+  <input type="hidden" name="action" value="add">
+  {{ form.non_field_errors }}
+  <fieldset>
+  <legend class="visually-hidden">Characters to add</legend>
+  {% for c in available %}
+  <label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"> {{ c.name }}</label><br>
+  {% endfor %}
+  </fieldset>
+  <p>{{ form.date.errors }}<label>Date {{ form.date }}</label></p>
+  <button class="btn btn-sm btn-primary" type="submit">Add</button>
+</form>
+{% endblock %}

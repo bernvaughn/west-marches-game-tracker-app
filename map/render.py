@@ -5,7 +5,9 @@ from .hexgrid import hex_points, to_pixel, window_bounds, window_positions
 from .models import Location, LocationCredit, Tile
 
 
-def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, club_slug=None):
+def build_cells(
+    hex_map, cq, cr, radius, visible=None, url_params="", size=30, club_slug=None, reveal=None
+):
     club_slug = club_slug or hex_map.club.slug
     q_min, q_max, r_min, r_max = window_bounds(cq, cr, radius)
     tiles = {
@@ -31,8 +33,12 @@ def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, c
         shown = visible is None or (q, r) in visible
         tile = tiles.get((q, r)) if shown else None
         locations = list(tile.locations.all()) if tile else []
+        placeholders = 0
+        if reveal is not None:
+            placeholders = sum(1 for loc in locations if loc.pk in reveal["placeholders"])
+            locations = [loc for loc in locations if loc.pk in reveal["found"]]
         fill = ""
-        if tile and (locations or tile.is_safe_town):
+        if tile and (locations or placeholders or tile.is_safe_town):
             fill = (
                 tile.color or next((loc.color for loc in locations if loc.color), "") or "lightgrey"
             )
@@ -44,7 +50,8 @@ def build_cells(hex_map, cq, cr, radius, visible=None, url_params="", size=30, c
                 "q": q,
                 "r": r,
                 "tile": tile,
-                "count": len(locations),
+                "count": len(locations) + placeholders,
+                "unknown": placeholders,
                 "unexplored": sum(1 for loc in locations if not loc.is_explored),
                 "symbol": next((loc.symbol for loc in locations if loc.symbol), ""),
                 "fill": fill,

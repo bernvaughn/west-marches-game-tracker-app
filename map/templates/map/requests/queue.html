@@ -12,7 +12,7 @@
 <tr>
 <td>{{ req.get_kind_display }}</td>
 <td>{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.q is not None %} ({{ req.q }}, {{ req.r }}){% endif %}</td>
-<td>{% if req.kind == "visit" %}-{% elif req.location %}{{ req.location.name }}{% else %}Location deleted{% endif %}</td>
+<td>{% if req.kind == "visit" %}-{% else %}{{ req.location_label }}{% endif %}</td>
 <td>{% for c in req.characters.all %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
 <td>{{ req.date|default:"" }}</td>
 <td>{{ req.note|linebreaksbr }}</td>

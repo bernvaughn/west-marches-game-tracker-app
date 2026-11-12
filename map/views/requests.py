@@ -13,9 +13,13 @@ from accounts.scoping import club_get_object_or_404, club_queryset
 from .. import services
 from ..forms_requests import CreditRequestForm, VisitRequestForm
 from ..models import HexMap, Location, LocationCredit, MapRequest, Tile
-from ..visibility import is_map_editor, own_characters, visible_positions
+from ..visibility import found_location_ids, is_map_editor, own_characters, visible_positions
 
-CREDIT_KINDS = {LocationCredit.Kind.DISCOVERED, LocationCredit.Kind.EXPLORED}
+LOCATION_KINDS = {
+    LocationCredit.Kind.DISCOVERED,
+    LocationCredit.Kind.EXPLORED,
+    MapRequest.Kind.FOUND,
+}
 
 
 def _get_map(request, map_id, is_editor):
@@ -34,6 +38,11 @@ def _get_visible_location(request, pk, is_editor):
         visible = visible_positions(hex_map, own_characters(request))
         if (location.tile.q, location.tile.r) not in visible:
             raise Http404
+    discovered = LocationCredit.objects.filter(
+        location=location, kind=LocationCredit.Kind.DISCOVERED, characters__isnull=False
+    )
+    if not discovered.exists():
+        raise Http404
     return location
 
 
@@ -94,7 +103,7 @@ def visit_new(request, club_slug, map_id):
 
 @club_member_required
 def credit_new(request, club_slug, location_id, kind):
-    if kind not in CREDIT_KINDS:
+    if kind not in LOCATION_KINDS:
         raise Http404
     is_editor = is_map_editor(request.user, request.club)
     location = _get_visible_location(request, location_id, is_editor)
@@ -118,19 +127,23 @@ def credit_new(request, club_slug, location_id, kind):
                 requested_by=request.membership,
             )
             req.characters.set(d["characters"])
-            messages.success(request, "Credit request sent.")
+            messages.success(request, "Request sent.")
             return redirect("map:requests", club_slug=club_slug)
     else:
         form = CreditRequestForm(characters_qs=chars)
+    if is_editor or location.pk in found_location_ids(chars):
+        label = location.name
+    else:
+        label = "Unknown location"
     return render(
         request,
         "map/requests/form.html",
         {
             "club": request.club,
             "form": form,
-            "title": f"Request {kind} credit",
+            "title": "Request a found mark" if kind == "found" else f"Request {kind} credit",
             "hex_map": location.tile.map,
-            "location": location,
+            "location_label": label,
             "has_characters": chars.exists(),
         },
     )
@@ -163,7 +176,14 @@ def queue(request, club_slug):
         .order_by("open_first", "-created")
     )
     requests_list = list(qs)
+    known = None if is_editor else found_location_ids(own_characters(request))
     for req in requests_list:
+        if req.location is None:
+            req.location_label = "Location deleted"
+        elif known is None or req.location_id in known:
+            req.location_label = req.location.name
+        else:
+            req.location_label = "Unknown location"
         req.can_approve = _can_approve(req, list(req.characters.all()))
     return render(
         request,
@@ -188,6 +208,10 @@ def _decide(request, club_slug, pk, status):
         if status == MapRequest.Status.APPROVED:
             if req.kind == MapRequest.Kind.VISIT:
                 services.record_visits(req.map, req.q, req.r, chars, req.date)
+            elif req.kind == MapRequest.Kind.FOUND:
+                services.add_found_marks(
+                    req.location, chars, req.date, created_by=request.membership
+                )
             else:
                 services.add_to_credit(req.location, req.kind, chars, req.date)
     messages.success(request, f"Request {status}.")

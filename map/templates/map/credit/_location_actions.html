@@ -1,1 +1,1 @@
-{% if is_editor %}<p><a href="{% url 'map:credit' club.slug location.pk 'discovered' %}">Edit discovered</a> · <a href="{% url 'map:credit' club.slug location.pk 'explored' %}">Edit explored</a></p>{% endif %}
+{% if is_editor %}<p><a href="{% url 'map:credit' club.slug location.pk 'discovered' %}">Edit discovered</a> · <a href="{% url 'map:credit' club.slug location.pk 'explored' %}">Edit explored</a> · <a href="{% url 'map:found' club.slug location.pk %}">Edit found marks</a></p>{% endif %}

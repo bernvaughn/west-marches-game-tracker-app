@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from map.models import Location, Tile
 from map.render import build_cells
-from map.services import add_to_credit, record_visits
+from map.services import add_found_marks, add_to_credit, record_visits
 from player_characters.models import Character
 
 
@@ -38,6 +38,8 @@ def foreign_character(other_club, other_club_member):
 def two_visits(hex_map, tile_location, second_location, player_character, second_character):
     record_visits(hex_map, 1, 0, [player_character])
     record_visits(hex_map, 0, 2, [second_character])
+    add_found_marks(tile_location, [player_character])
+    add_found_marks(second_location, [second_character])
 
 
 @pytest.mark.story("M8")

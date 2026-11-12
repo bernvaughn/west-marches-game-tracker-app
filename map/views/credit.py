@@ -9,7 +9,7 @@ from player_characters.models import Character
 
 from .. import services
 from ..forms_credit import PickForm
-from ..models import HexMap, Location, LocationCredit, TileVisit
+from ..models import FoundMark, HexMap, Location, LocationCredit, TileVisit
 from ..visibility import pick_characters
 
 
@@ -116,6 +116,55 @@ def credit(request, club_slug, pk, kind):
             "other_kind": "explored" if kind == "discovered" else "discovered",
             "credit": entry,
             "credited": credited,
+            "available": available,
+            "form": form,
+        },
+    )
+
+
+@admin_or_gm_required
+@require_http_methods(["GET", "POST"])
+def found(request, club_slug, pk):
+    location = club_get_object_or_404(request, Location, pk=pk)
+    form = PickForm()
+    if request.method == "POST":
+        action = request.POST.get("action")
+        chars = _picked(request)
+        if action == "remove":
+            if chars:
+                services.remove_found_marks(location, chars)
+                messages.success(request, f"Removed {len(chars)} character(s).")
+            else:
+                messages.error(request, "Pick at least one character to remove.")
+            return redirect(request.path)
+        form, ok = _bound_form(request, chars)
+        if action == "add" and ok:
+            services.add_found_marks(
+                location, chars, form.cleaned_data["date"], created_by=request.membership
+            )
+            messages.success(request, f"Added {len(chars)} character(s).")
+            return redirect(request.path)
+    marks = list(
+        FoundMark.objects.for_club(request.club)
+        .filter(location=location)
+        .select_related("character", "created_by__user")
+        .order_by("character__name")
+    )
+    marked_ids = {m.character_id for m in marks}
+    available = [
+        c for c in club_queryset(request, Character).order_by("name") if c.pk not in marked_ids
+    ]
+    tile = location.tile
+    return render(
+        request,
+        "map/credit/found.html",
+        {
+            "club": request.club,
+            "hex_map": tile.map,
+            "q": tile.q,
+            "r": tile.r,
+            "location": location,
+            "marks": marks,
             "available": available,
             "form": form,
         },
