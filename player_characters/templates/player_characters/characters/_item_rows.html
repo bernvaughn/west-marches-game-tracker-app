@@ -1,0 +1,12 @@
+{# Formset rows with visible labels. Context: formset. #}
+{{ formset.management_form }}
+{{ formset.non_form_errors }}
+<div class="wm-item-rows">
+{% for row in formset %}
+  <div class="wm-item-row">
+    {{ row.non_field_errors }}
+    <div><label for="{{ row.item.id_for_label }}">Item</label>{{ row.item }}{{ row.item.errors }}</div>
+    <div><label for="{{ row.quantity.id_for_label }}">Quantity</label>{{ row.quantity }}{{ row.quantity.errors }}</div>
+  </div>
+{% endfor %}
+</div>

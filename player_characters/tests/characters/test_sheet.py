@@ -21,8 +21,9 @@ def sheet(funded):
 @pytest.mark.story("U8")
 def test_coins_split(club, login, player, sheet):
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    for label in ("pp: 0", "gp: 10", "sp: 0", "cp: 0"):
-        assert label in html
+    assert "10 gp" in html
+    for zero in ("pp: 0", "sp: 0", "cp: 0"):
+        assert zero not in html
     assert "Rope" in html
     assert "Held" not in html
 
@@ -31,7 +32,7 @@ def test_coins_split(club, login, player, sheet):
 def test_holds_shown(club, login, player, sheet, make_open_trade):
     make_open_trade(coins=100)
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "Held:" in html and "Available:" in html
+    assert "Held" in html and "Available" in html
 
 
 @pytest.mark.story("U19")
@@ -96,3 +97,24 @@ def test_index_lists_all_without_inventory(club, login, other_player, sheet):
     html = login(other_player).get(u("characters:index", club)).content.decode()
     assert "Aria" in html and "Player" in html and "Rope" not in html
     assert Character.objects.count() == 1
+
+
+@pytest.mark.story("U37")
+def test_sheet_header_and_print_button(club, login, player, sheet):
+    html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
+    assert "Played by" in html and club.name in html
+    assert "Print sheet" in html and "Recent ledger entries" in html
+
+
+@pytest.mark.story("U37")
+def test_empty_notes_one_line(club, login, player, sheet):
+    sheet.notes = ""
+    sheet.save()
+    html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
+    assert "No notes yet." in html
+
+
+@pytest.mark.story("U37")
+def test_other_player_sees_no_ledger_or_print(club, login, other_player, sheet):
+    html = login(other_player).get(u("characters:detail", club, sheet.pk)).content.decode()
+    assert "Recent ledger entries" not in html and "Print sheet" not in html

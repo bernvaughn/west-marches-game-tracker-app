@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Characters{% endblock %}
 {% block content %}
-<h1>Characters</h1>
-<p><a href="{% url 'characters:create' club.slug %}">New character</a></p>
-<ul>
-{% for c in characters %}
-  <li><a href="{% url 'characters:detail' club.slug c.pk %}">{{ c.name }}</a> — {{ c.owner.user.display_name }}</li>
-{% empty %}
-  <li>No characters yet.</li>
-{% endfor %}
-</ul>
+{% url 'characters:create' club.slug as create_url %}
+{% include "components/page_header.html" with title="Characters" action_url=create_url action_label="New character" action_icon="plus-lg" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Name</th><th>Owner</th></tr></thead>
+  <tbody>
+  {% for c in characters %}
+  {% url 'characters:detail' club.slug c.pk as detail_url %}
+  <tr><td>{% include "components/character_chip.html" with name=c.name url=detail_url %}</td><td>{{ c.owner.user.display_name }}</td></tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=2 text="No characters yet." %}
+  {% endfor %}
+  </tbody>
+</table></div>
 {% endblock %}

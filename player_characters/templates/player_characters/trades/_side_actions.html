@@ -1,15 +1,15 @@
 {% if trade.status == "completed" %}
-<p>Trade completed. Items and coins moved.</p>
+<p class="mt-3">Trade completed. Items and coins moved.</p>
 {% elif side and trade.status == "accepted" %}
   {% if side == "sender" and not trade.sender_approved or side == "receiver" and not trade.receiver_approved %}
-  <p>
-    <a href="{% url 'trades:edit_side' club.slug trade.pk %}">Edit my side</a>
-  </p>
+  <div class="wm-trade-actions">
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'trades:edit_side' club.slug trade.pk %}">Edit my side</a>
   <form method="post" action="{% url 'trades:approve' club.slug trade.pk %}">
     {% csrf_token %}
     <button class="btn btn-sm btn-primary" type="submit">Approve as {% if side == "sender" %}{{ trade.sender.name }}{% else %}{{ trade.receiver.name }}{% endif %}</button>
   </form>
+  </div>
   {% else %}
-  <p>You approved. Waiting for the other player.</p>
+  <p class="mt-3">You approved. Waiting for the other player.</p>
   {% endif %}
 {% endif %}

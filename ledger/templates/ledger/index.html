@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Ledger{% endblock %}
 {% block content %}
-<h1>Ledger</h1>
-{% if characters %}
-<ul>
+{% include "components/page_header.html" with title="Ledger" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Character</th><th>Owner</th></tr></thead>
+  <tbody>
   {% for c in characters %}
-  <li><a href="{% url 'ledger:character_history' club.slug c.pk %}">{{ c.name }}</a> — {{ c.owner.user.display_name }}</li>
+  {% url 'ledger:character_history' club.slug c.pk as history_url %}
+  <tr><td>{% include "components/character_chip.html" with name=c.name url=history_url %}</td><td>{{ c.owner.user.display_name }}</td></tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=2 text="No characters to show." %}
   {% endfor %}
-</ul>
-{% else %}
-<p>No characters to show.</p>
-{% endif %}
+  </tbody>
+</table></div>
 {% endblock %}

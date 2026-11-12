@@ -1,0 +1,16 @@
+{# Context: trades (queryset), empty_text. Rows link to the trade. #}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>From</th><th>To</th><th>Status</th><th>Date</th></tr></thead>
+  <tbody>
+  {% for t in trades %}
+  <tr>
+    <td><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }}</a> <span class="text-body-secondary">({{ t.sender.owner.user.display_name }})</span></td>
+    <td>{{ t.receiver.name }} <span class="text-body-secondary">({{ t.receiver.owner.user.display_name }})</span></td>
+    <td>{% include "player_characters/trades/_status_badge.html" %}</td>
+    <td>{{ t.created|date }}</td>
+  </tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=4 text=empty_text %}
+  {% endfor %}
+  </tbody>
+</table></div>

@@ -2,12 +2,14 @@
 {% load coins %}
 {% block title %}Items of {{ character.name }}{% endblock %}
 {% block content %}
-<p class="no-print">
-  <a href="{% url 'characters:detail' club.slug character.pk %}">Back to sheet</a>
-  <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.print()">Print</button>
-</p>
-<h1>{{ character.name }}</h1>
-<p>Coins: {{ coins.owned|coins }}</p>
+<div class="wm-sheet-actions no-print" role="toolbar" aria-label="Item card actions">
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:detail' club.slug character.pk %}">Back to sheet</a>
+  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+</div>
+<header class="wm-sheet-header">
+  <h1>{{ character.name }}</h1>
+  <p>Coins: {{ coins.owned|coins }}</p>
+</header>
 {% for row in rows %}
 <article class="print-item">
   <h2>{{ row.item.name }}{% if row.item.retired %} (retired){% endif %}</h2>
@@ -17,6 +19,6 @@
   {% if row.item.details %}<div><strong>Details</strong>{{ row.item.details|linebreaks }}</div>{% endif %}
 </article>
 {% empty %}
-<p>No items.</p>
+{% include "components/empty_state.html" with text="No items." %}
 {% endfor %}
 {% endblock %}

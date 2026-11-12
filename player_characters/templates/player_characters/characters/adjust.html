@@ -1,17 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Adjust {{ character.name }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>Adjust {{ character.name }}</h1>
-<form method="post">
+{% include "components/page_header.html" with title="Adjust "|add:character.name %}
+<form method="post" class="wm-form">
   {% csrf_token %}
-  {{ form.as_p }}
-  <h2>Items</h2>
-  {{ formset.management_form }}
-  {{ formset.non_form_errors }}
-  {% for row in formset %}
-    <div>{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
-  {% endfor %}
-  <button class="btn btn-sm btn-primary" type="submit">Save</button>
-  <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+  {{ form }}
+  <h2 class="h5">Items</h2>
+  {% include "player_characters/characters/_item_rows.html" %}
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+  </div>
 </form>
 {% endblock %}
