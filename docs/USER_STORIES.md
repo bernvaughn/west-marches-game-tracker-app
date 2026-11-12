@@ -352,9 +352,17 @@ From using the build after round 4 (U44–U53) landed. Kept as built: the keeper
 **U60 A tighter top bar with icon links.** As anyone in a club, I want the top bar to stay compact at every width, with my most-used pages as icon links that are always visible, so I can move around without opening a menu. *(site-wide)*
 - Character, Shops, Quests, Trades and Map are icon links in the top bar, each with its icon, a tooltip, and its name as the accessible name. At wide widths each shows its icon and its label; as the bar narrows, the labels drop first and the icons stay.
 - These links stay visible at every width and only move into the hamburger menu if they physically do not fit, for example on a very narrow phone.
-- Trades and Map move out of the More menu (U29). The More, Game master and Club admin menus stay as they are and collapse into the hamburger menu as today.
+- The More menu becomes a "Menu" with every player page, grouped under headings. The icon links are shortcuts: each of them also appears in its group in the Menu, so the Menu is the full list. The groups:
+  - **Character:** My character, Character directory, New character, Move items, and Ledger (my character's history).
+  - **Town:** Shops and Quests.
+  - **Trades:** Trades and Propose trade.
+  - **Map:** Map, Map requests, and XP table.
+  - **Club:** People, Items, and Message the admins.
+  - **Account:** Log out, last, below a divider.
+- At desktop width, the Menu opens as one wide dropdown with the groups in columns. On narrow screens, the same groups show as headed sections inside the hamburger menu. A group with no links the person may use is hidden.
+- The Game master and Club admin menus stay separate menus, as today. "Agent access" moves from More into the Game master menu, since only game masters and club admins can use it.
 - When the bar wraps to two rows, the rows sit tight together: no empty band beside the brand or the hamburger button, small even padding, and the hamburger button lines up with the other controls instead of sitting tall on its own. The whole bar is as short as it can be at each width.
-- Log out moves into the More menu, as its last item, below a divider. The other always-visible items from U34 (club, user, character, approvals) stay visible, and nothing scrolls sideways.
+- Log out moves into the Menu's Account group. The other always-visible items from U34 (club, user, character, approvals) stay visible, and nothing scrolls sideways.
 - This changes U29 and U34.
 
 ## Quests
