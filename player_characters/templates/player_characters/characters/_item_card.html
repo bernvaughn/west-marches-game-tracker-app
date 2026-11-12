@@ -1,7 +1,11 @@
-<article class="wm-item-card{% if full %} wm-item-card--full{% endif %}">
-  <h2>{{ row.item.name }}{% if row.item.retired %} (Retired){% endif %}</h2>
+{% load coins %}<article class="wm-item-card{% if full %} wm-item-card--full{% endif %}">
+  <div class="wm-item-card-body">
+  <h2>{% include "items/_item_name.html" with item=row.item %}{% if row.item.retired %} (Retired){% endif %}</h2>
   <p>Quantity: {{ row.owned }}</p>
+  <p>Value: {{ row.item.value_cp|coins_text }}</p>
   {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
   {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}
   {% if row.item.details %}<div><strong>Details</strong>{{ row.item.details|linebreaks }}</div>{% endif %}
+  </div>
+  <footer class="wm-item-card-footer">{{ character.name }} · printed {{ printed_on|date:"Y-m-d" }}</footer>
 </article>

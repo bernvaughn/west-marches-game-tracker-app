@@ -13,7 +13,7 @@
   <tbody>
   {% for row in rows %}
   <tr>
-    <td>{{ row.item.name }}</td>
+    <td>{% include "items/_item_name.html" with item=row.item %}</td>
     <td class="num">{{ row.quantity }}</td>
     <td class="num">{{ row.price|coins }}</td>
     <td class="actions">

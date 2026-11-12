@@ -8,6 +8,7 @@ class Item(models.Model):
 
     club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="items")
     name = models.CharField(max_length=200)
+    symbol = models.CharField(max_length=8, blank=True)
     description = models.TextField(blank=True)
     traits = models.TextField(blank=True)
     details = models.TextField(blank=True)

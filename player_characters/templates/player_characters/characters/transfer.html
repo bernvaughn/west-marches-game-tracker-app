@@ -22,7 +22,7 @@
 {% else %}
 <p>Available coins: {{ coins_available|coins }}</p>
 <ul class="wm-compact-list">
-  {% for item, qty in available %}<li>{{ item.name }}: {{ qty }}</li>{% empty %}<li>No items available to move.</li>{% endfor %}
+  {% for item, qty in available %}<li>{% include "items/_item_name.html" with item=item %}: {{ qty }}</li>{% empty %}<li>No items available to move.</li>{% endfor %}
 </ul>
 <form method="post" class="wm-form">
   {% csrf_token %}

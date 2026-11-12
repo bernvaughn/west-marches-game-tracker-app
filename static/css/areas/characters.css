@@ -54,7 +54,9 @@
 .wm-history-pager { display: flex; gap: var(--wm-space-2); align-items: center; }
 
 /* Item cards: trading-card size (2.5 x 3.5 in). Inch sizes are physical paper sizes, not tokens. */
-.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; border: 1px solid var(--wm-text); background: var(--wm-surface-raised); padding: 0.1in 0.12in; }
+.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; border: 1px solid var(--wm-text); background: var(--wm-surface-raised); padding: 0.1in 0.12in; display: flex; flex-direction: column; }
+.wm-item-card-body { flex: 1; overflow: hidden; min-height: 0; }
+.wm-item-card-footer { margin-top: auto; border-top: 1px solid; font-size: 0.85em; padding-top: 0.05in; }
 .wm-item-card h2 { font-family: var(--wm-font-heading); font-size: 1.3em; margin: 0 0 0.25em; }
 .wm-item-card p { margin: 0 0 0.4em; }
 .wm-item-card--full { width: 7.5in; height: 10.5in; font-size: 2.1rem; padding: 0.3in 0.36in; }

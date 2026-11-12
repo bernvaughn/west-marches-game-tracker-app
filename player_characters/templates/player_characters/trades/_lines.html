@@ -2,7 +2,7 @@
 {% if lines %}
 <ul class="wm-trade-lines">
 {% for line in lines %}
-  <li>{% if line.item %}{{ line.item.name }} &times; {{ line.quantity }}{% else %}{{ line.coins|coins }}{% endif %}</li>
+  <li>{% if line.item %}{% include "items/_item_name.html" with item=line.item %} &times; {{ line.quantity }}{% else %}{{ line.coins|coins }}{% endif %}</li>
 {% endfor %}
 </ul>
 {% else %}
