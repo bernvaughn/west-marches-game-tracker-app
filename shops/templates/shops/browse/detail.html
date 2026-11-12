@@ -6,20 +6,21 @@
 {% if not is_open %}<p class="wm-shop-closed">{% include "components/badge.html" with status="warning" text="Closed" %}</p>{% endif %}
 <div class="wm-shop-banner wm-shop-banner--{{ shop.color }}">
   <figure class="wm-shop-keeper-figure">
-    <img class="wm-shop-silhouette" src="{% static 'shops/silhouettes/'|add:shop.silhouette|add:'.svg' %}" alt="" height="160">
     {% if shop.keeper_name %}<figcaption class="wm-shop-keeper-name">{{ shop.keeper_name }}</figcaption>{% endif %}
+    <img class="wm-shop-silhouette" src="{% static 'shops/silhouettes/'|add:shop.silhouette|add:'.svg' %}" alt="" height="160">
   </figure>
-  {% if shop.description %}<div class="wm-shop-banner-about">{{ shop.description|truncatewords:30 }}</div>{% endif %}
-  <div class="wm-shop-sellbar">
-  <a class="btn btn-outline-secondary" href="{% url 'shops:sell' club.slug shop.id %}">{% include "components/icon.html" with name="coin" %} {% if shop.keeper_name %}Sell to {{ shop.keeper_name }}{% else %}Sell to this shop{% endif %}</a>
-</div>
+  {% if shop.description or shop.keeper_description %}
+  <div id="shop-about" class="wm-shop-about-box">
+    {% if shop.description %}{{ shop.description|linebreaks }}{% endif %}
+    {% if shop.keeper_description %}{% if shop.keeper_name %}<h2>{{ shop.keeper_name }}</h2>{% endif %}{{ shop.keeper_description|linebreaks }}{% endif %}
+  </div>
+  {% endif %}
+  <div class="wm-shop-actions">
+    {% if shop.description or shop.keeper_description %}<button type="button" class="btn btn-outline-secondary btn-sm wm-shop-about-toggle" aria-controls="shop-about" aria-expanded="true" hidden>Hide description</button>{% endif %}
+    <div class="wm-shop-sellbar"><a class="btn btn-outline-secondary" href="{% url 'shops:sell' club.slug shop.id %}">{% include "components/icon.html" with name="coin" %} {% if shop.keeper_name %}Sell to {{ shop.keeper_name }}{% else %}Sell to this shop{% endif %}</a></div>
+  </div>
 </div>
 <div id="stock" class="wm-shop-counter" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
-{% if shop.description|wordcount > 30 %}<div class="wm-shop-about">{{ shop.description|linebreaks }}</div>{% endif %}
-{% if shop.keeper_name or shop.keeper_description %}
-<section class="wm-shop-keeper">
-  {% if shop.keeper_name %}<h2>{{ shop.keeper_name }}</h2>{% endif %}
-  {{ shop.keeper_description|linebreaks }}
-</section>
-{% endif %}
+{% include "shops/browse/_your_inventory.html" %}
+<script src="{% static 'js/shop_banner.js' %}" defer></script>
 {% endblock %}
