@@ -2,49 +2,87 @@
 {% load coins %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
-<h1>{{ character.name }}</h1>
-<p>Owner: {{ owner_name }}</p>
+<nav class="wm-breadcrumbs no-print" aria-label="Breadcrumb"><ol>
+  <li><a href="{% url 'characters:index' club.slug %}">Characters</a></li>
+  <li><span aria-current="page">{{ character.name }}</span></li>
+</ol></nav>
 {% if can_view %}
-<p>
-  {% if can_edit %}<a href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}
+<div class="wm-sheet-actions no-print" role="toolbar" aria-label="Sheet actions">
+  {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}
   {% if can_adjust %}
-    <a href="{% url 'characters:adjust' club.slug character.pk %}">Adjust</a>
-    <a href="{% url 'characters:consume' club.slug character.pk %}">Consume</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:adjust' club.slug character.pk %}">Adjust</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:consume' club.slug character.pk %}">Consume</a>
   {% endif %}
-  {% if can_transfer %}<a href="{% url 'characters:transfer' club.slug character.pk %}">Transfer</a>{% endif %}
-  <a href="{% url 'characters:print_items' club.slug character.pk %}">Print</a>
-  <a href="{% url 'ledger:character_history' club.slug character.pk %}">History</a>
-  {% if can_handover %}<a href="{% url 'characters:handover' club.slug character.pk %}">Hand over</a>{% endif %}
-</p>
-<h2>Coins</h2>
-<p>{{ coins.owned|coins }}</p>
-<ul>
-{% for label, value in coins.parts %}<li><span class="coin coin-{{ label }}">{{ label }}: {{ value }}</span></li>{% endfor %}
-</ul>
-{% if coins.has_holds %}
-<p>Held: {{ coins.held|coins }}. Available: {{ coins.available|coins }}.</p>
+  {% if can_transfer %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:transfer' club.slug character.pk %}">Transfer</a>{% endif %}
+  {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}">Hand over</a>{% endif %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}">History</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}">Print item cards</a>
+  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
+</div>
 {% endif %}
-<h2>Items</h2>
-{% if rows %}
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <tr><th>Item</th><th>Owned</th>{% if show_held %}<th>Held</th>{% endif %}<th>Available</th></tr>
-  {% for r in rows %}
-  <tr>
-    <td>{{ r.item.name }}{% if r.item.retired %} (retired){% endif %}</td>
-    <td>{{ r.owned }}</td>
-    {% if show_held %}<td>{{ r.held }}</td>{% endif %}
-    <td>{{ r.available }}</td>
-  </tr>
-  {% endfor %}
-</table></div>
-{% else %}
-<p>No items.</p>
-{% endif %}
-<h2>Notes</h2>
-{{ character.notes|linebreaks }}
-<h2>Stats</h2>
-{{ character.stats|linebreaks }}
-<h2>Details</h2>
-{{ character.details|linebreaks }}
-{% endif %}
+<article class="wm-sheet">
+  <header class="wm-sheet-header">
+    <h1>{{ character.name }}</h1>
+    <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
+  </header>
+  {% if can_view %}
+  <div class="wm-sheet-grid">
+    <section class="wm-sheet-box wm-sheet-coins" aria-labelledby="sheet-coins">
+      <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
+      <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+      {% if coins.has_holds %}<p class="wm-sheet-note">Held {{ coins.held|coins }} &middot; Available {{ coins.available|coins }}</p>{% endif %}
+    </section>
+    {% if character.stats %}
+    <section class="wm-sheet-box" aria-labelledby="sheet-stats">
+      <h2 class="wm-sheet-box-title" id="sheet-stats">Stats</h2>
+      <p>{{ character.stats|linebreaksbr }}</p>
+    </section>
+    {% endif %}
+    <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-notes">
+      <h2 class="wm-sheet-box-title" id="sheet-notes">Notes</h2>
+      {% if character.notes %}{{ character.notes|linebreaks }}
+      {% else %}<p class="wm-sheet-note">No notes yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}</p>{% endif %}
+      {% if character.details %}
+      <h3 class="wm-sheet-subtitle">Details</h3>
+      {{ character.details|linebreaks }}
+      {% endif %}
+    </section>
+    <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-items">
+      <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
+      {% if rows %}
+      <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
+        <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num">Held</th>{% endif %}<th class="num">Available</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.item.name }}{% if r.item.retired %} {% include "components/badge.html" with text="retired" %}{% endif %}</td>
+          <td class="num">{{ r.owned }}</td>
+          {% if show_held %}<td class="num">{{ r.held }}</td>{% endif %}
+          <td class="num">{{ r.available }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+      <p class="wm-sheet-note">No items.</p>
+      {% endif %}
+    </section>
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-ledger">
+      <h2 class="wm-sheet-box-title" id="sheet-ledger">Recent ledger entries</h2>
+      <ul class="wm-sheet-ledger">
+      {% for e in recent_entries %}
+        <li><span class="wm-sheet-date">{{ e.date|date:"Y-m-d" }}</span> {{ e.get_kind_display }}:
+          {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {{ line.item.name }}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </li>
+      {% empty %}
+        <li class="wm-sheet-note">No entries yet.</li>
+      {% endfor %}
+      </ul>
+      <a class="no-print" href="{% url 'ledger:character_history' club.slug character.pk %}">Full ledger</a>
+    </section>
+  </div>
+  {% else %}
+  <p class="wm-sheet-note">Only the owner, game masters and club admins see this sheet.</p>
+  {% endif %}
+</article>
 {% endblock %}

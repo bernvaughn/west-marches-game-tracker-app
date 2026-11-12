@@ -1,32 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Trades{% endblock %}
 {% block content %}
-<h1>Trades</h1>
-<p><a href="{% url 'trades:propose' club.slug %}">Propose trade</a></p>
-<h2>Open trades</h2>
-<ul>
-{% for t in open_trades %}
-  <li><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }} ({{ t.sender.owner.user.display_name }}) &rarr; {{ t.receiver.name }} ({{ t.receiver.owner.user.display_name }})</a> &middot; {{ t.get_status_display }} &middot; {{ t.created|date }}</li>
-{% empty %}
-  <li>No open trades.</li>
-{% endfor %}
-</ul>
-<h2>Closed trades</h2>
-<ul>
-{% for t in closed_trades %}
-  <li><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }} ({{ t.sender.owner.user.display_name }}) &rarr; {{ t.receiver.name }} ({{ t.receiver.owner.user.display_name }})</a> &middot; {{ t.get_status_display }} &middot; {{ t.created|date }}</li>
-{% empty %}
-  <li>No closed trades.</li>
-{% endfor %}
-</ul>
+{% url 'trades:propose' club.slug as propose_url %}
+{% include "components/page_header.html" with title="Trades" action_url=propose_url action_label="Propose trade" action_icon="plus-lg" %}
+{% include "components/section_open.html" with title="Open trades" %}
+{% include "player_characters/trades/_trade_table.html" with trades=open_trades empty_text="No open trades." %}
+{% include "components/section_close.html" %}
+{% include "components/section_open.html" with title="Closed trades" %}
+{% include "player_characters/trades/_trade_table.html" with trades=closed_trades empty_text="No closed trades." %}
+{% include "components/section_close.html" %}
 {% if show_all %}
-<h2>All club trades</h2>
-<ul>
-{% for t in all_trades %}
-  <li><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }} ({{ t.sender.owner.user.display_name }}) &rarr; {{ t.receiver.name }} ({{ t.receiver.owner.user.display_name }})</a> &middot; {{ t.get_status_display }} &middot; {{ t.created|date }}</li>
-{% empty %}
-  <li>No trades in this club.</li>
-{% endfor %}
-</ul>
+{% include "components/section_open.html" with title="All club trades" %}
+{% include "player_characters/trades/_trade_table.html" with trades=all_trades empty_text="No trades in this club." %}
+{% include "components/section_close.html" %}
 {% endif %}
 {% endblock %}

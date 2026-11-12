@@ -2,38 +2,45 @@
 {% load coins %}
 {% block title %}History of {{ character.name }}{% endblock %}
 {% block content %}
-<h1>History of {{ character.name }}</h1>
-<p><a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back to sheet</a></p>
+<header class="wm-page-header">
+  <nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
+    <li><a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">{{ character.name }}</a></li>
+    <li><span aria-current="page">History</span></li>
+  </ol></nav>
+  <div class="wm-page-header-row"><div><h1>History of {{ character.name }}</h1></div>
+    <div class="wm-page-actions"><a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back to sheet</a></div>
+  </div>
+</header>
 {% if entries %}
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
   <thead><tr><th>Date</th><th>Kind</th><th>Note</th><th>Lines</th><th>By</th></tr></thead>
   <tbody>
   {% for e in entries %}
   <tr>
     <td>{{ e.date|date:"Y-m-d" }}</td>
-    <td>{{ e.get_kind_display }} (#{{ e.id }}){% if e.reverses_id %} <small>reverses #{{ e.reverses_id }}</small>{% endif %}</td>
+    <td>{{ e.get_kind_display }} (#{{ e.id }}){% if e.reverses_id %} <span class="wm-badge wm-badge--neutral">reverses #{{ e.reverses_id }}</span>{% endif %}</td>
     <td>{{ e.note }}</td>
     <td>
-      <ul>
+      <ul class="wm-ledger-lines">
         {% for line in e.lines.all %}
         <li>
-          {% if line.item %}{{ line.quantity|stringformat:"+d" }} {{ line.item.name }}{% endif %}
-          {% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}
+          {% if line.item %}<span class="{% if line.quantity > 0 %}wm-credit{% else %}wm-debit{% endif %}">{{ line.quantity|stringformat:"+d" }} {{ line.item.name }}</span>{% endif %}
+          {% if line.coins %}<span class="{% if line.coins > 0 %}wm-credit{% else %}wm-debit{% endif %}">{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}</span>{% endif %}
         </li>
         {% endfor %}
       </ul>
     </td>
-    <td>{% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}{% if e.via_agent %} <span class="badge">agent</span>{% endif %}</td>
+    <td>{% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}{% if e.via_agent %} {% include "components/badge.html" with text="agent" %}{% endif %}</td>
   </tr>
   {% endfor %}
   </tbody>
 </table></div>
-<p>
-  {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
-  Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-  {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
-</p>
+<nav class="wm-history-pager" aria-label="Pages">
+  {% if page_obj.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+</nav>
 {% else %}
-<p>No history yet.</p>
+{% include "components/empty_state.html" with text="No history yet." %}
 {% endif %}
 {% endblock %}

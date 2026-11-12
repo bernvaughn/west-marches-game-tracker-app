@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
-<h1>{{ title }}</h1>
-<p>Coming soon.</p>
+{% include "components/page_header.html" with title=title %}
+{% include "components/empty_state.html" with text="Coming soon." %}
 {% endblock %}

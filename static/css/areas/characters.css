@@ -1,1 +1,82 @@
-/* Area styles: owned by the characters sweep story (U35). Use tokens only. */
+/* Area styles: characters, ledger and trades (U35 story 4, U37). Tokens only. */
+
+/* Character sheet (U37): a paper sheet of ruled, titled boxes. */
+.wm-sheet { max-width: 64rem; }
+.wm-sheet-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-3); }
+.wm-sheet-header {
+  border: 2px solid var(--wm-text); border-radius: var(--wm-radius-sm); background: var(--wm-surface-raised);
+  padding: var(--wm-space-3) var(--wm-space-4); margin-bottom: var(--wm-space-3);
+}
+.wm-sheet-header h1 { font-family: var(--wm-font-heading); font-size: var(--wm-text-3xl); margin: 0; line-height: 1.15; }
+.wm-sheet-header p { margin: var(--wm-space-1) 0 0; color: var(--wm-text-muted); }
+.wm-sheet-grid { display: grid; gap: var(--wm-space-3); grid-template-columns: 1fr; align-items: start; }
+.wm-sheet-box {
+  border: 1px solid var(--wm-text); border-radius: var(--wm-radius-sm); background: var(--wm-surface-raised);
+  padding: var(--wm-space-2) var(--wm-space-3); min-width: 0;
+}
+.wm-sheet-box p { margin: 0 0 var(--wm-space-1); }
+.wm-sheet-box-title {
+  font-family: var(--wm-font-heading); font-size: var(--wm-text-sm); text-transform: uppercase; letter-spacing: .06em;
+  color: var(--wm-text-muted); margin: 0 0 var(--wm-space-1); padding-bottom: var(--wm-space-1); border-bottom: 1px solid var(--wm-border);
+}
+.wm-sheet-subtitle { font-family: var(--wm-font-heading); font-size: var(--wm-text-sm); margin: var(--wm-space-2) 0 var(--wm-space-1); }
+.wm-sheet-coins-total { font-size: var(--wm-text-xl); font-weight: 600; line-height: 1.3; }
+.wm-sheet-note { color: var(--wm-text-muted); font-size: var(--wm-text-sm); }
+.wm-sheet-table { width: auto; min-width: 60%; margin: 0; }
+.wm-sheet-table th, .wm-sheet-table td { padding: var(--wm-space-1) var(--wm-space-2); }
+.wm-sheet-table th:first-child, .wm-sheet-table td:first-child { width: 100%; }
+.wm-sheet-ledger { list-style: none; margin: 0 0 var(--wm-space-1); padding: 0; font-size: var(--wm-text-sm); }
+.wm-sheet-ledger li { padding: 2px 0; }
+.wm-sheet-date { color: var(--wm-text-muted); font-variant-numeric: tabular-nums; margin-right: var(--wm-space-1); }
+@media (min-width: 768px) {
+  /* Two balanced columns: boxes flow down the first, then the second. No box leaves a hole. */
+  .wm-sheet-grid { display: block; column-count: 2; column-gap: var(--wm-space-3); }
+  .wm-sheet-box { break-inside: avoid; margin-bottom: var(--wm-space-3); }
+  .wm-sheet-full { column-span: all; }
+}
+@media (max-width: 767.98px) {
+  .wm-sheet-actions .btn, .wm-trade-actions .btn, .wm-history-pager .btn { min-height: 44px; display: inline-flex; align-items: center; }
+  .wm-sheet-header h1 { font-size: var(--wm-text-2xl); }
+}
+
+/* Forms with a formset of item rows (adjust, consume, transfer). */
+.wm-item-rows { display: grid; gap: var(--wm-space-2); margin: var(--wm-space-2) 0; }
+.wm-item-row { display: grid; grid-template-columns: 1fr; gap: var(--wm-space-2); }
+.wm-item-row label { font-size: var(--wm-text-sm); color: var(--wm-text-muted); display: block; }
+@media (min-width: 768px) { .wm-item-row { grid-template-columns: 2fr 1fr; } }
+.wm-compact-list { max-width: 28rem; }
+
+/* Trades */
+.wm-trade-sides { display: grid; gap: var(--wm-space-3); grid-template-columns: 1fr; margin: var(--wm-space-3) 0; }
+@media (min-width: 768px) { .wm-trade-sides { grid-template-columns: 1fr 1fr; } }
+.wm-trade-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; margin-top: var(--wm-space-3); }
+.wm-trade-actions form { margin: 0; }
+.wm-trade-approvals { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-2); }
+.wm-trade-lines { list-style: none; margin: 0; padding: 0; }
+
+/* Ledger history: signed amounts. The sign text carries the meaning; colour is an extra cue. */
+.wm-credit { color: var(--wm-success); }
+.wm-debit { color: var(--wm-danger); }
+.wm-ledger-lines { list-style: none; margin: 0; padding: 0; }
+.wm-history-pager { display: flex; gap: var(--wm-space-2); align-items: center; }
+
+/* Item cards: the same ruled boxes as the sheet. */
+.print-item { border: 1px solid var(--wm-text); border-radius: var(--wm-radius-sm); background: var(--wm-surface-raised); padding: var(--wm-space-2) var(--wm-space-3); margin-bottom: var(--wm-space-3); }
+.print-item h2 { font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); margin: 0 0 var(--wm-space-1); }
+
+@media print {
+  @page { margin: 12mm; }
+  body { background: white; color: black; font-size: 10pt; }
+  .wm-sheet { max-width: none; }
+  .wm-sheet-header, .wm-sheet-box, .print-item { background: white; border-color: black; box-shadow: none; break-inside: avoid; }
+  .wm-sheet-header h1 { font-size: 24pt; }
+  .wm-sheet-header p, .wm-sheet-box-title, .wm-sheet-note, .wm-sheet-date { color: black; }
+  .wm-sheet-box-title { border-bottom-color: black; }
+  .wm-sheet-grid { display: block; column-count: 2; column-gap: var(--wm-space-3); }
+  .wm-sheet-box { margin-bottom: var(--wm-space-2); }
+  .wm-sheet-full { column-span: all; }
+  .wm-sheet-coins-total { font-size: 14pt; }
+  .wm-sheet-table th { background: white; color: black; }
+  .wm-sheet-table tr { background: white; }
+  .wm-badge { border: 1px solid black; background: white; color: black; }
+}

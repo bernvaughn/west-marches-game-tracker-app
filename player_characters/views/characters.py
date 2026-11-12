@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.db.models import Prefetch
 from django.shortcuts import redirect, render
 
 from accounts.permissions import (
@@ -10,6 +11,7 @@ from accounts.permissions import (
     is_game_master,
 )
 from accounts.scoping import club_get_object_or_404, club_queryset
+from ledger.models import LedgerEntry, LedgerLine
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
@@ -63,6 +65,14 @@ def detail(request, club_slug, pk):
         ctx["rows"] = inventory_rows(character)
         ctx["coins"] = coin_summary(character)
         ctx["show_held"] = any(r.held for r in ctx["rows"])
+        ctx["recent_entries"] = (
+            LedgerEntry.objects.filter(character=character)
+            .select_related("created_by")
+            .prefetch_related(
+                Prefetch("lines", queryset=LedgerLine.objects.select_related("item").order_by("id"))
+            )
+            .order_by("-date", "-id")[:5]
+        )
     return render(request, "player_characters/characters/detail.html", ctx)
 
 

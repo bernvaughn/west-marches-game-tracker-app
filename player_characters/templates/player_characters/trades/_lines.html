@@ -1,10 +1,10 @@
 {% load coins %}
 {% if lines %}
-<ul>
+<ul class="wm-trade-lines">
 {% for line in lines %}
   <li>{% if line.item %}{{ line.item.name }} &times; {{ line.quantity }}{% else %}{{ line.coins|coins }}{% endif %}</li>
 {% endfor %}
 </ul>
 {% else %}
-<p>Nothing yet.</p>
+<p class="text-body-secondary mb-0">Nothing yet.</p>
 {% endif %}

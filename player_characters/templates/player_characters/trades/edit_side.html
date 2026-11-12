@@ -1,15 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Edit my side{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>Edit my side</h1>
+{% include "components/page_header.html" with title="Edit my side" subtitle="Saving a change clears both approvals." %}
 <p>{{ character.name }} trades with
   {% if side == "sender" %}{{ trade.receiver.name }}{% else %}{{ trade.sender.name }}{% endif %}.</p>
-<p>Saving a change clears both approvals.</p>
-<form method="post">
-  {% csrf_token %}
-  {% if not form.items %}<p>No items available.</p>{% endif %}
-  {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Save my side</button>
-</form>
-<p><a href="{% url 'trades:detail' club.slug trade.pk %}">Back to trade</a></p>
+{% if not form.items %}<p class="text-body-secondary">No items available.</p>{% endif %}
+{% url 'trades:detail' club.slug trade.pk as back %}
+{% include "components/form_layout.html" with form=form submit_label="Save my side" cancel_url=back %}
 {% endblock %}

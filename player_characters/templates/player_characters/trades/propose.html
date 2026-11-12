@@ -1,23 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Propose trade{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>Propose trade</h1>
+{% include "components/page_header.html" with title="Propose trade" %}
 {% if not sender %}
-<p>You have no character in this club. Create a character first.</p>
-<p><a href="{% url 'characters:create' club.slug %}">New character</a></p>
+{% url 'characters:create' club.slug as create_url %}
+{% include "components/empty_state.html" with text="You have no character in this club. Create a character first." action_url=create_url action_label="New character" %}
 {% else %}
 <p>From <strong>{{ sender.name }}</strong></p>
-<form method="post">
+<form method="post" class="wm-form">
   {% csrf_token %}
-  {{ form.non_field_errors }}
-  <p>{{ form.receiver.label_tag }} {{ form.receiver }} {{ form.receiver.errors }}</p>
-  <p>{{ form.note.label_tag }} {{ form.note }} {{ form.note.errors }}</p>
-  <h2>Offer</h2>
-  {{ side_form.non_field_errors }}
-  {% for field in side_form %}
-  <p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>
-  {% endfor %}
-  <button class="btn btn-sm btn-primary" type="submit">Propose trade as {{ sender.name }}</button>
+  {{ form }}
+  <h2 class="h5">Offer</h2>
+  {{ side_form }}
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Propose trade as {{ sender.name }}</button>
+    <a class="btn btn-outline-secondary" href="{% url 'trades:index' club.slug %}">Cancel</a>
+  </div>
 </form>
 {% endif %}
 {% endblock %}

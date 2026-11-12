@@ -1,0 +1,1 @@
+{% if t.status == "completed" %}{% include "components/badge.html" with status="success" text=t.get_status_display %}{% elif t.status == "accepted" or t.status == "requested" %}{% include "components/badge.html" with status="warning" text=t.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=t.get_status_display %}{% endif %}

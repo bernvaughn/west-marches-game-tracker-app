@@ -1,39 +1,39 @@
 {% extends "base.html" %}
 {% load coins %}
 {% block title %}Move loot: {{ character.name }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% if no_character %}
-<h1>Move items</h1>
-<p>You have no character in this club.</p>
+{% include "components/page_header.html" with title="Move items" %}
+{% include "components/empty_state.html" with text="You have no character in this club." %}
 {% else %}
-<h1>Move loot from {{ character.name }}</h1>
-<form method="get" action="{% url 'characters:transfer_start' request.club.slug %}">
-  <label>Move from
-    <select class="form-select form-select-sm w-auto d-inline-block" name="from">
+{% include "components/page_header.html" with title="Move loot from "|add:character.name %}
+<form method="get" action="{% url 'characters:transfer_start' request.club.slug %}" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+  <div>
+    <label class="form-label" for="transfer-from">Move from</label>
+    <select class="form-select" id="transfer-from" name="from">
       {% for c in sources %}<option value="{{ c.pk }}"{% if c.pk == character.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
     </select>
-  </label>
-  <button class="btn btn-sm btn-outline-secondary" type="submit">Change</button>
+  </div>
+  <button class="btn btn-outline-secondary" type="submit">Change</button>
 </form>
 {% if not destinations %}
-<p>You have no other character in this club.</p>
-<a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back</a>
+{% include "components/empty_state.html" with text="You have no other character in this club." %}
+<a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back</a>
 {% else %}
 <p>Available coins: {{ coins_available|coins }}</p>
-<ul>
+<ul class="wm-compact-list">
   {% for item, qty in available %}<li>{{ item.name }}: {{ qty }}</li>{% empty %}<li>No items available to move.</li>{% endfor %}
 </ul>
-<form method="post">
+<form method="post" class="wm-form">
   {% csrf_token %}
-  {{ form.as_p }}
-  <h2>Items</h2>
-  {{ formset.management_form }}
-  {{ formset.non_form_errors }}
-  {% for row in formset %}
-    <div>{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
-  {% endfor %}
-  <button class="btn btn-sm btn-primary" type="submit">Move loot</button>
-  <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+  {{ form }}
+  <h2 class="h5">Items</h2>
+  {% include "player_characters/characters/_item_rows.html" %}
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Move loot</button>
+    <a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
+  </div>
 </form>
 {% endif %}
 {% endif %}
