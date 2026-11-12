@@ -19,8 +19,9 @@ def _club_members(club):
 class CharacterForm(forms.ModelForm):
     class Meta:
         model = Character
-        fields = ["name", "notes", "stats", "details"]
+        fields = ["name", "level", "notes", "stats", "details"]
         widgets = {
+            "level": forms.NumberInput(attrs={"min": 1}),
             "notes": forms.Textarea(attrs={"rows": 5}),
             "stats": forms.Textarea(attrs={"rows": 5}),
             "details": forms.Textarea(attrs={"rows": 5}),
@@ -32,7 +33,7 @@ class CharacterForm(forms.ModelForm):
         self.choose_owner = choose_owner
         if choose_owner:
             self.fields["owner"] = _OwnerChoice(queryset=_club_members(club))
-            self.order_fields(["owner", "name", "notes", "stats", "details"])
+            self.order_fields(["owner", "name", "level", "notes", "stats", "details"])
 
     def save(self, commit=True):
         self.instance.club = self.club
