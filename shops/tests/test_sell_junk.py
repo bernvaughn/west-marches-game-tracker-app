@@ -76,7 +76,7 @@ def test_post_sells_only_ticked(club, login, player, junked, shop, item, torch):
         HTTP_HX_REQUEST="true",
     )
     assert r.status_code == 204
-    assert "shopStockChanged" in r.headers["HX-Trigger"]
+    assert r.headers["HX-Redirect"] == reverse("shops:detail", args=[club.slug, shop.pk])
     assert item_quantities(junked)[item.pk] == 3
     assert item_quantities(junked)[torch.pk] == 1
     assert [(x.item, x.quantity) for x in junk_rows(junked)] == [(item, 3), (torch, 1)]
@@ -133,3 +133,32 @@ def test_shop_page_and_buy_modal_junk_lines(club, login, player, junked, shop, i
     assert "Junk: " in body and "sells here for" in body and "Sell junk" in body
     buy = c.get(reverse("shops:buy", args=[club.slug, shop.pk, stock.pk])).content.decode()
     assert "Junk: " in buy
+
+
+def test_htmx_sale_total_reaches_the_user(club, login, player, junked, shop, item, torch):
+    c = login(player)
+    r = c.post(
+        url(club, shop),
+        {"item": [item.pk, torch.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"},
+        HTTP_HX_REQUEST="true",
+    )
+    assert r.status_code == 204
+    # htmx follows HX-Redirect with a full page load, which shows the message.
+    page = c.get(r.headers["HX-Redirect"]).content.decode()
+    assert "Sold junk to Lantern for 1 gp 2 sp." in page
+
+
+def test_total_follows_ticks_and_quantities(club, login, player, junked, shop, item, torch):
+    c = login(player)
+
+    def total(params):
+        body = c.get(url(club, shop), {"recalc": "1", **params}, HTTP_HX_REQUEST="true")
+        body = body.content.decode()
+        return body[body.index('id="junk-total"') :].split("</p>")[0]
+
+    assert "0 cp" in total({f"qty_{item.pk}": "3", f"qty_{torch.pk}": "4"})
+    assert "1 gp</span></strong>" in total(
+        {"item": [item.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
+    )
+    both = {"item": [item.pk, torch.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
+    assert "2 sp" in total(both)

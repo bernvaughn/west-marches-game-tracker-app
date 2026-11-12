@@ -6,7 +6,8 @@
 {% else %}
 <p>Selling as <strong>{{ character.name }}</strong> to {{ shop.name }}.</p>
 {% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
-<div class="wm-table-scroll"><table class="table table-sm wm-data-table">
+<input type="hidden" name="recalc" value="1">
+<div class="wm-table-scroll" hx-get="{% url 'shops:sell_junk' request.club.slug shop.pk %}" hx-trigger="change, input changed delay:300ms" hx-include="closest form" hx-target="#junk-total" hx-select="#junk-total" hx-swap="outerHTML"><table class="table table-sm wm-data-table">
   <thead><tr><th scope="col">Sell</th><th scope="col">Item</th><th scope="col">Quantity</th><th class="num" scope="col">Price (each)</th></tr></thead>
   <tbody>
   {% for row in rows %}
@@ -20,5 +21,5 @@
   {% endfor %}
   </tbody>
 </table></div>
-<p>Total for ticked rows: <strong>{{ total|coins }}</strong></p>
+<p id="junk-total" aria-live="polite">Total for ticked rows: <strong>{{ total|coins }}</strong></p>
 {% endif %}
