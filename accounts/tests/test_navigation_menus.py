@@ -107,7 +107,6 @@ def test_old_nav_links_still_reachable(login, club, player, club_admin, game_mas
             "map:index",
             "map:requests",
             "quests:index",
-            "agent_access:index",
         ],
         "admin": [
             "accounts:whitelist",
@@ -116,10 +115,16 @@ def test_old_nav_links_still_reachable(login, club, player, club_admin, game_mas
             "shops:rotation_list",
             "quests:manage",
             "agent_access:proposed_items",
+            "agent_access:index",
             "items:index",
             "accounts:index",
         ],
-        "gm": ["agent_access:connections", "agent_access:batches", "agent_access:proposed_items"],
+        "gm": [
+            "agent_access:index",
+            "agent_access:connections",
+            "agent_access:batches",
+            "agent_access:proposed_items",
+        ],
     }
     users = {"player": player, "admin": club_admin, "gm": game_master}
     for who, names in expected.items():
