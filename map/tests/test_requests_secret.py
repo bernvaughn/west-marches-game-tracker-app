@@ -82,3 +82,10 @@ def test_visit_page_shows_tile(login, club, player, hex_map, character):
 def test_cross_club_isolation(login, club, other_club_member, game_master, loc):
     resp = _page(login(other_club_member), club, "found", loc)
     assert resp.status_code in (403, 404)
+
+
+@pytest.mark.story("U53")
+def test_request_page_shows_location_line_once(login, club, player, character, loc):
+    for kind in ("found", "explored"):
+        body = _page(login(player), club, kind, loc).content.decode()
+        assert body.count("Tile: 1, 0") == 1

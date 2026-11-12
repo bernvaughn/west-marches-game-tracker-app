@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -19,8 +19,9 @@ from ledger.models import LedgerEntry, LedgerLine
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
 from ..inventory import coin_summary, inventory_rows
-from ..models import Character
+from ..models import Character, Trade
 from ..selection import selected_character
+from ..trade_services import OPEN
 
 
 @club_member_required
@@ -39,12 +40,42 @@ def directory(request, club_slug):
     characters = (
         club_queryset(request, Character).select_related("owner__user").order_by(Lower("name"))
     )
+    sel = selected_character(request)
+    by_other = {}
+    if sel:
+        open_trades = (
+            club_queryset(request, Trade)
+            .filter(status__in=OPEN)
+            .filter(Q(sender=sel) | Q(receiver=sel))
+            .order_by("-created")
+        )
+        for t in open_trades:
+            other_id = t.receiver_id if t.sender_id == sel.pk else t.sender_id
+            by_other.setdefault(other_id, []).append(t)
+    mine = getattr(request.membership, "pk", None)
     rows = []
     for c in characters:
-        allowed = sees_all or c.owner_id == getattr(request.membership, "pk", None)
-        url = reverse("characters:detail", args=[request.club.slug, c.pk]) if allowed else None
-        rows.append((c, url))
-    return render(request, "player_characters/characters/directory.html", {"rows": rows})
+        own = c.owner_id == mine
+        url = (
+            reverse("characters:detail", args=[request.club.slug, c.pk])
+            if sees_all or own
+            else None
+        )
+        propose_url = None
+        if sel and not own:
+            propose_url = reverse("trades:propose", args=[request.club.slug]) + f"?to={c.pk}"
+        rows.append(
+            {
+                "character": c,
+                "url": url,
+                "own": own,
+                "trades": [] if own else by_other.get(c.pk, []),
+                "propose_url": propose_url,
+            }
+        )
+    return render(
+        request, "player_characters/characters/directory.html", {"rows": rows, "selected": sel}
+    )
 
 
 @admin_or_gm_required
