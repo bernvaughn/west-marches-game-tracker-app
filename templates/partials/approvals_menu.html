@@ -1,1 +1,14 @@
-{# Intentionally empty. Story U26 fills this with the approvals dropdown. #}
+{% if approvals_total %}
+<div class="dropdown no-print">
+  <button class="btn btn-sm btn-outline-primary dropdown-toggle approvals-menu" type="button"
+          data-bs-toggle="dropdown" aria-expanded="false"
+          aria-label="Approvals: {{ approvals_total }} waiting">
+    Approvals <span class="badge text-bg-danger approvals-total">{{ approvals_total }}</span>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    {% for a in approvals %}
+    <li><a class="dropdown-item d-flex justify-content-between gap-3" href="{{ a.url }}">{{ a.label }} <span class="badge text-bg-secondary">{{ a.count }}</span></a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
