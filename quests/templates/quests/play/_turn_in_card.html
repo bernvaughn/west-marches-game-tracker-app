@@ -1,0 +1,24 @@
+<section id="turn-in" class="wm-quest-turnin card" aria-labelledby="turn-in-title">
+  <h2 id="turn-in-title" class="h4">Turn in</h2>
+  {% if character %}
+  <p class="wm-quest-turnin-name"><strong>{{ character.name }}</strong></p>
+  <div class="wm-table-scroll">
+    <table class="table table-sm wm-data-table">
+      <thead><tr><th scope="col">Item</th><th scope="col">Needed</th><th scope="col">Has</th><th scope="col"><span class="visually-hidden">Status</span></th></tr></thead>
+      <tbody>
+      {% for r in turnin_rows %}
+        <tr{% if r.short %} class="wm-quest-turnin-missing"{% endif %}><td>{% include "items/_item_name.html" with item=r.item %}</td><td>{{ r.needed }}</td><td>{{ r.has }}</td><td>{% if r.short %}{% include "components/badge.html" with status="warning" text="Missing" %} {{ r.short }}{% else %}{% include "components/badge.html" with status="success" text="OK" %}{% endif %}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}">
+    {% csrf_token %}
+    {% if blocked_reason %}<p class="wm-sheet-note" id="turn-in-reason">{{ blocked_reason }}</p>{% endif %}
+    <button class="btn btn-primary" type="submit"{% if blocked_reason %} disabled aria-describedby="turn-in-reason"{% endif %}>Turn in as {{ character.name }}</button>
+  </form>
+  {% else %}
+  {% url 'characters:create' club.slug as create_url %}
+  {% include "components/empty_state.html" with text="You have no character in this club." icon="person" action_url=create_url action_label="Create a character" %}
+  {% endif %}
+</section>

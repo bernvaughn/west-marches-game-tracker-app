@@ -100,17 +100,39 @@ def detail(request, club_slug, pk):
     club_left = services.completions_left(quest)
     row = None
     stamp = None
+    turnin_rows = []
+    blocked_reason = None
     if character is not None:
+        have = available_items(character)
         missing = services.missing_items(quest, character)
         left = services.character_completions_left(quest, character)
+        for req in quest.requirements.select_related("item"):
+            has = have.get(req.item_id, 0)
+            turnin_rows.append(
+                {
+                    "item": req.item,
+                    "needed": req.quantity,
+                    "has": has,
+                    "short": max(0, req.quantity - has),
+                }
+            )
+        # Same order as quests.services.turn_in (liveness is checked above).
+        if not turnin_rows:
+            blocked_reason = "This quest has no requirements."
+        elif club_left == 0:
+            blocked_reason = "This quest is full."
+        elif left == 0:
+            blocked_reason = f"{character} has completed this quest the maximum number of times."
+        elif missing:
+            blocked_reason = _missing_text(missing)
         row = {
             "missing": missing,
             "limit_reached": left == 0,
-            "ready": not missing and left != 0 and club_left != 0,
+            "ready": blocked_reason is None,
         }
         if left == 0:
             stamp = "done"
-        elif row["ready"] and quest.requirements.exists():
+        elif not missing and left != 0 and club_left != 0 and turnin_rows:
             stamp = "ready"
     quest.tilt = _tilt(quest)
     return render(
@@ -122,6 +144,8 @@ def detail(request, club_slug, pk):
             "rewards": quest.rewards.select_related("item"),
             "character": character,
             "row": row,
+            "turnin_rows": turnin_rows,
+            "blocked_reason": blocked_reason,
             "stamp": stamp,
             "club_left": club_left,
             "is_admin": _is_admin(request),
