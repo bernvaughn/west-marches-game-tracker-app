@@ -3,10 +3,11 @@
 {% block content %}
 {% include "components/page_header.html" with title=club.name subtitle="Pick an area." %}
 {% nav_entries as nav %}
-<div class="wm-card-grid">
-  {% for link in nav.primary %}{% include "accounts/_area_card.html" %}{% endfor %}
-  {% for link in nav.more %}{% include "accounts/_area_card.html" %}{% endfor %}
-</div>
+{% for key, heading, links in nav|menu_sections %}{% if key != "account" %}
+{% include "components/section_open.html" with title=heading %}
+<div class="wm-card-grid">{% for link in links %}{% include "accounts/_area_card.html" %}{% endfor %}</div>
+{% include "components/section_close.html" %}
+{% endif %}{% endfor %}
 {% if nav.gm %}
 {% include "components/section_open.html" with title="Game master" %}
 <div class="wm-card-grid">{% for link in nav.gm %}{% include "accounts/_area_card.html" %}{% endfor %}</div>

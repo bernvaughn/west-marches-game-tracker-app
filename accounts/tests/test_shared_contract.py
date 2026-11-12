@@ -66,20 +66,21 @@ def _req(rf, user, club):
 
 @pytest.mark.story("U29")
 def test_real_registry_has_all_groups():
-    assert {e.group for e in navigation._entries} == set(navigation.GROUPS)
+    # "account" is filled by the Menu template (Log out); "primary" by icon shortcuts (U60).
+    assert {e.group for e in navigation._entries} == set(navigation.GROUPS) - {"account", "primary"}
 
 
 @pytest.mark.story("U29")
 def test_checks_order_and_groups(registry, rf, club, other_club, player, game_master):
     navigation.register("gm", "Zeta", "club_home", lambda r: is_game_master(r.user, r.club), 2)
     navigation.register("primary", "B", "club_home", None, 5)
-    navigation.register("more", "Late", "club_home", None, 9)
-    navigation.register("more", "Early", "club_home", None, 1)  # duplicate ignored
+    navigation.register("town", "Late", "club_home", None, 9)
+    navigation.register("town", "Early", "club_home", None, 1)  # duplicate ignored
     gm = navigation.entries_for(_req(rf, game_master, club))
     assert list(gm) == list(navigation.GROUPS)
     assert [link.label for link in gm["gm"]] == ["Zeta"]
     assert gm["gm"][0].url == reverse("club_home", args=[club.slug])
-    assert [link.label for link in gm["more"]] == ["Late"]
+    assert [link.label for link in gm["town"]] == ["Late"]
     assert navigation.entries_for(_req(rf, player, club))["gm"] == []
     assert navigation.entries_for(_req(rf, game_master, other_club))["gm"] == []
 

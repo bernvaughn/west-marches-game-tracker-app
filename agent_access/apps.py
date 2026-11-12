@@ -16,7 +16,7 @@ class AgentAccessConfig(AppConfig):
         from accounts.apps import is_gm, is_gm_or_admin
 
         reg = navigation.register
-        reg("more", "Agent access", "agent_access:index", is_gm_or_admin, 90)
+        reg("gm", "Agent access", "agent_access:index", is_gm_or_admin, 90)
         reg("gm", "Agent connections", "agent_access:connections", is_gm, 50)
         reg("gm", "Agent batches", "agent_access:batches", is_gm, 40)
         reg("gm", "Proposed items", "agent_access:proposed_items", is_gm_or_admin, 30)
