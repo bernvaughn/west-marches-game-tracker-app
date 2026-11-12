@@ -59,6 +59,19 @@ def _int(value):
         return 0
 
 
+def _location_label(location, characters, is_editor, secret=False):
+    """Name for a request. Players see it only when every picked character found it."""
+    if location is None:
+        return "Location deleted"
+    if is_editor:
+        return location.name
+    if secret or not characters:
+        return "Unknown location"
+    if all(location.pk in found_location_ids([c]) for c in characters):
+        return location.name
+    return "Unknown location"
+
+
 def _default_character(request):
     sel = selected_character(request)
     return {"characters": [sel.pk]} if sel else {}
@@ -106,6 +119,7 @@ def visit_new(request, club_slug, map_id):
             "form": form,
             "title": "Request a visit",
             "hex_map": hex_map,
+            "subtitle": f"Map: {hex_map.name}. Tile: {form['q'].value()}, {form['r'].value()}",
             "has_characters": chars.exists(),
         },
     )
@@ -141,10 +155,13 @@ def credit_new(request, club_slug, location_id, kind):
             return redirect("map:requests", club_slug=club_slug)
     else:
         form = CreditRequestForm(characters_qs=chars, initial=_default_character(request))
-    if is_editor or location.pk in found_location_ids(chars):
-        label = location.name
+    if request.method == "POST":
+        picked_ids = {_int(v) for v in request.POST.getlist("characters")}
     else:
-        label = "Unknown location"
+        picked_ids = set(_default_character(request).get("characters", []))
+    picked = [c for c in chars if c.pk in picked_ids]
+    label = _location_label(location, picked, is_editor, secret=(kind == "found"))
+    tile = location.tile
     return render(
         request,
         "map/requests/form.html",
@@ -154,6 +171,7 @@ def credit_new(request, club_slug, location_id, kind):
             "title": "Request a found mark" if kind == "found" else f"Request {kind} credit",
             "hex_map": location.tile.map,
             "location_label": label,
+            "subtitle": f"Map: {tile.map.name}. Tile: {tile.q}, {tile.r}. Location: {label}",
             "has_characters": chars.exists(),
         },
     )
@@ -174,7 +192,7 @@ def queue(request, club_slug):
     if not is_editor:
         qs = qs.filter(requested_by=request.membership) if request.membership else qs.none()
     qs = (
-        qs.select_related("map", "location", "requested_by__user", "decided_by__user")
+        qs.select_related("map", "location__tile", "tile", "requested_by__user", "decided_by__user")
         .prefetch_related("characters")
         .annotate(
             open_first=Case(
@@ -186,14 +204,12 @@ def queue(request, club_slug):
         .order_by("open_first", "-created")
     )
     requests_list = list(qs)
-    known = None if is_editor else found_location_ids(own_characters(request))
     for req in requests_list:
-        if req.location is None:
-            req.location_label = "Location deleted"
-        elif known is None or req.location_id in known:
-            req.location_label = req.location.name
-        else:
-            req.location_label = "Unknown location"
+        picked = list(req.characters.all())
+        req.location_label = _location_label(req.location, picked, is_editor)
+        src = req.tile or (req.location.tile if req.location else None)
+        req.tile_q = req.q if req.q is not None else (src.q if src else None)
+        req.tile_r = req.r if req.q is not None else (src.r if src else None)
         req.can_approve = _can_approve(req, list(req.characters.all()))
     return render(
         request,
