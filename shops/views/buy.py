@@ -1,8 +1,7 @@
-import json
-
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.htmx import is_htmx, render_modal_or_page
@@ -48,8 +47,8 @@ def buy(request, club_slug, shop_id, stock_id):
                 messages.success(request, entry.note)
                 if is_htmx(request):
                     response = HttpResponse(status=204)
-                    response["HX-Trigger"] = json.dumps(
-                        {"appModalClose": None, "shopStockChanged": None}
+                    response["HX-Redirect"] = reverse(
+                        "shops:detail", kwargs={"club_slug": club_slug, "shop_id": shop.pk}
                     )
                     return response
                 return redirect("shops:detail", club_slug=club_slug, shop_id=shop.pk)
