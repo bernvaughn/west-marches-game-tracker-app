@@ -8,7 +8,7 @@
     {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
   {% endfor %}
 </p>
-<div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML">
+<div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
 <div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <tr><th>From</th><th>Email</th><th>Character</th><th>Message</th><th>Date</th><th>Status</th></tr>
   {% for m in messages_list %}
