@@ -1,8 +1,11 @@
+import json
+
 from django.contrib import messages
-from django.http import Http404
-from django.shortcuts import redirect, render
+from django.http import Http404, HttpResponse
+from django.shortcuts import redirect
 from django.utils import timezone
 
+from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
@@ -42,15 +45,40 @@ def buy(request, club_slug, shop_id, stock_id):
                 error = str(exc)
             else:
                 messages.success(request, entry.note)
+                if is_htmx(request):
+                    response = HttpResponse(status=204)
+                    response["HX-Trigger"] = json.dumps(
+                        {"appModalClose": None, "shopStockChanged": None}
+                    )
+                    return response
                 return redirect("shops:detail", club_slug=club_slug, shop_id=shop.pk)
+    elif "quantity" in request.GET:
+        form = BuyForm(request.GET, max_quantity=stock.quantity)
     else:
         form = BuyForm(max_quantity=stock.quantity)
 
     stock.refresh_from_db()
-    return render(
+    quantity = 1
+    if form.is_bound and form.is_valid():
+        quantity = form.cleaned_data["quantity"]
+    elif form.is_bound:
+        try:
+            quantity = max(int(form.data.get("quantity", 1)), 0)
+        except (TypeError, ValueError):
+            quantity = 0
+    before = available_coins(character) if character else None
+    total = unit_price * quantity
+    after = before - total if character else None
+    return render_modal_or_page(
         request,
+        "shops/buy/_confirm.html",
         "shops/buy/buy.html",
         {
+            "quantity": quantity,
+            "total": total,
+            "before": before,
+            "after": after,
+            "short": character is not None and after < 0,
             "shop": shop,
             "stock": stock,
             "price": unit_price,
