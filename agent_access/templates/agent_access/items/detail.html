@@ -2,27 +2,31 @@
 {% load coins %}
 {% block title %}{{ p.name }}{% endblock %}
 {% block content %}
-<h1>{{ p.name }}</h1>
-<p>Status: {{ p.get_status_display }}. Proposed by: {{ p.connection.label|default:"unknown" }} on {{ p.created|date:"Y-m-d H:i" }}.</p>
+<a class="wm-agent-back" href="{% url 'agent_access:proposed_items' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Back to list</a>
+{% with who=p.connection.label|default:"unknown" when=p.created|date:"Y-m-d H:i" %}{% include "components/page_header.html" with title=p.name subtitle="Proposed by "|add:who|add:" on "|add:when %}{% endwith %}
+<p>{% if p.status == "pending" %}{% include "components/badge.html" with status="warning" text=p.get_status_display %}{% elif p.status == "approved" %}{% include "components/badge.html" with status="success" text=p.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=p.get_status_display %}{% endif %}</p>
 {% if form %}
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Save changes</button>
-  <button class="btn btn-sm btn-primary" type="submit" formaction="{% url 'agent_access:proposed_item_approve' club.slug p.pk %}">Approve</button>
-</form>
-<form method="post" action="{% url 'agent_access:proposed_item_reject' club.slug p.pk %}">
-  {% csrf_token %}
-  <button class="btn btn-sm btn-outline-danger" type="submit">Reject</button>
-</form>
+{% include "components/card_open.html" with title="Review" %}
+  <form class="wm-form" method="post">
+    {% csrf_token %}
+    {{ form }}
+    <div class="wm-form-actions">
+      <button class="btn btn-outline-secondary" type="submit">Save changes</button>
+      <button class="btn btn-primary wm-agent-approve" type="submit" formaction="{% url 'agent_access:proposed_item_approve' club.slug p.pk %}">Approve</button>
+      <button class="btn btn-outline-danger" type="submit" form="reject-form">Reject</button>
+    </div>
+  </form>
+  <form id="reject-form" method="post" action="{% url 'agent_access:proposed_item_reject' club.slug p.pk %}">{% csrf_token %}</form>
+{% include "components/card_close.html" %}
 {% else %}
-<dl>
-  <dt>Description</dt><dd>{{ p.description }}</dd>
-  <dt>Traits</dt><dd>{{ p.traits }}</dd>
-  <dt>Details</dt><dd>{{ p.details }}</dd>
-  <dt>Value</dt><dd>{% if p.value_cp %}{{ p.value_cp|coins }}{% endif %}</dd>
-</dl>
-{% if p.approved_item %}<p>Catalogue item: {{ p.approved_item.name }}</p>{% endif %}
+{% include "components/card_open.html" with title="Details" %}
+  <dl class="wm-dl">
+    <dt>Description</dt><dd>{{ p.description|default:"—" }}</dd>
+    <dt>Traits</dt><dd>{{ p.traits|default:"—" }}</dd>
+    <dt>Details</dt><dd>{{ p.details|default:"—" }}</dd>
+    <dt>Value</dt><dd>{% if p.value_cp %}{{ p.value_cp|coins }}{% else %}—{% endif %}</dd>
+    {% if p.approved_item %}<dt>Catalogue item</dt><dd>{{ p.approved_item.name }}</dd>{% endif %}
+  </dl>
+{% include "components/card_close.html" %}
 {% endif %}
-<p><a href="{% url 'agent_access:proposed_items' club.slug %}">Back to list</a></p>
 {% endblock %}

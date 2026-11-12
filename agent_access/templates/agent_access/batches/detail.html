@@ -2,52 +2,85 @@
 {% load coins %}
 {% block title %}Batch #{{ batch.pk }}{% endblock %}
 {% block content %}
-<h1>Batch #{{ batch.pk }}</h1>
-<p>Status: <strong>{{ batch.get_status_display }}</strong>. Date: {{ batch.date }}.
-  Proposed by {{ batch.user.display_name }} through {{ batch.connection.label }} on {{ batch.created }}.</p>
-{% if batch.confirmed_at %}<p>Confirmed by {{ batch.confirmed_by.display_name }} on {{ batch.confirmed_at }}.</p>{% endif %}
-{% if batch.reversed_at %}<p>Reversed by {{ batch.reversed_by.display_name }} on {{ batch.reversed_at }}.</p>{% endif %}
-{% if batch.source_notes %}
-<h2>Source notes</h2>
-<pre>{{ batch.source_notes }}</pre>
+<a class="wm-agent-back" href="{% url 'agent_access:batches' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} All batches</a>
+{% with n=batch.pk|stringformat:"s" %}{% include "components/page_header.html" with title="Batch #"|add:n subtitle="Proposed by "|add:batch.user.display_name|add:" through "|add:batch.connection.label %}{% endwith %}
+
+{% include "components/card_open.html" %}
+  <div class="wm-agent-batch-head">{% include "agent_access/batches/_status_badge.html" %}</div>
+  <dl class="wm-dl wm-agent-meta">
+    <div><dt>Date</dt><dd>{{ batch.date }}</dd></div>
+    <div><dt>Created</dt><dd>{{ batch.created }}</dd></div>
+    <div><dt>Lines</dt><dd>{{ rows|length }}</dd></div>
+    {% if batch.confirmed_at %}<div><dt>Confirmed</dt><dd>{{ batch.confirmed_by.display_name }} on {{ batch.confirmed_at }}</dd></div>{% endif %}
+    {% if batch.reversed_at %}<div><dt>Reversed</dt><dd>{{ batch.reversed_by.display_name }} on {{ batch.reversed_at }}</dd></div>{% endif %}
+  </dl>
+  {% if batch.source_notes %}
+  <h2 class="wm-agent-notes-title">Source notes</h2>
+  <blockquote class="wm-agent-notes">{{ batch.source_notes }}</blockquote>
+  {% endif %}
+{% include "components/card_close.html" %}
+
+{% include "components/card_open.html" with title="Lines" %}
+  <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
+    <thead><tr><th class="num">#</th><th>Character</th><th>Item</th><th class="num">Qty</th><th class="num">Coins</th><th class="wm-agent-note">Note</th><th>Date</th></tr></thead>
+    <tbody>
+    {% for row in rows %}
+      <tr id="line-{{ row.line.pk }}">
+        <td class="num">{{ row.n }}</td>
+        <td>{% include "components/character_chip.html" with name=row.line.character.name %}</td>
+        <td>{% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }} {% include "components/badge.html" with status="info" text="New item" %}{% else %}—{% endif %}</td>
+        <td class="num">{% if row.line.quantity %}{{ row.line.quantity }}{% else %}—{% endif %}</td>
+        <td class="num">{% if row.line.coins %}{% include "components/coins.html" with value=row.line.coins %}{% else %}—{% endif %}</td>
+        <td class="text-muted wm-agent-note">{{ row.line.note|default:"—" }}</td>
+        <td>{{ row.line.date|default:"—" }}</td>
+      </tr>
+    {% empty %}
+      {% include "components/data_table_empty.html" with cols=7 text="No lines." %}
+    {% endfor %}
+    </tbody>
+  </table></div>
+{% include "components/card_close.html" %}
+
+{% if pending and rows %}
+{% include "components/card_open.html" with title="Edit lines" subtitle="Open a line to change it. Nothing reaches the ledger until you confirm." %}
+  {% for row in rows %}
+  <details class="wm-agent-line-edit" id="edit-line-{{ row.line.pk }}"{% if row.form.errors %} open{% endif %}>
+    <summary>{% include "components/icon.html" with name="chevron-down" %}<span>Line {{ row.n }} · {{ row.line.character.name }} · {% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }}{% else %}{{ row.line.coins|coins }}{% endif %}</span></summary>
+    <form class="wm-form" method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
+      {% csrf_token %}
+      <div class="wm-agent-line-grid">{{ row.form }}</div>
+      <div class="wm-agent-line-actions">
+        <button class="btn btn-sm btn-primary" type="submit">Save line</button>
+        <button class="btn btn-sm btn-outline-danger" type="submit" formnovalidate formaction="{% url 'agent_access:batch_line_remove' club.slug batch.pk row.line.pk %}">Remove line</button>
+      </div>
+    </form>
+  </details>
+  {% endfor %}
+{% include "components/card_close.html" %}
 {% endif %}
 
-<h2>Lines</h2>
-{% for row in rows %}
-  <section id="line-{{ row.line.pk }}">
-    <h3>Line {{ row.n }}</h3>
-    {% if row.form %}
-    <form method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
-      {% csrf_token %}
-      {{ row.form.as_p }}
-      <button class="btn btn-sm btn-primary" type="submit">Save line</button>
-    </form>
-    <form method="post" action="{% url 'agent_access:batch_line_remove' club.slug batch.pk row.line.pk %}">
-      {% csrf_token %}
-      <button class="btn btn-sm btn-outline-danger" type="submit">Remove line</button>
-    </form>
+{% if pending or batch.status == "confirmed" %}
+<div class="wm-card wm-agent-decision">
+  <div class="wm-card-body">
+    {% if pending %}
+    <p class="wm-agent-decision-lead">Confirming writes these lines to the ledger. Nothing changes before you confirm.</p>
+    <div class="wm-agent-decision-actions">
+      <form method="post" action="{% url 'agent_access:batch_confirm' club.slug batch.pk %}">
+        {% csrf_token %}<button class="btn btn-primary" type="submit">{% include "components/icon.html" with name="check-lg" %} Confirm batch</button>
+      </form>
+      <form method="post" action="{% url 'agent_access:batch_discard' club.slug batch.pk %}">
+        {% csrf_token %}<button class="btn btn-outline-danger" type="submit">Discard batch</button>
+      </form>
+    </div>
     {% else %}
-    <p>{{ row.line.character }}:
-      {% if row.line.item %}{{ row.line.quantity }} × {{ row.line.item }}
-      {% elif row.line.proposed_item %}{{ row.line.quantity }} × {{ row.line.proposed_item }} (proposed)
-      {% else %}{{ row.line.coins|coins }}{% endif %}
-      {% if row.line.note %}— {{ row.line.note }}{% endif %}</p>
+    <p class="wm-agent-decision-lead">Reversing adds opposite entries; nothing is deleted.</p>
+    <div class="wm-agent-decision-actions">
+      <form method="post" action="{% url 'agent_access:batch_reverse' club.slug batch.pk %}">
+        {% csrf_token %}<button class="btn btn-outline-danger" type="submit">Reverse batch</button>
+      </form>
+    </div>
     {% endif %}
-  </section>
-{% empty %}
-  <p>No lines.</p>
-{% endfor %}
-
-{% if pending %}
-<form method="post" action="{% url 'agent_access:batch_confirm' club.slug batch.pk %}">
-  {% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Confirm batch</button>
-</form>
-<form method="post" action="{% url 'agent_access:batch_discard' club.slug batch.pk %}">
-  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Discard batch</button>
-</form>
-{% elif batch.status == "confirmed" %}
-<form method="post" action="{% url 'agent_access:batch_reverse' club.slug batch.pk %}">
-  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Reverse</button>
-</form>
+  </div>
+</div>
 {% endif %}
 {% endblock %}

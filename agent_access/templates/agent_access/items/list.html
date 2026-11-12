@@ -1,26 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Proposed items{% endblock %}
 {% block content %}
-<h1>Proposed items</h1>
-<p>
+<a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
+{% include "components/page_header.html" with title="Proposed items" subtitle="Items agents suggest for the catalogue." %}
+<nav class="nav nav-pills wm-agent-filters" aria-label="Filter by status">
 {% for f in filters %}
-  {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
+  <a class="nav-link{% if f == status %} active{% endif %}" href="?status={{ f }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>
 {% endfor %}
-</p>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Name</th><th>Value</th><th>Status</th><th>Proposed by</th><th>Created</th><th></th></tr></thead>
+</nav>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
+  <thead><tr><th>Name</th><th class="num">Value</th><th>Status</th><th>Proposed by</th><th>Created</th><th></th></tr></thead>
   <tbody>
   {% for row in rows %}
     <tr>
       <td>{{ row.p.name }}</td>
-      <td>{{ row.value }}</td>
-      <td>{{ row.p.get_status_display }}</td>
+      <td class="num">{{ row.value|default:"—" }}</td>
+      <td>{% if row.p.status == "pending" %}{% include "components/badge.html" with status="warning" text=row.p.get_status_display %}{% elif row.p.status == "approved" %}{% include "components/badge.html" with status="success" text=row.p.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=row.p.get_status_display %}{% endif %}</td>
       <td>{{ row.p.connection.label|default:"" }}</td>
       <td>{{ row.p.created|date:"Y-m-d H:i" }}</td>
-      <td><a href="{% url 'agent_access:proposed_item_detail' club.slug row.p.pk %}">Review</a></td>
+      <td class="actions"><a class="btn btn-sm btn-outline-primary" href="{% url 'agent_access:proposed_item_detail' club.slug row.p.pk %}">Review</a></td>
     </tr>
   {% empty %}
-    <tr><td colspan="6">No proposed items.</td></tr>
+    {% include "components/data_table_empty.html" with cols=6 text="No proposed items." %}
   {% endfor %}
   </tbody>
 </table></div>

@@ -1,17 +1,25 @@
 {% extends "base.html" %}
 {% block title %}Agent connections{% endblock %}
 {% block content %}
-<h1>Agent connections</h1>
+<a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
+{% include "components/page_header.html" with title="Agent connections" subtitle="Tokens that let an agent propose changes for this club." %}
 {% if new_secret %}
-<div class="notice">
-  <p><strong>Copy this token now. It will not be shown again.</strong></p>
-  <p><code id="new-secret">{{ new_secret }}</code></p>
-  <p>Send it as the header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+<div class="alert alert-warning wm-alert wm-alert--warning wm-agent-secret" role="alert">
+  {% include "components/icon.html" with name="exclamation-triangle-fill" %}
+  <div>
+    <span class="wm-alert-title">Copy this token now. It will not be shown again.</span>
+    <p><code id="new-secret">{{ new_secret }}</code></p>
+    <p>Send it as the header <code>Authorization: Bearer &lt;token&gt;</code>.</p>
+  </div>
 </div>
 {% endif %}
-<p>MCP URL: <code>{{ mcp_url }}</code></p>
 
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
+{% include "components/card_open.html" with title="MCP URL" %}
+  <p class="wm-agent-code"><code>{{ mcp_url }}</code></p>
+{% include "components/card_close.html" %}
+
+{% include "components/card_open.html" with title="Connections" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
   <thead>
     <tr><th>Label</th><th>Kind</th><th>Prefix</th><th>Created</th><th>Last used</th><th>Status</th><th></th></tr>
   </thead>
@@ -20,11 +28,11 @@
     <tr>
       <td>{{ c.label }}</td>
       <td>{{ c.get_kind_display }}</td>
-      <td>{% if c.token_prefix %}{{ c.token_prefix }}…{% endif %}</td>
-      <td>{{ c.created }}</td>
-      <td>{{ c.last_used_at|default:"never" }}</td>
-      <td>{% if c.revoked_at %}Revoked {{ c.revoked_at }}{% else %}Active{% endif %}</td>
-      <td>
+      <td>{% if c.token_prefix %}<code>{{ c.token_prefix }}…</code>{% endif %}</td>
+      <td>{{ c.created|date:"Y-m-d H:i" }}</td>
+      <td>{{ c.last_used_at|date:"Y-m-d H:i"|default:"never" }}</td>
+      <td>{% if c.revoked_at %}{% include "components/badge.html" with status="neutral" text="Revoked" %} <span class="text-muted">{{ c.revoked_at|date:"Y-m-d" }}</span>{% else %}{% include "components/badge.html" with status="success" text="Active" %}{% endif %}</td>
+      <td class="actions">
         {% if not c.revoked_at %}
         <form method="post" action="{% url 'agent_access:connection_revoke' club.slug c.pk %}">
           {% csrf_token %}
@@ -34,15 +42,13 @@
       </td>
     </tr>
   {% empty %}
-    <tr><td colspan="7">No connections yet.</td></tr>
+    {% include "components/data_table_empty.html" with cols=7 text="No connections yet." %}
   {% endfor %}
   </tbody>
 </table></div>
+{% include "components/card_close.html" %}
 
-<h2>New token</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Create token</button>
-</form>
+{% include "components/card_open.html" with title="New token" %}
+  {% include "components/form_layout.html" with form=form submit_label="Create token" %}
+{% include "components/card_close.html" %}
 {% endblock %}
