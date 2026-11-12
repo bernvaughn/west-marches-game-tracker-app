@@ -2,18 +2,20 @@
 {% load accounts_tags %}
 {% block title %}People{% endblock %}
 {% block content %}
-<h1>People</h1>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Name</th><th>Roles</th><th>Characters</th><th>Email</th><th></th></tr></thead>
+{% include "components/page_header.html" with title="People" subtitle="Members of this club." %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Name</th><th>Roles</th><th>Characters</th><th>Email</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for m in members %}
     <tr>
       <td>{% firstof m.user.display_name m.user %}</td>
-      <td>{% if m.is_club_admin %}Club admin{% endif %}{% if m.is_club_admin and m.is_game_master %}, {% endif %}{% if m.is_game_master %}Game master{% endif %}{% if not m.is_club_admin and not m.is_game_master %}Player{% endif %}</td>
-      <td>{% for c in m.characters.all %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+      <td><span class="wm-badge-row">{% if m.is_club_admin %}{% include "components/badge.html" with status="danger" text="Club admin" %}{% endif %}{% if m.is_game_master %}{% include "components/badge.html" with status="warning" text="Game master" %}{% endif %}{% if not m.is_club_admin and not m.is_game_master %}{% include "components/badge.html" with status="success" text="Player" %}{% endif %}</span></td>
+      <td><span class="wm-badge-row">{% for c in m.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</span></td>
       <td>{% member_email m.user %}</td>
-      <td>{% if m.user|can_reset:request.user %}<a href="{% url 'accounts:reset_password' club.slug m.id %}">Reset password</a>{% endif %}</td>
+      <td class="actions">{% if m.user|can_reset:request.user %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:reset_password' club.slug m.id %}">Reset password</a>{% endif %}</td>
     </tr>
+  {% empty %}
+    {% include "components/data_table_empty.html" with cols=5 text="No members yet." %}
   {% endfor %}
   </tbody>
 </table></div>

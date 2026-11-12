@@ -1,11 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Grant for message #{{ msg.pk }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>Grant for message #{{ msg.pk }}</h1>
-<blockquote class="blockquote">{{ msg.body|linebreaksbr }}</blockquote>
-<form method="post" action="{% url 'accounts:message_grant' request.club.slug msg.pk %}">
+{% url 'accounts:message_inbox' request.club.slug as inbox_url %}
+{% include "components/page_header.html" with title="Grant for message" subtitle="Record what this message earned." %}
+{% include "components/card_open.html" with title="The message" %}
+<p class="text-muted mb-1">Message #{{ msg.pk }}</p>
+<p class="mb-0">{{ msg.body|linebreaksbr }}</p>
+{% include "components/card_close.html" %}
+<form method="post" class="wm-form" action="{% url 'accounts:message_grant' request.club.slug msg.pk %}">
   {% include "accounts/inbox/_grant_fields.html" %}
-  <button class="btn btn-primary" type="submit">Grant</button>
-  <a href="{% url 'accounts:message_inbox' request.club.slug %}?status={{ filter }}">Back to inbox</a>
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Grant</button>
+    <a class="btn btn-outline-secondary" href="{{ inbox_url }}?status={{ filter }}">Back to inbox</a>
+  </div>
 </form>
 {% endblock %}

@@ -1,5 +1,20 @@
 {% extends "base.html" %}
+{% load accounts_tags %}
 {% block content %}
-<h1>{{ club.name }}</h1>
-<p>Pick an area from the menu.</p>
+{% include "components/page_header.html" with title=club.name subtitle="Pick an area." %}
+{% nav_entries as nav %}
+<div class="wm-area-grid">
+  {% for link in nav.primary %}{% include "accounts/_area_card.html" %}{% endfor %}
+  {% for link in nav.more %}{% include "accounts/_area_card.html" %}{% endfor %}
+</div>
+{% if nav.gm %}
+{% include "components/section_open.html" with title="Game master" %}
+<div class="wm-area-grid">{% for link in nav.gm %}{% include "accounts/_area_card.html" %}{% endfor %}</div>
+{% include "components/section_close.html" %}
+{% endif %}
+{% if nav.admin %}
+{% include "components/section_open.html" with title="Club admin" %}
+<div class="wm-area-grid">{% for link in nav.admin %}{% include "accounts/_area_card.html" %}{% endfor %}</div>
+{% include "components/section_close.html" %}
+{% endif %}
 {% endblock %}
