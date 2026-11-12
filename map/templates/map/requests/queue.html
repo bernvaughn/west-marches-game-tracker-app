@@ -4,8 +4,8 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% include "components/page_header.html" with title="Map requests" %}
-<div class="map-toolbar">
-<a class="btn btn-link" href="{% url 'map:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Back to maps</a>
+<div class="wm-toolbar">
+{% url 'map:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to maps" %}
 </div>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle">
 <thead><tr><th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th>Requested by</th><th>Status</th><th>Decided</th>{% if is_editor %}<th></th>{% endif %}</tr></thead>
@@ -19,7 +19,7 @@
 <td>{{ req.date|default:"" }}</td>
 <td>{{ req.note|linebreaksbr }}</td>
 <td>{{ req.requested_by.user.display_name }}</td>
-<td>{% if req.status == "approved" %}{% include "components/badge.html" with status="success" text=req.get_status_display %}{% elif req.status == "declined" %}{% include "components/badge.html" with status="danger" text=req.get_status_display %}{% else %}{% include "components/badge.html" with status="warning" text=req.get_status_display %}{% endif %}</td>
+<td>{% include "components/status_badge.html" with value=req.status text=req.get_status_display %}</td>
 <td>{% if req.decided_at %}{{ req.decided_by.user.display_name|default:"" }} {{ req.decided_at|date:"Y-m-d H:i" }}{% endif %}</td>
 {% if is_editor %}<td class="actions">{% if req.status == "requested" %}
 {% if req.can_approve %}<form method="post" class="d-inline" action="{% url 'map:request_approve' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Approve</button></form>{% endif %}

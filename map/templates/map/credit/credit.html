@@ -5,15 +5,15 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% with t=kind|capfirst|add:" by: "|add:location.name %}{% include "components/page_header.html" with title=t %}{% endwith %}
-<div class="map-toolbar">
-<a class="btn btn-link" href="{% url 'map:tile' club.slug hex_map.pk q r %}">{% include "components/icon.html" with name="arrow-left" %} Back to the tile</a>
+<div class="wm-toolbar">
+{% url 'map:tile' club.slug hex_map.pk q r as back_url %}{% include "components/back_link.html" with url=back_url label="Back to the tile" %}
 <a class="btn btn-outline-secondary" href="{% url 'map:credit' club.slug location.pk other_kind %}">Edit {{ other_kind }}</a>
 </div>
 {% include "components/card_open.html" with title="Credited characters" %}
 {% if credited %}
 <form method="post" class="wm-form">{% csrf_token %}
   <input type="hidden" name="action" value="remove">
-  <fieldset class="map-checks"><legend class="visually-hidden">Characters to remove</legend>
+  <fieldset class="wm-check-list"><legend class="visually-hidden">Characters to remove</legend>
   {% for c in credited %}
   <div class="form-check"><input class="form-check-input" type="checkbox" id="rm-{{ c.pk }}" name="characters" value="{{ c.pk }}"><label class="form-check-label" for="rm-{{ c.pk }}">{{ c.name }}</label></div>
   {% endfor %}
@@ -27,7 +27,7 @@
 <form method="post" class="wm-form">{% csrf_token %}
   <input type="hidden" name="action" value="add">
   {{ form.non_field_errors }}
-  <fieldset class="map-checks"><legend class="visually-hidden">Characters to add</legend>
+  <fieldset class="wm-check-list"><legend class="visually-hidden">Characters to add</legend>
   {% for c in available %}
   <div class="form-check"><input class="form-check-input" type="checkbox" id="add-{{ c.pk }}" name="characters" value="{{ c.pk }}"><label class="form-check-label" for="add-{{ c.pk }}">{{ c.name }}</label></div>
   {% endfor %}

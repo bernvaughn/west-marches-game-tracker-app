@@ -3,7 +3,7 @@
 {% block title %}Inbox{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Inbox" subtitle="Messages from players to the club admins." %}
-<nav class="wm-segmented" aria-label="Filter by status">
+<nav class="wm-filter-pills" aria-label="Filter by status">
   {% for f in filters %}<a class="btn btn-sm {% if f == status %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?status={{ f }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>{% endfor %}
 </nav>
 <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
@@ -28,9 +28,9 @@
       {% endif %}
     </td>
     <td>{{ m.created|date:"Y-m-d H:i" }}</td>
-    <td>{% if m.status == "open" %}{% include "components/badge.html" with status="warning" text=m.get_status_display %}{% elif m.status == "handled" %}{% include "components/badge.html" with status="success" text=m.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=m.get_status_display %}{% endif %}</td>
+    <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
     <td class="actions">
-      <form method="post" class="wm-status-form" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
+      <form method="post" class="wm-inline-form" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
         {% csrf_token %}
         <input type="hidden" name="filter" value="{{ status }}">
         <label class="visually-hidden" for="status-{{ m.pk }}">Status for message {{ m.pk }}</label>

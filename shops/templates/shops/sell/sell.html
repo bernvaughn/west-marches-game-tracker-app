@@ -2,8 +2,7 @@
 {% load coins %}
 {% block title %}Sell to {{ shop.name }}{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title="Sell to "|add:shop.name %}
-<p><a href="{% url 'shops:detail' club.slug shop.id %}">Back to {{ shop.name }}</a></p>
+{% url "shops:detail" club.slug shop.id as back_url %}{% include "components/page_header.html" with title="Sell to "|add:shop.name back_url=back_url back_label="Back to "|add:shop.name %}
 {% if not character %}
 {% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
 {% else %}

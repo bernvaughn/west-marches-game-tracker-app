@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Proposed items{% endblock %}
 {% block content %}
-<a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
+{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Agent access" %}
 {% include "components/page_header.html" with title="Proposed items" subtitle="Items agents suggest for the catalogue." %}
-<nav class="nav nav-pills wm-agent-filters" aria-label="Filter by status">
+<nav class="nav nav-pills wm-filter-pills" aria-label="Filter by status">
 {% for f in filters %}
   <a class="nav-link{% if f == status %} active{% endif %}" href="?status={{ f }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>
 {% endfor %}
@@ -15,7 +15,7 @@
     <tr>
       <td>{{ row.p.name }}</td>
       <td class="num">{{ row.value|default:"—" }}</td>
-      <td>{% if row.p.status == "pending" %}{% include "components/badge.html" with status="warning" text=row.p.get_status_display %}{% elif row.p.status == "approved" %}{% include "components/badge.html" with status="success" text=row.p.get_status_display %}{% else %}{% include "components/badge.html" with status="neutral" text=row.p.get_status_display %}{% endif %}</td>
+      <td>{% include "components/status_badge.html" with value=row.p.status text=row.p.get_status_display %}</td>
       <td>{{ row.p.connection.label|default:"" }}</td>
       <td>{{ row.p.created|date:"Y-m-d H:i" }}</td>
       <td class="actions"><a class="btn btn-sm btn-outline-primary" href="{% url 'agent_access:proposed_item_detail' club.slug row.p.pk %}">Review</a></td>

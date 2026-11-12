@@ -1,0 +1,5 @@
+{% comment %}back_link: the one "back to the parent page" link. Muted, with an arrow and a gap.
+   Context: url (required), label (required).
+   Example: {% include "components/back_link.html" with url=list_url label="All batches" %}
+{% endcomment %}
+<a class="wm-back-link no-print" href="{{ url }}">{% include "components/icon.html" with name="arrow-left" %}<span>{{ label }}</span></a>

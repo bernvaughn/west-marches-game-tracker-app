@@ -50,6 +50,7 @@ def token_groups():
         "radius": ("Radii", lambda n: "-radius-" in n),
         "shadow": ("Shadows", lambda n: "-shadow-" in n),
         "focus": ("Focus ring", lambda n: "-focus-" in n),
+        "size": ("Sizes", lambda n: "-size-" in n),
     }
     out, used = [], set()
     for gid, (title, test) in groups.items():

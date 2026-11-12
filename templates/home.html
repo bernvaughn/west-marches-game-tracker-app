@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 {% include "components/page_header.html" with title="Your clubs" subtitle="Pick a club to open it." %}
-{% if user.is_superuser %}<p class="wm-site-links no-print"><a class="btn btn-outline-secondary" href="{% url 'site_clubs' %}">Clubs</a> <a class="btn btn-outline-secondary" href="{% url 'site_settings' %}">Site settings</a></p>{% endif %}
+{% if user.is_superuser %}<p class="wm-toolbar no-print"><a class="btn btn-outline-secondary" href="{% url 'site_clubs' %}">Clubs</a> <a class="btn btn-outline-secondary" href="{% url 'site_settings' %}">Site settings</a></p>{% endif %}
 {% if cards %}
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
   {% for card in cards %}

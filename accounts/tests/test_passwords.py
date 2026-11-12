@@ -40,7 +40,7 @@ def test_flagged_user_redirected_everywhere(club, player, login):
         r = client.get(url)
         assert r.status_code == 302 and r.url == change, url
     assert client.get(change).status_code == 200
-    static = client.get("/static/css/app.css")
+    static = client.get("/static/css/components.css")
     assert static.status_code != 302 or static.url != change
 
 

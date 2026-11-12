@@ -2,15 +2,7 @@
 {% load coins %}
 {% block title %}History of {{ character.name }}{% endblock %}
 {% block content %}
-<header class="wm-page-header">
-  <nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
-    <li><a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">{{ character.name }}</a></li>
-    <li><span aria-current="page">History</span></li>
-  </ol></nav>
-  <div class="wm-page-header-row"><div><h1>History of {{ character.name }}</h1></div>
-    <div class="wm-page-actions"><a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back to sheet</a></div>
-  </div>
-</header>
+{% url "characters:detail" club_slug=request.club.slug pk=character.pk as sheet_url %}{% include "components/page_header.html" with title="History of "|add:character.name back_url=sheet_url back_label="Back to sheet" %}
 {% if entries %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
   <thead><tr><th>Date</th><th>Kind</th><th>Note</th><th>Lines</th><th>By</th></tr></thead>

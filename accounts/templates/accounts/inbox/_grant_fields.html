@@ -1,34 +1,34 @@
 {% csrf_token %}
 <input type="hidden" name="filter" value="{{ filter }}">
 {{ form.non_field_errors }}
-<fieldset class="wm-grant-group"><legend>Who</legend>
+<fieldset class="wm-fieldset"><legend>Who</legend>
   {% include "forms/field.html" with field=form.character %}
 </fieldset>
-<fieldset class="wm-grant-group"><legend>Coins</legend>
+<fieldset class="wm-fieldset"><legend>Coins</legend>
   {% include "forms/field.html" with field=form.coins %}
 </fieldset>
-<fieldset class="wm-grant-group"><legend>Items</legend>
+<fieldset class="wm-fieldset"><legend>Items</legend>
   {{ formset.management_form }}
   {{ formset.non_form_errors }}
   {% for row in formset %}
   {{ row.non_field_errors }}
-  <div class="wm-grant-row wm-grant-row--item">
+  <div class="wm-form-row wm-form-row--wide-first">
     {% include "forms/field.html" with field=row.item %}
     {% include "forms/field.html" with field=row.quantity %}
   </div>
   {% endfor %}
 </fieldset>
-<fieldset class="wm-grant-group"><legend>Map</legend>
+<fieldset class="wm-fieldset"><legend>Map</legend>
   {% include "forms/field.html" with field=form.map_kind %}
   {% include "forms/field.html" with field=form.location %}
   <p class="form-text">Or a visit to a tile with no location:</p>
-  <div class="wm-grant-row wm-grant-row--tile">
+  <div class="wm-form-row wm-form-row--wide-first wm-form-row--3">
     {% include "forms/field.html" with field=form.hex_map %}
     <div class="wm-field"><label class="form-label mb-1" for="{{ form.q.id_for_label }}">Column (q)</label>{{ form.q }}{{ form.q.errors }}</div>
     <div class="wm-field"><label class="form-label mb-1" for="{{ form.r.id_for_label }}">Row (r)</label>{{ form.r }}{{ form.r.errors }}</div>
   </div>
 </fieldset>
-<fieldset class="wm-grant-group"><legend>Record</legend>
+<fieldset class="wm-fieldset"><legend>Record</legend>
   {% include "forms/field.html" with field=form.note %}
   {% include "forms/field.html" with field=form.date %}
   {% include "forms/field.html" with field=form.mark_handled %}

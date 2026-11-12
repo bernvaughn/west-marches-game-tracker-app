@@ -1,6 +1,7 @@
 /* Map area styles. Tokens only. */
 .map-frame .wm-card-body { padding: var(--wm-space-3); }
 .hexmap svg { width: 100%; height: auto; display: block; }
+.hexmap a { text-decoration: none; }
 .hex { stroke: var(--wm-text-muted); stroke-width: 1; fill: none; }
 .hex-empty { fill: none; }
 .hex-visited { fill: var(--wm-success-bg); }
@@ -11,8 +12,6 @@
 .hex-unexplored, .legend-unexplored { fill: var(--wm-danger); font-weight: bold; font-size: var(--wm-text-md); pointer-events: none; }
 .unexplored { color: var(--wm-danger); }
 .hex-unknown, .legend-unknown { fill: var(--wm-text); font-weight: bold; font-size: var(--wm-text-xl); pointer-events: none; }
-.map-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wm-space-2); margin-bottom: var(--wm-space-4); }
-.map-toolbar:empty { display: none; }
 .map-controls { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--wm-space-4); margin-bottom: var(--wm-space-3); }
 .map-picker { display: flex; flex-direction: column; gap: var(--wm-space-3); }
 .map-picker fieldset { border: 0; margin: 0; padding: 0; }
@@ -23,28 +22,23 @@
 .map-legend { display: flex; flex-wrap: wrap; gap: var(--wm-space-2) var(--wm-space-4); list-style: none; margin: 0; padding: 0; font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
 .map-legend li { display: flex; align-items: center; gap: var(--wm-space-2); }
 .map-legend svg { width: 1.5rem; height: 1.5rem; flex: none; }
-.map-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--wm-space-3); list-style: none; padding: 0; margin: 0; }
-.map-grid a { display: flex; align-items: center; gap: var(--wm-space-2); padding: var(--wm-space-3) var(--wm-space-4); background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); font-weight: 600; min-height: 2.75rem; }
+.map-grid a { display: flex; align-items: center; gap: var(--wm-space-2); padding: var(--wm-space-3) var(--wm-space-4); background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); font-weight: 600; min-height: var(--wm-size-touch); }
 .map-grid--muted a { color: var(--wm-text-muted); }
 .map-location-meta { color: var(--wm-text-muted); font-size: var(--wm-text-sm); margin: 0 0 var(--wm-space-2); }
 .map-location h3 { font-size: var(--wm-text-md); margin: var(--wm-space-3) 0 var(--wm-space-1); }
 .map-gm-notes { background: var(--wm-surface-sunken); border-radius: var(--wm-radius-sm); padding: var(--wm-space-2) var(--wm-space-3); }
 .map-location p { margin-bottom: var(--wm-space-2); }
 .map-location .location-actions, .map-location .map-actions-row { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin: var(--wm-space-2) 0; }
-.map-checks { display: flex; flex-direction: column; gap: var(--wm-space-1); border: 0; padding: 0; margin: 0 0 var(--wm-space-3); }
-.map-checks legend { font-size: var(--wm-text-md); }
-.map-checks--inline { flex-direction: row; flex-wrap: wrap; gap: var(--wm-space-1) var(--wm-space-3); }
 .map-short input, .map-short select { max-width: 12rem; }
 .map-keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: var(--wm-space-3); }
 .map-key { break-inside: avoid; background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); padding: var(--wm-space-3); }
 .map-key h3 { font-size: var(--wm-text-md); margin: 0 0 var(--wm-space-2); }
 .map-key p { margin-bottom: var(--wm-space-1); }
 @media (max-width: 575.98px) {
-  .map-picker .form-check, .map-checks .form-check { min-height: 2.75rem; padding-top: var(--wm-space-2); }
-  .pan-links .btn { min-height: 2.75rem; }
+  .pan-links .btn { min-height: var(--wm-size-touch); }
 }
 @media print {
-  .site-header, .area-nav, .map-toolbar, .map-controls, .map-picker, .pan-links, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }
+  .site-header, .wm-toolbar, .map-controls, .map-picker, .pan-links, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }
   .hexmap svg { width: 100%; max-width: none; }
   .map-frame { border: 0; box-shadow: none; }
   .map-keys { display: block; }

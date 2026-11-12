@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Agent batches{% endblock %}
 {% block content %}
-<a class="wm-agent-back" href="{% url 'agent_access:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Agent access</a>
+{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Agent access" %}
 {% include "components/page_header.html" with title="Agent batches" subtitle="Review what agents propose before it reaches the ledger." %}
 
 <h2 class="wm-agent-section">Pending</h2>
@@ -13,7 +13,7 @@
       <h3><a href="{% url 'agent_access:batch_detail' club.slug b.pk %}">Batch #{{ b.pk }}</a></h3>
       {% include "agent_access/batches/_status_badge.html" with batch=b %}
     </div>
-    <dl class="wm-dl wm-agent-meta">
+    <dl class="wm-dl wm-dl--grid wm-code-wrap">
       <div><dt>Date</dt><dd>{{ b.date }}</dd></div>
       <div><dt>Proposed by</dt><dd>{{ b.user.display_name }}</dd></div>
       <div><dt>Connection</dt><dd>{{ b.connection.label }}</dd></div>

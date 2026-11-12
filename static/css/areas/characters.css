@@ -2,7 +2,6 @@
 
 /* Character sheet (U37): a paper sheet of ruled, titled boxes. */
 .wm-sheet { max-width: 64rem; }
-.wm-sheet-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-3); }
 .wm-sheet-header {
   border: 2px solid var(--wm-text); border-radius: var(--wm-radius-sm); background: var(--wm-surface-raised);
   padding: var(--wm-space-3) var(--wm-space-4); margin-bottom: var(--wm-space-3);
@@ -26,7 +25,7 @@
 .wm-sheet-table th, .wm-sheet-table td { padding: var(--wm-space-1) var(--wm-space-2); }
 .wm-sheet-table th:first-child, .wm-sheet-table td:first-child { width: 100%; }
 .wm-sheet-ledger { list-style: none; margin: 0 0 var(--wm-space-1); padding: 0; font-size: var(--wm-text-sm); }
-.wm-sheet-ledger li { padding: 2px 0; }
+.wm-sheet-ledger li { padding: var(--wm-space-1) 0; }
 .wm-sheet-date { color: var(--wm-text-muted); font-variant-numeric: tabular-nums; margin-right: var(--wm-space-1); }
 @media (min-width: 768px) {
   /* Two balanced columns: boxes flow down the first, then the second. No box leaves a hole. */
@@ -35,22 +34,16 @@
   .wm-sheet-full { column-span: all; }
 }
 @media (max-width: 767.98px) {
-  .wm-sheet-actions .btn, .wm-trade-actions .btn, .wm-history-pager .btn { min-height: 44px; display: inline-flex; align-items: center; }
+  .wm-history-pager .btn { min-height: var(--wm-size-touch); display: inline-flex; align-items: center; }
   .wm-sheet-header h1 { font-size: var(--wm-text-2xl); }
 }
 
 /* Forms with a formset of item rows (adjust, consume, transfer). */
-.wm-item-rows { display: grid; gap: var(--wm-space-2); margin: var(--wm-space-2) 0; }
-.wm-item-row { display: grid; grid-template-columns: 1fr; gap: var(--wm-space-2); }
-.wm-item-row label { font-size: var(--wm-text-sm); color: var(--wm-text-muted); display: block; }
-@media (min-width: 768px) { .wm-item-row { grid-template-columns: 2fr 1fr; } }
-.wm-compact-list { max-width: 28rem; }
+.wm-compact-list { max-width: var(--wm-size-narrow); }
 
 /* Trades */
 .wm-trade-sides { display: grid; gap: var(--wm-space-3); grid-template-columns: 1fr; margin: var(--wm-space-3) 0; }
 @media (min-width: 768px) { .wm-trade-sides { grid-template-columns: 1fr 1fr; } }
-.wm-trade-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; margin-top: var(--wm-space-3); }
-.wm-trade-actions form { margin: 0; }
 .wm-trade-approvals { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-2); }
 .wm-trade-lines { list-style: none; margin: 0; padding: 0; }
 

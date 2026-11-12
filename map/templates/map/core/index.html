@@ -6,12 +6,12 @@
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% if is_editor %}{% url 'map:map_create' club.slug as new_url %}{% include "components/page_header.html" with title="Maps" action_url=new_url action_label="New map" action_icon="plus-lg" %}
 {% else %}{% include "components/page_header.html" with title="Maps" %}{% endif %}
-<div class="map-toolbar">
+<div class="wm-toolbar">
 {% include "map/xp/_index_actions.html" %}
 {% include "map/requests/_index_actions.html" %}
 </div>
 {% if maps %}
-<ul class="map-grid">
+<ul class="wm-card-grid map-grid">
 {% for m in maps %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{% include "components/icon.html" with name="map" %} {{ m.name }}</a></li>{% endfor %}
 </ul>
 {% elif is_editor %}{% url 'map:map_create' club.slug as new_url %}{% include "components/empty_state.html" with text="No maps yet." icon="map" action_url=new_url action_label="New map" %}
@@ -19,7 +19,7 @@
 {% if is_editor %}
 {% include "components/section_open.html" with title="Archived maps" %}
 {% if archived %}
-<ul class="map-grid map-grid--muted">
+<ul class="wm-card-grid map-grid map-grid--muted">
 {% for m in archived %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{% include "components/icon.html" with name="map" %} {{ m.name }}</a></li>{% endfor %}
 </ul>
 {% else %}{% include "components/empty_state.html" with text="No archived maps." icon="archive" %}{% endif %}

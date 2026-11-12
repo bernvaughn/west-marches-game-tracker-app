@@ -2,7 +2,7 @@
 <p class="mt-3">Trade completed. Items and coins moved.</p>
 {% elif side and trade.status == "accepted" %}
   {% if side == "sender" and not trade.sender_approved or side == "receiver" and not trade.receiver_approved %}
-  <div class="wm-trade-actions">
+  <div class="wm-toolbar">
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'trades:edit_side' club.slug trade.pk %}">Edit my side</a>
   <form method="post" action="{% url 'trades:approve' club.slug trade.pk %}">
     {% csrf_token %}

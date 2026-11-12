@@ -3,17 +3,17 @@
 {% block title %}{{ item.name }}{% endblock %}
 {% block content %}
 {% url 'items:edit' club.slug item.pk as edit_url %}
-{% if is_admin %}{% include "components/page_header.html" with title=item.name action_url=edit_url action_label="Edit" action_icon="pencil" %}{% else %}{% include "components/page_header.html" with title=item.name %}{% endif %}
-{% if item.retired %}<p>{% include "components/badge.html" with status="neutral" text="(Retired)" %}</p>{% endif %}
+{% url "items:index" club.slug as list_url %}
+{% if is_admin %}{% include "components/page_header.html" with title=item.name back_url=list_url back_label="Back to items" action_url=edit_url action_label="Edit" action_icon="pencil" %}{% else %}{% include "components/page_header.html" with title=item.name back_url=list_url back_label="Back to items" %}{% endif %}
+{% if item.retired %}<p>{% include "components/badge.html" with status="neutral" text="Retired" %}</p>{% endif %}
 {% include "components/card_open.html" %}
 <dl class="wm-dl"><dt>Value</dt><dd>{{ item.value_cp|coins }}</dd></dl>
 {% if item.description %}<h2 class="wm-card-title">Description</h2>{{ item.description|linebreaks }}{% endif %}
 {% if item.traits %}<h2 class="wm-card-title">Traits</h2>{{ item.traits|linebreaks }}{% endif %}
 {% if item.details %}<h2 class="wm-card-title">Details</h2>{{ item.details|linebreaks }}{% endif %}
 {% include "components/card_close.html" %}
-<p><a href="{% url 'items:index' club.slug %}">Back to items</a></p>
 {% if is_admin %}
-<div class="wm-item-actions">
+<div class="wm-toolbar">
 {% if item.retired %}
 <form method="post" action="{% url 'items:restore' club.slug item.pk %}" class="wm-inline-form">{% csrf_token %}<button class="btn btn-outline-secondary">Restore</button></form>
 {% else %}
