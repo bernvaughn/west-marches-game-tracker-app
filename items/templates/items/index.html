@@ -2,25 +2,23 @@
 {% load coins %}
 {% block title %}Items{% endblock %}
 {% block content %}
-<h1>Items</h1>
+{% url 'items:create' club.slug as create_url %}
+{% if is_admin %}{% include "components/page_header.html" with title="Items" action_url=create_url action_label="New item" action_icon="plus-lg" %}{% else %}{% include "components/page_header.html" with title="Items" %}{% endif %}
 {% if is_admin %}
-<p>
-  <a href="{% url 'items:create' club.slug %}">New item</a> |
-  {% if show_retired %}<a href="{% url 'items:index' club.slug %}">Hide retired</a>
-  {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}
-</p>
+<p>{% if show_retired %}<a href="{% url 'items:index' club.slug %}">Hide retired</a>
+  {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}</p>
 {% endif %}
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Name</th><th>Value</th><th>Traits</th></tr></thead>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Name</th><th class="num">Value</th><th>Traits</th></tr></thead>
   <tbody>
   {% for i in items %}
     <tr>
-      <td><a href="{% url 'items:detail' club.slug i.pk %}">{{ i.name }}</a>{% if i.retired %} <em>(Retired)</em>{% endif %}</td>
-      <td>{{ i.value_cp|coins }}</td>
+      <td><a href="{% url 'items:detail' club.slug i.pk %}">{{ i.name }}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="(Retired)" %}{% endif %}</td>
+      <td class="num">{{ i.value_cp|coins }}</td>
       <td>{{ i.traits }}</td>
     </tr>
   {% empty %}
-    <tr><td colspan="3">No items.</td></tr>
+    {% include "components/data_table_empty.html" with cols=3 text="No items." %}
   {% endfor %}
   </tbody>
 </table></div>

@@ -1,32 +1,33 @@
 {% extends "base.html" %}
 {% load coins %}
+{% block title %}{% if shop %}Edit {{ shop.name }}{% else %}New shop{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if shop %}Edit {{ shop.name }}{% else %}New shop{% endif %}</h1>
-<form method="post">{% csrf_token %}
-{{ form.as_p }}
-<button class="btn btn-sm btn-primary" type="submit">Save</button>
-</form>
+{% url 'shops:manage_list' club.slug as back_url %}
+{% if shop %}{% include "components/page_header.html" with title="Edit "|add:shop.name %}{% else %}{% include "components/page_header.html" with title="New shop" %}{% endif %}
+{% include "components/form_layout.html" with form=form cancel_url=back_url %}
 {% if shop %}
-<h2>Stock</h2>
-<p><a href="{% url 'shops:stock_add' club.slug shop.pk %}">Add item</a></p>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-<tr><th>Item</th><th>Value</th><th>Quantity</th><th>Sell %</th><th>Buy %</th><th>Sell price</th><th>Buy price</th><th></th></tr>
+<section class="wm-section wm-stock-section">
+<div class="wm-section-bar"><h2>Stock</h2><a class="btn btn-primary" href="{% url 'shops:stock_add' club.slug shop.pk %}">{% include "components/icon.html" with name="plus-lg" %} Add item</a></div>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+<thead><tr><th>Item</th><th class="num">Value</th><th class="num">Quantity</th><th class="num">Sell %</th><th class="num">Buy %</th><th class="num">Sell price</th><th class="num">Buy price</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+<tbody>
 {% for row in rows %}
 <tr>
 <td>{{ row.stock.item.name }}{% if row.stock.quantity == 0 %} (Sold out){% endif %}{% if row.stock.item.retired %} (Retired){% endif %}</td>
-<td>{{ row.stock.item.value_cp|coins }}</td>
-<td>{% if row.stock.quantity is None %}Unlimited{% else %}{{ row.stock.quantity }}{% endif %}</td>
-<td>{% if row.stock.sell_percent is None %}default{% else %}{{ row.stock.sell_percent }}{% endif %}</td>
-<td>{% if row.stock.buy_percent is None %}default{% else %}{{ row.stock.buy_percent }}{% endif %}</td>
-<td>{{ row.sell_price|coins }}</td>
-<td>{{ row.buy_price|coins }}</td>
-<td><a href="{% url 'shops:stock_edit' club.slug shop.pk row.stock.pk %}">Edit</a>
-<form method="post" action="{% url 'shops:stock_remove' club.slug shop.pk row.stock.pk %}" style="display:inline">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></td>
+<td class="num">{{ row.stock.item.value_cp|coins }}</td>
+<td class="num">{% if row.stock.quantity is None %}Unlimited{% else %}{{ row.stock.quantity }}{% endif %}</td>
+<td class="num">{% if row.stock.sell_percent is None %}default{% else %}{{ row.stock.sell_percent }}{% endif %}</td>
+<td class="num">{% if row.stock.buy_percent is None %}default{% else %}{{ row.stock.buy_percent }}{% endif %}</td>
+<td class="num">{{ row.sell_price|coins }}</td>
+<td class="num">{{ row.buy_price|coins }}</td>
+<td class="actions"><a class="btn btn-sm btn-outline-secondary" href="{% url 'shops:stock_edit' club.slug shop.pk row.stock.pk %}">Edit</a>
+<form method="post" action="{% url 'shops:stock_remove' club.slug shop.pk row.stock.pk %}" class="wm-inline-form">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></td>
 </tr>
 {% empty %}
-<tr><td colspan="8">No stock.</td></tr>
+{% include "components/data_table_empty.html" with cols=8 text="No stock." %}
 {% endfor %}
+</tbody>
 </table></div>
+</section>
 {% endif %}
-<p><a href="{% url 'shops:manage_list' club.slug %}">Back to shops</a></p>
 {% endblock %}

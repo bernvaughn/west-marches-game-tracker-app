@@ -1,26 +1,27 @@
 {% extends "base.html" %}
 {% load coins %}
+{% block title %}Sell to {{ shop.name }}{% endblock %}
 {% block content %}
-<h1>Sell to {{ shop.name }}</h1>
+{% include "components/page_header.html" with title="Sell to "|add:shop.name %}
 <p><a href="{% url 'shops:detail' club.slug shop.id %}">Back to {{ shop.name }}</a></p>
 {% if not character %}
-<p>You have no character in this club.</p>
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
 {% else %}
 <p>Selling as <strong>{{ character.name }}</strong></p>
 {% if rows %}
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Item</th><th>Available</th><th>Buy price (each)</th><th></th></tr></thead>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Item</th><th class="num">Available</th><th class="num">Buy price (each)</th><th><span class="visually-hidden">Sell</span></th></tr></thead>
   <tbody>
   {% for row in rows %}
   <tr>
     <td>{{ row.item.name }}</td>
-    <td>{{ row.quantity }}</td>
-    <td>{{ row.price|coins }}</td>
-    <td>
-      <form method="post">
+    <td class="num">{{ row.quantity }}</td>
+    <td class="num">{{ row.price|coins }}</td>
+    <td class="actions">
+      <form method="post" class="wm-inline-form">
         {% csrf_token %}
         <input type="hidden" name="item" value="{{ row.item.id }}">
-        <input class="form-control form-control-sm w-auto d-inline-block" type="number" name="quantity" value="1" min="1" max="{{ row.quantity }}" aria-label="Quantity">
+        <input class="form-control form-control-sm w-auto" type="number" name="quantity" value="1" min="1" max="{{ row.quantity }}" aria-label="Quantity of {{ row.item.name }}">
         <button class="btn btn-sm btn-primary" type="submit">Sell as {{ character.name }}</button>
       </form>
     </td>
@@ -29,7 +30,7 @@
   </tbody>
 </table></div>
 {% else %}
-<p>No items to sell.</p>
+{% include "components/empty_state.html" with text="No items to sell." icon="bag" %}
 {% endif %}
 {% endif %}
 {% endblock %}

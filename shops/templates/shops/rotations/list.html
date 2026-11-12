@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% block title %}Rotations{% endblock %}
 {% block content %}
-<h1>Rotations</h1>
-<p><a href="{% url 'shops:rotation_create' club.slug %}">New rotation</a></p>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Name</th><th>Opens</th><th>Closes</th><th>Status</th><th>Shops</th><th></th></tr></thead>
+{% url 'shops:rotation_create' club.slug as create_url %}
+{% include "components/page_header.html" with title="Rotations" action_url=create_url action_label="New rotation" action_icon="plus-lg" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Name</th><th>Opens</th><th>Closes</th><th>Status</th><th>Shops</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for rotation, status in rows %}
     <tr>
@@ -12,14 +13,14 @@
       <td>{% if rotation.close_date %}{{ rotation.close_date|date:"Y-m-d" }}{% else %}No close date{% endif %}</td>
       <td>{{ status }}</td>
       <td>{% for s in rotation.shops.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% empty %}No shops{% endfor %}</td>
-      <td>
-        <form method="post" action="{% url 'shops:rotation_delete' club.slug rotation.id %}">
+      <td class="actions">
+        <form method="post" action="{% url 'shops:rotation_delete' club.slug rotation.id %}" class="wm-inline-form">
           {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
         </form>
       </td>
     </tr>
   {% empty %}
-    <tr><td colspan="6">No rotations yet.</td></tr>
+    {% include "components/data_table_empty.html" with cols=6 text="No rotations yet." %}
   {% endfor %}
   </tbody>
 </table></div>

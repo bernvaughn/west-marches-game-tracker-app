@@ -7,16 +7,24 @@ from shops.models import Shop, ShopStock
 PERCENT = [MinValueValidator(0), MaxValueValidator(1000)]
 
 
+class SilhouetteSelect(forms.RadioSelect):
+    """Radio buttons, each with a small preview of the silhouette."""
+
+    template_name = "shops/widgets/silhouette_radios.html"
+    option_template_name = "shops/widgets/silhouette_option.html"
+
+
 class ShopForm(forms.ModelForm):
     class Meta:
         model = Shop
         fields = [
             "name", "description", "keeper_name", "keeper_description",
-            "color", "symbol", "sell_percent", "buy_percent",
+            "color", "silhouette", "symbol", "sell_percent", "buy_percent",
         ]  # fmt: skip
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
             "keeper_description": forms.Textarea(attrs={"rows": 3}),
+            "silhouette": SilhouetteSelect,
         }
 
     def __init__(self, *args, **kwargs):

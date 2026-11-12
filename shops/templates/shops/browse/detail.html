@@ -1,16 +1,24 @@
 {% extends "base.html" %}
 {% load static %}
+{% block title %}{{ shop.name }}{% endblock %}
 {% block content %}
-<link rel="stylesheet" href="{% static 'shops/shops.css' %}">
-<article class="shop shop--{{ shop.color }}">
-  {% if not is_open %}<p class="shop-closed-banner">Closed</p>{% endif %}
-  <h1><span class="shop-symbol">{{ shop.symbol }}</span> {{ shop.name }}</h1>
-  {{ shop.description|linebreaks }}
-  <section class="shop-keeper">
-    <h2>{{ shop.keeper_name }}</h2>
-    {{ shop.keeper_description|linebreaks }}
-  </section>
-  <div id="stock" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
-  <p><a href="{% url 'shops:sell' club.slug shop.id %}">Sell to this shop</a></p>
-</article>
+<h1 class="wm-shop-title">{% if shop.symbol %}<span class="wm-shop-symbol" aria-hidden="true">{{ shop.symbol }}</span> {% endif %}{{ shop.name }}</h1>
+{% if not is_open %}<p class="wm-shop-closed">{% include "components/badge.html" with status="warning" text="Closed" %}</p>{% endif %}
+<div class="wm-shop-banner wm-shop-banner--{{ shop.color }}">
+  <figure class="wm-shop-keeper-figure">
+    <img class="wm-shop-silhouette" src="{% static 'shops/silhouettes/'|add:shop.silhouette|add:'.svg' %}" alt="" height="160">
+    {% if shop.keeper_name %}<figcaption class="wm-shop-keeper-name">{{ shop.keeper_name }}</figcaption>{% endif %}
+  </figure>
+  <div class="wm-shop-sellbar">
+  <a class="btn btn-outline-secondary" href="{% url 'shops:sell' club.slug shop.id %}">{% include "components/icon.html" with name="coin" %} {% if shop.keeper_name %}Sell to {{ shop.keeper_name }}{% else %}Sell to this shop{% endif %}</a>
+</div>
+</div>
+<div id="stock" class="wm-shop-counter" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
+{% if shop.description %}<div class="wm-shop-about">{{ shop.description|linebreaks }}</div>{% endif %}
+{% if shop.keeper_name or shop.keeper_description %}
+<section class="wm-shop-keeper">
+  {% if shop.keeper_name %}<h2>{{ shop.keeper_name }}</h2>{% endif %}
+  {{ shop.keeper_description|linebreaks }}
+</section>
+{% endif %}
 {% endblock %}

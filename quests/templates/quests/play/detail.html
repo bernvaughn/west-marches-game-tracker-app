@@ -1,21 +1,24 @@
 {% extends "base.html" %}
 {% block title %}{{ quest.name }}{% endblock %}
 {% block content %}
-<h1>{{ quest.name }}</h1>
+{% include "components/page_header.html" with title=quest.name %}
 <p><a href="{% url 'quests:index' club.slug %}">All quests</a></p>
+{% include "components/card_open.html" %}
 {% include "quests/_info.html" %}
 {% if club_left is not None %}<p>{{ club_left }} left</p>{% endif %}
-<h2>Turn in</h2>
+{% include "components/card_close.html" %}
+{% include "components/section_open.html" with title="Turn in" %}
 {% if character %}
-<form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}">
+<form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}" class="wm-quest-turnin">
   {% csrf_token %}
-  <strong>{{ character.name }}</strong>:
-  {% if row.limit_reached %}Limit reached
-  {% elif row.ready %}Ready
-  {% else %}Missing {% for item, n in row.missing %}{{ n }} x {{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
-  <button class="btn btn-sm btn-primary" type="submit"{% if not row.ready %} disabled{% endif %}>Turn in as {{ character.name }}</button>
+  <p><strong>{{ character.name }}</strong>:
+  {% if row.limit_reached %}{% include "components/badge.html" with status="danger" text="Limit reached" %}
+  {% elif row.ready %}{% include "components/badge.html" with status="success" text="Ready" %}
+  {% else %}{% include "components/badge.html" with status="warning" text="Not ready" %} Missing {% for item, n in row.missing %}{{ n }} x {{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
+  <button class="btn btn-primary" type="submit"{% if not row.ready %} disabled{% endif %}>Turn in as {{ character.name }}</button>
 </form>
 {% else %}
-<p>You have no character in this club.</p>
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
 {% endif %}
+{% include "components/section_close.html" %}
 {% endblock %}

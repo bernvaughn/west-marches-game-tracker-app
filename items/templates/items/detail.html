@@ -2,21 +2,26 @@
 {% load coins %}
 {% block title %}{{ item.name }}{% endblock %}
 {% block content %}
-<h1>{{ item.name }}{% if item.retired %} <em>(Retired)</em>{% endif %}</h1>
-<p>Value: {{ item.value_cp|coins }}</p>
-{% if item.description %}<h2>Description</h2>{{ item.description|linebreaks }}{% endif %}
-{% if item.traits %}<h2>Traits</h2>{{ item.traits|linebreaks }}{% endif %}
-{% if item.details %}<h2>Details</h2>{{ item.details|linebreaks }}{% endif %}
+{% url 'items:edit' club.slug item.pk as edit_url %}
+{% if is_admin %}{% include "components/page_header.html" with title=item.name action_url=edit_url action_label="Edit" action_icon="pencil" %}{% else %}{% include "components/page_header.html" with title=item.name %}{% endif %}
+{% if item.retired %}<p>{% include "components/badge.html" with status="neutral" text="(Retired)" %}</p>{% endif %}
+{% include "components/card_open.html" %}
+<dl class="wm-dl"><dt>Value</dt><dd>{{ item.value_cp|coins }}</dd></dl>
+{% if item.description %}<h2 class="wm-card-title">Description</h2>{{ item.description|linebreaks }}{% endif %}
+{% if item.traits %}<h2 class="wm-card-title">Traits</h2>{{ item.traits|linebreaks }}{% endif %}
+{% if item.details %}<h2 class="wm-card-title">Details</h2>{{ item.details|linebreaks }}{% endif %}
+{% include "components/card_close.html" %}
 <p><a href="{% url 'items:index' club.slug %}">Back to items</a></p>
 {% if is_admin %}
-<p><a href="{% url 'items:edit' club.slug item.pk %}">Edit</a></p>
+<div class="wm-item-actions">
 {% if item.retired %}
-<form method="post" action="{% url 'items:restore' club.slug item.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Restore</button></form>
+<form method="post" action="{% url 'items:restore' club.slug item.pk %}" class="wm-inline-form">{% csrf_token %}<button class="btn btn-outline-secondary">Restore</button></form>
 {% else %}
-<form method="post" action="{% url 'items:retire' club.slug item.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Retire</button></form>
+<form method="post" action="{% url 'items:retire' club.slug item.pk %}" class="wm-inline-form">{% csrf_token %}<button class="btn btn-outline-secondary">Retire</button></form>
 {% endif %}
-<form method="post" action="{% url 'items:delete' club.slug item.pk %}">{% csrf_token %}
-  <button class="btn btn-sm btn-outline-danger">Delete</button> Deletes only if unused; otherwise retires.
+<form method="post" action="{% url 'items:delete' club.slug item.pk %}" class="wm-inline-form">{% csrf_token %}
+  <button class="btn btn-outline-danger">Delete</button> <small class="text-muted">Deletes only if unused; otherwise retires.</small>
 </form>
+</div>
 {% endif %}
 {% endblock %}

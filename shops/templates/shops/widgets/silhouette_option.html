@@ -1,0 +1,1 @@
+{% load static %}<label class="wm-silhouette-option"{% if widget.attrs.id %} for="{{ widget.attrs.id }}"{% endif %}>{% include "django/forms/widgets/input.html" %}<span class="wm-silhouette-swatch"><img src="{% static 'shops/silhouettes/'|add:widget.value|add:'.svg' %}" alt="" height="64" loading="lazy"></span><span class="wm-silhouette-label">{{ widget.label }}</span></label>

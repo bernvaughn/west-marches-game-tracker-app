@@ -1,18 +1,21 @@
 {% extends "base.html" %}
+{% block title %}Manage shops{% endblock %}
 {% block content %}
-<h1>Manage shops</h1>
-<p><a href="{% url 'shops:manage_create' club.slug %}">New shop</a></p>
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-<tr><th>Name</th><th>Symbol</th><th>Status</th><th>Stock</th></tr>
+{% url 'shops:manage_create' club.slug as create_url %}
+{% include "components/page_header.html" with title="Manage shops" action_url=create_url action_label="New shop" action_icon="plus-lg" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+<thead><tr><th>Name</th><th>Symbol</th><th>Status</th><th class="num">Stock</th></tr></thead>
+<tbody>
 {% for shop, is_open in rows %}
 <tr>
 <td><a href="{% url 'shops:manage_edit' club.slug shop.pk %}">{{ shop.name }}</a></td>
 <td>{{ shop.symbol }}</td>
-<td>{% if is_open %}Open{% else %}Closed{% endif %}</td>
-<td>{{ shop.stock_count }}</td>
+<td>{% if is_open %}{% include "components/badge.html" with status="success" text="Open" %}{% else %}{% include "components/badge.html" with status="neutral" text="Closed" %}{% endif %}</td>
+<td class="num">{{ shop.stock_count }}</td>
 </tr>
 {% empty %}
-<tr><td colspan="4">No shops yet.</td></tr>
+{% include "components/data_table_empty.html" with cols=4 text="No shops yet." %}
 {% endfor %}
+</tbody>
 </table></div>
 {% endblock %}
