@@ -1,0 +1,20 @@
+{% csrf_token %}
+<input type="hidden" name="filter" value="{{ filter }}">
+{{ form.non_field_errors }}
+<div class="mb-2">{{ form.character.label_tag }} {{ form.character }} {{ form.character.errors }}</div>
+<h2 class="h6">Coins</h2>
+<div class="mb-2">{{ form.coins }} {{ form.coins.errors }}</div>
+<h2 class="h6">Items</h2>
+{{ formset.management_form }}
+{{ formset.non_form_errors }}
+{% for row in formset %}
+  <div class="mb-1">{{ row.non_field_errors }}{{ row.item }} {{ row.quantity }} {{ row.item.errors }}{{ row.quantity.errors }}</div>
+{% endfor %}
+<h2 class="h6">Map</h2>
+<div class="mb-1">{{ form.map_kind.label_tag }} {{ form.map_kind }} {{ form.map_kind.errors }}</div>
+<div class="mb-1">{{ form.location.label_tag }} {{ form.location }} {{ form.location.errors }}</div>
+<div class="mb-2">Or a visit to a tile with no location: {{ form.hex_map }} q {{ form.q }} r {{ form.r }}
+  {{ form.hex_map.errors }}{{ form.q.errors }}{{ form.r.errors }}</div>
+<div class="mb-1">{{ form.note.label_tag }} {{ form.note }} {{ form.note.errors }}</div>
+<div class="mb-1">{{ form.date.label_tag }} {{ form.date }} {{ form.date.errors }}</div>
+<div class="form-check mb-1">{{ form.mark_handled }} {{ form.mark_handled.label_tag }}</div>

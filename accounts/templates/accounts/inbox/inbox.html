@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load accounts_tags %}
+{% load accounts_tags coins %}
 {% block title %}Inbox{% endblock %}
 {% block content %}
 <h1>Inbox</h1>
@@ -8,6 +8,7 @@
     {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
   {% endfor %}
 </p>
+<div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML">
 <div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <tr><th>From</th><th>Email</th><th>Character</th><th>Message</th><th>Date</th><th>Status</th></tr>
   {% for m in messages_list %}
@@ -15,7 +16,19 @@
     <td>{{ m.sender.user.display_name }}</td>
     <td>{% member_email m.sender.user %}</td>
     <td>{{ m.character.name|default:"-" }}</td>
-    <td>{{ m.body|linebreaksbr }}</td>
+    <td>{{ m.body|linebreaksbr }}
+      {% if m.granted_entries.all or m.granted_visits.all or m.granted_credits.all or m.granted_found_marks.all %}
+      <div class="small mt-1"><strong>Granted</strong>
+        <ul class="mb-0">
+          {% for e in m.granted_entries.all %}{% for l in e.lines.all %}
+          <li>{{ e.character.name }}: {% if l.item %}{{ l.item.name }} × {{ l.quantity }}{% else %}{{ l.coins|coins }}{% endif %}</li>
+          {% endfor %}{% endfor %}
+          {% for v in m.granted_visits.all %}<li>{{ v.character.name }}: Visit ({{ v.q }}, {{ v.r }}) on {{ v.map.name }}</li>{% endfor %}
+          {% for g in m.granted_credits.all %}<li>{{ g.character.name }}: {{ g.credit.get_kind_display }}: {{ g.credit.location.name }}</li>{% endfor %}
+          {% for f in m.granted_found_marks.all %}<li>{{ f.character.name }}: Found: {{ f.location.name }}</li>{% endfor %}
+        </ul></div>
+      {% endif %}
+    </td>
     <td>{{ m.created|date:"Y-m-d H:i" }}</td>
     <td>
       {{ m.get_status_display }}
@@ -29,10 +42,13 @@
         </select>
         <button class="btn btn-sm btn-primary" type="submit">Set</button>
       </form>
+      {% url 'accounts:message_grant' request.club.slug m.pk as grant_url %}
+      <a class="btn btn-sm btn-outline-primary mt-1" href="{{ grant_url }}?filter={{ status }}" hx-get="{{ grant_url }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Grant</a>
     </td>
   </tr>
   {% empty %}
   <tr><td colspan="6">No messages.</td></tr>
   {% endfor %}
 </table></div>
+</div>
 {% endblock %}

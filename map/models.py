@@ -129,6 +129,26 @@ class LocationCredit(models.Model):
         return f"{self.kind} {self.location}"
 
 
+class CreditGrant(models.Model):
+    """A character an inbox grant added to a shared location credit (U30)."""
+
+    club_path = "credit__location__tile__map__club"
+
+    credit = models.ForeignKey(LocationCredit, on_delete=models.CASCADE, related_name="grants")
+    character = models.ForeignKey(
+        "player_characters.Character", on_delete=models.CASCADE, related_name="credit_grants"
+    )
+    source_message = models.ForeignKey(
+        "accounts.Message", on_delete=models.CASCADE, related_name="granted_credits"
+    )
+    created = models.DateTimeField(auto_now_add=True)
+
+    objects = ClubScopedManager()
+
+    def __str__(self):
+        return f"{self.character} added to {self.credit}"
+
+
 class FoundMark(models.Model):
     """A character has found a location, without being credited for it."""
 
@@ -145,6 +165,13 @@ class FoundMark(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="created_found_marks",
+    )
+    source_message = models.ForeignKey(
+        "accounts.Message",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="granted_found_marks",
     )
 
     objects = ClubScopedManager()
@@ -217,6 +244,13 @@ class TileVisit(models.Model):
         "player_characters.Character", on_delete=models.CASCADE, related_name="tile_visits"
     )
     date = models.DateField(null=True, blank=True)
+    source_message = models.ForeignKey(
+        "accounts.Message",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="granted_visits",
+    )
 
     objects = ClubScopedManager()
 
