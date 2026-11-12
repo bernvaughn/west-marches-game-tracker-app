@@ -190,6 +190,8 @@ From using the build after the first-look stories landed.
 - Below it, bordered and titled boxes: coins (colour-coded, U31), inventory, notes and stats (U2), and recent ledger entries with a link to the full ledger (C5).
 - Actions (edit, move items, and the game master and club admin adjustments) sit together outside the sheet, so the sheet stays clean.
 - A "Print sheet" button prints the sheet in black and white without the navigation or actions, on one Letter or A4 page where possible.
+- The sheet is compact, with little white space. At desktop width, the boxes sit in a multi-column grid, each only as wide as its content needs. A typical character fits on one screen with little or no scrolling.
+- Coins show once, with held and available on one line, and zero denominations are never listed. Empty boxes are hidden or show a one-line empty state. The inventory table is narrow, with small right-aligned number columns.
 - On a phone, the boxes stack in one column. Privacy is unchanged (U19).
 
 ## Quests
