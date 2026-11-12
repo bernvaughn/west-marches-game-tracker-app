@@ -133,7 +133,7 @@ From using the build after the first-look stories landed.
 - A card shows only what any member of that club may see: no emails and no inventories.
 
 **U29 Grouped navigation.** As anyone in a club, I want the navigation under the top bar grouped into a few menus, with the pages players use most kept as plain links, so I can find things without scanning a long row of links. *(site-wide)*
-- Plain links: Character, Shops, and Quests.
+- Plain links: Character, Shops, and Quests. Character opens the selected character's sheet, and the full list moves to "All characters" in the Game master menu (U41).
 - "More" menu for everyone: Map, Trades, Ledger, and Message the admins.
 - "Game master" menu, for game masters and club admins: awards and adjustments, map editing, map requests, agent batches, proposed items, and agent connections.
 - "Club admin" menu, for club admins only: members, inbox, item catalogue, shops and stock, rotations, and the XP table.
@@ -144,6 +144,7 @@ From using the build after the first-look stories landed.
 - The modal can give coins, give items from the catalogue with a quantity, and record a visit, discovered credit, explored credit, or a found mark on a location.
 - Grants go through the same rules and ledger as manual adjustments (U14) and map credit (M14, M16). Each has a note, which starts as a reference to the message, and a date, which starts as today.
 - After granting, I can mark the message handled in the same step. The message shows what was granted from it.
+- U38 splits this modal into separate buttons and confirm modals.
 - The inbox stays for club admins only (U13). Game masters keep using the award and map pages.
 
 **U31 Colour-coded coins.** As anyone, I want each coin denomination shown in its own colour everywhere amounts appear, so I can read amounts at a glance. *(site-wide)*
@@ -184,6 +185,7 @@ From using the build after the first-look stories landed.
 - A club admin picks the shop's colour from the existing presets and its silhouette from a set of preset generic silhouettes, both on the shop's edit form, with a preview of each silhouette. There is no free colour picker.
 - The app ships 8 to 10 original, generic silhouettes that suit a fantasy shop (for example a hooded trader, dwarf smith, robed mage, halfling grocer, or goblin peddler), each readable on every preset colour.
 - On a phone, the banner and silhouette shrink and the table stays readable with no sideways scroll.
+- U39 moves the silhouette to the left of the banner and redraws the presets.
 
 **U37 A printable character sheet.** As a player, I want my character's page to look like a stylised character sheet that I could print and bring to the table. *(player_characters, ledger)*
 - A header box with the character's name in large serif, the owner, and the club, like the top of a paper character sheet.
@@ -193,6 +195,51 @@ From using the build after the first-look stories landed.
 - The sheet is compact, with little white space. At desktop width, the boxes sit in a multi-column grid, each only as wide as its content needs. A typical character fits on one screen with little or no scrolling.
 - Coins show once, with held and available on one line, and zero denominations are never listed. Empty boxes are hidden or show a one-line empty state. The inventory table is narrow, with small right-aligned number columns.
 - On a phone, the boxes stack in one column. Privacy is unchanged (U19).
+- Item cards print one at a time (U40).
+
+## Round 3: stories from the third look (2026-11-12)
+
+From using the build after the design overhaul (U27–U37, M17) landed. Kept as built, because they work well: the colour-coded coins (U31), the character sheet layout (U37), and the "Sell to <keeper>" button's place on the shop page (U36). Shop emoji render correctly in a normal browser. Only club admins can edit the XP table (M13); players can view it. That is how it works today and stays that way.
+
+**U38 Inbox actions as buttons.** As a club admin, I want each inbox action to be its own button that opens a confirm modal, instead of a dropdown plus a "Set" button, so handling a message is one clear click and a confirm. *(accounts, player_characters, ledger, map)*
+- Status actions are separate buttons that show only when they apply: "Mark handled" and "Close" on an open message, and "Reopen" on a handled or closed one. Each opens a short confirm modal that names the message's sender and subject.
+- Granting is split into separate buttons: "Give coins", "Give items", and "Give map credit". Each opens its own modal with only the fields for that grant, then a confirm step that summarises exactly what will be given and to which character. This replaces the one grant modal with a map-kind dropdown (U30).
+- Inside "Give map credit", the kind of credit (visit, discovered, explored, found mark) is a row of buttons or radio choices, not a dropdown.
+- Each grant modal keeps U30's rules: the character starts as the message's character, the note starts as a reference to the message, the date starts as today, and "mark handled" is offered in the same step.
+- The demo data includes an inbox message about a character, so the grant modals open with a character already picked.
+
+**M18 Found-mark requests keep the secret.** As a player, I want the request page for a location my characters haven't found to say "Unknown location" and show where it is, so the request doesn't give away the name and I can tell which "?" I'm asking about. *(map)*
+- A found-mark request always shows "Unknown location" to a player, never the location's name, even when another of their characters has already found it. Credit requests on a location that none of the picked characters has found do the same.
+- The page shows the map name and the tile's coordinates (column and row, as on the map), for example "Map: Westlands. Tile: 0, -2. Location: Unknown location".
+- Game masters and club admins still see the real name. The request queue (M12) shows the same coordinates beside each map request.
+
+**U39 Shopkeeper beside the counter, with better silhouettes.** As a player, I want the shopkeeper's silhouette to stand off to the left of the shop banner, drawn well, so the shop looks like a real storefront and not a placeholder. *(shops)*
+- The silhouette sits on the left side of the banner instead of centred, with the keeper's name beside or just below it. The space to its right can hold the shop's short description or stay as plain banner colour. The "Sell to <keeper name>" button keeps its current place.
+- The 10 preset silhouettes are redrawn to look finished: clear, recognisable outlines (hood, beard, hat, apron, pack, and so on), one consistent style, and readable at banner size on every preset colour. None should look like a generic blob or a chess piece.
+- The silhouette picker on the shop form shows the new drawings. Existing shops keep their chosen silhouette.
+- On a phone, the silhouette shrinks and stays on the left, and nothing scrolls sideways.
+- This changes the silhouette placement in U36.
+
+**U40 Print one item card at a time.** As a player, I want to print the card for a single item, instead of every item at once, so I print only what I need to bring to the table. *(player_characters, items)*
+- Each item on the character sheet's inventory has a "Print card" action that prints just that item's card.
+- The "Print item cards" button that prints the whole inventory is removed. "Print sheet" (U37) stays.
+- The card prints in black and white at a playing-card-like size, without the navigation. Privacy is unchanged (U19).
+
+**U41 "Character" means my character.** As a player, I want the Character link to open the sheet of the character selected in the top bar, so it goes straight to the character I am playing. *(player_characters, site-wide)*
+- For a player with a selected character, Character opens that character's sheet (U37). A player with no character in the club sees a short empty state with "Create a character".
+- The list of every character in the club moves to a link named "All characters" in the Game master menu (U29), for game masters and club admins. Players no longer see that list.
+- A game master or club admin who also plays a character gets both: Character opens their own selected character, and All characters lists everyone.
+- This changes the Character link in U29.
+
+**U42 Switching character follows the page.** As a player, I want switching characters in the top bar to show the same page for the new character, so I'm never left looking at the character I just switched away from. *(player_characters, accounts)*
+- On a page about one of my characters (its sheet, its ledger, its edit page, its printouts), switching goes to the same page for the newly selected character. Edit pages go to the new character's sheet instead, so an unsaved form is never pre-filled for the wrong character.
+- On any other page (shops, quests, map, and so on), switching stays on the page and reloads it for the new character.
+- The "Acting as <name>" success message is dropped, because the top bar already shows the new character.
+
+**U43 Only show what I can use.** As anyone in a club, I want the club home and lists to show only the tiles, links and columns I may use, so I don't run into pages or headings meant for someone else. *(accounts, site-wide)*
+- The club home shows a tile only when the person may open the page it links to. For example, Agent access shows only to game masters and club admins, and admin-only tiles show only to club admins.
+- The People page hides the Email column, header included, from anyone who can't see emails (U19 allows club admins only).
+- A player's XP table tile opens the read-only table; only club admins see edit controls.
 
 ## Quests
 
