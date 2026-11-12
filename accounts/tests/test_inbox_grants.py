@@ -228,3 +228,12 @@ def test_service_source_message(location, character, msg):
     map_services.add_to_credit(location, "explored", [character], source_message=msg)
     assert CreditGrant.objects.count() == 1
     assert TileVisit.objects.get().source_message == msg
+
+
+def test_inbox_list_does_not_leak_htmx_attrs(club, club_admin, msg, login):
+    page = (
+        login(club_admin).get(reverse("accounts:message_inbox", args=[club.slug])).content.decode()
+    )
+    start = page.index('id="inbox-list"')
+    tag = page[start : page.index(">", start)]
+    assert 'hx-select="#inbox-list"' in tag and 'hx-disinherit="*"' in tag
