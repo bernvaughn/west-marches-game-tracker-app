@@ -1,0 +1,10 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+{% url 'accounts:message_status' request.club.slug msg.pk as status_url %}
+<form method="post" action="{{ status_url }}" hx-post="{{ status_url }}" hx-target="#app-modal .modal-content">
+{{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{{ action }}{% endblock %}
+{% block body %}{% include "accounts/inbox/_status_confirm_body.html" %}{% endblock %}
+{% block footer %}<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="submit">{{ action }}</button>{% endblock %}

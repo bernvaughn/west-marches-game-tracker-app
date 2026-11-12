@@ -27,9 +27,16 @@ def seed():
     for email, name in (("alice@example.com", "Alice"), ("bob@example.com", "Bob")):
         Membership.objects.get_or_create(user=_user(email, name), club=club)
     alice = Membership.objects.get(user__email="alice@example.com", club=club)
-    Message.objects.get_or_create(
+    from player_characters.models import Character
+
+    aria, _ = Character.objects.get_or_create(club=club, owner=alice, name="Aria Windrunner")
+    msg, _ = Message.objects.get_or_create(
         club=club,
         sender=alice,
         body="I think Gwen forgot the silver ring from the goblin cave.",
+        defaults={"character": aria},
     )
+    if msg.character_id is None:
+        msg.character = aria
+        msg.save(update_fields=["character"])
     return club

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% url 'accounts:message_inbox' request.club.slug as inbox_url %}
+{% include "components/page_header.html" with title=title subtitle="Check this before you confirm." back_url=inbox_url|add:"?status="|add:filter back_label="Back to inbox" %}
+<form method="post" class="wm-form" action="{{ give_url }}">
+  {% include "accounts/inbox/_give_summary.html" %}
+  <div class="wm-form-actions">
+    <button type="submit" name="edit" value="1" class="btn btn-outline-secondary" formnovalidate>Back</button>
+    <button class="btn btn-primary" type="submit" name="confirmed" value="1">Give</button>
+  </div>
+</form>
+{% endblock %}

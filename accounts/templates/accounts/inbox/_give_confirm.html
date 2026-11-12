@@ -1,0 +1,9 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ give_url }}" hx-post="{{ give_url }}" hx-target="#app-modal .modal-content" class="wm-form">
+{{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{{ title }}{% endblock %}
+{% block body %}{% include "accounts/inbox/_give_summary.html" %}{% endblock %}
+{% block footer %}<button type="submit" name="edit" value="1" class="btn btn-outline-secondary" formnovalidate>Back</button><button class="btn btn-primary" type="submit" name="confirmed" value="1">Give</button>{% endblock %}

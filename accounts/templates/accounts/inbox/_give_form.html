@@ -1,0 +1,10 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ give_url }}" hx-post="{{ give_url }}" hx-target="#app-modal .modal-content" class="wm-form">
+{{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{{ title }}{% endblock %}
+{% block subtitle %}<p class="wm-page-subtitle">From {{ msg.sender.user.display_name }}: {{ msg.body|truncatechars:80 }}</p>{% endblock %}
+{% block body %}{% include "accounts/inbox/_give_fields.html" %}{% endblock %}
+{% block footer %}<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="submit">Review</button>{% endblock %}
