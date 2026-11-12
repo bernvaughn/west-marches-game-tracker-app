@@ -67,3 +67,96 @@ def test_print_button_and_css(login, club, player, funded):
     assert "window.print()" in body
     css = (Path(settings.BASE_DIR) / "static/css/print.css").read_text()
     assert "/* Characters: print view */" in css
+
+
+def item_url(club, character, item):
+    return reverse("characters:print_item", args=[club.slug, character.pk, item.pk])
+
+
+def many_items(club, character, n):
+    from items.models import Item
+
+    items = [Item.objects.create(club=club, name=f"Thing {i:02d}", value_cp=1) for i in range(n)]
+    record(character, "award", [Line(item=i, quantity=1) for i in items])
+    return items
+
+
+@pytest.mark.story("U40")
+def test_print_all_nine_per_sheet(login, club, player, funded):
+    many_items(club, funded, 9)  # 10 items with the fixture item
+    r = login(player).get(url(club, funded))
+    body = r.content.decode()
+    assert body.count('class="wm-item-card"') == 10
+    assert body.count('<section class="wm-card-sheet">') == 2
+    first = body.split('<section class="wm-card-sheet">')[1]
+    assert first.count('class="wm-item-card"') == 9
+    assert "player_characters/characters/_item_card.html" in [t.name for t in r.templates]
+
+
+@pytest.mark.story("U40")
+def test_card_css():
+    base = Path(settings.BASE_DIR) / "static/css"
+    css = (base / "print.css").read_text()
+    assert "size: portrait" in css and "break-after: page" in css
+    cards = (base / "areas/characters.css").read_text()
+    assert "2.5in" in cards and "3.5in" in cards
+
+
+@pytest.mark.story("U40")
+def test_print_item_layouts(login, club, player, funded, item):
+    c = login(player)
+    full = c.get(item_url(club, funded, item), {"layout": "full"})
+    assert full.status_code == 200
+    assert "wm-item-card--full" in full.content.decode()
+    assert "player_characters/characters/_item_card.html" in [t.name for t in full.templates]
+    grid = c.get(item_url(club, funded, item), {"layout": "grid"}).content.decode()
+    assert grid.count('class="wm-item-card"') == 1
+    assert grid.count("wm-card-cell") == 8
+    assert c.get(item_url(club, funded, item), {"layout": "bogus"}).status_code == 400
+    choose = c.get(item_url(club, funded, item)).content.decode()
+    assert "?layout=full" in choose and "?layout=grid" in choose
+
+
+@pytest.mark.story("U40")
+@pytest.mark.parametrize("who", ["game_master", "club_admin", "site_admin"])
+def test_print_item_viewers(request, login, club, funded, item, who):
+    u = request.getfixturevalue(who)
+    assert login(u).get(item_url(club, funded, item), {"layout": "grid"}).status_code == 200
+
+
+@pytest.mark.story("U40")
+def test_print_item_refusals(
+    login,
+    club,
+    other_club,
+    player,
+    other_player,
+    funded,
+    item,
+    second_item,
+    foreign_member,
+    foreign_character,
+    foreign_item,
+    other_character,
+):
+    assert login(other_player).get(item_url(club, funded, item)).status_code == 403
+    c = login(player)
+    assert c.get(item_url(club, foreign_character, item)).status_code == 404
+    assert c.get(item_url(other_club, foreign_character, item)).status_code == 404
+    assert c.get(item_url(club, funded, foreign_item)).status_code == 404
+    assert c.get(item_url(club, funded, second_item)).status_code == 404  # not owned
+    record(funded, "award", [Line(item=second_item, quantity=1)])
+    record(funded, "consumed", [Line(item=second_item, quantity=-1)])
+    assert c.get(item_url(club, funded, second_item)).status_code == 404  # zero quantity
+
+
+@pytest.mark.story("U40")
+def test_sheet_has_print_card_links(login, club, player, funded, item):
+    body = (
+        login(player)
+        .get(reverse("characters:detail", args=[club.slug, funded.pk]))
+        .content.decode()
+    )
+    base = item_url(club, funded, item)
+    assert "Print card" in body
+    assert f"{base}?layout=full" in body and f"{base}?layout=grid" in body

@@ -2,4 +2,8 @@
 
 /* Characters: print view */
 .no-print { display: none !important; }
-.print-item { break-inside: avoid; page-break-inside: avoid; }
+.wm-item-card { break-inside: avoid; page-break-inside: avoid; background: white; color: black; border-color: black; box-shadow: none; }
+@page cards { size: portrait; margin: 0.25in 0.35in; }
+.wm-card-page, .wm-card-sheet { page: cards; margin: 0; }
+.wm-card-sheet { break-after: page; }
+.wm-card-sheet:last-child { break-after: auto; }

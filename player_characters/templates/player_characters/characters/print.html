@@ -6,18 +6,14 @@
   {% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
   <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
-<header class="wm-sheet-header">
+<header class="wm-sheet-header no-print">
   <h1>{{ character.name }}</h1>
   <p>Coins: {{ coins.owned|coins }}</p>
 </header>
-{% for row in rows %}
-<article class="print-item">
-  <h2>{{ row.item.name }}{% if row.item.retired %} (Retired){% endif %}</h2>
-  <p>Quantity: {{ row.owned }}</p>
-  {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
-  {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}
-  {% if row.item.details %}<div><strong>Details</strong>{{ row.item.details|linebreaks }}</div>{% endif %}
-</article>
+{% for sheet in sheets %}
+<section class="wm-card-sheet">
+{% for row in sheet %}{% include "player_characters/characters/_item_card.html" %}{% endfor %}
+</section>
 {% empty %}
 {% include "components/empty_state.html" with text="No items." %}
 {% endfor %}

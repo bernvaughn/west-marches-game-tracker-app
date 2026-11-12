@@ -15,4 +15,5 @@ urlpatterns = [
     path("<int:pk>/consume/", character_adjust.consume, name="consume"),
     path("<int:pk>/transfer/", character_transfer.transfer, name="transfer"),
     path("<int:pk>/print/", character_print.print_items, name="print_items"),
+    path("<int:pk>/items/<int:item_pk>/print/", character_print.print_item, name="print_item"),
 ]
