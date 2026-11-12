@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib import messages
 from django.db.models import Q
 from django.http import Http404
@@ -49,41 +48,17 @@ def _pick(queryset, raw):
 def propose(request, club_slug):
     club = request.club
     form = ProposeTradeForm(request.user, club)
-    senders = form.fields["sender"].queryset
     receivers = form.fields["receiver"].queryset
-    ctx = {
-        "form": None,
-        "side_form": None,
-        "sender": None,
-        "choices": senders,
-        "default_sender": selected_character(request),
-    }
+    sender = selected_character(request)
+    ctx = {"form": None, "side_form": None, "sender": None, "to": None}
     template = "player_characters/trades/propose.html"
-    if not senders.exists():
-        return render(request, template, ctx)
-
-    source = request.POST if request.method == "POST" else request.GET
-    sender = None
-    if request.method == "POST":
-        sender = _pick(senders, request.POST.get("sender"))
-    elif source.get("from"):
-        sender = _pick(senders, source.get("from"))
-    elif source.get("choose"):
-        pass
-    else:
-        chosen = selected_character(request)
-        if chosen is not None:
-            sender = senders.filter(pk=chosen.pk).first()
-        if sender is None and senders.count() == 1:
-            sender = senders.first()
-
-    to = None
-    if request.method == "GET" and source.get("to"):
-        to = _pick(receivers, source.get("to"))
-    ctx["to"] = to
-
     if sender is None:
         return render(request, template, ctx)
+
+    to = None
+    if request.method == "GET" and request.GET.get("to"):
+        to = _pick(receivers, request.GET.get("to"))
+    ctx["to"] = to
 
     if request.method == "POST":
         form = ProposeTradeForm(request.user, club, data=request.POST)
@@ -92,17 +67,16 @@ def propose(request, club_slug):
             cd = form.cleaned_data
             try:
                 trade = propose_trade(
-                    cd["sender"], cd["receiver"], side.lines(), cd["note"], request.user
+                    sender, cd["receiver"], side.lines(), cd["note"], request.user
                 )
             except TradeError as e:
                 messages.error(request, str(e))
                 url = reverse("trades:propose", args=[club.slug])
-                return redirect(f"{url}?from={sender.pk}&to={cd['receiver'].pk}")
+                return redirect(f"{url}?to={cd['receiver'].pk}")
             messages.success(request, "Trade proposed.")
             return redirect("trades:detail", club.slug, trade.pk)
     else:
-        form = ProposeTradeForm(request.user, club, initial={"sender": sender, "receiver": to})
+        form = ProposeTradeForm(request.user, club, initial={"receiver": to})
         side = TradeSideForm(sender, prefix="offer")
-    form.fields["sender"].widget = forms.HiddenInput()
     ctx.update({"form": form, "side_form": side, "sender": sender})
     return render(request, template, ctx)

@@ -192,12 +192,12 @@ def test_get_approve_not_allowed(login, club, trade, player):
 
 def test_side_actions_shown_then_hidden(login, club, trade, player, game_master):
     html = login(player).get(url(club, trade, "detail")).content.decode()
-    assert "Edit my side" in html and ">Approve<" in html
+    assert "Edit my side" in html and "Approve as" in html
     html = login(game_master).get(url(club, trade, "detail")).content.decode()
-    assert "Edit my side" not in html and ">Approve<" not in html
+    assert "Edit my side" not in html and "Approve as" not in html
     login(player).post(url(club, trade, "approve"))
     html = login(player).get(url(club, trade, "detail")).content.decode()
-    assert "Edit my side" not in html and ">Approve<" not in html
+    assert "Edit my side" not in html and "Approve as" not in html
     assert "Waiting for the other player" in html
 
 

@@ -7,7 +7,6 @@ from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
-from player_characters.models import Character
 from player_characters.selection import selected_character
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
@@ -21,16 +20,15 @@ def buy(request, club_slug, shop_id, stock_id):
     stock = club_get_object_or_404(request, ShopStock, pk=stock_id, shop=shop)
     if not is_open(shop, timezone.localdate()) or stock.item.retired:
         raise Http404
-    characters = Character.objects.for_club(request.club).filter(owner__user=request.user)
+    character = selected_character(request)
     unit_price = sell_price(stock)
     error = None
     if stock.quantity == 0:
         error = "Already sold: someone bought the last one."
 
     if request.method == "POST":
-        form = BuyForm(request.POST, characters=characters, max_quantity=stock.quantity)
-        if form.is_valid():
-            character = form.cleaned_data["character"]
+        form = BuyForm(request.POST, max_quantity=stock.quantity)
+        if character is not None and form.is_valid():
             quantity = form.cleaned_data["quantity"]
             try:
                 entry = buy_service(character, stock, quantity, actor=request.user)
@@ -46,11 +44,7 @@ def buy(request, club_slug, shop_id, stock_id):
                 messages.success(request, entry.note)
                 return redirect("shops:detail", club_slug=club_slug, shop_id=shop.pk)
     else:
-        form = BuyForm(
-            initial={"character": selected_character(request)},
-            characters=characters,
-            max_quantity=stock.quantity,
-        )
+        form = BuyForm(max_quantity=stock.quantity)
 
     stock.refresh_from_db()
     return render(
@@ -62,7 +56,8 @@ def buy(request, club_slug, shop_id, stock_id):
             "price": unit_price,
             "form": form,
             "error": error,
-            "has_characters": characters.exists(),
+            "character": character,
+            "available": available_coins(character) if character else None,
             "sold_out": stock.quantity == 0,
         },
     )

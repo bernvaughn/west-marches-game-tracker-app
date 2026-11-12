@@ -7,7 +7,7 @@
   </p>
   <form method="post" action="{% url 'trades:approve' club.slug trade.pk %}">
     {% csrf_token %}
-    <button class="btn btn-sm btn-primary" type="submit">Approve</button>
+    <button class="btn btn-sm btn-primary" type="submit">Approve as {% if side == "sender" %}{{ trade.sender.name }}{% else %}{{ trade.receiver.name }}{% endif %}</button>
   </form>
   {% else %}
   <p>You approved. Waiting for the other player.</p>

@@ -42,7 +42,8 @@ def test_other_club_404(login, player, other_club_quest, quest, other_club):
     u = User.objects.create_user("x@example.com", password="pw", display_name="X")
     m = Membership.objects.create(user=u, club=other_club)
     foreign = Character.objects.create(club=other_club, owner=m, name="Zed")
-    assert c.post(_url("turn_in", quest.pk), {"character": foreign.pk}).status_code == 404
+    assert c.post(_url("turn_in", quest.pk), {"character": foreign.pk}).status_code == 302
+    assert QuestCompletion.objects.count() == 0
 
 
 @pytest.mark.story("Q1")
@@ -55,13 +56,15 @@ def test_owner_turn_in(login, player, quest, character, item, give):
 
 
 @pytest.mark.story("Q1")
-def test_not_owner_and_blank(login, player, other_player, quest, character, item, give):
+def test_posted_character_ignored_and_no_character(
+    login, player, other_player, quest, character, item, give
+):
     give(character, item, 2)
     r = login(other_player).post(_url("turn_in", quest.pk), {"character": character.pk})
-    assert r.status_code == 404
-    r = login(player).post(_url("turn_in", quest.pk), {"character": ""})
     assert r.status_code == 302
     assert QuestCompletion.objects.count() == 0
+    r = login(player).post(_url("turn_in", quest.pk), {"character": ""}, follow=True)
+    assert QuestCompletion.objects.get().character == character
 
 
 @pytest.mark.story("Q1")

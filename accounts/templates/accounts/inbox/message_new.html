@@ -2,13 +2,17 @@
 {% block title %}Message admins{% endblock %}
 {% block content %}
 <h1>Message the club admins</h1>
+{% if is_member %}
 {% if form %}
-{% if not form.fields.character.queryset.exists %}<p>You have no character in this club.</p>{% endif %}
+<p>Message as <strong>{{ character.name }}</strong></p>
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Send</button>
+  <button class="btn btn-sm btn-primary" type="submit">Send as {{ character.name }}</button>
 </form>
+{% else %}
+<p>You have no character in this club.</p>
+{% endif %}
 <h2>Your messages</h2>
 <div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <tr><th>Date</th><th>Character</th><th>Message</th><th>Status</th></tr>

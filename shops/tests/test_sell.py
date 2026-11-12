@@ -132,9 +132,10 @@ def test_cross_club_shop_404(club, player, login, other_shop):
     assert login(player).get(url(club, other_shop)).status_code == 404
 
 
-def test_other_owner_character_404(club, player, login, other_character, shop, always_open):
+def test_other_owner_character_ignored(club, player, login, other_character, shop, always_open):
     r = login(player).get(url(club, shop), {"character": other_character.id})
-    assert r.status_code == 404
+    assert r.status_code == 200
+    assert r.context["character"] != other_character
 
 
 def test_other_club_item_404(club, player, login, character, shop, always_open, other_item):

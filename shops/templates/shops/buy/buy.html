@@ -8,13 +8,14 @@
 <p>Remaining: {% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</p>
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
 {% if sold_out %}
-{% elif not has_characters %}
+{% elif not character %}
 <p>You have no character in this club.</p>
 {% else %}
 <form method="post">
   {% csrf_token %}
+  <p>Buying as <strong>{{ character.name }}</strong> ({{ available|coins }} available)</p>
   {{ form.as_p }}
-  <button class="btn btn-sm btn-primary" type="submit">Buy</button>
+  <button class="btn btn-sm btn-primary" type="submit">Buy as {{ character.name }}</button>
 </form>
 {% endif %}
 <p><a href="{% url 'shops:detail' request.club.slug shop.pk %}">Back to {{ shop.name }}</a></p>

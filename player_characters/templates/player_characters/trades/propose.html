@@ -2,26 +2,14 @@
 {% block title %}Propose trade{% endblock %}
 {% block content %}
 <h1>Propose trade</h1>
-{% if not choices %}
+{% if not sender %}
 <p>You have no character in this club. Create a character first.</p>
 <p><a href="{% url 'characters:create' club.slug %}">New character</a></p>
-{% elif not sender %}
-<form method="get">
-  <label>Trade from
-    <select class="form-select form-select-sm w-auto d-inline-block" name="from">
-      {% for c in choices %}<option value="{{ c.pk }}"{% if default_sender and c.pk == default_sender.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
-    </select>
-  </label>
-  {% if to %}<input type="hidden" name="to" value="{{ to.pk }}">{% endif %}
-  <button class="btn btn-sm btn-outline-secondary" type="submit">Choose</button>
-</form>
 {% else %}
-<p>From <strong>{{ sender.name }}</strong>
-  (<a href="{% url 'trades:propose' club.slug %}?choose=1{% if form.receiver.value %}&to={{ form.receiver.value }}{% endif %}">change</a>)</p>
+<p>From <strong>{{ sender.name }}</strong></p>
 <form method="post">
   {% csrf_token %}
   {{ form.non_field_errors }}
-  {{ form.sender }}{{ form.sender.errors }}
   <p>{{ form.receiver.label_tag }} {{ form.receiver }} {{ form.receiver.errors }}</p>
   <p>{{ form.note.label_tag }} {{ form.note }} {{ form.note.errors }}</p>
   <h2>Offer</h2>
@@ -29,7 +17,7 @@
   {% for field in side_form %}
   <p>{{ field.label_tag }} {{ field }} {{ field.errors }}</p>
   {% endfor %}
-  <button class="btn btn-sm btn-primary" type="submit">Propose trade</button>
+  <button class="btn btn-sm btn-primary" type="submit">Propose trade as {{ sender.name }}</button>
 </form>
 {% endif %}
 {% endblock %}

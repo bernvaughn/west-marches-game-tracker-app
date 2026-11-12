@@ -58,7 +58,7 @@ def test_empty_offer_error(login, player, club, character, other_character):
     client = login(player)
     resp = client.post(propose_url(club), post_data(character, other_character))
     assert resp.status_code == 302
-    assert "from=" in resp.url
+    assert "to=" in resp.url
     page = client.get(resp.url)
     assert "Offer something or write a note." in page.content.decode()
     assert not Trade.objects.exists()
@@ -70,16 +70,16 @@ def test_preselects_single_character(login, player, club, stocked, other_charact
     assert 'name="offer-item_' in html
 
 
-def test_chooser_with_two_characters(login, player, club, character, other_character):
+def test_selected_character_with_two_characters(login, player, club, character, other_character):
     owner = Membership.objects.get(user=player, club=club)
     second = Character.objects.create(club=club, owner=owner, name="Second")
     client = login(player)
-    html = client.get(propose_url(club), {"choose": 1}).content.decode()
-    assert "Choose" in html and 'name="from"' in html
     html = client.get(
         propose_url(club), {"from": second.pk, "to": other_character.pk}
     ).content.decode()
-    assert "Second" in html and "offer-coins" in html
+    assert 'name="from"' not in html and 'name="sender"' not in html
+    assert "From <strong>Aria" in html or f"From <strong>{character.name}</strong>" in html
+    assert f"Propose trade as {character.name}" in html
     assert f'value="{other_character.pk}" selected' in html
 
 
@@ -112,16 +112,16 @@ def test_bad_characters(
 ):
     client = login(player)
     url = propose_url(club)
-    assert client.get(url, {"from": other_character.pk}).status_code == 404
-    assert client.get(url, {"from": foreign_character.pk}).status_code == 404
+    assert client.get(url, {"from": other_character.pk}).context["sender"] == stocked
+    assert client.get(url, {"from": foreign_character.pk}).context["sender"] == stocked
     assert client.get(url, {"to": foreign_character.pk}).status_code == 404
     assert client.get(url, {"to": stocked.pk}).status_code == 404
     for recv in (foreign_character, stocked):
         resp = client.post(url, post_data(stocked, recv, note="x"))
         assert resp.status_code == 200
     resp = client.post(url, post_data(other_character, third_character, note="x"))
-    assert resp.status_code == 404
-    assert not Trade.objects.exists()
+    assert resp.status_code == 302
+    assert Trade.objects.get().sender == stocked
 
 
 def test_no_characters(login, other_player, club):

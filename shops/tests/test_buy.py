@@ -123,13 +123,11 @@ def test_unlimited_stock_stays_null(shop, always_open, unlimited_stock, rich_cha
 
 
 @pytest.mark.story("C2")
-def test_other_owners_character_refused(
+def test_other_owners_character_ignored(
     club, shop, always_open, stock, funded_other, player, login
 ):
-    resp = login(player).post(url(club, shop, stock), {"character": funded_other.pk, "quantity": 1})
-    assert resp.status_code == 200
-    assert resp.context["form"].errors.get("character")
-    assert purchases().count() == 0
+    login(player).post(url(club, shop, stock), {"character": funded_other.pk, "quantity": 1})
+    assert not purchases().filter(character=funded_other).exists()
 
 
 @pytest.mark.story("C2")

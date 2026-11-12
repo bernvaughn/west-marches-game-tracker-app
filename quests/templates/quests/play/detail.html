@@ -6,17 +6,16 @@
 {% include "quests/_info.html" %}
 {% if club_left is not None %}<p>{{ club_left }} left</p>{% endif %}
 <h2>Turn in</h2>
-{% for row in rows %}
+{% if character %}
 <form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}">
   {% csrf_token %}
-  <input type="hidden" name="character" value="{{ row.character.pk }}">
-  <strong>{{ row.character.name }}</strong>{% if row.selected %} (acting as){% endif %}:
+  <strong>{{ character.name }}</strong>:
   {% if row.limit_reached %}Limit reached
   {% elif row.ready %}Ready
   {% else %}Missing {% for item, n in row.missing %}{{ n }} x {{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
-  <button class="btn btn-sm btn-primary" type="submit"{% if not row.ready %} disabled{% endif %}>Turn in</button>
+  <button class="btn btn-sm btn-primary" type="submit"{% if not row.ready %} disabled{% endif %}>Turn in as {{ character.name }}</button>
 </form>
-{% empty %}
+{% else %}
 <p>You have no character in this club.</p>
-{% endfor %}
+{% endif %}
 {% endblock %}
