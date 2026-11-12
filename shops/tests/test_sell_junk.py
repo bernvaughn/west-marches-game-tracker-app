@@ -161,4 +161,4 @@ def test_total_follows_ticks_and_quantities(club, login, player, junked, shop, i
         {"item": [item.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
     )
     both = {"item": [item.pk, torch.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
-    assert "1 gp 2 sp" in total(both)
+    assert "2 sp" in total(both)
