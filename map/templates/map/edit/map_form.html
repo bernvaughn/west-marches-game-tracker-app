@@ -1,13 +1,12 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}{{ title }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>{{ title }}</h1>
-<form method="post">
-{% csrf_token %}
-{{ form.as_p }}
-<button class="btn btn-sm btn-primary" type="submit">Save</button>
-<a href="{% if back %}{{ back }}{% else %}{% url 'map:index' club.slug %}{% endif %}">Cancel</a>
-</form>
+{% include "components/page_header.html" with title=title %}
+{% url 'map:index' club.slug as index_url %}
+{% include "components/card_open.html" %}
+{% include "components/form_layout.html" with form=form cancel_url=back|default:index_url %}
+{% include "components/card_close.html" %}
 {% endblock %}

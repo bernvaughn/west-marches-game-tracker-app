@@ -1,17 +1,22 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}XP table{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-<h1>XP table</h1>
-<p><a href="{% url 'map:index' club.slug %}">Back to the maps</a></p>
-{% if can_edit %}<form method="post">{% csrf_token %}
-{% if form.errors %}<p class="errors">Enter whole numbers of 0 or more.</p>{% endif %}{% endif %}
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-<thead><tr><th>Target level</th><th>Discovering</th><th>Exploring</th></tr></thead>
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+{% include "components/page_header.html" with title="XP table" %}
+<div class="map-toolbar">
+<a class="btn btn-link" href="{% url 'map:index' club.slug %}">{% include "components/icon.html" with name="arrow-left" %} Back to the maps</a>
+</div>
+{% if can_edit %}<form method="post" class="wm-form">{% csrf_token %}
+{% if form.errors %}{% include "components/alert.html" with level="danger" text="Enter whole numbers of 0 or more." %}{% endif %}{% endif %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+<thead><tr><th>Target level</th><th class="num">Discovering</th><th class="num">Exploring</th></tr></thead>
 <tbody>
 {% for line in lines %}<tr><td>{{ line.label }}</td>
-{% if can_edit %}<td>{{ line.discover }}{{ line.discover.errors }}</td><td>{{ line.explore }}{{ line.explore.errors }}</td>
-{% else %}<td>{{ line.row.discover_xp }}</td><td>{{ line.row.explore_xp }}</td>{% endif %}</tr>
+{% if can_edit %}<td class="num"><label class="visually-hidden" for="{{ line.discover.id_for_label }}">Discovering XP, {{ line.label }}</label>{{ line.discover }}{{ line.discover.errors }}</td><td class="num"><label class="visually-hidden" for="{{ line.explore.id_for_label }}">Exploring XP, {{ line.label }}</label>{{ line.explore }}{{ line.explore.errors }}</td>
+{% else %}<td class="num">{{ line.row.discover_xp|floatformat:"0g" }}</td><td class="num">{{ line.row.explore_xp|floatformat:"0g" }}</td>{% endif %}</tr>
 {% endfor %}
 </tbody></table></div>
-{% if can_edit %}<button class="btn btn-sm btn-primary" type="submit">Save</button></form>{% endif %}
+{% if can_edit %}<div class="wm-form-actions"><button class="btn btn-primary" type="submit">Save</button></div></form>{% endif %}
 {% endblock %}

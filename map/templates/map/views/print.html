@@ -3,11 +3,16 @@
 {% block title %}{{ hex_map.name }} (print){% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-<h1>{{ hex_map.name }}</h1>
-<p>{% if show_gm %}Full map{% else %}Players' view{% if picked %}: {% for c in picked %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}{% endif %}</p>
-<p class="no-print"><a href="{% url 'map:detail' club.slug hex_map.pk %}{% if back_params %}?{{ back_params }}{% endif %}">Back to the map</a>. Use your browser's print command to print this page.</p>
+{% if show_gm %}{% include "components/page_header.html" with title=hex_map.name subtitle="Full map" %}
+{% else %}{% include "components/page_header.html" with title=hex_map.name subtitle="Players' view" %}{% if picked %}<p>Characters: {% for c in picked %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}{% endif %}
+<div class="map-toolbar no-print">
+<a class="btn btn-link" href="{% url 'map:detail' club.slug hex_map.pk %}{% if back_params %}?{{ back_params }}{% endif %}">{% include "components/icon.html" with name="arrow-left" %} Back to the map</a>
+<span class="text-muted">Use your browser's print command to print this page.</span>
+</div>
 {% include "map/_hexmap.html" %}
+<div class="mt-3 mb-3">{% include "map/_legend.html" %}</div>
 <h2>Locations</h2>
+<div class="map-keys">
 {% for loc in rows %}
 <section class="map-key">
   <h3>{{ loc.symbol }} {{ loc.name }} ({{ loc.q }}, {{ loc.r }}){% if loc.unexplored %} <span class="unexplored">Unexplored</span>{% endif %}</h3>
@@ -22,5 +27,6 @@
 {% for q, r in unknown_rows %}
 <section class="map-key"><h3>? Unknown location ({{ q }}, {{ r }})</h3></section>
 {% endfor %}
+</div>
 {% if not rows and not unknown_rows %}<p>No locations to show.</p>{% endif %}
 {% endblock %}

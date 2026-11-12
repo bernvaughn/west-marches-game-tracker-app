@@ -1,17 +1,17 @@
-{% if tile.is_safe_town %}<p><strong>Safe town</strong></p>{% endif %}
-<div class="map-actions">
+<div class="map-toolbar no-print">
+{% if show_back %}<a class="btn btn-link" href="{{ back_url }}">{% include "components/icon.html" with name="arrow-left" %} Back to the map</a>{% endif %}
 {% include "map/edit/_tile_actions.html" %}
 {% include "map/credit/_tile_actions.html" %}
 {% include "map/requests/_tile_actions.html" %}
 </div>
+{% if tile.is_safe_town %}<p>{% include "components/badge.html" with status="success" text="Safe town" %}</p>{% endif %}
 {% for location in locations %}
-<section class="location">
-  <h2>{{ location.name }}</h2>
-  <p>Colour: {{ location.color|default:"none" }}. Symbol: {{ location.symbol|default:"none" }}.</p>
-  {% if location.unexplored %}<p class="unexplored"><strong>Unexplored</strong></p>{% endif %}
-  {% if location.target_band %}<p>Target level: CR {{ location.target_band }}</p>{% endif %}
+<div class="map-location">
+{% include "components/card_open.html" with title=location.name %}
+  {% if location.unexplored or location.target_band %}<p>{% if location.unexplored %}{% include "components/badge.html" with status="warning" text="Unexplored" %}{% endif %} {% if location.target_band %}{% include "components/badge.html" with status="info" text="CR "|add:location.target_band %}{% endif %}</p>{% endif %}
+  <p class="map-location-meta">Colour: {{ location.color|default:"none" }}. Symbol: {{ location.symbol|default:"none" }}.</p>
   {% if location.player_notes %}<h3>Notes</h3><p>{{ location.player_notes|linebreaksbr }}</p>{% endif %}
-  {% if show_gm and location.gm_notes %}<h3>GM notes</h3><p>{{ location.gm_notes|linebreaksbr }}</p>{% endif %}
+  {% if show_gm and location.gm_notes %}<h3>GM notes</h3><p class="map-gm-notes">{{ location.gm_notes|linebreaksbr }}</p>{% endif %}
   {% if location.encounters.all %}<h3>Encounters</h3><ul>
   {% for e in location.encounters.all %}<li>{% if e.date %}{{ e.date }}: {% endif %}{{ e.description }}</li>{% endfor %}</ul>{% endif %}
   <p>Discovered by: {% for c in location.discovered %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody yet{% endfor %}</p>
@@ -20,15 +20,17 @@
   {% include "map/xp/_location_xp.html" %}
   {% include "map/credit/_location_actions.html" %}
   {% include "map/requests/_location_actions.html" %}
-</section>
+{% include "components/card_close.html" %}
+</div>
 {% endfor %}
 {% for p in placeholders %}
-<section class="location">
-  <h2>Unknown location</h2>
+<div class="map-location">
+{% include "components/card_open.html" with title="Unknown location" %}
   <p>You know something is here, but not what.</p>
-  {% if request.membership %}<p><a href="{% url 'map:request_credit' club.slug 'found' p.request_id %}">Request a found mark</a>
-  <a href="{% url 'map:request_credit' club.slug 'explored' p.request_id %}">Request explored credit</a>
-  <a href="{% url 'map:request_credit' club.slug 'discovered' p.request_id %}">Request discovered credit</a></p>{% endif %}
-</section>
+  {% if request.membership %}<div class="location-actions"><a class="btn btn-sm btn-outline-secondary" href="{% url 'map:request_credit' club.slug 'found' p.request_id %}">Request a found mark</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'map:request_credit' club.slug 'explored' p.request_id %}">Request explored credit</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'map:request_credit' club.slug 'discovered' p.request_id %}">Request discovered credit</a></div>{% endif %}
+{% include "components/card_close.html" %}
+</div>
 {% endfor %}
-{% if not locations and not placeholders and not tile.is_safe_town %}<p>Nothing here yet.</p>{% endif %}
+{% if not locations and not placeholders and not tile.is_safe_town %}{% include "components/empty_state.html" with text="Nothing here yet." icon="map" %}{% endif %}
