@@ -40,25 +40,6 @@ def test_silhouette_and_name_in_left_slot(login, player, club, open_shop):
 
 
 @pytest.mark.story("U39")
-def test_banner_description_truncated(login, player, club, open_shop):
-    Shop.objects.filter(pk=open_shop.pk).update(description=" ".join(f"w{i}" for i in range(40)))
-    body = detail(login(player), club, open_shop)
-    b = banner(body)
-    assert "wm-shop-banner-about" in b and "w29" in b and "w30" not in b
-    assert "wm-shop-about" in body.split('id="stock"')[1]  # long text kept in full below
-
-
-@pytest.mark.story("U39")
-def test_short_description_not_repeated_and_empty_plain(login, player, club, open_shop):
-    c = login(player)
-    Shop.objects.filter(pk=open_shop.pk).update(description="Fine wares.")
-    body = detail(c, club, open_shop)
-    assert "wm-shop-banner-about" in banner(body) and body.count("Fine wares.") == 1
-    Shop.objects.filter(pk=open_shop.pk).update(description="")
-    assert "wm-shop-banner-about" not in detail(c, club, open_shop)
-
-
-@pytest.mark.story("U39")
 def test_sell_button_keeps_place(login, player, club, open_shop):
     b = banner(detail(login(player), club, open_shop))
     sell = b[b.index("wm-shop-sellbar") :]

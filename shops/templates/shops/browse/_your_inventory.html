@@ -1,0 +1,27 @@
+{% load coins %}
+<section id="your-inventory" class="wm-your-inventory card" aria-labelledby="your-inventory-title" hx-get="{% url 'shops:detail' club.slug shop.id %}" hx-select="#your-inventory" hx-target="this" hx-swap="outerHTML" hx-trigger="shopStockChanged from:body">
+  <h2 id="your-inventory-title" class="h4">Your inventory</h2>
+  {% if inventory_character %}
+  <p class="wm-your-inventory-name"><strong>{{ inventory_character.name }}</strong></p>
+  <p class="wm-your-inventory-coins">{{ inventory_coins.owned|coins }}</p>
+  <p class="wm-sheet-note">Held {{ inventory_coins.held|coins }} &middot; Available {{ inventory_coins.available|coins }}</p>
+  <div class="wm-your-inventory-junk" data-slot="junk">{# U47 junk line and Sell junk button go here #}</div>
+  {% if inventory_rows %}
+  <div class="wm-table-scroll">
+    <table class="table table-sm wm-data-table">
+      <thead><tr><th scope="col">Item</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}<th scope="col">{% if shop.keeper_name %}{{ shop.keeper_name }}{% else %}This shop{% endif %} pays (each)</th></tr></thead>
+      <tbody>
+      {% for row in inventory_rows %}
+        <tr><td>{{ row.item.name }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}<td>{{ row.price|coins }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {% include "components/empty_state.html" with text="No items yet." icon="bag" %}
+  {% endif %}
+  {% else %}
+  {% url 'characters:create' club.slug as create_url %}
+  {% include "components/empty_state.html" with text="You have no character in this club." icon="person" action_url=create_url action_label="Create a character" %}
+  {% endif %}
+</section>

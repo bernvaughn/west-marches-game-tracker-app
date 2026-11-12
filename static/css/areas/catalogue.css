@@ -23,8 +23,10 @@
 .wm-shop-closed { text-align: center; margin: calc(-1 * var(--wm-space-2)) 0 var(--wm-space-3); }
 .wm-shop-banner { background: var(--wm-shop-tint); margin: 0 calc(-1 * var(--wm-space-4)); padding: var(--wm-space-4) var(--wm-space-4) 0;
   position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--wm-space-4);
-  grid-template-areas: "keeper about" "keeper sell"; align-items: end; }
-@media (min-width: 576px) { .wm-shop-banner { margin: 0 calc(-1 * var(--wm-space-6)); padding: var(--wm-space-5) var(--wm-space-6) 0; column-gap: var(--wm-space-5); } }
+  grid-template-areas: "keeper actions" "about about"; align-items: end; }
+.wm-shop-banner > * { min-width: 0; }
+@media (min-width: 576px) { .wm-shop-banner { margin: 0 calc(-1 * var(--wm-space-6)); padding: var(--wm-space-5) var(--wm-space-6) 0; column-gap: var(--wm-space-5);
+  grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "keeper about actions"; } }
 .wm-shop-keeper-figure { grid-area: keeper; margin: 0; display: flex; flex-direction: column; align-items: center; gap: var(--wm-space-2); }
 .wm-shop-silhouette { height: 88px; width: auto; display: block; }
 @media (min-width: 576px) { .wm-shop-silhouette { height: 160px; } }
@@ -32,9 +34,15 @@
   font-family: var(--wm-font-heading); font-size: var(--wm-text-sm); font-weight: 600; color: var(--wm-text);
   background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); padding: var(--wm-space-1) var(--wm-space-3); box-shadow: var(--wm-shadow-1); margin-bottom: var(--wm-space-2); }
 @media (min-width: 576px) { .wm-shop-keeper-name { font-size: var(--wm-text-md); max-width: 12rem; } }
-.wm-shop-banner-about { grid-area: about; align-self: start; min-width: 0; overflow-wrap: anywhere; color: var(--wm-text); font-size: var(--wm-text-sm); }
-@media (min-width: 576px) { .wm-shop-banner-about { font-size: var(--wm-text-md); } }
-.wm-shop-sellbar { grid-area: sell; justify-self: end; align-self: end; margin: var(--wm-space-3) 0; }
+.wm-shop-about-box { grid-area: about; justify-self: stretch; align-self: center; text-align: left; overflow-wrap: anywhere; box-sizing: border-box;
+  background: var(--wm-surface-raised); color: var(--wm-text); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md);
+  padding: var(--wm-space-3) var(--wm-space-4); margin: var(--wm-space-3) 0; font-size: var(--wm-text-sm); }
+@media (min-width: 576px) { .wm-shop-about-box { justify-self: center; max-width: 36rem; margin: 0; font-size: var(--wm-text-md); } }
+.wm-shop-about-box[hidden] { display: none; }
+.wm-shop-about-box h2 { font-size: var(--wm-text-xl); }
+.wm-shop-about-box p:last-child { margin-bottom: 0; }
+.wm-shop-actions { grid-area: actions; display: flex; flex-direction: column; align-items: flex-end; align-self: end; gap: var(--wm-space-2); }
+.wm-shop-sellbar { margin: var(--wm-space-3) 0; }
 .wm-shop-sellbar .btn { min-height: var(--wm-size-touch); display: inline-flex; align-items: center; gap: var(--wm-space-2); }
 
 /* The counter: a wood-toned top band across the banner, then the table. */
@@ -45,8 +53,8 @@
 @media (min-width: 576px) { .wm-shop-counter::before { margin: 0 calc(-1 * var(--wm-space-6)) var(--wm-space-3); } }
 .wm-shop-stock .btn { min-height: var(--wm-size-touch); display: inline-flex; align-items: center; }
 .wm-shop-stock td.actions { white-space: nowrap; }
-.wm-shop-about, .wm-shop-keeper { max-width: var(--wm-size-form); }
-.wm-shop-keeper h2 { font-size: var(--wm-text-xl); }
+.wm-your-inventory { margin-bottom: var(--wm-space-5); padding: var(--wm-space-4); }
+.wm-your-inventory-junk:empty { display: none; }
 
 /* ---- Forms and tables in this area ---- */
 .wm-stock-section { margin-top: var(--wm-space-6); }
