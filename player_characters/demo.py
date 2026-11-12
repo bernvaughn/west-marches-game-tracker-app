@@ -6,7 +6,11 @@ from ledger.services import Line, record
 
 from .models import Character
 
-CHARACTERS = [("alice@example.com", "Aria Windrunner"), ("bob@example.com", "Borin Stonefist")]
+CHARACTERS = [
+    ("alice@example.com", "Aria Windrunner"),
+    ("alice@example.com", "Wren Thistledown"),
+    ("bob@example.com", "Borin Stonefist"),
+]
 GEAR_NOTE = "Demo: starting gear"
 GEAR = {
     "Aria Windrunner": {"Rope": 1, "Healing potion": 2, "Torch": 5},
