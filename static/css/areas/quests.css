@@ -50,3 +50,6 @@
   .wm-notice-pin { display: none; }
   .wm-stamp { rotate: none; background: none; color: #000; }
   }
+
+.wm-quest-turnin { max-width: 40rem; margin-inline: auto; margin-bottom: var(--wm-space-5); padding: var(--wm-space-4); }
+.wm-quest-turnin-missing td { background: var(--wm-surface-muted, transparent); }

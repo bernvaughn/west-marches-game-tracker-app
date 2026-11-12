@@ -10,9 +10,9 @@
   {% if quest.description %}<p class="wm-notice-desc">{% if large %}{{ quest.description|linebreaksbr }}{% else %}{{ quest.description|truncatechars:140 }}{% endif %}</p>{% endif %}
   <dl class="wm-notice-info">
     <dt>Reward</dt>
-    <dd>{% for rw in quest.rewards.all %}{% if rw.item %}{{ rw.quantity }} x {{ rw.item }}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    <dd>{% for rw in quest.rewards.all %}{% if rw.item %}{{ rw.quantity }} x {% include "items/_item_name.html" with item=rw.item %}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
     <dt>Bring</dt>
-    <dd>{% for r in quest.requirements.all %}{{ r.quantity }} x {{ r.item }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    <dd>{% for r in quest.requirements.all %}{{ r.quantity }} x {% include "items/_item_name.html" with item=r.item %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
     {% if quest.end_date %}<dt>Ends</dt><dd>{{ quest.end_date }}</dd>{% endif %}
   </dl>
   {% if quest.left is not None %}<p class="wm-notice-left">{{ quest.left }} left</p>{% elif club_left is not None %}<p class="wm-notice-left">{{ club_left }} left</p>{% endif %}

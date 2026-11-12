@@ -93,7 +93,7 @@ def test_quest_uses_selected_only(login, club, player, two):
     assert r.status_code == 200
     assert r.context["character"] == wren
     assert "Turn in as Wren" in r.content.decode()
-    assert "Aria" not in r.content.decode().split("<h2>Turn in</h2>")[1]
+    assert "Aria" not in r.content.decode().split('id="turn-in"')[1]
 
 
 def test_quest_no_character(login, club, other_player):

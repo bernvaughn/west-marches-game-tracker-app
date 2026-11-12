@@ -3,18 +3,5 @@
 {% block content %}
 <p><a href="{% url 'quests:index' club.slug %}">All quests</a>{% if is_admin %} · <a href="{% url 'quests:edit' club.slug quest.pk %}">Edit quest</a>{% endif %}</p>
 {% include "quests/_notice.html" with large=True heading="h1" %}
-{% include "components/section_open.html" with title="Turn in" %}
-{% if character %}
-<form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}" class="wm-quest-turnin">
-  {% csrf_token %}
-  <p><strong>{{ character.name }}</strong>:
-  {% if row.limit_reached %}{% include "components/badge.html" with status="danger" text="Limit reached" %}
-  {% elif row.ready %}{% include "components/badge.html" with status="success" text="Ready" %}
-  {% else %}{% include "components/badge.html" with status="warning" text="Not ready" %} Missing {% for item, n in row.missing %}{{ n }} x {{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}</p>
-  <button class="btn btn-primary" type="submit"{% if not row.ready %} disabled{% endif %}>Turn in as {{ character.name }}</button>
-</form>
-{% else %}
-{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
-{% endif %}
-{% include "components/section_close.html" %}
+{% include "quests/play/_turn_in_card.html" %}
 {% endblock %}
