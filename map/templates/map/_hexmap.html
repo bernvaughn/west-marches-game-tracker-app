@@ -1,6 +1,6 @@
 <div class="hexmap">
 <svg viewBox="{{ viewbox }}" role="img" aria-label="Hex map">
-{% for c in cells %}{% if c.url %}<a href="{{ c.url }}">{% endif %}<g>
+{% for c in cells %}{% if c.url %}<a href="{{ c.url }}"{% if tile_modal %} hx-get="{{ c.url }}" hx-target="#app-modal .modal-content" data-app-modal hx-on:click="event.preventDefault()"{% endif %}>{% endif %}<g>
 <polygon class="hex{% if not c.fill %} hex-empty{% endif %}{% if c.visited %} hex-visited{% endif %}{% if c.safe %} hex-safe{% endif %}" points="{{ c.points }}"{% if c.fill %} style="fill: {{ c.fill }}"{% endif %}><title>({{ c.q }}, {{ c.r }}){% if c.safe %} Safe town{% endif %}</title></polygon>
 {% if c.symbol %}<text class="hex-symbol" x="{{ c.x }}" y="{{ c.y }}" text-anchor="middle" dominant-baseline="central">{{ c.symbol }}</text>{% endif %}
 {% if c.unexplored %}<text class="hex-unexplored" x="{{ c.x }}" y="{{ c.y }}" transform="translate(-14 -10)" text-anchor="middle" dominant-baseline="central">!<title>Unexplored</title></text>{% endif %}

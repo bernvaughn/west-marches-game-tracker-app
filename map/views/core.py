@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import render
 from django.urls import reverse
 
+from accounts.htmx import render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 
@@ -116,6 +117,7 @@ def detail(request, club_slug, map_id):
         players_url=with_params(base, window, "view=players"),
         mine_url=with_params(base, window, "view=mine"),
     )
+    ctx["tile_modal"] = True
     return render(request, "map/core/detail.html", ctx)
 
 
@@ -153,4 +155,5 @@ def tile(request, club_slug, map_id, q, r):
         mine_url=with_params(request.path, "view=mine"),
         full_url=request.path,
     )
-    return render(request, "map/core/tile.html", ctx)
+    ctx["tile_page_url"] = request.get_full_path()
+    return render_modal_or_page(request, "map/core/_tile_modal.html", "map/core/tile.html", ctx)
