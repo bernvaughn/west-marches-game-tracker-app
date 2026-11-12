@@ -43,7 +43,7 @@ Reading it: a person (user) joins clubs through memberships, and a membership ow
 ## Rules that apply everywhere
 
 - **Every record belongs to a club.** Every lookup is limited to the current club, which is what keeps clubs from seeing each other's data (U12).
-- **Coins are whole numbers of copper.** They are shown as copper, silver, gold, and platinum.
+- **Coins are whole numbers of copper.** They are shown as copper, silver, gold, and platinum, with no platinum under 10,000 gp (U32).
 - **The ledger is the history and the source of truth.** A character's inventory and coin total are the sum of their ledger lines. The app may keep running totals for speed, but the ledger wins if they disagree. Ledger entries are never edited or deleted; a mistake is fixed with a new entry.
 - **Holds are not a separate record.** Items and coins that appear on a trade or trade request that is still open count as held. What a character can use is what they own minus what is held, which is how the lock on selling, transferring, turning in, and consuming works (U16).
 - **Dates on manual changes default to today** and can be changed (U14).
@@ -56,7 +56,7 @@ Reading it: a person (user) joins clubs through memberships, and a membership ow
 - **Club**: a name. The unit that separates data.
 - **Membership**: a user in a club, with two separate yes/no permissions, club admin and game master. Everyone with a membership is also a player and can own characters.
 - **Whitelist entry**: an email address allowed to join a club (U1). Belongs to one club; the same email can be whitelisted in several.
-- **Message**: from a membership to the club's admins, free text, with an optional character it is about, and a handled/closed flag set by an admin (U13). No replies are stored.
+- **Message**: from a membership to the club's admins, free text, with an optional character it is about (the sender's selected character, U27), and a handled/closed flag set by an admin (U13). No replies are stored. Grants made from a message (U30) are ordinary ledger entries, visits, credit, or found marks that point back at the message, so the message can list what was granted from it.
 
 A player's email is shown only to club admins (U17).
 
