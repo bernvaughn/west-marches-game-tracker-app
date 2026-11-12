@@ -177,6 +177,21 @@ From using the build after the first-look stories landed.
 - The tile page keeps working at its own address, for links, printing, and use without JavaScript.
 - Closing the modal returns to the same map position and character filter.
 
+**U36 The shopkeeper's counter.** As a player, I want each shop page to feel like walking up to a shopkeeper's counter, so shopping is memorable and fun (U10). *(shops)*
+- From top to bottom: the shop name, centred, as the page title; a full-width banner in the shop's colour with the shopkeeper's silhouette in the middle and their name over it; a coin button labelled "Sell to <keeper name>" just above the items; then the table of items to buy.
+- The table starts at the bottom edge of the banner, and its top looks like the shopkeeper's counter, for example a wood-toned counter-top band. It then continues down the page as a normal table. Buy opens the confirm modal (U33).
+- The shop and keeper descriptions show below the table.
+- A club admin picks the shop's colour from the existing presets and its silhouette from a set of preset generic silhouettes, both on the shop's edit form, with a preview of each silhouette. There is no free colour picker.
+- The app ships 8 to 10 original, generic silhouettes that suit a fantasy shop (for example a hooded trader, dwarf smith, robed mage, halfling grocer, or goblin peddler), each readable on every preset colour.
+- On a phone, the banner and silhouette shrink and the table stays readable with no sideways scroll.
+
+**U37 A printable character sheet.** As a player, I want my character's page to look like a stylised character sheet that I could print and bring to the table. *(player_characters, ledger)*
+- A header box with the character's name in large serif, the owner, and the club, like the top of a paper character sheet.
+- Below it, bordered and titled boxes: coins (colour-coded, U31), inventory, notes and stats (U2), and recent ledger entries with a link to the full ledger (C5).
+- Actions (edit, move items, and the game master and club admin adjustments) sit together outside the sheet, so the sheet stays clean.
+- A "Print sheet" button prints the sheet in black and white without the navigation or actions, on one Letter or A4 page where possible.
+- On a phone, the boxes stack in one column. Privacy is unchanged (U19).
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -355,6 +370,7 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see a location and its encounters only once a character they are viewing the map as has found it; visiting the tile is not enough (M2-M6, M16).
 - **Acting as a character.** A player picks one character to act as from the top bar, remembered per club. Pages that act as one character always use it, with no per-page choice. Pages that pick several characters (the map, map requests) start with it, and picking others there does not change the top-bar selection (U24, U27, M8).
 - **Found locations.** A character has found a location if it is credited with discovering or exploring it, or has a found mark from a game master or club admin. A found mark gives no XP and only makes the location visible; players can ask for one like other map credit (M12, M16). On visited tiles, players see an unnamed "?" for each location someone has discovered but their characters have not found, and can ask for credit on it. Undiscovered locations show nothing, and only a game master or club admin records first discovery.
+- **Shop and character pages.** A shop page is a banner in the shop's preset colour with a preset shopkeeper silhouette over a counter-style item table (U36). A character page is a printable character sheet (U37).
 - **Look.** The Bootswatch Journal theme (MIT) for Bootstrap 5 across the whole site, served by the app, with compact tables and forms on dense pages (U23).
 - **Navigation.** Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U29, U34).
 - **Modals.** Buying (U33), map tiles (M17), and inbox grants (U30) open in modals. Each still has a plain page that works without JavaScript.

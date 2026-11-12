@@ -78,7 +78,7 @@ A player's email is shown only to club admins (U17).
 
 ### shops
 
-- **Shop**: belongs to a club. Name, description, shopkeeper's name and description, a default sell percentage, and a default buy percentage (S1).
+- **Shop**: belongs to a club. Name, description, shopkeeper's name and description, a default sell percentage, a default buy percentage (S1), and its look: a preset colour, a symbol, and a preset shopkeeper silhouette (U10, U36).
 - **Shop stock**: a shop, an item, a quantity in stock (empty means unlimited), and optional sell and buy percentage overrides for that item in that shop (U9, S1). Stock lives here and carries over between rotations. Only items with a stock row are purchasable. A shop can still buy items it has no stock row for, using its default buy percentage, and that does not create a stock row.
 - **Rotation**: a name, an open date, and an optional close date (S2). An empty close date means always open, which is how always-open shops (U5) work. Links to the shops that are open in it; a shop can be in several rotations.
 
