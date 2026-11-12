@@ -99,3 +99,24 @@ class SelectedCharacter(models.Model):
 
     def __str__(self):
         return f"{self.membership} acts as {self.character}"
+
+
+class JunkMark(models.Model):
+    """Items a character set aside to sell. Capped on read; never touches the ledger."""
+
+    club_path = "character__club"
+
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="junk_marks")
+    item = models.ForeignKey("items.Item", on_delete=models.CASCADE, related_name="junk_marks")
+    quantity = models.PositiveIntegerField()
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["character", "item"], name="unique_junk_per_item"),
+            models.CheckConstraint(condition=models.Q(quantity__gte=1), name="junk_quantity_min"),
+        ]
+
+    def __str__(self):
+        return f"{self.character}: {self.quantity} × {self.item} junk"

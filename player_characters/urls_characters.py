@@ -1,6 +1,13 @@
 from django.urls import path
 
-from .views import character_adjust, character_print, character_transfer, characters, selection
+from .views import (
+    character_adjust,
+    character_junk,
+    character_print,
+    character_transfer,
+    characters,
+    selection,
+)
 
 app_name = "characters"
 urlpatterns = [
@@ -18,4 +25,5 @@ urlpatterns = [
     path("<int:pk>/transfer/", character_transfer.transfer, name="transfer"),
     path("<int:pk>/print/", character_print.print_items, name="print_items"),
     path("<int:pk>/items/<int:item_pk>/print/", character_print.print_item, name="print_item"),
+    path("<int:pk>/items/<int:item_pk>/junk/", character_junk.junk, name="junk"),
 ]

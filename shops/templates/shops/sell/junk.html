@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Sell junk to {{ shop.name }}{% endblock %}
+{% block content %}
+{% url "shops:detail" request.club.slug shop.pk as back_url %}{% include "components/page_header.html" with title="Sell junk to "|add:shop.name back_url=back_url back_label="Back to "|add:shop.name %}
+{% include "components/card_open.html" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {% include "shops/sell/_junk_body.html" %}
+  {% if character and rows %}<div class="wm-form-actions"><button class="btn btn-primary" type="submit">Sell ticked items</button></div>{% endif %}
+</form>
+{% include "components/card_close.html" %}
+{% endblock %}

@@ -1,0 +1,8 @@
+<p><strong>{{ character.name }}</strong> owns {{ owned }} × {% include "items/_item_name.html" with item=item %}.</p>
+{% if form.non_field_errors %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert"><div>{{ form.non_field_errors|join:" " }}</div></div>{% endif %}
+<p>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">How many are junk?</label>
+  {{ form.quantity }}
+  <span class="form-text">{{ form.quantity.help_text }}</span>
+  {% if form.quantity.errors %}<span class="error text-danger d-block" role="alert">{{ form.quantity.errors|join:" " }}</span>{% endif %}
+</p>

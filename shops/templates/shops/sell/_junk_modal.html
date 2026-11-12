@@ -1,0 +1,13 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{% url 'shops:sell_junk' request.club.slug shop.pk %}" hx-post="{% url 'shops:sell_junk' request.club.slug shop.pk %}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Sell junk{% endblock %}
+{% block body %}{% include "shops/sell/_junk_body.html" %}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+{% if character and rows %}<button class="btn btn-primary" type="submit">Sell ticked items</button>{% endif %}
+{% endblock %}

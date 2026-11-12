@@ -10,6 +10,7 @@ from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
+from player_characters.junk import junk_value
 from player_characters.selection import selected_character
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
@@ -85,6 +86,7 @@ def buy(request, club_slug, shop_id, stock_id):
             "form": form,
             "error": error,
             "character": character,
+            "junk_value": junk_value(character) if character else 0,
             "available": available_coins(character) if character else None,
             "sold_out": stock.quantity == 0,
         },

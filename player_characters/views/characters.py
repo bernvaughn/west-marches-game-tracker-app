@@ -15,10 +15,12 @@ from accounts.permissions import (
 )
 from accounts.scoping import club_get_object_or_404, club_queryset
 from ledger.models import LedgerEntry, LedgerLine
+from quests.services import needed_by_open_quests
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
 from ..inventory import coin_summary, inventory_rows
+from ..junk import junk_rows, junk_value
 from ..models import Character, Trade
 from ..selection import selected_character
 from ..trade_services import OPEN
@@ -130,6 +132,11 @@ def detail(request, club_slug, pk):
         ctx["rows"] = inventory_rows(character)
         ctx["coins"] = coin_summary(character)
         ctx["show_held"] = any(r.held for r in ctx["rows"])
+        junk = junk_rows(character)
+        ctx["junk"] = {r.item.pk: r.quantity for r in junk}
+        ctx["junk_value"] = junk_value(character, junk)
+        needs = needed_by_open_quests(character) if junk else {}
+        ctx["quest_needs"] = {pk: needs[pk] for pk in ctx["junk"] if pk in needs}
         ctx["recent_entries"] = (
             LedgerEntry.objects.filter(character=character)
             .select_related("created_by")
