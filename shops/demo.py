@@ -15,6 +15,11 @@ def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look)
     if not created and shop.silhouette == Shop.Silhouette.HOODED_TRADER and "silhouette" in look:
         shop.silhouette = look["silhouette"]
         shop.save(update_fields=["silhouette"])
+    # Same for the street: shops still on the defaults take their building and place.
+    if not created and shop.building == Shop.Building.GENERAL_STORE and shop.street_position == 0:
+        shop.building = look.get("building", shop.building)
+        shop.street_position = look.get("street_position", 0)
+        shop.save(update_fields=["building", "street_position"])
     for item_name, qty in stock:
         item = Item.objects.get(club=club, name=item_name)
         ShopStock.objects.get_or_create(shop=shop, item=item, defaults={"quantity": qty})
@@ -41,6 +46,8 @@ def seed(club):
             "color": "ember",
             "silhouette": "burly_innkeeper",
             "symbol": "🏮",
+            "building": "inn",
+            "street_position": 1,
         },
     )
     _shop(
@@ -56,5 +63,7 @@ def seed(club):
             "color": "violet",
             "silhouette": "veiled_merchant",
             "symbol": "🐪",
+            "building": "tent",
+            "street_position": 2,
         },
     )

@@ -1,0 +1,44 @@
+/* Shop street (U49). Built from existing tokens only. */
+.wm-street {
+  --wm-street-road: var(--wm-border);
+  --wm-street-road-edge: var(--wm-text-muted);
+  --wm-street-lot-min: 10rem;
+  --wm-street-road-height: 1.25rem;
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(var(--wm-street-lot-min), 45%), 1fr));
+  column-gap: 0; row-gap: var(--wm-space-4);
+}
+.wm-street-lot { position: relative; margin: 0; padding: 0; min-width: 0; }
+/* Each lot paints its own road segment; with no column gap they join into one band per row. */
+.wm-street-lot::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--wm-street-road-height);
+  background: var(--wm-street-road); border-top: 2px solid var(--wm-street-road-edge); z-index: 0;
+}
+.wm-street-link {
+  position: relative; z-index: 1; display: block; text-decoration: none; color: var(--wm-shop-edge);
+  padding: 0 var(--wm-space-2) var(--wm-street-road-height); transition: transform .15s ease;
+}
+.wm-street-link:hover { transform: translateY(-3px); }
+.wm-street-link:focus-visible { outline: var(--wm-focus-outline); outline-offset: 2px; }
+.wm-building {
+  display: block; width: 100%; aspect-ratio: 1; background-color: currentColor;
+  -webkit-mask: var(--wm-building-src) center bottom / contain no-repeat;
+  mask: var(--wm-building-src) center bottom / contain no-repeat;
+}
+/* The sign sits over the plain wall area of the building (x 30-130, y 92-114 of 160). */
+.wm-street-sign {
+  position: absolute; left: calc(var(--wm-space-2) + 18.75%); right: calc(var(--wm-space-2) + 18.75%);
+  top: 57.5%; min-height: 13.75%; display: flex; align-items: center; justify-content: center; gap: .25rem;
+  background: var(--wm-shop-tint); color: var(--wm-text); border: 2px solid var(--wm-shop-edge);
+  border-radius: var(--wm-radius-sm); font-size: var(--wm-text-sm); line-height: 1.1; text-align: center; overflow: hidden;
+}
+.wm-street-name { overflow-wrap: anywhere; }
+.wm-building-swatch .wm-building { width: 64px; height: 64px; color: var(--wm-shop-parchment-deep); }
+@media (prefers-reduced-motion: reduce) { .wm-street-link { transition: none; } .wm-street-link:hover { transform: none; } }
+@media (max-width: 575px) { .wm-street-sign { font-size: .75rem; } }
+@media print {
+  .wm-street { display: block; }
+  .wm-street-lot::after, .wm-building { display: none; }
+  .wm-street-link { padding: 0; }
+  .wm-street-sign { position: static; display: inline; border: 0; background: none; }
+}

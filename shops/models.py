@@ -24,6 +24,18 @@ class Shop(models.Model):
         WANDERING_BARD = "wandering_bard", "Wandering bard"
         VEILED_MERCHANT = "veiled_merchant", "Veiled merchant"
 
+    class Building(models.TextChoices):
+        INN = "inn", "Timber inn"
+        SMITHY = "smithy", "Smithy"
+        TOWER = "tower", "Mage's tower"
+        STALL = "stall", "Market stall"
+        TENT = "tent", "Tent"
+        APOTHECARY = "apothecary", "Apothecary"
+        GENERAL_STORE = "general_store", "General store"
+        GUILD_HALL = "guild_hall", "Guild hall"
+        CHAPEL = "chapel", "Chapel"
+        STABLE = "stable", "Stable"
+
     club_path = "club"
 
     club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="shops")
@@ -36,6 +48,12 @@ class Shop(models.Model):
     color = models.CharField(max_length=16, choices=Color.choices, default=Color.PARCHMENT)
     silhouette = models.CharField(
         max_length=24, choices=Silhouette.choices, default=Silhouette.HOODED_TRADER
+    )
+    building = models.CharField(
+        max_length=24, choices=Building.choices, default=Building.GENERAL_STORE
+    )
+    street_position = models.PositiveSmallIntegerField(
+        default=0, help_text="Lower numbers stand first on the street."
     )
     symbol = models.CharField(max_length=8, blank=True)
 
