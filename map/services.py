@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
-from .models import FoundMark, LocationCredit, Tile, TileVisit
+from .models import CreditGrant, FoundMark, LocationCredit, Tile, TileVisit
 
 
 @transaction.atomic
@@ -19,12 +19,16 @@ def prune_tile(tile):
 
 
 @transaction.atomic
-def record_visits(hex_map, q, r, characters, date=None):
+def record_visits(hex_map, q, r, characters, date=None, source_message=None):
     date = date or timezone.localdate()
     created = []
     for character in characters:
         visit, was_created = TileVisit.objects.get_or_create(
-            map=hex_map, q=q, r=r, character=character, defaults={"date": date}
+            map=hex_map,
+            q=q,
+            r=r,
+            character=character,
+            defaults={"date": date, "source_message": source_message},
         )
         if was_created:
             created.append(visit)
@@ -32,15 +36,22 @@ def record_visits(hex_map, q, r, characters, date=None):
 
 
 @transaction.atomic
-def add_to_credit(location, kind, characters, date=None):
+def add_to_credit(location, kind, characters, date=None, source_message=None):
     characters = list(characters)
     date = date or timezone.localdate()
     credit, _ = LocationCredit.objects.get_or_create(
         location=location, kind=kind, defaults={"date": date}
     )
+    existing = set(credit.characters.filter(pk__in=[c.pk for c in characters]))
     credit.characters.add(*characters)
+    if source_message is not None:
+        for character in characters:
+            if character not in existing:
+                CreditGrant.objects.get_or_create(
+                    credit=credit, character=character, source_message=source_message
+                )
     tile = location.tile
-    record_visits(tile.map, tile.q, tile.r, characters, date)
+    record_visits(tile.map, tile.q, tile.r, characters, date, source_message)
     return credit
 
 
@@ -55,17 +66,21 @@ def remove_from_credit(location, kind, characters):
 
 
 @transaction.atomic
-def add_found_marks(location, characters, date=None, created_by=None):
+def add_found_marks(location, characters, date=None, created_by=None, source_message=None):
     characters = list(characters)
     date = date or timezone.localdate()
+    created = []
     for character in characters:
-        FoundMark.objects.get_or_create(
+        mark, was_created = FoundMark.objects.get_or_create(
             location=location,
             character=character,
-            defaults={"date": date, "created_by": created_by},
+            defaults={"date": date, "created_by": created_by, "source_message": source_message},
         )
+        if was_created:
+            created.append(mark)
     tile = location.tile
-    record_visits(tile.map, tile.q, tile.r, characters, date)
+    record_visits(tile.map, tile.q, tile.r, characters, date, source_message)
+    return created
 
 
 @transaction.atomic

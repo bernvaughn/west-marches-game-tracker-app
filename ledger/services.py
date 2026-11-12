@@ -97,6 +97,7 @@ def record(
     agent_batch=None,
     reverses=None,
     exclude_trade=None,
+    source_message=None,
 ):
     return record_many(
         [
@@ -112,6 +113,7 @@ def record(
                 agent_batch=agent_batch,
                 reverses=reverses,
                 exclude_trade=exclude_trade,
+                source_message=source_message,
             )
         ]
     )[0]
@@ -194,6 +196,7 @@ def record_many(specs):
                 shop=spec.get("shop"),
                 agent_batch=spec.get("agent_batch"),
                 reverses=spec.get("reverses"),
+                source_message=spec.get("source_message"),
             )
             for line in spec["lines"]:
                 LedgerLine.objects.create(

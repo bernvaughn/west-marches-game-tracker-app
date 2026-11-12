@@ -14,4 +14,5 @@ urlpatterns = [
     path("messages/new/", inbox.message_new, name="message_new"),
     path("messages/", inbox.message_inbox, name="message_inbox"),
     path("messages/<int:pk>/status/", inbox.message_status, name="message_status"),
+    path("messages/<int:pk>/grant/", inbox.message_grant, name="message_grant"),
 ]

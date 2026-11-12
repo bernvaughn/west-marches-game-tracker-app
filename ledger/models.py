@@ -67,6 +67,13 @@ class LedgerEntry(AppendOnlyModel):
     reverses = models.ForeignKey(
         "self", null=True, blank=True, on_delete=models.PROTECT, related_name="reversals"
     )
+    source_message = models.ForeignKey(
+        "accounts.Message",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="granted_entries",
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     objects = AppendOnlyManager()
