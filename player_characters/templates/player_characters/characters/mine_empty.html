@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Character{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Character" %}
+{% url 'characters:create' club.slug as create_url %}
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" action_url=create_url action_label="Create a character" %}
+{% endblock %}

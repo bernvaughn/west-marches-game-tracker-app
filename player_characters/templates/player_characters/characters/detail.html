@@ -3,7 +3,7 @@
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
 <nav class="wm-breadcrumbs no-print" aria-label="Breadcrumb"><ol>
-  <li><a href="{% url 'characters:index' club.slug %}">Characters</a></li>
+  <li><a href="{{ characters_url }}">Characters</a></li>
   <li><span aria-current="page">{{ character.name }}</span></li>
 </ol></nav>
 {% if can_view %}

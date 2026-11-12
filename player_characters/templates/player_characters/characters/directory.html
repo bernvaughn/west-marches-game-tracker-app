@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Character directory{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Character directory" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Name</th><th>Player</th></tr></thead>
+  <tbody>
+  {% for c, url in rows %}
+  <tr><td>{% include "components/character_chip.html" with name=c.name url=url %}</td><td>{{ c.owner.user.display_name }}</td></tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=2 text="No characters yet." %}
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

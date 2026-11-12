@@ -92,7 +92,7 @@ def test_unsafe_next_goes_home(login, club, player, two, target):
 @pytest.mark.story("U24")
 def test_safe_next_and_get(login, club, player, two):
     client = login(player)
-    nxt = f"/c/{club.slug}/characters/"
+    nxt = f"/c/{club.slug}/characters/directory/"
     r = client.post(_url(club), {"character": two[0].pk, "next": nxt})
     assert r.url == nxt
     assert client.get(_url(club)).status_code == 405
@@ -108,19 +108,19 @@ def test_gm_and_superuser(login, club, game_master, site_admin):
 
 @pytest.mark.story("U25")
 def test_navbar_name_and_dropdown(login, club, player, character):
-    html = login(player).get(f"/c/{club.slug}/characters/").content.decode()
+    html = login(player).get(f"/c/{club.slug}/characters/directory/").content.decode()
     assert "Player" in html and "Acting as Aria" in html and "<select" not in html
 
 
 @pytest.mark.story("U25")
 def test_navbar_dropdown_with_two(login, club, player, two):
-    html = login(player).get(f"/c/{club.slug}/characters/").content.decode()
+    html = login(player).get(f"/c/{club.slug}/characters/directory/").content.decode()
     assert 'name="character"' in html and "Wren" in html
 
 
 @pytest.mark.story("U25")
 def test_navbar_no_character(login, club, player):
-    assert b"No character" in login(player).get(f"/c/{club.slug}/characters/").content
+    assert b"No character" in login(player).get(f"/c/{club.slug}/characters/directory/").content
 
 
 @pytest.mark.story("U25")
@@ -128,7 +128,7 @@ def test_selector_isolated_between_clubs(login, club, other_club, player, two):
     Membership.objects.create(user=player, club=other_club)
     _char(other_club, player, "Secretname")
     _char(other_club, player, "Othername")
-    html = login(player).get(f"/c/{club.slug}/characters/").content.decode()
+    html = login(player).get(f"/c/{club.slug}/characters/directory/").content.decode()
     assert "Secretname" not in html and "Othername" not in html
 
 

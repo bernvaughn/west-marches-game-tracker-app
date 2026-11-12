@@ -5,6 +5,8 @@ from .views import character_adjust, character_print, character_transfer, charac
 app_name = "characters"
 urlpatterns = [
     path("", characters.index, name="index"),
+    path("mine/", characters.mine, name="mine"),
+    path("directory/", characters.directory, name="directory"),
     path("new/", characters.create, name="create"),
     path("select/", selection.select, name="select"),
     path("transfer/", character_transfer.transfer_start, name="transfer_start"),

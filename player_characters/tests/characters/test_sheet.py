@@ -94,7 +94,7 @@ def test_foreign_member_gets_404(club, login, foreign_member, character):
 
 @pytest.mark.story("U2")
 def test_index_lists_all_without_inventory(club, login, other_player, sheet):
-    html = login(other_player).get(u("characters:index", club)).content.decode()
+    html = login(other_player).get(u("characters:directory", club)).content.decode()
     assert "Aria" in html and "Player" in html and "Rope" not in html
     assert Character.objects.count() == 1
 
