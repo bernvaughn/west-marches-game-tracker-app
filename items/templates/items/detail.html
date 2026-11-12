@@ -11,12 +11,12 @@
 {% if is_admin %}
 <p><a href="{% url 'items:edit' club.slug item.pk %}">Edit</a></p>
 {% if item.retired %}
-<form method="post" action="{% url 'items:restore' club.slug item.pk %}">{% csrf_token %}<button>Restore</button></form>
+<form method="post" action="{% url 'items:restore' club.slug item.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Restore</button></form>
 {% else %}
-<form method="post" action="{% url 'items:retire' club.slug item.pk %}">{% csrf_token %}<button>Retire</button></form>
+<form method="post" action="{% url 'items:retire' club.slug item.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Retire</button></form>
 {% endif %}
 <form method="post" action="{% url 'items:delete' club.slug item.pk %}">{% csrf_token %}
-  <button>Delete</button> Deletes only if unused; otherwise retires.
+  <button class="btn btn-sm btn-outline-danger">Delete</button> Deletes only if unused; otherwise retires.
 </form>
 {% endif %}
 {% endblock %}

@@ -6,7 +6,7 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Hand over</button>
+  <button class="btn btn-sm btn-primary" type="submit">Hand over</button>
 </form>
 <p><a href="{% url 'characters:detail' club.slug character.pk %}">Cancel</a></p>
 {% endblock %}

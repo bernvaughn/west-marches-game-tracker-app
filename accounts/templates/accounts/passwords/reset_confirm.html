@@ -5,7 +5,7 @@
 <p>Reset the password for {{ target.display_name|default:"this member" }}? They are signed out and must choose a new password.</p>
 <form method="post">
   {% csrf_token %}
-  <button type="submit">Reset password</button>
+  <button class="btn btn-sm btn-primary" type="submit">Reset password</button>
   <a href="{% url 'accounts:index' club.slug %}">Cancel</a>
 </form>
 {% endblock %}

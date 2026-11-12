@@ -4,7 +4,7 @@
 {% block content %}
 <p class="no-print">
   <a href="{% url 'characters:detail' club.slug character.pk %}">Back to sheet</a>
-  <button type="button" onclick="window.print()">Print</button>
+  <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.print()">Print</button>
 </p>
 <h1>{{ character.name }}</h1>
 <p>Coins: {{ coins.owned|coins }}</p>

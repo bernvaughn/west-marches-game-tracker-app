@@ -14,7 +14,7 @@
   {% if row.limit_reached %}Limit reached
   {% elif row.ready %}Ready
   {% else %}Missing {% for item, n in row.missing %}{{ n }} x {{ item }}{% if not forloop.last %}, {% endif %}{% endfor %}{% endif %}
-  <button type="submit"{% if not row.ready %} disabled{% endif %}>Turn in</button>
+  <button class="btn btn-sm btn-primary" type="submit"{% if not row.ready %} disabled{% endif %}>Turn in</button>
 </form>
 {% empty %}
 <p>You have no characters in this club.</p>

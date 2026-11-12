@@ -2,7 +2,7 @@
 {% block content %}
 <h1>Manage shops</h1>
 <p><a href="{% url 'shops:manage_create' club.slug %}">New shop</a></p>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
 <tr><th>Name</th><th>Symbol</th><th>Status</th><th>Stock</th></tr>
 {% for shop, is_open in rows %}
 <tr>
@@ -14,5 +14,5 @@
 {% empty %}
 <tr><td colspan="4">No shops yet.</td></tr>
 {% endfor %}
-</table>
+</table></div>
 {% endblock %}

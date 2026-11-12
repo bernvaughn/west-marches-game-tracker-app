@@ -4,7 +4,7 @@
 <h1>{% if item %}Edit {{ item.name }}{% else %}New item{% endif %}</h1>
 <form method="post">{% csrf_token %}
   {{ form.as_p }}
-  <button>Save</button>
+  <button class="btn btn-sm btn-primary">Save</button>
   <a href="{% url 'items:index' club.slug %}">Cancel</a>
 </form>
 {% endblock %}

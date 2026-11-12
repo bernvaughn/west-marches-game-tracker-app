@@ -8,7 +8,7 @@
     {% if f == status %}<strong>{{ f|capfirst }}</strong>{% else %}<a href="?status={{ f }}">{{ f|capfirst }}</a>{% endif %}
   {% endfor %}
 </p>
-<table>
+<div class="table-responsive"><table class="table table-sm table-striped align-middle">
   <tr><th>From</th><th>Email</th><th>Character</th><th>Message</th><th>Date</th><th>Status</th></tr>
   {% for m in messages_list %}
   <tr>
@@ -22,17 +22,17 @@
       <form method="post" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
         {% csrf_token %}
         <input type="hidden" name="filter" value="{{ status }}">
-        <select name="status">
+        <select class="form-select form-select-sm w-auto d-inline-block" name="status">
           {% for value, label in statuses %}
           <option value="{{ value }}"{% if value == m.status %} selected{% endif %}>{{ label }}</option>
           {% endfor %}
         </select>
-        <button type="submit">Set</button>
+        <button class="btn btn-sm btn-primary" type="submit">Set</button>
       </form>
     </td>
   </tr>
   {% empty %}
   <tr><td colspan="6">No messages.</td></tr>
   {% endfor %}
-</table>
+</table></div>
 {% endblock %}

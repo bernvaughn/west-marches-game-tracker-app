@@ -9,7 +9,7 @@
   {% csrf_token %}
   {% if not form.items %}<p>No items available.</p>{% endif %}
   {{ form.as_p }}
-  <button type="submit">Save my side</button>
+  <button class="btn btn-sm btn-primary" type="submit">Save my side</button>
 </form>
 <p><a href="{% url 'trades:detail' club.slug trade.pk %}">Back to trade</a></p>
 {% endblock %}

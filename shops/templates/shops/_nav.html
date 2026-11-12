@@ -1,5 +1,5 @@
-<a href="{% url 'shops:index' club.slug %}">Shops</a>
+<a class="nav-link" href="{% url 'shops:index' club.slug %}">Shops</a>
 {% if user.is_superuser or request.membership.is_club_admin %}
-<a href="{% url 'shops:manage_list' club.slug %}">Manage shops</a>
-<a href="{% url 'shops:rotation_list' club.slug %}">Rotations</a>
+<a class="nav-link" href="{% url 'shops:manage_list' club.slug %}">Manage shops</a>
+<a class="nav-link" href="{% url 'shops:rotation_list' club.slug %}">Rotations</a>
 {% endif %}

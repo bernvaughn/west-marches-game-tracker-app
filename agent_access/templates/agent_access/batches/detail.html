@@ -20,11 +20,11 @@
     <form method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
       {% csrf_token %}
       {{ row.form.as_p }}
-      <button type="submit">Save line</button>
+      <button class="btn btn-sm btn-primary" type="submit">Save line</button>
     </form>
     <form method="post" action="{% url 'agent_access:batch_line_remove' club.slug batch.pk row.line.pk %}">
       {% csrf_token %}
-      <button type="submit">Remove line</button>
+      <button class="btn btn-sm btn-outline-danger" type="submit">Remove line</button>
     </form>
     {% else %}
     <p>{{ row.line.character }}:
@@ -40,14 +40,14 @@
 
 {% if pending %}
 <form method="post" action="{% url 'agent_access:batch_confirm' club.slug batch.pk %}">
-  {% csrf_token %}<button type="submit">Confirm batch</button>
+  {% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Confirm batch</button>
 </form>
 <form method="post" action="{% url 'agent_access:batch_discard' club.slug batch.pk %}">
-  {% csrf_token %}<button type="submit">Discard batch</button>
+  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Discard batch</button>
 </form>
 {% elif batch.status == "confirmed" %}
 <form method="post" action="{% url 'agent_access:batch_reverse' club.slug batch.pk %}">
-  {% csrf_token %}<button type="submit">Reverse</button>
+  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Reverse</button>
 </form>
 {% endif %}
 {% endblock %}

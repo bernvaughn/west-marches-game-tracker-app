@@ -7,7 +7,7 @@
 <form method="post">
 {% csrf_token %}
 {{ form.as_p }}
-<button type="submit">Save</button>
+<button class="btn btn-sm btn-primary" type="submit">Save</button>
 <a href="{% if back %}{{ back }}{% else %}{% url 'map:index' club.slug %}{% endif %}">Cancel</a>
 </form>
 {% endblock %}

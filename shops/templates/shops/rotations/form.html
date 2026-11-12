@@ -4,12 +4,12 @@
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}
-  <button type="submit">Save</button>
+  <button class="btn btn-sm btn-primary" type="submit">Save</button>
   <a href="{% url 'shops:rotation_list' club.slug %}">Cancel</a>
 </form>
 {% if rotation %}
 <form method="post" action="{% url 'shops:rotation_delete' club.slug rotation.id %}">
-  {% csrf_token %}<button type="submit">Delete rotation</button>
+  {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete rotation</button>
 </form>
 {% endif %}
 {% endblock %}

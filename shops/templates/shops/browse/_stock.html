@@ -1,6 +1,6 @@
 {% load coins %}
 {% if rows %}
-<table class="shop-stock">
+<div class="table-responsive"><table class="shop-stock table table-sm table-striped align-middle">
   <thead><tr><th>Item</th><th>Description</th><th>Price</th><th>Quantity</th><th></th></tr></thead>
   <tbody>
   {% for stock in rows %}
@@ -13,7 +13,7 @@
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% else %}
 <p>Nothing in stock right now.</p>
 {% endif %}

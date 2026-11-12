@@ -6,8 +6,8 @@
 <form method="get">
 {% if hex_map and radius %}<input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="r" value="{{ r }}"><input type="hidden" name="radius" value="{{ radius }}">{% endif %}
 {% if is_editor %}<input type="hidden" name="view" value="players">{% endif %}
-{% for c in choices %}<label><input type="checkbox" name="characters" value="{{ c.pk }}"{% if c.pk in picked_ids %} checked{% endif %}> {{ c.name }}</label> {% endfor %}
-<button type="submit">Show</button>
+{% for c in choices %}<label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"{% if c.pk in picked_ids %} checked{% endif %}> {{ c.name }}</label> {% endfor %}
+<button class="btn btn-sm btn-outline-secondary" type="submit">Show</button>
 </form>
 {% endif %}
 </div>

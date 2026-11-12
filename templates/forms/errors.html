@@ -1,0 +1,1 @@
+{% if errors %}{% if "nonfield" in error_class %}<div class="{{ error_class }} alert alert-danger py-1 mb-2">{% for error in errors %}<div>{{ error }}</div>{% endfor %}</div>{% else %}<div class="{{ error_class }} invalid-feedback d-block">{% for error in errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}{% endif %}

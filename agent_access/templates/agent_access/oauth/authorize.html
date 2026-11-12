@@ -11,13 +11,13 @@
   {% for field in form.hidden_fields %}{{ field }}{% endfor %}
   {% if form.club.field.queryset.exists %}
   <p><label for="id_club">Club</label>
-  <select name="club" id="id_club" required>
+  <select class="form-select form-select-sm w-auto d-inline-block" name="club" id="id_club" required>
     {% for c in form.club.field.queryset %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
   </select></p>
-  <button type="submit" name="allow" value="true">Approve</button>
+  <button class="btn btn-sm btn-primary" type="submit" name="allow" value="true">Approve</button>
   {% else %}
   <p>You are not a game master in any club, so you cannot connect an agent.</p>
   {% endif %}
-  <button type="submit">Deny</button>
+  <button class="btn btn-sm btn-outline-danger" type="submit">Deny</button>
 </form>
 {% endblock %}

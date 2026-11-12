@@ -1,6 +1,17 @@
-body { font-family: system-ui, sans-serif; margin: 0; padding: 0 1rem; line-height: 1.5; }
-.site-header, .area-nav { display: flex; gap: 1rem; align-items: center; padding: .5rem 0; flex-wrap: wrap; }
-.area-nav { border-bottom: 1px solid #ccc; }
-.club-switcher { display: flex; gap: .5rem; flex: 1; }
-.messages { list-style: none; padding: 0; }
-.messages .error { color: #a00; }
+/* App-specific rules only. Layout and typography come from the vendored Journal theme. */
+.donate { font-size: .875rem; }
+.notice { font-weight: bold; }
+.temp-password { font-family: monospace; }
+.area-nav .nav-link { padding: .35rem .6rem; }
+main table { margin-bottom: .5rem; }
+
+/* Map SVG */
+.hexmap svg { max-width: 100%; height: auto; }
+.hex { stroke: #555; stroke-width: 1; }
+.hex-empty { fill: #f4f1ea; }
+.hex-visited { stroke-width: 2; }
+.hex-safe { stroke: #2a7; }
+.hex-symbol { font-size: 14px; pointer-events: none; }
+.hex-badge { fill: #333; }
+.hex-badge-text { font-size: 10px; fill: #fff; pointer-events: none; }
+.hex-unexplored { fill: #c00; font-weight: bold; }
