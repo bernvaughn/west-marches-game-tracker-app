@@ -159,9 +159,11 @@ def test_queue_order_and_player_scope(
 
 
 def test_nav_count(login, club, game_master, player, visit_request):
-    assert "Map requests (1)" in login(game_master).get(_url("index", club)).content.decode()
+    gm_body = login(game_master).get(_url("index", club)).content.decode()
+    assert "Map requests (" not in gm_body
+    assert "approvals-total" in gm_body
     body = login(player).get(_url("index", club)).content.decode()
-    assert "Map requests" in body and "Map requests (" not in body
+    assert "Map requests (" not in body
 
 
 def test_gm_notes_not_shown_to_player(login, club, player, character, visible_location):

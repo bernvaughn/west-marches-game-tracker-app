@@ -1,6 +1,0 @@
-<a class="nav-link" href="{% url 'agent_access:index' club.slug %}">Agent access</a>
-{% if user.is_superuser or request.membership.is_game_master or request.membership.is_club_admin %}
-<a class="nav-link" href="{% url 'agent_access:connections' club.slug %}">Connections</a>
-<a class="nav-link" href="{% url 'agent_access:batches' club.slug %}">Batches</a>
-<a class="nav-link" href="{% url 'agent_access:proposed_items' club.slug %}">Proposed items</a>
-{% endif %}

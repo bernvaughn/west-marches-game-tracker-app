@@ -15,39 +15,34 @@
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <nav class="site-header navbar navbar-expand-lg bg-body-tertiary py-1">
-  <div class="container-fluid">
+  <div class="container-fluid flex-wrap">
     <a class="navbar-brand" href="{% url 'home' %}">West Marches</a>
-    <button class="navbar-toggler no-print" type="button" data-bs-toggle="collapse" data-bs-target="#site-header-menu" aria-controls="site-header-menu" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse" id="site-header-menu">
-      <ul class="navbar-nav me-auto club-switcher" aria-label="Clubs">
-        {% if user.is_authenticated %}{% for c in user_clubs %}<li class="nav-item"><a class="nav-link{% if c == club %} active{% endif %}" href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}{% endif %}
-      </ul>
-      <div class="d-flex align-items-center gap-2">
-        {% include "accounts/_donate.html" %}
-        {% if user.is_authenticated %}<span class="navbar-text user-name">{{ user.display_name|default:user.email }}</span>{% endif %}
-        {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
-        {% if user.is_authenticated %}
-        <form method="post" action="{% url 'logout' %}" class="logout">
-          {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary">Log out</button>
-        </form>
-        {% endif %}
+    <div class="site-header-fixed d-flex align-items-center gap-2 flex-nowrap order-lg-last ms-auto">
+      <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
+      {% if user.is_authenticated and club %}
+      <div class="dropdown club-switcher no-print">
+        <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name text-truncate" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}">{{ club.name }}</a>
+        <ul class="dropdown-menu">
+          {% for c in user_clubs %}<li><a class="dropdown-item{% if c == club %} active{% endif %}" href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}
+        </ul>
       </div>
+      {% endif %}
+      {% if user.is_authenticated %}<span class="navbar-text user-name text-truncate">{{ user.display_name|default:user.email }}</span>{% endif %}
+      {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'logout' %}" class="logout">
+        {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><span class="d-sm-none" aria-hidden="true">⏻</span></button>
+      </form>
+      {% endif %}
     </div>
+    {% if club %}
+    <button class="navbar-toggler no-print" type="button" data-bs-toggle="collapse" data-bs-target="#site-header-menu" aria-controls="site-header-menu" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse " id="site-header-menu">
+      {% include "partials/nav.html" %}
+    </div>
+    {% endif %}
   </div>
 </nav>
-{% if club %}
-<nav class="area-nav nav nav-underline small px-2 border-bottom" aria-label="{{ club.name }}">
-  {% include "accounts/_nav.html" %}
-  {% include "player_characters/characters/_nav.html" %}
-  {% include "player_characters/trades/_nav.html" %}
-  {% include "items/_nav.html" %}
-  {% include "shops/_nav.html" %}
-  {% include "ledger/_nav.html" %}
-  {% include "map/_nav.html" %}
-  {% include "quests/_nav.html" %}
-  {% include "agent_access/_nav.html" %}
-</nav>
-{% endif %}
 {% if messages %}<ul class="messages list-unstyled px-2 pt-2 mb-0">{% for m in messages %}<li class="alert alert-{% if m.level_tag == 'error' %}danger{% else %}{{ m.level_tag|default:'info' }}{% endif %} {{ m.tags }} py-1 px-2 mb-1">{{ m }}</li>{% endfor %}</ul>{% endif %}
 <main class="container-fluid py-2">{% block content %}{% endblock %}</main>
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"></div></div></div>

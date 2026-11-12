@@ -2,7 +2,13 @@
 .donate { font-size: .875rem; }
 .notice { font-weight: bold; }
 .temp-password { font-family: monospace; }
-.area-nav .nav-link { padding: .35rem .6rem; }
+.site-header .user-name, .site-header .club-name, .site-header .character-name { max-width: 8rem; }
+.site-header .character-selector select { max-width: 9rem; }
+@media (max-width: 575.98px) {
+  .site-header .user-name, .site-header .club-name, .site-header .character-name { max-width: 4.5rem; }
+  .site-header .character-selector select { max-width: 6rem; }
+  .site-header .character-selector button { display: none; }
+}
 main table { margin-bottom: .5rem; }
 
 /* Map SVG */

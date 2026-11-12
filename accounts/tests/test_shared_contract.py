@@ -65,8 +65,8 @@ def _req(rf, user, club):
 
 
 @pytest.mark.story("U29")
-def test_real_registry_is_empty():
-    assert navigation._entries == []
+def test_real_registry_has_all_groups():
+    assert {e.group for e in navigation._entries} == set(navigation.GROUPS)
 
 
 @pytest.mark.story("U29")
