@@ -9,7 +9,7 @@
       <td>{{ stock.item.description }}</td>
       <td>{{ stock.price|coins }}</td>
       <td>{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</td>
-      <td><a href="{% url 'shops:buy' club.slug shop.id stock.id %}">Buy</a></td>
+      <td><a href="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-get="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-target="#app-modal .modal-content" data-app-modal>Buy</a></td>
     </tr>
   {% endfor %}
   </tbody>

@@ -1,0 +1,23 @@
+{% load coins %}
+<h2 class="h5">{{ stock.item.name }}</h2>
+{% if stock.item.description %}<p>{{ stock.item.description }}</p>{% endif %}
+<p>Price each: {{ price|coins }}</p>
+<p>Remaining: {% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</p>
+{% if error %}<p class="error alert alert-danger" role="alert">{{ error }}</p>{% endif %}
+{% if sold_out %}
+{% elif not character %}
+<p>You have no character in this club.</p>
+{% else %}
+<p>Buying as <strong>{{ character.name }}</strong></p>
+{% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
+<p>
+  <label for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <input type="number" name="quantity" id="{{ form.quantity.id_for_label }}" min="1"{% if stock.quantity is not None %} max="{{ stock.quantity }}"{% endif %} value="{{ quantity }}" class="form-control form-control-sm w-auto"
+    hx-get="{% url 'shops:buy' request.club.slug shop.pk stock.pk %}" hx-trigger="input changed delay:300ms" hx-target="#buy-summary" hx-select="#buy-summary" hx-swap="outerHTML" hx-include="closest form">
+</p>
+<div id="buy-summary">
+  <p>Total: {{ total|coins }}</p>
+  <p>Coins before: {{ before|coins }}</p>
+  <p>Coins after: {% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</p>
+</div>
+{% endif %}

@@ -10,7 +10,7 @@
     <h2>{{ shop.keeper_name }}</h2>
     {{ shop.keeper_description|linebreaks }}
   </section>
-  <div id="stock" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
+  <div id="stock" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
   <p><a href="{% url 'shops:sell' club.slug shop.id %}">Sell to this shop</a></p>
 </article>
 {% endblock %}
