@@ -219,12 +219,14 @@ From using the build after the design overhaul (U27–U37, M17) landed. Kept as 
 - The silhouette picker on the shop form shows the new drawings. Existing shops keep their chosen silhouette.
 - On a phone, the silhouette shrinks and stays on the left, and nothing scrolls sideways.
 - This changes the silhouette placement in U36.
+- U45 moves the name above the silhouette and the description into the banner.
 
 **U40 Print item cards, one or all.** As a player, I want to print all my item cards on card sheets, or print a single card, so I print only what I need to bring to the table. *(player_characters, items)*
 - "Print item cards" stays on the character sheet and prints every item's card in a 3 by 3 grid, nine cards per portrait Letter or A4 page, like a nine-pocket card sheet. Extra cards continue on more pages.
 - Each item in the inventory also has a "Print card" action. It asks for one of two layouts: "Full page", with the card enlarged to fill a portrait page, or "Grid spot", with the card in the top-left spot of the same 3 by 3 grid and the rest of the page left blank, so it fits the same card sheets.
 - Cards print in black and white without the navigation. A card in the grid is the same size whether it is printed alone or with the others.
 - Privacy is unchanged (U19).
+- U44 adds an icon, the value, and an owner and print-date footer.
 
 **U41 "Character" means my character.** As a player, I want the Character link to open the sheet of the character selected in the top bar, so it goes straight to the character I am playing. *(player_characters, site-wide)*
 - For a player with a selected character, Character opens that character's sheet (U37). A player with no character in the club sees a short empty state with "Create a character".
@@ -242,6 +244,72 @@ From using the build after the design overhaul (U27–U37, M17) landed. Kept as 
 - The club home shows a tile only when the person may open the page it links to. For example, Agent access shows only to game masters and club admins, and admin-only tiles show only to club admins.
 - The People page hides the Email column, header included, from anyone who can't see emails (U19 allows club admins only).
 - A player's XP table tile opens the read-only table; only club admins see edit controls.
+
+## Round 4: stories from the fourth look (2026-11-12)
+
+From using the build after round 3 (U38–U43, M18) landed.
+
+**U44 Item cards worth keeping.** As a player, I want each printed item card to show the item's icon, value, owner and print date, so a card is useful at the table on its own. *(player_characters, items)*
+- Each catalogue item gets an optional emoji icon, picked by a club admin on the item form, like a shop's symbol. The card shows it next to the item name. The icon also shows next to the item name in inventories, shop tables and the catalogue.
+- The card shows the item's base value (U8, U32), even when it is zero.
+- The card has a footer with the character who owned the item when it was printed and the print date, for example "Aria Windrunner · printed 2026-11-12".
+- The card never overlaps the browser's own print header and footer, in any layout (all cards, full page, or one grid spot). The print pages leave room for them, or remove them where the browser allows, and the 3 by 3 grid of 2.5 in by 3.5 in cards still fits on a portrait Letter or A4 page.
+- This adds to U40.
+
+**U45 Shopkeeper name and description in the banner.** As a player, I want the shopkeeper's name above their silhouette and the shop's description on request inside the banner, so the banner reads like a storefront and the table stays near the top. *(shops)*
+- The keeper's name label sits above the silhouette instead of below it.
+- A "Show description" button sits just above the "Sell to <keeper name>" button. It shows the shop and keeper descriptions in a box in the middle of the banner, next to the silhouette. The box is centred in the banner; the text inside it is left-aligned. Pressing the button again ("Hide description") hides the box.
+- The descriptions no longer show below the table. Without JavaScript, the description stays visible in the banner.
+- On a phone, the box shows below the silhouette, inside the banner, and nothing scrolls sideways.
+- This changes U39.
+
+**U46 Your character on the shop page.** As a player, I want my selected character's coins and inventory always visible on a shop page, so I know what I can afford and what I could sell without opening Buy. *(shops, player_characters)*
+- A "Your inventory" card below the table of items to buy shows the selected character's name, coins (held and available, as on the sheet), and a compact list of their items with quantities and what this shop would pay for each.
+- The card shows the junk total and what this shop would pay for the junk (U47).
+- With no selected character, the card says so and links to create one. Game masters and club admins see their own selected character here, like any player.
+
+**U47 Junk to sell.** As a player, I want to mark items in my character's inventory as junk and sell them quickly, so I can clear out loot I don't want without selling items one by one. *(player_characters, shops, quests, ledger)*
+- On the character sheet, each inventory item can be marked as junk with a quantity, from one up to the number owned. Marking and unmarking needs no approval and never changes the ledger. Only the character's owner, game masters and club admins can mark junk.
+- If the character later owns fewer of an item than are marked, the junk quantity drops to match.
+- Wherever the character's coins show (sheet, shop "Your inventory" card, buy modal), a junk line shows the total base value of the junk next to them, for example "Junk: 42 gp".
+- On a shop page, the junk line also shows what this shop would pay for all the junk, using the shop's buy prices (S1).
+- A "Sell junk" button on the shop page opens a modal listing every junk item with its quantity and this shop's price. All are ticked. The player can untick items or lower a quantity to keep them for another shopkeeper who pays more. Confirming sells the ticked items through the normal sell rules and ledger, and shows the total received.
+- A junk item that an open quest (Q1, Q2, Q3) asks for, and that this character can still complete, shows a warning, for example "Needed for quest: Wolf hunt". The warning shows on the sheet and in the Sell junk modal, and that item starts unticked in the modal.
+
+**U48 Quest notice board.** As a player, I want the quest pages to feel like a notice board in a town square, so quests feel like jobs posted for adventurers, not another shop. *(quests)*
+- The quest list is a board, for example a wood or cork background, with each open quest pinned to it as a paper notice: title, short description, reward (coins and items), what to bring, and the end date if there is one.
+- A notice shows whether the selected character can turn it in now, for example a "Ready to turn in" stamp, and whether this character has already completed it as many times as allowed.
+- Ended or full quests are left off the board, or shown faded in a separate "Taken down" section.
+- The quest page looks like the same notice, enlarged, with the turn-in action below it. Game master and club admin edit actions sit outside the notice.
+- It uses the design system and works on a phone, with notices in one column.
+
+**U49 Shop street.** As a player, I want the shops page to show a little town street with a building for each open shop, so visiting a shop feels like walking into town. *(shops)*
+- The shops page draws a simple street with one building per open shop. Each building shows the shop's name on a sign and its symbol, in the shop's colour. Clicking a building opens the shop.
+- The street is deterministic: the same shops always appear in the same order and look, with no randomness on reload. A club admin can set each shop's position on the street.
+- A club admin picks each shop's building shape from a set of preset shapes on the shop form, with a preview, like the keeper silhouette (U36). The app ships 8 to 10 original, generic building shapes, for example a timber inn, a stone smithy, a mage's tower, a market stall, and a tent.
+- On a phone, the street wraps into several rows of buildings, with no sideways scroll.
+- Screen readers and keyboards get the same links in a plain list. Closed shops are not drawn.
+
+**U50 Club ledger.** As a game master or club admin, I want one ledger for the whole club, with filters, so I can see what happened across all characters without going through each character's history. *(ledger)*
+- The Ledger page, for game masters and club admins, shows every ledger entry in the club, newest first, with date, character, player, what changed (coins and items), kind (award, adjustment, buy, sell, trade, quest, transfer, and so on), note and who recorded it.
+- Filters for character, player, kind, item, who recorded it, and a date range. Filters combine and stay in the page address, so a filtered view can be shared or bookmarked. The list is paged.
+- Each entry links to the character's sheet and to the entry's source where there is one (trade, quest, batch, message).
+- A character's own history page stays for players (C5). Its back link returns to where the person came from: the club ledger, or the character sheet.
+- Players do not see the club ledger. Their Ledger link opens their selected character's history.
+
+**U51 Trades in the character directory.** As a player, I want the character directory to show which characters my selected character has trades with, and their status, so I can find and follow up on trades. *(player_characters)*
+- Each directory row shows any open trade between my selected character and that character, with its status (requested, accepted) and a link to the trade.
+- Each row also has a "Propose trade" link that starts a trade with that character. My own characters have no trade link.
+- Completed, declined and cancelled trades are not shown in the directory; they stay on the Trades page.
+
+**U52 Character level.** As a player, game master or club admin, I want to record a character's level, so everyone can see roughly how experienced a character is. *(player_characters)*
+- Each character has an optional level, a whole number from 1 up. It is not tied to XP (M11, M13) or anything else in the app.
+- The character's owner, game masters and club admins can set it on the character's edit form.
+- The level shows in the character directory, in All characters, and in the character sheet header.
+
+**U53 Small fixes from round 3.** *(map, player_characters)*
+- The map request page shows "Map: … Tile: … Location: …" once, not in both the page header and the card header.
+- In the character directory, names that link to a sheet look like links; names without a link look like plain text.
 
 ## Quests
 
