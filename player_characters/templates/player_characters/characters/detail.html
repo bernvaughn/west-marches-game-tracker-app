@@ -30,6 +30,7 @@
     <section class="wm-sheet-box wm-sheet-coins" aria-labelledby="sheet-coins">
       <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
       <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+      {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
       {% if coins.has_holds %}<p class="wm-sheet-note">Held {{ coins.held|coins }} &middot; Available {{ coins.available|coins }}</p>{% endif %}
     </section>
     {% if character.stats %}
@@ -55,12 +56,16 @@
         <tbody>
         {% for r in rows %}
         <tr>
-          <td>{% include "items/_item_name.html" with item=r.item %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
+          <td>{% include "items/_item_name.html" with item=r.item %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}
+            {% for pk, qty in junk.items %}{% if pk == r.item.pk %} {% include "components/badge.html" with text="Junk" %} &times;{{ qty }}{% endif %}{% endfor %}
+            {% for pk, quests in quest_needs.items %}{% if pk == r.item.pk %}<div class="wm-sheet-note">Needed for quest: {% for q in quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}{% endfor %}</td>
           <td class="num">{{ r.owned }}</td>
           {% if show_held %}<td class="num">{{ r.held }}</td>{% endif %}
           <td class="num">{{ r.available }}</td>
           <td class="no-print">
-            <div class="dropdown">
+            {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal>Junk</a>
+            <div class="dropdown d-inline-block">
               <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{% url 'characters:print_item' club.slug character.pk r.item.pk %}" data-bs-toggle="dropdown" aria-expanded="false">Print card</a>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{% url 'characters:print_item' club.slug character.pk r.item.pk %}?layout=full">Full page</a></li>

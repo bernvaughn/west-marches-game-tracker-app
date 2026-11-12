@@ -5,6 +5,7 @@ from django.utils import timezone
 from accounts.permissions import club_member_required, is_club_admin
 from accounts.scoping import club_get_object_or_404
 from player_characters.inventory import coin_summary, inventory_rows
+from player_characters.junk import junk_rows, junk_value, junk_value_at
 from player_characters.selection import selected_character
 from shops.models import Shop, ShopStock
 from shops.services import is_open, open_shops, percent_price, sell_price
@@ -56,7 +57,11 @@ def _inventory_context(request, shop):
         }
         for r in rows
     ]
+    junk = junk_rows(character)
     return {
+        "inventory_has_junk": bool(junk),
+        "inventory_junk_value": junk_value(character, junk),
+        "inventory_junk_value_at": junk_value_at(character, shop, junk),
         "inventory_character": character,
         "inventory_coins": coin_summary(character),
         "inventory_rows": priced,

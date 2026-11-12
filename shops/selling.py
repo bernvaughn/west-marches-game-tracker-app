@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
-from ledger.services import Line, record
+from ledger.services import LedgerError, Line, record
 from shops.services import ShopClosed, ShopError, buy_price, is_open
 
 
@@ -27,3 +27,33 @@ def sell(character, shop, item, quantity=1, actor=None, today=None):
             actor=actor,
             shop=shop,
         )
+
+
+class SellLineError(ShopError):
+    """One line of a bulk sale failed. `item` names it."""
+
+    def __init__(self, item, message):
+        super().__init__(message)
+        self.item = item
+
+
+def sell_many(character, shop, lines, actor=None, today=None):
+    """Sell several (item, quantity) lines in one transaction: all or nothing.
+
+    Sold quantities are then taken off the character's junk marks.
+    """
+    from player_characters.junk import reduce_junk
+
+    if not lines:
+        raise ShopError("Tick at least one item.")
+    entries = []
+    with transaction.atomic():
+        for item, quantity in lines:
+            try:
+                if item.club_id != character.club_id:
+                    raise ShopError("This item is not in the character's club.")
+                entries.append(sell(character, shop, item, quantity, actor=actor, today=today))
+            except (LedgerError, ShopError) as exc:
+                raise SellLineError(item, f"{item}: {exc}") from exc
+        reduce_junk(character, {item: quantity for item, quantity in lines})
+    return entries

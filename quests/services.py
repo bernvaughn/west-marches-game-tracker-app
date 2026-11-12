@@ -94,3 +94,40 @@ def turn_in(quest, character, actor, today=None):
             )
         record_many(specs)
         return QuestCompletion.objects.create(quest=quest, character=character, date=today)
+
+
+def needed_by_open_quests(character, today=None):
+    """Map item id to the open quests asking for it that this character can still complete.
+
+    Open means live today, under the club limit and under this character's limit.
+    """
+    from django.db.models import Count
+
+    from .models import Quest
+
+    today = today or timezone.localdate()
+    counts = {
+        row["quest"]: row["n"]
+        for row in QuestCompletion.objects.filter(character=character)
+        .values("quest")
+        .annotate(n=Count("id"))
+    }
+    quests = (
+        Quest.objects.for_club(character.club)
+        .live_on(today)
+        .annotate(done=Count("completions"))
+        .prefetch_related("requirements")
+        .order_by("name", "pk")
+    )
+    needed = {}
+    for quest in quests:
+        if quest.max_completions is not None and quest.done >= quest.max_completions:
+            continue
+        if (
+            quest.max_per_character is not None
+            and counts.get(quest.pk, 0) >= quest.max_per_character
+        ):
+            continue
+        for req in quest.requirements.all():
+            needed.setdefault(req.item_id, []).append(quest)
+    return needed

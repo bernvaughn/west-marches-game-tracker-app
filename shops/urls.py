@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import browse, buy, manage, rotations, sell
+from .views import browse, buy, manage, rotations, sell, sell_junk
 
 app_name = "shops"
 urlpatterns = [
@@ -9,6 +9,7 @@ urlpatterns = [
     path("<int:shop_id>/stock/", browse.stock_fragment, name="stock_fragment"),
     path("<int:shop_id>/buy/<int:stock_id>/", buy.buy, name="buy"),
     path("<int:shop_id>/sell/", sell.sell, name="sell"),
+    path("<int:shop_id>/sell-junk/", sell_junk.sell_junk, name="sell_junk"),
     path("manage/", manage.shop_list, name="manage_list"),
     path("manage/new/", manage.shop_create, name="manage_create"),
     path("manage/<int:shop_id>/", manage.shop_edit, name="manage_edit"),
