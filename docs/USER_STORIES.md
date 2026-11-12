@@ -354,7 +354,7 @@ From using the build after round 4 (U44–U53) landed. Kept as built: the keeper
 - These links stay visible at every width and only move into the hamburger menu if they physically do not fit, for example on a very narrow phone.
 - Trades and Map move out of the More menu (U29). The More, Game master and Club admin menus stay as they are and collapse into the hamburger menu as today.
 - When the bar wraps to two rows, the rows sit tight together: no empty band beside the brand or the hamburger button, small even padding, and the hamburger button lines up with the other controls instead of sitting tall on its own. The whole bar is as short as it can be at each width.
-- The always-visible items from U34 (club, user, character, approvals, log out) stay visible, and nothing scrolls sideways.
+- Log out moves into the More menu, as its last item, below a divider. The other always-visible items from U34 (club, user, character, approvals) stay visible, and nothing scrolls sideways.
 - This changes U29 and U34.
 
 ## Quests
