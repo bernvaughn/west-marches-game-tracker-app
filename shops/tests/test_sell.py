@@ -101,7 +101,8 @@ def test_get_shows_reduced_for_held(
 
 def test_post_success(club, player, login, character, shop, always_open, loot):
     r = login(player).post(
-        url(club, shop), {"character": character.id, "item": loot.id, "quantity": 2}
+        url(club, shop),
+        {"character": character.id, "item": loot.id, "quantity": 2, "confirmed": "1"},
     )
     assert r.status_code == 302
     assert r.url == reverse("shops:detail", args=[club.slug, shop.id])

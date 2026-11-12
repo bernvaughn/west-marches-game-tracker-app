@@ -1,0 +1,13 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{% url 'shops:sell' request.club.slug shop.pk %}" hx-post="{% url 'shops:sell' request.club.slug shop.pk %}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Sell {{ item.name }}{% endblock %}
+{% block body %}{% include "shops/sell/_confirm_body.html" %}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Sell as {{ character.name }}</button>
+{% endblock %}

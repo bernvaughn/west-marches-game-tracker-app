@@ -17,7 +17,7 @@
     <td class="num">{{ row.quantity }}</td>
     <td class="num">{{ row.price|coins }}</td>
     <td class="actions">
-      <form method="post" class="wm-inline-form">
+      <form method="post" class="wm-inline-form" hx-post="{% url 'shops:sell' club.slug shop.id %}" hx-target="#app-modal .modal-content">
         {% csrf_token %}
         <input type="hidden" name="item" value="{{ row.item.id }}">
         <input class="form-control form-control-sm w-auto" type="number" name="quantity" value="1" min="1" max="{{ row.quantity }}" aria-label="Quantity of {{ row.item.name }}">
