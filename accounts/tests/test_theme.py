@@ -115,3 +115,19 @@ def test_club_switcher_is_isolated(club, other_club, player, login):
     html = client.get(reverse("club_home", args=[club.slug])).content.decode()
     assert "Club A" in html and "Club B" not in html
     assert client.get(reverse("club_home", args=[other_club.slug])).status_code in (403, 404)
+
+
+@pytest.mark.story("U23")
+def test_checkbox_select_multiple_is_not_a_dropdown():
+    class F(forms.Form):
+        many = forms.MultipleChoiceField(
+            choices=[("a", "A"), ("b", "B")], widget=forms.CheckboxSelectMultiple
+        )
+        when = forms.DateField(widget=forms.SelectDateWidget)
+
+    html = F(renderer=BootstrapFormRenderer()).as_p()
+    container = html[html.index('id="id_many"') :].split(">", 1)[0]
+    assert "form-select" not in container
+    assert html.count("form-check-input") == 2
+    assert "<fieldset" in html and "<legend" in html
+    assert html.count("form-select form-select-sm") == 3
