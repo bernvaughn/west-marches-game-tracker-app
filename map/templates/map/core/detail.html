@@ -3,12 +3,12 @@
 {% block title %}{{ hex_map.name }}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% if not is_editor %}{% include "components/page_header.html" with title=hex_map.name %}
-{% elif view_param == "mine" %}{% include "components/page_header.html" with title=hex_map.name subtitle="My characters" %}
-{% elif players_view %}{% include "components/page_header.html" with title=hex_map.name subtitle="Players' view" %}
-{% else %}{% include "components/page_header.html" with title=hex_map.name subtitle="Full map" %}{% endif %}
+{% url 'map:index' club.slug as back_url %}
+{% if not is_editor %}{% include "components/page_header.html" with title=hex_map.name back_url=back_url back_label="Back to maps" %}
+{% elif view_param == "mine" %}{% include "components/page_header.html" with title=hex_map.name subtitle="My characters" back_url=back_url back_label="Back to maps" %}
+{% elif players_view %}{% include "components/page_header.html" with title=hex_map.name subtitle="Players' view" back_url=back_url back_label="Back to maps" %}
+{% else %}{% include "components/page_header.html" with title=hex_map.name subtitle="Full map" back_url=back_url back_label="Back to maps" %}{% endif %}
 <div class="wm-toolbar no-print">
-{% url 'map:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="All maps" %}
 {% include "map/requests/_map_actions.html" %}
 {% include "map/edit/_map_actions.html" %}
 <a class="btn btn-outline-secondary print-link" href="{{ print_url }}">{% include "components/icon.html" with name="printer" %} Print</a>

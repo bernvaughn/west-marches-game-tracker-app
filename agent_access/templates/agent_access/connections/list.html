@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Agent connections{% endblock %}
 {% block content %}
-{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Agent access" %}
+{% url 'agent_access:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to agent access" %}
 {% include "components/page_header.html" with title="Agent connections" subtitle="Tokens that let an agent propose changes for this club." %}
 {% if new_secret %}
 <div class="alert alert-warning wm-alert wm-alert--warning wm-code-wrap" role="alert">

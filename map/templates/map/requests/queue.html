@@ -3,10 +3,8 @@
 {% block title %}Map requests{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% include "components/page_header.html" with title="Map requests" %}
-<div class="wm-toolbar">
-{% url 'map:index' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to maps" %}
-</div>
+{% url 'map:index' club.slug as back_url %}
+{% include "components/page_header.html" with title="Map requests" back_url=back_url back_label="Back to maps" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle">
 <thead><tr><th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th>Requested by</th><th>Status</th><th>Decided</th>{% if is_editor %}<th></th>{% endif %}</tr></thead>
 <tbody>
