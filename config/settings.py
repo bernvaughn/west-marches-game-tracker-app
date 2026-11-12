@@ -54,6 +54,8 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "accounts.context_processors.clubs",
+                "player_characters.context_processors.selection",
+                "accounts.approvals.context_processor",
             ],
         },
     },

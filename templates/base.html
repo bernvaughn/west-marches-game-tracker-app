@@ -22,6 +22,8 @@
       </ul>
       <div class="d-flex align-items-center gap-2">
         {% include "accounts/_donate.html" %}
+        {% if user.is_authenticated %}<span class="navbar-text user-name">{{ user.display_name|default:user.email }}</span>{% endif %}
+        {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
         {% if user.is_authenticated %}
         <form method="post" action="{% url 'logout' %}" class="logout">
           {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary">Log out</button>

@@ -74,3 +74,21 @@ class TradeLine(models.Model):
 
     def __str__(self):
         return f"TradeLine {self.pk} of trade {self.trade_id}"
+
+
+class SelectedCharacter(models.Model):
+    """The character a member is acting as in a club (one row per membership)."""
+
+    club_path = "membership__club"
+
+    membership = models.OneToOneField(
+        "accounts.Membership", on_delete=models.CASCADE, related_name="selected_character"
+    )
+    character = models.ForeignKey(
+        Character, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
+
+    objects = ClubScopedManager()
+
+    def __str__(self):
+        return f"{self.membership} acts as {self.character}"

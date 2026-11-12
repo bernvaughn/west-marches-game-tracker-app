@@ -1,0 +1,11 @@
+{% if own_characters|length > 1 %}
+<form method="post" action="{% url 'characters:select' club.slug %}" class="character-selector d-flex align-items-center gap-1 no-print">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  <select name="character" class="form-select form-select-sm" aria-label="Acting as">
+    {% for c in own_characters %}<option value="{{ c.pk }}"{% if c == selected_character %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+  </select>
+  <button type="submit" class="btn btn-sm btn-outline-primary">Switch</button>
+</form>
+{% elif selected_character %}<span class="navbar-text character-name">Acting as {{ selected_character.name }}</span>
+{% else %}<span class="navbar-text character-name">No character</span>{% endif %}

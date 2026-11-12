@@ -86,7 +86,7 @@ def test_player_print(login, club, hex_map, two_visits, second_location, player,
     assert "Old Watchtower" in body and "Player note text" in body and "CR 1-2" in body
     assert "Secret GM note" not in body
     assert "Unseen Ruin" not in body
-    assert body.count("<form") == 1  # only the base layout logout form
+    assert body.count("<form") == 2  # base layout: character selector (no-print) and logout
     page = get(
         login(player), "detail", club, hex_map.pk, query="?characters=" + str(player_character.pk)
     )
