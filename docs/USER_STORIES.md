@@ -44,6 +44,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 **U8 Coin denominations.** As a player, I want to have different denominations of coins, but have it auto-exchange when buying things so I can see my coins split out but do not need to suffer when buying. *(player_characters, shops)*
 - The denominations are copper, silver, gold, and platinum, and amounts are stored in copper.
 - The rates are 10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum.
+- How amounts are shown follows U32: no platinum under 10,000 gp, and colour-coded denominations (U31).
 
 **U9 Unlimited or limited stock.** As an admin, I want some items to be unlimited and some to have limited quantities at a given shop, so players can or cannot buy as many as they want. *(shops)*
 
@@ -54,7 +55,7 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 **U12 Clubs.** As an admin, I want data segregated between groups (I like the term "club") so I can eventually have other people use this app too, or I could have multiple "club"s going at once, and keep the players and items and etc separated between the clubs. *(all apps)*
 
 **U13 Ask for a fix.** As a player, I want to be able to message the club admins to manually evaluate and give me items, so if I remember something my character gathered but the game master forgot to add to my online inventory, a club admin can fix it. *(accounts, player_characters, items)*
-- Messages are mostly free text; the sender can pick which of their characters the message is about.
+- Messages are mostly free text, and are about the sender's selected character (U24, U27).
 
 **U14 Manual adjustments.** As a club admin or game master, I want to be able to give and take items and money to and from players, so I can manually adjust their loot as needed. I need to be able to tag the give and take actions with notes and dates. *(player_characters, items)*
 - Adjustments are recorded as new entries with a note and a date; earlier entries are never edited or deleted.
@@ -102,7 +103,9 @@ From the first run of a local build. M8, M12, M15 and M16 in the map section als
 **U24 Act as a character.** As a player, I want to pick one of my characters to act as from a dropdown in the top bar, so shops, buying and selling, trades, moving items, quests, and requests use that character without me choosing it on every page. *(player_characters, accounts, shops, quests, map)*
 - The dropdown appears only if I have more than one character in the current club. With one character, that character is always selected. With none, the top bar says so and pages that need a character tell me I don't have one.
 - My selection is remembered per club across pages and sign-ins, and switching clubs switches to my selection for that club.
-- Pages that act on a character use the selected one by default. Where a page involves a second character of mine (moving items, U15), the selected character is the starting side and I pick the other.
+- Pages that act as one of my characters always use the selected one, with no character field of their own: buying, selling, proposing and answering trades, quest turn-ins, and messages to the admins (U13). To act as another character, I switch it in the top bar (round 2, U27).
+- Where a page involves a second character of mine (moving items, U15), the selected character is the "from" side and I pick the other.
+- Pages where I can pick several characters keep their picker and start with the selected character: the map (M8) and map requests (M12).
 - If my selected character is handed to someone else (U18), my selection falls back to another of my characters.
 - Game masters and club admins who own characters get the same dropdown. Selecting a character never limits their game master or club admin views.
 
@@ -113,6 +116,66 @@ From the first run of a local build. M8, M12, M15 and M16 in the map section als
 - Clicking it lists each waiting thing, grouped by kind, with a link to where I approve, decline, or handle it.
 - The count disappears when nothing is waiting. Players never see it.
 - It updates when I load a page; it does not need to be live.
+
+## Round 2: stories from the second look (2026-11-11)
+
+From using the build after the first-look stories landed.
+
+**U27 One character everywhere.** As a player, I want every page that acts as one of my characters to use the character in the top bar, with no character choice of its own, so I never act as the wrong character by mistake. *(shops, player_characters, quests, accounts)*
+- This replaces the per-page character field that U24 first kept. It covers selling to a shop, buying, trades, quest turn-ins, and messages to the admins.
+- Each of these pages names the character it is acting as, near the top or on the action button, for example "Sell as Aria Windrunner".
+- Pages where I can pick several characters keep their picker, starting with the selected character: the map (M8) and map requests (M12).
+- Game master and club admin pages that act on other people's characters (awards, adjustments, visits, credit, found marks) keep their character pickers. The top bar never limits them.
+
+**U28 Club cards.** As anyone signed in, I want the "Your clubs" page to show each club as a card with useful details, so it is inviting and I can see at a glance what each club is. *(accounts, player_characters)*
+- Each card shows the club name, my role there (player, game master, club admin), the game masters' names, the number of players, and my characters in that club.
+- The whole card links to the club. Cards sit in a grid that becomes one column on a phone.
+- A card shows only what any member of that club may see: no emails and no inventories.
+
+**U29 Grouped navigation.** As anyone in a club, I want the navigation under the top bar grouped into a few menus, with the pages players use most kept as plain links, so I can find things without scanning a long row of links. *(site-wide)*
+- Plain links: Character, Shops, and Quests.
+- "More" menu for everyone: Map, Trades, Ledger, and Message the admins.
+- "Game master" menu, for game masters and club admins: awards and adjustments, map editing, map requests, agent batches, proposed items, and agent connections.
+- "Club admin" menu, for club admins only: members, inbox, item catalogue, shops and stock, rotations, and the XP table.
+- A menu shows only the links the person may use, and a menu with no links is hidden.
+
+**U30 Handle requests from the inbox.** As a club admin, I want to grant items, coins, and map credit from a modal on the inbox, so I can handle a player's request without leaving the inbox. *(accounts, player_characters, ledger, map)*
+- Each message has a "Grant" button that opens a modal for the message's character. I can pick a different character in the same club.
+- The modal can give coins, give items from the catalogue with a quantity, and record a visit, discovered credit, explored credit, or a found mark on a location.
+- Grants go through the same rules and ledger as manual adjustments (U14) and map credit (M14, M16). Each has a note, which starts as a reference to the message, and a date, which starts as today.
+- After granting, I can mark the message handled in the same step. The message shows what was granted from it.
+- The inbox stays for club admins only (U13). Game masters keep using the award and map pages.
+
+**U31 Colour-coded coins.** As anyone, I want each coin denomination shown in its own colour everywhere amounts appear, so I can read amounts at a glance. *(site-wide)*
+- Copper is copper-brown, silver is grey, gold is gold, and platinum is a pale blue-white. Each colour has enough contrast to read on the theme background.
+- The denomination label (cp, sp, gp, pp) always stays next to the number, so colour is never the only cue.
+- The colours apply to balances, prices, values, sell offers, the ledger, trades, quest rewards, agent batches, and coin inputs. Printouts can stay black and white.
+
+**U32 Gold first.** As a player, I want amounts shown in gold up to 9,999 gp, and mostly in platinum above that, because that is how my table talks about money. *(site-wide)*
+- Under 10,000 gp in total, no platinum is shown, for example "9,999 gp 5 sp".
+- From 10,000 gp up, the whole amount uses the normal split, for example "1,000 pp" for 10,000 gp and "1,234 pp 5 gp 6 sp" for 12,345 gp 6 sp.
+- The rates do not change (1 pp = 10 gp), amounts stay stored in copper (U8), and copper and silver show as usual.
+- The rule applies to every amount the app shows: balances, item values, shop prices, sell offers, the ledger, trades, quest rewards, and agent batches.
+
+**U33 Buy with a confirm modal.** As a player, I want the Buy button to open a confirm modal instead of a new page, so buying is quick. *(shops)*
+- The modal shows the item, the price, the quantity, the character buying (U27), and that character's coins before and after.
+- Confirming buys the item and updates the shop page in place. "Already sold" (C3) and "can't afford" (C2) messages show in the modal.
+- Without JavaScript, the Buy button still works through the buy page.
+
+**U34 Top bar on narrow screens.** As anyone on a phone or narrow window, I want the club name, my name, my selected character, the approvals indicator, and log out to stay visible at every width, so I always know where I am and who I am acting as. *(site-wide)*
+- Only the navigation links and menus (U29) collapse into the hamburger menu.
+- On very narrow screens, the always-visible items may shrink (for example, initials or icons with labels for screen readers), but they never move into the hamburger menu.
+
+**U35 A nicer-looking app.** As anyone using the app, I want every page to look polished and consistent, so the app is pleasant to use. I am not a designer; I want it to look nice. *(site-wide)*
+- Every page uses the same building blocks: a page header with the title and main action, cards for grouped details, compact tables for lists, badges for statuses, clear empty states, and consistent spacing and buttons.
+- The agent batch review page (A4) gets a cleanup first: one card per batch with its status and source notes, a clear table of lines, and the edit, confirm, and reverse actions grouped.
+- A component reference page, visible only to the site admin, shows every building block, so new pages stay consistent.
+- Each change is checked by screenshots of the pages at desktop and phone width, attached to the work for review.
+
+**M17 Tile details in a modal.** As anyone looking at a map, I want clicking a tile to open its details in a modal over the map, instead of a new page, so I keep my place on the map. *(map)*
+- The modal shows what the tile page shows today, with the same visibility rules (M16) and the same actions (requests, and game master editing links).
+- The tile page keeps working at its own address, for links, printing, and use without JavaScript.
+- Closing the modal returns to the same map position and character filter.
 
 ## Quests
 
@@ -277,7 +340,7 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Items.** Each club has its own item catalogue (the `items` app), so clubs can add their own homebrew items. The `shops` app holds inventories that point at the catalogue, with a stock amount per item, and handles buying and selling. A shop only sees its own club's items.
 - **Shop prices.** Each item has a value. Each shop has a default sell percentage and a separate default buy percentage of that value, which can be overridden item by item within the shop (S1).
 - **Rotations.** A rotation only sets when its shops open and close, and a shop can be in several rotations. A shop's inventory is an ongoing list that carries over between rotations, with stock quantities kept per shop (S2).
-- **Coins.** Stored as copper and shown as copper, silver, gold, and platinum (10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum).
+- **Coins.** Stored as copper and shown as copper, silver, gold, and platinum (10 copper = 1 silver, 10 silver = 1 gold, 10 gold = 1 platinum). No platinum is shown under 10,000 gp; from 10,000 gp up the normal split is used (U32). Each denomination has its own colour, always with its label (U31).
 - **Ledger.** The `ledger` app records every gain or loss of items or coins for a character, with a note and a date.
 - **Trades.** The `player_characters` app owns trades. The rules are in U16: players edit their own side until they approve, either player can decline or cancel at any time, trades never expire, offered items are locked and offered coins are held, and held items and coins cannot be offered twice.
 - **Who sees what.** A character's inventory and coins are visible to its owner, game masters, and club admins, and game masters keep that view even while they play a character of their own. A player's email is visible to club admins only. On the map, game masters and club admins see everything; players see only the tiles their characters have visited and only the locations those characters have found (M16).
@@ -290,9 +353,12 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
 - **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see a location and its encounters only once a character they are viewing the map as has found it; visiting the tile is not enough (M2-M6, M16).
-- **Acting as a character.** A player picks one character to act as from the top bar, remembered per club, and pages that act on a character use it by default. The map starts filtered to that character, but any of the player's characters can be picked there without changing the top-bar selection (U24, M8).
+- **Acting as a character.** A player picks one character to act as from the top bar, remembered per club. Pages that act as one character always use it, with no per-page choice. Pages that pick several characters (the map, map requests) start with it, and picking others there does not change the top-bar selection (U24, U27, M8).
 - **Found locations.** A character has found a location if it is credited with discovering or exploring it, or has a found mark from a game master or club admin. A found mark gives no XP and only makes the location visible; players can ask for one like other map credit (M12, M16). On visited tiles, players see an unnamed "?" for each location someone has discovered but their characters have not found, and can ask for credit on it. Undiscovered locations show nothing, and only a game master or club admin records first discovery.
 - **Look.** The Bootswatch Journal theme (MIT) for Bootstrap 5 across the whole site, served by the app, with compact tables and forms on dense pages (U23).
+- **Navigation.** Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U29, U34).
+- **Modals.** Buying (U33), map tiles (M17), and inbox grants (U30) open in modals. Each still has a plain page that works without JavaScript.
+- **Inbox grants.** Club admins can grant coins, items, and map credit from a message, through the same rules and ledger as manual adjustments and map credit, and mark the message handled in the same step (U30).
 - **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each location has one credited discovery group (the first) and one credited explored group (which may differ). Game masters and club admins can correct them, and everyone who sees the location sees the credited characters (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants, with no automatic declines (M12). A party is only a list of characters picked at the time, not a stored record.
 - **Left for later.** Lore and the donate service.
 
