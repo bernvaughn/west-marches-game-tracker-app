@@ -1,0 +1,5 @@
+<p>Give this from {{ msg.sender.user.display_name }}'s message, "{{ msg.body|truncatechars:80 }}"</p>
+{% include "components/definition_list.html" with items=summary %}
+{% csrf_token %}
+{% for name, value in carry %}<input type="hidden" name="{{ name }}" value="{{ value }}">
+{% endfor %}

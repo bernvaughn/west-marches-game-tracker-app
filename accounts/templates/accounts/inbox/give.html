@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% url 'accounts:message_inbox' request.club.slug as inbox_url %}
+{% include "components/page_header.html" with title=title subtitle="From "|add:msg.sender.user.display_name|add:": "|add:msg.body|truncatechars:80 back_url=inbox_url|add:"?status="|add:filter back_label="Back to inbox" %}
+<form method="post" class="wm-form" action="{{ give_url }}">
+  {% include "accounts/inbox/_give_fields.html" %}
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Review</button>
+  </div>
+</form>
+{% endblock %}

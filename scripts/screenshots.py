@@ -76,7 +76,7 @@ def _act(page, action):
     link = {
         "buy_modal": "a[data-app-modal]",
         "tile_modal": "svg a[data-app-modal]",
-        "grant_modal": "a[data-app-modal]",
+        "grant_modal": 'a[data-app-modal][href*="/give/coins/"]',
     }[action]
     if action == "tile_modal":
         # Prefer the tile that holds the Wolf Den.

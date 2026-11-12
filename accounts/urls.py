@@ -14,5 +14,27 @@ urlpatterns = [
     path("messages/new/", inbox.message_new, name="message_new"),
     path("messages/", inbox.message_inbox, name="message_inbox"),
     path("messages/<int:pk>/status/", inbox.message_status, name="message_status"),
-    path("messages/<int:pk>/grant/", inbox.message_grant, name="message_grant"),
+    path(
+        "messages/<int:pk>/status/<slug:status>/confirm/",
+        inbox.message_status_confirm,
+        name="message_status_confirm",
+    ),
+    path(
+        "messages/<int:pk>/give/coins/",
+        inbox.message_give,
+        {"kind": "coins"},
+        name="message_give_coins",
+    ),
+    path(
+        "messages/<int:pk>/give/items/",
+        inbox.message_give,
+        {"kind": "items"},
+        name="message_give_items",
+    ),
+    path(
+        "messages/<int:pk>/give/map/",
+        inbox.message_give,
+        {"kind": "map"},
+        name="message_give_map",
+    ),
 ]

@@ -129,13 +129,13 @@ def _build_pages() -> list[Page]:
         P("accounts-reset-password", "gm", _c("accounts:reset_password", "alice_membership.pk")),
         P("accounts-message-new", "alice", _c("accounts:message_new")),
         P("accounts-message-inbox", "gm", _c("accounts:message_inbox")),
-        P("accounts-message-grant", "gm", _c("accounts:message_grant", "message.pk")),
+        P("accounts-message-grant", "gm", _c("accounts:message_give_coins", "message.pk")),
         P(
             "inbox-grant-modal",
             "gm",
             _c("accounts:message_inbox"),
             action="grant_modal",
-            modal_url=_c("accounts:message_grant", "message.pk"),
+            modal_url=_c("accounts:message_give_coins", "message.pk"),
         ),
         # site admin
         P("site-clubs", "site_admin", lambda d: reverse("site_clubs")),

@@ -3,12 +3,13 @@ import json
 from django.contrib import messages as flash
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from items.models import Item
+from ledger.coins import format_coins
 from ledger.services import LedgerError, Line, record
 from map import services as map_services
 from map.models import HexMap, Location
@@ -16,8 +17,8 @@ from player_characters.forms import formset_lines, item_line_formset
 from player_characters.models import Character
 from player_characters.selection import selected_character
 
-from ..forms.grants import NOTHING, GrantForm
-from ..forms.inbox import MessageForm, StatusForm
+from ..forms.grants import GRANT_FORMS, GRANT_TITLES, MapGrantForm
+from ..forms.inbox import STATUS_ACTIONS, MessageForm, StatusForm, allowed_statuses
 from ..htmx import is_htmx, render_modal_or_page
 from ..models import Message
 from ..permissions import club_admin_required, club_member_required
@@ -79,8 +80,41 @@ def message_inbox(request, club_slug):
             "messages_list": qs,
             "status": status,
             "filters": FILTERS,
-            "statuses": Message.Status.choices,
         },
+    )
+
+
+def _filter_of(data):
+    back = data.get("filter", "open")
+    return back if back in FILTERS else "open"
+
+
+def _inbox_url(club_slug, back):
+    return f"{reverse('accounts:message_inbox', args=[club_slug])}?status={back}"
+
+
+def _modal_done():
+    response = HttpResponse(status=204)
+    response["HX-Trigger"] = json.dumps({"appModalClose": True, "inboxChanged": True})
+    return response
+
+
+@club_admin_required
+def message_status_confirm(request, club_slug, pk, status):
+    msg = club_get_object_or_404(request, Message, pk=pk)
+    if status not in allowed_statuses(msg):
+        raise Http404
+    ctx = {
+        "msg": msg,
+        "status": status,
+        "action": STATUS_ACTIONS[status],
+        "filter": _filter_of(request.GET),
+    }
+    return render_modal_or_page(
+        request,
+        "accounts/inbox/_status_confirm.html",
+        "accounts/inbox/status_confirm.html",
+        ctx,
     )
 
 
@@ -93,22 +127,17 @@ def message_status(request, club_slug, pk):
         return HttpResponseBadRequest("Invalid status")
     msg.status = form.cleaned_data["status"]
     msg.save(update_fields=["status"])
-    back = request.POST.get("filter", "open")
-    if back not in FILTERS:
-        back = "open"
-    return redirect(f"{reverse('accounts:message_inbox', args=[club_slug])}?status={back}")
+    if is_htmx(request):
+        return _modal_done()
+    return redirect(_inbox_url(club_slug, _filter_of(request.POST)))
 
 
-def _apply_grant(request, msg, form, formset):
+def _apply_grant(request, msg, kind, data, lines):
     """Write the grant through the ledger and map services. Raise LedgerError to roll back."""
-    data = form.cleaned_data
     character, date, note = data["character"], data["date"], data["note"]
-    lines = formset_lines(formset, 1)
-    if data.get("coins"):
+    lines = list(lines)
+    if kind == "coins":
         lines.append(Line(coins=data["coins"]))
-    kind = data.get("map_kind")
-    if not lines and not kind and not data["mark_handled"]:
-        raise LedgerError(NOTHING)
     with transaction.atomic():
         if lines:
             record(
@@ -120,16 +149,17 @@ def _apply_grant(request, msg, form, formset):
                 actor=request.user,
                 source_message=msg,
             )
+        map_kind = data.get("map_kind") if kind == "map" else None
         location = data.get("location")
-        if kind == "visit":
+        if map_kind == "visit":
             if location is not None:
                 hex_map, q, r = location.tile.map, location.tile.q, location.tile.r
             else:
                 hex_map, q, r = data["hex_map"], data["q"], data["r"]
             map_services.record_visits(hex_map, q, r, [character], date, source_message=msg)
-        elif kind in ("discovered", "explored"):
-            map_services.add_to_credit(location, kind, [character], date, source_message=msg)
-        elif kind == "found":
+        elif map_kind in ("discovered", "explored"):
+            map_services.add_to_credit(location, map_kind, [character], date, source_message=msg)
+        elif map_kind == "found":
             map_services.add_found_marks(
                 location, [character], date, created_by=request.membership, source_message=msg
             )
@@ -138,36 +168,91 @@ def _apply_grant(request, msg, form, formset):
             msg.save(update_fields=["status"])
 
 
+def _summary(kind, data, lines):
+    """(label, value) rows describing what a confirmed grant will write."""
+    rows = [("Character", data["character"].name)]
+    if kind == "coins":
+        rows.append(("Coins", format_coins(data["coins"])))
+    elif kind == "items":
+        rows.append(("Items", ", ".join(f"{ln.item.name} × {ln.quantity}" for ln in lines)))
+    else:
+        label = dict(MapGrantForm.MAP_KINDS)[data["map_kind"]]
+        location = data.get("location")
+        if location is not None:
+            tile = location.tile
+            where = f"{location.name} ({tile.map.name} {tile.q}, {tile.r})"
+        else:
+            where = f"{data['hex_map'].name} ({data['q']}, {data['r']})"
+        rows.append(("Map credit", f"{label}: {where}"))
+    rows += [
+        ("Note", data["note"]),
+        ("Date", data["date"].isoformat()),
+        ("Marks the message handled", "Yes" if data["mark_handled"] else "No"),
+    ]
+    return rows
+
+
+_NOT_CARRIED = {"csrfmiddlewaretoken", "confirmed", "edit"}
+
+
 @club_admin_required
-def message_grant(request, club_slug, pk):
+def message_give(request, club_slug, pk, kind):
     msg = club_get_object_or_404(request, Message, pk=pk)
     post = request.method == "POST"
     data = request.POST if post else None
-    items = Item.objects.for_club(request.club).filter(retired=False)
-    form = GrantForm(
-        data,
-        characters_qs=club_queryset(request, Character).order_by("name"),
-        locations_qs=club_queryset(request, Location).select_related("tile__map"),
-        maps_qs=club_queryset(request, HexMap),
-        message=msg,
-    )
-    formset = item_line_formset(items, data, extra=3)
-    back = (data or request.GET).get("filter", "open")
-    if back not in FILTERS:
-        back = "open"
-    if post and form.is_valid() and formset.is_valid():
-        try:
-            _apply_grant(request, msg, form, formset)
-        except LedgerError as exc:
-            form.add_error(None, str(exc))
-        else:
-            if is_htmx(request):
-                response = HttpResponse(status=204)
-                response["HX-Trigger"] = json.dumps({"appModalClose": True, "inboxChanged": True})
-                return response
-            flash.success(request, f"Granted from message #{msg.pk}.")
-            return redirect(f"{reverse('accounts:message_inbox', args=[club_slug])}?status={back}")
-    ctx = {"msg": msg, "form": form, "formset": formset, "filter": back}
-    return render_modal_or_page(
-        request, "accounts/inbox/_grant_form.html", "accounts/inbox/grant.html", ctx
-    )
+    kwargs = {
+        "characters_qs": club_queryset(request, Character).order_by("name"),
+        "message": msg,
+    }
+    if kind == "map":
+        kwargs["locations_qs"] = club_queryset(request, Location).select_related("tile__map")
+        kwargs["maps_qs"] = club_queryset(request, HexMap)
+    form = GRANT_FORMS[kind](data, **kwargs)
+    formset = None
+    if kind == "items":
+        items = Item.objects.for_club(request.club).filter(retired=False)
+        formset = item_line_formset(items, data, extra=3)
+    back = _filter_of(data or request.GET)
+    ctx = {
+        "msg": msg,
+        "kind": kind,
+        "title": GRANT_TITLES[kind],
+        "form": form,
+        "formset": formset,
+        "filter": back,
+        "give_url": reverse(f"accounts:message_give_{kind}", args=[club_slug, msg.pk]),
+    }
+    fill = ("accounts/inbox/_give_form.html", "accounts/inbox/give.html")
+    if post and "edit" not in request.POST:
+        valid = form.is_valid()
+        if formset is not None:
+            valid = formset.is_valid() and valid
+        if valid:
+            lines = formset_lines(formset, 1) if formset is not None else []
+            if kind == "items" and not lines:
+                form.add_error(None, "Add at least one item.")
+            elif request.POST.get("confirmed"):
+                try:
+                    _apply_grant(request, msg, kind, form.cleaned_data, lines)
+                except LedgerError as exc:
+                    form.add_error(None, str(exc))
+                else:
+                    if is_htmx(request):
+                        return _modal_done()
+                    flash.success(request, f"{GRANT_TITLES[kind]} done from message #{msg.pk}.")
+                    return redirect(_inbox_url(club_slug, back))
+            else:
+                ctx["summary"] = _summary(kind, form.cleaned_data, lines)
+                ctx["carry"] = [
+                    (name, value)
+                    for name, values in request.POST.lists()
+                    if name not in _NOT_CARRIED
+                    for value in values
+                ]
+                return render_modal_or_page(
+                    request,
+                    "accounts/inbox/_give_confirm.html",
+                    "accounts/inbox/give_confirm.html",
+                    ctx,
+                )
+    return render_modal_or_page(request, *fill, ctx)

@@ -30,19 +30,15 @@
     <td>{{ m.created|date:"Y-m-d H:i" }}</td>
     <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
     <td class="actions">
-      <form method="post" class="wm-inline-form" action="{% url 'accounts:message_status' request.club.slug m.pk %}">
-        {% csrf_token %}
-        <input type="hidden" name="filter" value="{{ status }}">
-        <label class="visually-hidden" for="status-{{ m.pk }}">Status for message {{ m.pk }}</label>
-        <select class="form-select form-select-sm" id="status-{{ m.pk }}" name="status">
-          {% for value, label in statuses %}
-          <option value="{{ value }}"{% if value == m.status %} selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-        <button class="btn btn-sm btn-primary" type="submit">Set</button>
-      </form>
-      {% url 'accounts:message_grant' request.club.slug m.pk as grant_url %}
-      <a class="btn btn-sm btn-outline-primary" href="{{ grant_url }}?filter={{ status }}" hx-get="{{ grant_url }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Grant</a>
+      {% if m.status == "open" %}
+      {% url 'accounts:message_status_confirm' request.club.slug m.pk "handled" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Mark handled</a>
+      {% url 'accounts:message_status_confirm' request.club.slug m.pk "closed" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Close</a>
+      {% else %}
+      {% url 'accounts:message_status_confirm' request.club.slug m.pk "open" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Reopen</a>
+      {% endif %}
+      {% url 'accounts:message_give_coins' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Give coins</a>
+      {% url 'accounts:message_give_items' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Give items</a>
+      {% url 'accounts:message_give_map' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Give map credit</a>
     </td>
   </tr>
   {% empty %}

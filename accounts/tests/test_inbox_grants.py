@@ -37,8 +37,13 @@ def location(hex_map):
     return Location.objects.create(tile=tile, name="Old Keep")
 
 
-def url(club, msg):
-    return reverse("accounts:message_grant", args=[club.slug, msg.pk])
+def url(club, msg, kind="coins"):
+    return reverse(f"accounts:message_give_{kind}", args=[club.slug, msg.pk])
+
+
+def give(client, club, msg, kind, data, **kw):
+    """Post a confirmed grant."""
+    return client.post(url(club, msg, kind), {**data, "confirmed": "1"}, **kw)
 
 
 def payload(character, **extra):
@@ -56,7 +61,9 @@ def payload(character, **extra):
 
 
 def test_coins_grant(club, club_admin, character, msg, login):
-    r = login(club_admin).post(url(club, msg), payload(character, coins_gp=5, mark_handled="on"))
+    r = give(
+        login(club_admin), club, msg, "coins", payload(character, coins_gp=5, mark_handled="on")
+    )
     assert r.status_code == 302
     e = LedgerEntry.objects.get()
     assert (e.kind, e.note, e.date, e.created_by, e.source_message) == (
@@ -82,81 +89,92 @@ def test_items_grant(club, club_admin, character, msg, item, login):
             "items-1-quantity": 1,
         },
     )
-    assert login(club_admin).post(url(club, msg), data).status_code == 302
+    assert give(login(club_admin), club, msg, "items", data).status_code == 302
     assert LedgerEntry.objects.count() == 1
     assert item_quantities(character) == {item.pk: 2, other.pk: 1}
 
 
 def test_unchecked_stays_open(club, club_admin, character, msg, login):
-    login(club_admin).post(url(club, msg), payload(character, coins_cp=1))
+    give(login(club_admin), club, msg, "coins", payload(character, coins_cp=1))
     msg.refresh_from_db()
     assert msg.status == "open"
 
 
 def test_nothing_to_grant_errors(club, club_admin, character, msg, login):
-    r = login(club_admin).post(url(club, msg), payload(character))
-    assert r.status_code == 200
-    assert "Enter something to grant" in r.content.decode()
+    c = login(club_admin)
+    r = give(c, club, msg, "coins", payload(character))
+    assert r.status_code == 200 and "Enter an amount." in r.content.decode()
+    r = give(c, club, msg, "items", payload(character))
+    assert r.status_code == 200 and "Add at least one item." in r.content.decode()
     assert not LedgerEntry.objects.exists()
 
 
 def test_visit_by_location_and_tile(club, club_admin, character, msg, location, hex_map, login):
     c = login(club_admin)
-    c.post(url(club, msg), payload(character, map_kind="visit", location=location.pk))
+    give(c, club, msg, "map", payload(character, map_kind="visit", location=location.pk))
     v = TileVisit.objects.get()
     assert (v.q, v.r, v.source_message, v.date) == (2, 1, msg, datetime.date(2026, 1, 2))
-    c.post(url(club, msg), payload(character, map_kind="visit", hex_map=hex_map.pk, q=5, r=5))
+    give(c, club, msg, "map", payload(character, map_kind="visit", hex_map=hex_map.pk, q=5, r=5))
     assert TileVisit.objects.filter(q=5, r=5, source_message=msg).exists()
 
 
 @pytest.mark.parametrize("kind", ["discovered", "explored"])
 def test_credit(club, club_admin, character, msg, location, login, kind):
-    login(club_admin).post(url(club, msg), payload(character, map_kind=kind, location=location.pk))
+    give(
+        login(club_admin), club, msg, "map", payload(character, map_kind=kind, location=location.pk)
+    )
     g = CreditGrant.objects.get()
     assert (g.character, g.source_message, g.credit.kind) == (character, msg, kind)
     assert TileVisit.objects.get().source_message == msg
 
 
 def test_found(club, club_admin, character, msg, location, login):
-    login(club_admin).post(
-        url(club, msg), payload(character, map_kind="found", location=location.pk)
+    give(
+        login(club_admin),
+        club,
+        msg,
+        "map",
+        payload(character, map_kind="found", location=location.pk),
     )
     f = FoundMark.objects.get()
     assert f.source_message == msg and f.date == datetime.date(2026, 1, 2)
 
 
 def test_location_required(club, club_admin, character, msg, login):
-    r = login(club_admin).post(url(club, msg), payload(character, map_kind="found"))
+    r = give(login(club_admin), club, msg, "map", payload(character, map_kind="found"))
     assert r.status_code == 200 and not FoundMark.objects.exists()
 
 
 def test_defaults_on_get(club, club_admin, character, msg, login):
-    r = login(club_admin).get(url(club, msg))
-    form = r.context["form"]
-    assert form["note"].value() == f"From message #{msg.pk}"
-    assert form["date"].value() is not None
-    assert form["character"].value() == character.pk
-    assert form["mark_handled"].value() is True
+    for kind in ("coins", "items", "map"):
+        r = login(club_admin).get(url(club, msg, kind))
+        form = r.context["form"]
+        assert form["note"].value() == f"From message #{msg.pk}"
+        assert form["date"].value() is not None
+        assert form["character"].value() == character.pk
+        assert form["mark_handled"].value() is True
 
 
 def test_inbox_lists_granted(club, club_admin, character, msg, location, login):
     c = login(club_admin)
-    c.post(url(club, msg), payload(character, coins_gp=3, map_kind="found", location=location.pk))
+    give(c, club, msg, "coins", payload(character, coins_gp=3))
+    give(c, club, msg, "map", payload(character, map_kind="found", location=location.pk))
     page = c.get(
         reverse("accounts:message_inbox", args=[club.slug]) + "?status=all"
     ).content.decode()
     assert "Granted" in page and "Found: Old Keep" in page and "gp" in page
-    assert "Grant</a>" in page
+    assert "Give coins</a>" in page
 
 
 def test_permissions(club, club_admin, game_master, player, other_club, club_b_admin, msg, login):
-    u = url(club, msg)
-    for user in (game_master, player):
-        assert login(user).get(u).status_code == 403
-        assert login(user).post(u, {}).status_code == 403
-    assert login(club_admin).get(u).status_code == 200
-    bu = reverse("accounts:message_grant", args=[other_club.slug, msg.pk])
-    assert login(club_b_admin).get(bu).status_code == 404
+    for kind in ("coins", "items", "map"):
+        u = url(club, msg, kind)
+        for user in (game_master, player):
+            assert login(user).get(u).status_code == 403
+            assert login(user).post(u, {}).status_code == 403
+        assert login(club_admin).get(u).status_code == 200
+        bu = reverse(f"accounts:message_give_{kind}", args=[other_club.slug, msg.pk])
+        assert login(club_b_admin).get(bu).status_code == 404
 
 
 def test_cross_club_refused(club, club_admin, other_club, character, msg, login):
@@ -173,13 +191,13 @@ def test_cross_club_refused(club, club_admin, other_club, character, msg, login)
     )
     c = login(club_admin)
     cases = [
-        payload(b_char, coins_2=1),
-        payload(character, **{"items-0-item": b_item.pk, "items-0-quantity": 1}),
-        payload(character, map_kind="found", location=b_loc.pk),
-        payload(character, map_kind="visit", hex_map=b_map.pk, q=1, r=1),
+        ("coins", payload(b_char, coins_cp=1)),
+        ("items", payload(character, **{"items-0-item": b_item.pk, "items-0-quantity": 1})),
+        ("map", payload(character, map_kind="found", location=b_loc.pk)),
+        ("map", payload(character, map_kind="visit", hex_map=b_map.pk, q=1, r=1)),
     ]
-    for data in cases:
-        assert c.post(url(club, msg), data).status_code == 200
+    for kind, data in cases:
+        assert give(c, club, msg, kind, data).status_code == 200
     assert not LedgerEntry.objects.exists()
     assert not FoundMark.objects.exists()
     assert not TileVisit.objects.exists()
@@ -188,9 +206,9 @@ def test_cross_club_refused(club, club_admin, other_club, character, msg, login)
 def test_htmx_responses(club, club_admin, character, msg, login):
     c = login(club_admin)
     frag = c.get(url(club, msg), **HX).content.decode()
-    assert "<html" not in frag and "Grant for message" in frag
+    assert "<html" not in frag and "Give coins" in frag
     assert "<html" in c.get(url(club, msg)).content.decode()
-    r = c.post(url(club, msg), payload(character, coins_cp=1), **HX)
+    r = give(c, club, msg, "coins", payload(character, coins_cp=1), **HX)
     assert r.status_code == 204 and "appModalClose" in r["HX-Trigger"]
 
 
@@ -198,7 +216,7 @@ def test_change_character(club, club_admin, other_player, msg, login):
     other = Character.objects.create(
         club=club, owner=Membership.objects.get(user=other_player, club=club), name="Bob"
     )
-    login(club_admin).post(url(club, msg), payload(other, coins_cp=2))
+    give(login(club_admin), club, msg, "coins", payload(other, coins_cp=2))
     assert LedgerEntry.objects.get().character == other
 
 
@@ -210,12 +228,15 @@ def test_ledger_error_rolls_back(club, club_admin, character, msg, location, log
         raise LedgerError("nope")
 
     monkeypatch.setattr(inbox.map_services, "add_found_marks", boom)
-    r = login(club_admin).post(
-        url(club, msg),
-        payload(character, coins_cp=2, map_kind="found", location=location.pk, mark_handled="on"),
+    r = give(
+        login(club_admin),
+        club,
+        msg,
+        "map",
+        payload(character, map_kind="found", location=location.pk, mark_handled="on"),
     )
     assert r.status_code == 200 and "nope" in r.content.decode()
-    assert not LedgerEntry.objects.exists()
+    assert not TileVisit.objects.exists()
     msg.refresh_from_db()
     assert msg.status == "open"
 
