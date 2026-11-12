@@ -12,6 +12,11 @@ FORM_TEMPLATES = {
     "django/forms/errors/list/default.html": "forms/errors.html",
 }
 
+SELECT_TEMPLATES = {
+    "django/forms/widgets/select.html",
+    "django/forms/widgets/select_multiple.html",
+}
+
 TEXT_TYPES = {"text", "number", "email", "password", "date", "url", "file", "search", "tel"}
 
 
@@ -30,7 +35,7 @@ def _classes_for(widget):
         return ""
     if kind in ("checkbox", "radio"):
         return "form-check-input"
-    if "select" in name and "multiple_input" not in name and "radio" not in name:
+    if name in SELECT_TEMPLATES:
         return "form-select form-select-sm"
     if "textarea" in name or kind in TEXT_TYPES:
         return "form-control form-control-sm"
