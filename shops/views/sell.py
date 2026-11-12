@@ -9,6 +9,7 @@ from items.models import Item
 from ledger.coins import format_coins
 from ledger.services import InsufficientItems, available_items
 from player_characters.models import Character
+from player_characters.selection import selected_character
 from shops.forms.sell import SellForm
 from shops.models import Shop
 from shops.selling import sell as do_sell
@@ -38,8 +39,10 @@ def sell(request, club_slug, shop_id):
             character = None
         if character is None:
             raise Http404("No such character.")
-    elif len(characters) == 1:
-        character = characters[0]
+    else:
+        chosen = selected_character(request)
+        if chosen is not None and characters.filter(pk=chosen.pk).exists():
+            character = chosen
 
     items = Item.objects.for_club(club)
 

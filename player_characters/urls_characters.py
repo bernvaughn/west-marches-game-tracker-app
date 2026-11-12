@@ -7,6 +7,7 @@ urlpatterns = [
     path("", characters.index, name="index"),
     path("new/", characters.create, name="create"),
     path("select/", selection.select, name="select"),
+    path("transfer/", character_transfer.transfer_start, name="transfer_start"),
     path("<int:pk>/", characters.detail, name="detail"),
     path("<int:pk>/edit/", characters.edit, name="edit"),
     path("<int:pk>/handover/", characters.handover, name="handover"),

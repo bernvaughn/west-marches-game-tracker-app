@@ -9,6 +9,7 @@ from accounts.permissions import club_member_required, is_club_admin
 from accounts.scoping import club_get_object_or_404
 from ledger.services import InsufficientItems
 from player_characters.models import Character
+from player_characters.selection import selected_character
 from quests import services
 from quests.models import Quest
 
@@ -38,12 +39,15 @@ def detail(request, club_slug, pk):
     rows = []
     if request.membership is not None:
         owned = Character.objects.for_club(request.club).filter(owner=request.membership)
-        for ch in owned:
+        chosen = selected_character(request)
+        chosen_id = chosen.pk if chosen else None
+        for ch in sorted(owned, key=lambda c: (c.pk != chosen_id, c.name)):
             missing = services.missing_items(quest, ch)
             left = services.character_completions_left(quest, ch)
             rows.append(
                 {
                     "character": ch,
+                    "selected": ch.pk == chosen_id,
                     "missing": missing,
                     "limit_reached": left == 0,
                     "ready": not missing and left != 0,

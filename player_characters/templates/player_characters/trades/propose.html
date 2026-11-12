@@ -3,13 +3,13 @@
 {% block content %}
 <h1>Propose trade</h1>
 {% if not choices %}
-<p>You have no characters in this club. Create a character first.</p>
+<p>You have no character in this club. Create a character first.</p>
 <p><a href="{% url 'characters:create' club.slug %}">New character</a></p>
 {% elif not sender %}
 <form method="get">
   <label>Trade from
     <select class="form-select form-select-sm w-auto d-inline-block" name="from">
-      {% for c in choices %}<option value="{{ c.pk }}">{{ c.name }}</option>{% endfor %}
+      {% for c in choices %}<option value="{{ c.pk }}"{% if default_sender and c.pk == default_sender.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
     </select>
   </label>
   {% if to %}<input type="hidden" name="to" value="{{ to.pk }}">{% endif %}
@@ -17,7 +17,7 @@
 </form>
 {% else %}
 <p>From <strong>{{ sender.name }}</strong>
-  (<a href="{% url 'trades:propose' club.slug %}{% if form.receiver.value %}?to={{ form.receiver.value }}{% endif %}">change</a>)</p>
+  (<a href="{% url 'trades:propose' club.slug %}?choose=1{% if form.receiver.value %}&to={{ form.receiver.value }}{% endif %}">change</a>)</p>
 <form method="post">
   {% csrf_token %}
   {{ form.non_field_errors }}

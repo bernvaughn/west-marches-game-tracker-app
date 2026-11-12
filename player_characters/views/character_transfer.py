@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
 from django.shortcuts import redirect, render
 
 from accounts.permissions import club_member_required
@@ -11,6 +12,7 @@ from ..access import owns_character
 from ..forms import formset_lines, item_line_formset
 from ..forms_transfer import TransferForm
 from ..models import Character
+from ..selection import own_characters, selected_character
 
 NO_AMOUNT = "Enter at least one coin or item amount."
 
@@ -38,6 +40,24 @@ def _specs(character, dest, lines, note, actor):
 
 
 @club_member_required
+def transfer_start(request, club_slug):
+    """Entry for moving items: start from the selected (or chosen own) character."""
+    owned = own_characters(request)
+    raw = request.GET.get("from")
+    if raw:
+        if not raw.isdigit():
+            raise Http404("No such character.")
+        character = owned.filter(pk=int(raw)).first()
+        if character is None:
+            raise Http404("No such character.")
+    else:
+        character = selected_character(request)
+    if character is None:
+        return render(request, "player_characters/characters/transfer.html", {"no_character": True})
+    return redirect("characters:transfer", club_slug=club_slug, pk=character.pk)
+
+
+@club_member_required
 def transfer(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     if not owns_character(request.user, character):
@@ -48,7 +68,11 @@ def transfer(request, club_slug, pk):
         .exclude(pk=character.pk)
         .order_by("name")
     )
-    context = {"character": character, "destinations": destinations}
+    context = {
+        "character": character,
+        "destinations": destinations,
+        "sources": own_characters(request),
+    }
     if not destinations.exists():
         return render(request, "player_characters/characters/transfer.html", context)
 

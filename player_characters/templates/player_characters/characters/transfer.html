@@ -2,7 +2,19 @@
 {% load coins %}
 {% block title %}Move loot: {{ character.name }}{% endblock %}
 {% block content %}
+{% if no_character %}
+<h1>Move items</h1>
+<p>You have no character in this club.</p>
+{% else %}
 <h1>Move loot from {{ character.name }}</h1>
+<form method="get" action="{% url 'characters:transfer_start' request.club.slug %}">
+  <label>Move from
+    <select class="form-select form-select-sm w-auto d-inline-block" name="from">
+      {% for c in sources %}<option value="{{ c.pk }}"{% if c.pk == character.pk %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    </select>
+  </label>
+  <button class="btn btn-sm btn-outline-secondary" type="submit">Change</button>
+</form>
 {% if not destinations %}
 <p>You have no other character in this club.</p>
 <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Back</a>
@@ -23,5 +35,6 @@
   <button class="btn btn-sm btn-primary" type="submit">Move loot</button>
   <a href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
 </form>
+{% endif %}
 {% endif %}
 {% endblock %}

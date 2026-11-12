@@ -74,7 +74,7 @@ def test_chooser_with_two_characters(login, player, club, character, other_chara
     owner = Membership.objects.get(user=player, club=club)
     second = Character.objects.create(club=club, owner=owner, name="Second")
     client = login(player)
-    html = client.get(propose_url(club)).content.decode()
+    html = client.get(propose_url(club), {"choose": 1}).content.decode()
     assert "Choose" in html and 'name="from"' in html
     html = client.get(
         propose_url(club), {"from": second.pk, "to": other_character.pk}

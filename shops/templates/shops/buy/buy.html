@@ -9,7 +9,7 @@
 {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
 {% if sold_out %}
 {% elif not has_characters %}
-<p>You have no characters in this club to buy for.</p>
+<p>You have no character in this club.</p>
 {% else %}
 <form method="post">
   {% csrf_token %}
