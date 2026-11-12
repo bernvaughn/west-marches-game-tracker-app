@@ -1,5 +1,3 @@
-import json
-
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -51,11 +49,19 @@ def test_htmx_confirm_closes_modal_and_refreshes(
 ):
     resp = login(player).post(url(club, shop, stock), {"quantity": 1}, **HX)
     assert resp.status_code == 204
-    trigger = json.loads(resp["HX-Trigger"])
-    assert "appModalClose" in trigger and "shopStockChanged" in trigger
+    assert resp["HX-Redirect"] == reverse("shops:detail", args=[club.slug, shop.pk])
     assert purchases().count() == 1
     stock.refresh_from_db()
     assert stock.quantity == 1
+
+
+@pytest.mark.story("U33")
+def test_htmx_buy_message_shown_after_redirect(
+    club, shop, always_open, stock, rich_character, player, login
+):
+    c = login(player)
+    resp = c.post(url(club, shop, stock), {"quantity": 1}, **HX)
+    assert "Bought" in c.get(resp["HX-Redirect"]).content.decode()
 
 
 def test_plain_post_redirects(club, shop, always_open, stock, rich_character, player, login):
