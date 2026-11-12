@@ -1,27 +1,29 @@
 {% extends "base.html" %}
 {% block title %}{% if quest %}Edit {{ quest.name }}{% else %}New quest{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if quest %}Edit {{ quest.name }}{% else %}New quest{% endif %}</h1>
-<form method="post">{% csrf_token %}
-  {{ form.as_p }}
+{% if quest %}{% include "components/page_header.html" with title="Edit "|add:quest.name %}{% else %}{% include "components/page_header.html" with title="New quest" %}{% endif %}
+<form method="post" class="wm-form">{% csrf_token %}
+  {{ form }}
   <h2>Requirements</h2>
   {{ reqs.management_form }}
   {{ reqs.non_form_errors }}
   {% for f in reqs %}
-  <fieldset>{{ f.non_field_errors }}{{ f.as_p }}</fieldset>
+  <fieldset class="wm-quest-row">{{ f.non_field_errors }}{{ f }}</fieldset>
   {% endfor %}
   <h2>Rewards</h2>
   {{ rews.management_form }}
   {{ rews.non_form_errors }}
   {% for f in rews %}
-  <fieldset>{{ f.non_field_errors }}{{ f.as_p }}</fieldset>
+  <fieldset class="wm-quest-row">{{ f.non_field_errors }}{{ f }}</fieldset>
   {% endfor %}
-  <button class="btn btn-sm btn-primary">Save</button>
-  <a href="{% url 'quests:manage' club.slug %}">Cancel</a>
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" href="{% url 'quests:manage' club.slug %}">Cancel</a>
+  </div>
 </form>
 {% if quest %}
-<form method="post" action="{% url 'quests:delete' club.slug quest.pk %}">{% csrf_token %}
-  <button class="btn btn-sm btn-outline-danger">Delete quest</button>
+<form method="post" action="{% url 'quests:delete' club.slug quest.pk %}" class="mt-4">{% csrf_token %}
+  <button class="btn btn-outline-danger" type="submit">Delete quest</button>
 </form>
 {% endif %}
 {% endblock %}

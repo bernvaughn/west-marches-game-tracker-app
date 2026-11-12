@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.staticfiles import finders
 from django.urls import reverse
 
 from items.models import Item
@@ -29,7 +30,7 @@ def shop_b(club):
 
 def shop_data(**over):
     data = {"name": "Lantern", "description": "", "keeper_name": "", "keeper_description": "",
-            "color": "parchment", "symbol": "",
+            "color": "parchment", "silhouette": "hooded_trader", "symbol": "",
             "sell_percent": "100", "buy_percent": "50"}  # fmt: skip
     data.update(over)
     return data
@@ -184,3 +185,37 @@ def test_cross_club_404(admin_client, club, other_shop, shop, shop_b, item, othe
     assert admin_client.get(u("stock_edit", club, shop.pk, mine.pk)).status_code == 404
     assert admin_client.post(u("stock_remove", club, shop.pk, mine.pk)).status_code == 404
     assert ShopStock.objects.filter(pk=mine.pk).exists()
+
+
+@pytest.mark.story("U36")
+def test_silhouette_choices_and_default():
+    values = Shop.Silhouette.values
+    assert 8 <= len(values) <= 10
+    assert Shop._meta.get_field("silhouette").default == values[0]
+
+
+@pytest.mark.story("U36")
+def test_every_silhouette_has_an_svg():
+    for value in Shop.Silhouette.values:
+        assert finders.find(f"shops/silhouettes/{value}.svg"), value
+
+
+@pytest.mark.story("U36")
+def test_form_saves_silhouette(admin_client, club, shop):
+    r = admin_client.post(u("manage_edit", club, shop.pk), shop_data(silhouette="robed_mage"))
+    assert r.status_code == 302
+    shop.refresh_from_db()
+    assert shop.silhouette == "robed_mage"
+    body = admin_client.get(u("manage_edit", club, shop.pk)).content.decode()
+    assert 'type="radio"' in body and "shops/silhouettes/robed_mage.svg" in body
+
+
+@pytest.mark.story("U36")
+def test_other_club_cannot_edit_silhouette(login, club_admin, other_club, other_shop):
+    c = login(club_admin)
+    url = reverse(
+        "shops:manage_edit", kwargs={"club_slug": other_club.slug, "shop_id": other_shop.pk}
+    )
+    assert c.post(url, shop_data(silhouette="robed_mage")).status_code in (403, 404)
+    other_shop.refresh_from_db()
+    assert other_shop.silhouette == "hooded_trader"

@@ -1,12 +1,13 @@
-<div class="modal-header">
-  <h1 class="modal-title fs-5">Buy {{ stock.item.name }}</h1>
-  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-</div>
+{% extends "components/modal_frame.html" %}
+{% block content %}
 <form method="post" action="{% url 'shops:buy' request.club.slug shop.pk stock.pk %}" hx-post="{% url 'shops:buy' request.club.slug shop.pk stock.pk %}" hx-target="#app-modal .modal-content">
   {% csrf_token %}
-  <div class="modal-body">{% include "shops/buy/_confirm_body.html" %}</div>
-  <div class="modal-footer">
-    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-    {% if character and not sold_out %}<button class="btn btn-sm btn-primary" type="submit">Buy as {{ character.name }}</button>{% endif %}
-  </div>
+  {{ block.super }}
 </form>
+{% endblock %}
+{% block title %}Buy {{ stock.item.name }}{% endblock %}
+{% block body %}{% include "shops/buy/_confirm_body.html" %}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+{% if character and not sold_out %}<button class="btn btn-primary" type="submit">Buy as {{ character.name }}</button>{% endif %}
+{% endblock %}

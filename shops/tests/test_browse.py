@@ -97,22 +97,40 @@ def test_look(login, player, club, shop, always_open):
     )
     c = login(player)
     body = c.get(url("detail", club, shop.id)).content.decode()
-    assert "shop shop--ember" in body
+    assert "wm-shop-banner--ember" in body
     assert "🔥" in body
     assert "Marta" in body
     assert "Gruff but fair." in body
-    assert "shops/shops.css" in body
     index = c.get(url("index", club)).content.decode()
-    assert "shop--ember" in index
+    assert "wm-shop-card--ember" in index
     assert "🔥" in index
 
 
 @pytest.mark.story("U10")
 def test_css_has_all_colors():
-    path = finders.find("shops/shops.css")
-    css = open(path).read()
+    css = open(finders.find("css/areas/catalogue.css")).read()
     for color in Shop.Color.values:
-        assert f".shop--{color}" in css
+        assert f".wm-shop-banner--{color}" in css
+        assert f".wm-shop-card--{color}" in css
+
+
+@pytest.mark.story("U36")
+def test_detail_banner_silhouette_and_keeper(login, player, club, shop, always_open):
+    Shop.objects.filter(pk=shop.pk).update(silhouette="dwarf_smith")
+    body = login(player).get(url("detail", club, shop.id)).content.decode()
+    assert "wm-shop-banner" in body
+    assert "shops/silhouettes/dwarf_smith.svg" in body
+    assert '<figcaption class="wm-shop-keeper-name">Marta</figcaption>' in body
+    assert "Sell to Marta" in body
+
+
+@pytest.mark.story("U36")
+def test_detail_without_keeper(login, player, club, shop, always_open):
+    Shop.objects.filter(pk=shop.pk).update(keeper_name="")
+    body = login(player).get(url("detail", club, shop.id)).content.decode()
+    assert "shops/silhouettes/hooded_trader.svg" in body
+    assert "wm-shop-keeper-name" not in body
+    assert "Sell to this shop" in body
 
 
 @pytest.mark.story("C1")

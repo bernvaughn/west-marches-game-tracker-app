@@ -70,3 +70,15 @@ def test_demo_logins(client, email):
     call_command("seed_demo")
     assert client.login(username=email, password=DEMO_PASSWORD)
     assert client.get("/c/demo/").status_code == 200
+
+
+def test_demo_shop_silhouettes_idempotent():
+    call_command("seed_demo")
+    got = dict(Shop.objects.values_list("name", "silhouette"))
+    assert got["The Rusty Lantern"] == "burly_innkeeper"
+    assert got["Wandering Caravan"] == "veiled_merchant"
+    Shop.objects.update(silhouette=Shop.Silhouette.HOODED_TRADER)  # a pre-U36 database
+    call_command("seed_demo")
+    assert dict(Shop.objects.values_list("name", "silhouette")) == got
+    call_command("seed_demo")
+    assert dict(Shop.objects.values_list("name", "silhouette")) == got

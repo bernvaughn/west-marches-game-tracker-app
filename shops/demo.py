@@ -8,9 +8,13 @@ from .models import Rotation, Shop, ShopStock
 
 
 def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look):
-    shop, _ = Shop.objects.get_or_create(
+    shop, created = Shop.objects.get_or_create(
         club=club, name=name, defaults={"keeper_name": keeper, **look}
     )
+    # Shops seeded before silhouettes existed still hold the default: give them theirs.
+    if not created and shop.silhouette == Shop.Silhouette.HOODED_TRADER and "silhouette" in look:
+        shop.silhouette = look["silhouette"]
+        shop.save(update_fields=["silhouette"])
     for item_name, qty in stock:
         item = Item.objects.get(club=club, name=item_name)
         ShopStock.objects.get_or_create(shop=shop, item=item, defaults={"quantity": qty})
@@ -35,6 +39,7 @@ def seed(club):
         {
             "keeper_description": "A broad woman with flour-dusted hands and a sharp eye for coin.",
             "color": "ember",
+            "silhouette": "burly_innkeeper",
             "symbol": "🏮",
         },
     )
@@ -49,6 +54,7 @@ def seed(club):
         {
             "keeper_description": "A veiled trader who arrives with the dust and leaves by dawn.",
             "color": "violet",
+            "silhouette": "veiled_merchant",
             "symbol": "🐪",
         },
     )

@@ -12,6 +12,18 @@ class Shop(models.Model):
         VIOLET = "violet", "Violet"
         SLATE = "slate", "Slate"
 
+    class Silhouette(models.TextChoices):
+        HOODED_TRADER = "hooded_trader", "Hooded trader"
+        DWARF_SMITH = "dwarf_smith", "Dwarf smith"
+        ROBED_MAGE = "robed_mage", "Robed mage"
+        HALFLING_GROCER = "halfling_grocer", "Halfling grocer"
+        ELF_FLETCHER = "elf_fletcher", "Elf fletcher"
+        BURLY_INNKEEPER = "burly_innkeeper", "Burly innkeeper"
+        OLD_ALCHEMIST = "old_alchemist", "Old alchemist"
+        GOBLIN_PEDDLER = "goblin_peddler", "Goblin peddler"
+        WANDERING_BARD = "wandering_bard", "Wandering bard"
+        VEILED_MERCHANT = "veiled_merchant", "Veiled merchant"
+
     club_path = "club"
 
     club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="shops")
@@ -22,6 +34,9 @@ class Shop(models.Model):
     sell_percent = models.PositiveIntegerField(default=100)
     buy_percent = models.PositiveIntegerField(default=50)
     color = models.CharField(max_length=16, choices=Color.choices, default=Color.PARCHMENT)
+    silhouette = models.CharField(
+        max_length=24, choices=Silhouette.choices, default=Silhouette.HOODED_TRADER
+    )
     symbol = models.CharField(max_length=8, blank=True)
 
     objects = ClubScopedManager()

@@ -2,26 +2,26 @@
 {% load coins %}
 {% block title %}Manage quests{% endblock %}
 {% block content %}
-<h1>Manage quests</h1>
-<p><a href="{% url 'quests:create' club.slug %}">New quest</a></p>
+{% url 'quests:create' club.slug as create_url %}
+{% include "components/page_header.html" with title="Manage quests" action_url=create_url action_label="New quest" action_icon="plus-lg" %}
 {% if rows %}
-<div class="table-responsive"><table class="table table-sm table-striped align-middle">
-  <thead><tr><th>Name</th><th>Start</th><th>End</th><th>Max total</th><th>Max per character</th><th>Status</th><th>Completions</th><th></th></tr></thead>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Name</th><th>Start</th><th>End</th><th class="num">Max total</th><th class="num">Max per character</th><th>Status</th><th class="num">Completions</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for row in rows %}
     <tr>
       <td>{{ row.quest.name }}</td>
       <td>{{ row.quest.start_date|default:"-" }}</td>
       <td>{{ row.quest.end_date|default:"-" }}</td>
-      <td>{{ row.quest.max_completions|default:"No limit" }}</td>
-      <td>{{ row.quest.max_per_character|default:"No limit" }}</td>
+      <td class="num">{{ row.quest.max_completions|default:"No limit" }}</td>
+      <td class="num">{{ row.quest.max_per_character|default:"No limit" }}</td>
       <td>{{ row.status }}</td>
-      <td>{{ row.count }}</td>
-      <td>
-        <a href="{% url 'quests:edit' club.slug row.quest.pk %}">Edit</a>
+      <td class="num">{{ row.count }}</td>
+      <td class="actions">
+        <a class="btn btn-sm btn-outline-secondary" href="{% url 'quests:edit' club.slug row.quest.pk %}">Edit</a>
         {% if not row.count %}
-        <form method="post" action="{% url 'quests:delete' club.slug row.quest.pk %}" style="display:inline">{% csrf_token %}
-          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        <form method="post" action="{% url 'quests:delete' club.slug row.quest.pk %}" class="wm-inline-form">{% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
         </form>
         {% endif %}
       </td>
@@ -30,6 +30,6 @@
   </tbody>
 </table></div>
 {% else %}
-<p>No quests yet.</p>
+{% include "components/empty_state.html" with text="No quests yet." icon="compass" %}
 {% endif %}
 {% endblock %}

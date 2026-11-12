@@ -1,19 +1,18 @@
 {% load coins %}
 {% if rows %}
-<div class="table-responsive"><table class="shop-stock table table-sm table-striped align-middle">
-  <thead><tr><th>Item</th><th>Description</th><th>Price</th><th>Quantity</th><th></th></tr></thead>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
+  <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
   <tbody>
   {% for stock in rows %}
     <tr>
-      <td>{{ stock.item.name }}</td>
-      <td>{{ stock.item.description }}</td>
-      <td>{{ stock.price|coins }}</td>
-      <td>{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</td>
-      <td><a href="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-get="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-target="#app-modal .modal-content" data-app-modal>Buy</a></td>
+      <td>{{ stock.item.name }}{% if stock.item.description %}<small class="d-block text-muted">{{ stock.item.description }}</small>{% endif %}</td>
+      <td class="num">{{ stock.price|coins }}</td>
+      <td class="num">{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</td>
+      <td class="actions"><a class="btn btn-sm btn-primary" href="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-get="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-target="#app-modal .modal-content" data-app-modal>Buy</a></td>
     </tr>
   {% endfor %}
   </tbody>
 </table></div>
 {% else %}
-<p>Nothing in stock right now.</p>
+{% include "components/empty_state.html" with text="Nothing in stock right now." icon="bag" %}
 {% endif %}
