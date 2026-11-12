@@ -10,7 +10,7 @@ from accounts.scoping import club_get_object_or_404, club_queryset
 from ..hexgrid import pan_links, parse_window
 from ..models import HexMap, Tile
 from ..render import build_cells
-from ..visibility import is_map_editor, resolve_view
+from ..visibility import is_map_editor, location_reveal, resolve_view
 
 
 def _map_context(request, hex_map, q, r, view, tile=None):
@@ -91,8 +91,18 @@ def detail(request, club_slug, map_id):
     ]
     window = urlencode({"q": cq, "r": cr, "radius": radius})
     print_base = reverse("map:print", kwargs={"club_slug": club_slug, "map_id": hex_map.pk})
+    reveal = location_reveal(hex_map, view)
     ctx.update(
-        build_cells(hex_map, cq, cr, radius, view["visible"], char_params, club_slug=club_slug)
+        build_cells(
+            hex_map,
+            cq,
+            cr,
+            radius,
+            view["visible"],
+            char_params,
+            club_slug=club_slug,
+            reveal=reveal,
+        )
     )
     ctx.update(
         pan=pan,
@@ -122,8 +132,19 @@ def tile(request, club_slug, map_id, q, r):
     )
     ctx = _map_context(request, hex_map, q, r, view, tile=tile_obj)
     back = reverse("map:detail", kwargs={"club_slug": club_slug, "map_id": hex_map.pk})
+    locations = location_rows(tile_obj)
+    placeholders = []
+    reveal = location_reveal(hex_map, view)
+    if reveal is not None:
+        placeholders = [
+            {"request_id": loc.pk}
+            for loc in sorted(locations, key=lambda loc: loc.pk)
+            if loc.pk in reveal["placeholders"]
+        ]
+        locations = [loc for loc in locations if loc.pk in reveal["found"]]
     ctx.update(
-        locations=location_rows(tile_obj),
+        locations=locations,
+        placeholders=placeholders,
         back_url=with_params(back, urlencode({"q": q, "r": r}), view["char_params"]),
         players_url=with_params(request.path, "view=players"),
         full_url=request.path,

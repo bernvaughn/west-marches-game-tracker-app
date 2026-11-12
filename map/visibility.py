@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 from accounts.permissions import is_club_admin, is_game_master
 from player_characters.models import Character
 
-from .models import TileVisit
+from .models import FoundMark, Location, LocationCredit, TileVisit
 
 
 def is_map_editor(user, club):
@@ -72,4 +72,58 @@ def resolve_view(request, hex_map):
         "choices": list(choices),
         "visible": visible,
         "char_params": urlencode(pairs),
+    }
+
+
+def found_location_ids(characters):
+    """Ids of locations these characters found: credit of either kind, or a found mark."""
+    characters = list(characters)
+    if not characters:
+        return set()
+    credited = LocationCredit.objects.filter(characters__in=characters).values_list(
+        "location_id", flat=True
+    )
+    marked = FoundMark.objects.filter(character__in=characters).values_list(
+        "location_id", flat=True
+    )
+    return set(credited) | set(marked)
+
+
+def placeholder_location_ids(hex_map, visible_positions, found_ids):
+    """Ids of discovered but not found locations on visible tiles."""
+    discovered = set(
+        LocationCredit.objects.filter(
+            location__tile__map=hex_map,
+            kind=LocationCredit.Kind.DISCOVERED,
+            characters__isnull=False,
+        ).values_list("location_id", flat=True)
+    )
+    discovered -= set(found_ids)
+    if not discovered:
+        return set()
+    return {
+        pk
+        for pk, q, r in Location.objects.filter(pk__in=discovered).values_list(
+            "pk", "tile__q", "tile__r"
+        )
+        if (q, r) in visible_positions
+    }
+
+
+def location_reveal(hex_map, view):
+    """What a player view may show. None means the editors' full view."""
+    visible = view["visible"]
+    if visible is None:
+        return None
+    found = found_location_ids(view["picked"])
+    on_visible = {
+        pk
+        for pk, q, r in Location.objects.filter(tile__map=hex_map).values_list(
+            "pk", "tile__q", "tile__r"
+        )
+        if (q, r) in visible
+    }
+    return {
+        "found": found & on_visible,
+        "placeholders": placeholder_location_ids(hex_map, visible, found),
     }

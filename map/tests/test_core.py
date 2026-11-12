@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 
 from map.models import HexMap
-from map.services import add_to_credit, record_visits
+from map.services import add_found_marks, add_to_credit, record_visits
 
 pytestmark = pytest.mark.story("M2")
 
@@ -69,6 +69,7 @@ def test_tile_gm_notes_editor_only(
     login, club, hex_map, tile_location, game_master, player, player_character
 ):
     record_visits(hex_map, 1, 0, [player_character])
+    add_found_marks(tile_location, [player_character])
     gm = login(game_master).get(url("tile", club, hex_map.pk, 1, 0)).content.decode()
     assert "Secret GM note" in gm and "Player note text" in gm and "CR 1-2" in gm
     pl = login(player).get(url("tile", club, hex_map.pk, 1, 0)).content.decode()

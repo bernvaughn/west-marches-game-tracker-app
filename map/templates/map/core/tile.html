@@ -29,7 +29,15 @@
   {% include "map/credit/_location_actions.html" %}
   {% include "map/requests/_location_actions.html" %}
 </section>
-{% empty %}
-{% if not tile.is_safe_town %}<p>Nothing here yet.</p>{% endif %}
 {% endfor %}
+{% for p in placeholders %}
+<section class="location">
+  <h2>Unknown location</h2>
+  <p>You know something is here, but not what.</p>
+  {% if request.membership %}<p><a href="{% url 'map:request_credit' club.slug 'found' p.request_id %}">Request a found mark</a>
+  <a href="{% url 'map:request_credit' club.slug 'explored' p.request_id %}">Request explored credit</a>
+  <a href="{% url 'map:request_credit' club.slug 'discovered' p.request_id %}">Request discovered credit</a></p>{% endif %}
+</section>
+{% endfor %}
+{% if not locations and not placeholders and not tile.is_safe_town %}<p>Nothing here yet.</p>{% endif %}
 {% endblock %}

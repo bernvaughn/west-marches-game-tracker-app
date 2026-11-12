@@ -5,7 +5,7 @@ from django.urls import reverse
 
 from accounts.models import Membership
 from map.models import Encounter, HexMap, Location, Tile
-from map.services import record_visits
+from map.services import add_found_marks, record_visits
 
 
 def url(name, club, *args):
@@ -108,6 +108,7 @@ def test_player_notes_visible_gm_notes_hidden(
         {"name": "Fort", "player_notes": "Public text", "gm_notes": "Hidden text"},
     )
     record_visits(hex_map, 3, 0, [player_character])
+    add_found_marks(Location.objects.get(name="Fort"), [player_character])
     html = login(player).get(url("tile", club, hex_map.pk, 3, 0)).content.decode()
     assert "Public text" in html and "Hidden text" not in html
     gm = login(game_master).get(url("tile", club, hex_map.pk, 3, 0)).content.decode()
@@ -119,6 +120,7 @@ def test_encounter_add_after_visit_shows_to_player(
     login, club, hex_map, tile_location, game_master, player, player_character
 ):
     record_visits(hex_map, 1, 0, [player_character])
+    add_found_marks(tile_location, [player_character])
     login(game_master).post(
         url("encounter_create", club, tile_location.pk),
         {"date": "2025-01-02", "description": "Ambush at dusk"},

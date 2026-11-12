@@ -18,7 +18,9 @@
   <p>Discovered by: {% for c in loc.discovered %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody yet{% endfor %}</p>
   <p>Explored by: {% for c in loc.explored %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% empty %}nobody yet{% endfor %}</p>
 </section>
-{% empty %}
-<p>No locations to show.</p>
 {% endfor %}
+{% for q, r in unknown_rows %}
+<section class="map-key"><h3>? Unknown location ({{ q }}, {{ r }})</h3></section>
+{% endfor %}
+{% if not rows and not unknown_rows %}<p>No locations to show.</p>{% endif %}
 {% endblock %}

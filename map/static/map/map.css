@@ -13,3 +13,4 @@
   .site-header, .area-nav, .map-actions, .pan-links, .map-picker, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }
   .hexmap svg { width: 100%; max-width: none; }
 }
+.hex-unknown { fill: #333; font-weight: bold; font-size: 18px; pointer-events: none; }

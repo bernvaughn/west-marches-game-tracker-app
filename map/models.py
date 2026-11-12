@@ -129,6 +129,35 @@ class LocationCredit(models.Model):
         return f"{self.kind} {self.location}"
 
 
+class FoundMark(models.Model):
+    """A character has found a location, without being credited for it."""
+
+    club_path = "location__tile__map__club"
+
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name="found_marks")
+    character = models.ForeignKey(
+        "player_characters.Character", on_delete=models.CASCADE, related_name="found_marks"
+    )
+    date = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        "accounts.Membership",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="created_found_marks",
+    )
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["location", "character"], name="unique_found_mark")
+        ]
+
+    def __str__(self):
+        return f"{self.character} found {self.location}"
+
+
 class MapRequest(models.Model):
     club_path = "club"
 
@@ -136,6 +165,7 @@ class MapRequest(models.Model):
         VISIT = "visit", "Visit"
         DISCOVERED = "discovered", "Discovered"
         EXPLORED = "explored", "Explored"
+        FOUND = "found", "Found"
 
     class Status(models.TextChoices):
         REQUESTED = "requested", "Requested"

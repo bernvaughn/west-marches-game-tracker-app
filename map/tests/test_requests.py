@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from accounts.models import Membership
 from map.models import LocationCredit, MapRequest, Tile, TileVisit
+from map.services import add_to_credit
 from player_characters.models import Character
 
 pytestmark = pytest.mark.story("M12")
@@ -26,7 +27,8 @@ def visit_request(login, club, hex_map, player, character, second_character):
 
 
 @pytest.fixture
-def visible_location(tile_location, hex_map, character):
+def visible_location(tile_location, hex_map, character, other_character):
+    add_to_credit(tile_location, "discovered", [other_character])
     TileVisit.objects.create(map=hex_map, q=1, r=0, character=character)
     return tile_location
 
@@ -55,7 +57,7 @@ def test_credit_request_approval(login, club, game_master, player, character, vi
     assert req.kind == "discovered" and req.location == visible_location
     login(game_master).post(_url("request_approve", club, req.pk))
     credit = LocationCredit.objects.get(location=visible_location, kind="discovered")
-    assert list(credit.characters.all()) == [character]
+    assert character in credit.characters.all()
     assert TileVisit.objects.filter(q=1, r=0, character=character).exists()
 
 
@@ -92,7 +94,10 @@ def test_player_cannot_decide(login, club, player, visit_request):
     assert visit_request.status == "requested"
 
 
-def test_credit_for_unseen_location_or_bad_kind_404(login, club, player, character, tile_location):
+def test_credit_for_unseen_location_or_bad_kind_404(
+    login, club, player, character, other_character, tile_location
+):
+    add_to_credit(tile_location, "discovered", [other_character])
     client = login(player)
     assert client.get(_url("request_credit", club, "explored", tile_location.pk)).status_code == 404
     TileVisit.objects.create(map=tile_location.tile.map, q=1, r=0, character=character)
