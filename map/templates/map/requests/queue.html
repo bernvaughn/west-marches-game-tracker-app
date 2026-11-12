@@ -11,7 +11,7 @@
 {% for req in requests %}
 <tr>
 <td>{% include "components/badge.html" with status="info" text=req.get_kind_display %}</td>
-<td>{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.q is not None %} ({{ req.q }}, {{ req.r }}){% endif %}</td>
+<td>{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.tile_q is not None %} ({{ req.tile_q }}, {{ req.tile_r }}){% endif %}</td>
 <td>{% if req.kind == "visit" %}-{% else %}{{ req.location_label }}{% endif %}</td>
 <td>{% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</td>
 <td>{{ req.date|default:"" }}</td>

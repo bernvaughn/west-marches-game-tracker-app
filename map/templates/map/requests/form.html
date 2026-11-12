@@ -4,8 +4,7 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% if location_label %}{% with s="Map: "|add:hex_map.name|add:". Location: "|add:location_label %}{% include "components/page_header.html" with title=title subtitle=s %}{% endwith %}
-{% else %}{% with s="Map: "|add:hex_map.name %}{% include "components/page_header.html" with title=title subtitle=s %}{% endwith %}{% endif %}
+{% include "components/page_header.html" with title=title subtitle=subtitle %}
 {% if not has_characters %}{% include "components/alert.html" with level="info" text="You have no characters in this club, so you cannot make a request." %}{% endif %}
 {% include "components/card_open.html" %}
 <form method="post" class="wm-form">{% csrf_token %}
