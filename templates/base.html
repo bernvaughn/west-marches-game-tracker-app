@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static accounts_tags %}<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -33,7 +33,7 @@
         </ul>
       </div>
       {% endif %}
-      {% if user.is_authenticated %}<span class="navbar-text user-name d-none d-xxl-inline">{{ user.display_name|default:user.email }}</span>{% endif %}
+      {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}"><span class="wm-avatar wm-avatar-sm d-xxl-none" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden d-xxl-none">{{ who }}</span><span class="d-none d-xxl-inline">{{ who }}</span></span>{% endwith %}{% endif %}
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
       {% if user.is_authenticated %}
       <form method="post" action="{% url 'logout' %}" class="logout">

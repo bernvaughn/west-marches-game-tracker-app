@@ -23,3 +23,14 @@ def nav_entries(context):
     from .. import navigation
 
     return navigation.entries_for(context["request"])
+
+
+@register.filter
+def initials(value):
+    """Up to two capital initials: 'Gwen the GM' -> 'GG', 'Alice' -> 'A'."""
+    words = [w for w in str(value or "").replace("@", " ").split() if w]
+    if not words:
+        return "?"
+    if len(words) == 1:
+        return words[0][0].upper()
+    return (words[0][0] + words[-1][0]).upper()

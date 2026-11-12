@@ -235,3 +235,5 @@ a.wm-chip:hover { color: var(--wm-accent); }
   .site-header .navbar-nav .nav-link { padding-inline: var(--wm-space-2); }
   .site-header .navbar-brand { margin-right: 0; }
 }
+
+.wm-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: var(--wm-text-xs); flex: none; }
