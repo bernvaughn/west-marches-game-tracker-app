@@ -178,13 +178,27 @@ def test_always_visible_items_outside_collapse(login, club, game_master, charact
 
 
 @pytest.mark.story("U34")
-def test_approvals_menu_outside_collapse(login, club, game_master, player):
+def test_busy_header_keeps_everything_outside_collapse(login, club, club_admin, player):
+    """A GM/admin with approvals and several characters still gets every top-bar item."""
+    from accounts.models import Membership, Message
+    from player_characters.models import Character
 
-    body = page(login, game_master, club)
-    if "approvals-menu" in body:
-        tree = _Tree()
-        tree.feed(body)
-        assert tree.inside["approvals-menu"] is False
+    admin_m = Membership.objects.get(user=club_admin, club=club)
+    admin_m.is_game_master = True
+    admin_m.save()
+    for name in ("Thaddeus Longername the Third", "Second"):
+        Character.objects.create(club=club, owner=admin_m, name=name)
+    sender = Membership.objects.get(user=player, club=club)
+    Message.objects.create(club=club, sender=sender, body="hi")
+    body = page(login, club_admin, club)
+    header = body[: body.index("</nav>", body.index('<nav class="site-header'))]
+    tree = _Tree()
+    tree.feed(header)
+    for key in ("user-name", "club-name", "character-selector", "approvals-menu", "logout"):
+        assert tree.inside.get(key) is False, key
+    assert 'aria-label="Log out"' in header
+    # The narrow-screen log out icon is an inline SVG, not a font glyph.
+    assert "<svg" in header[header.index('aria-label="Log out"') :]
 
 
 @pytest.mark.story("U29")

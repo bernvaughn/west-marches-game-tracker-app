@@ -2,12 +2,21 @@
 .donate { font-size: .875rem; }
 .notice { font-weight: bold; }
 .temp-password { font-family: monospace; }
-.site-header .user-name, .site-header .club-name, .site-header .character-name { max-width: 8rem; }
+.site-header-fixed { flex-wrap: nowrap; min-width: 0; max-width: 100%; }
+.site-header-fixed > * { min-width: 0; }
+.site-header .user-name, .site-header .club-name, .site-header .character-name {
+  max-width: 8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.site-header .character-name { display: inline-block; vertical-align: middle; }
 .site-header .character-selector select { max-width: 9rem; }
 @media (max-width: 575.98px) {
+  .site-header-fixed { flex-wrap: wrap; row-gap: .25rem; justify-content: flex-end; }
   .site-header .user-name, .site-header .club-name, .site-header .character-name { max-width: 4.5rem; }
   .site-header .character-selector select { max-width: 6rem; }
-  .site-header .character-selector button { display: none; }
+  /* Approvals: badge only; the button keeps its aria-label. */
+  .site-header .approvals-menu { font-size: 0; }
+  .site-header .approvals-menu .badge { font-size: .75rem; }
+  .site-header .approvals-menu::after { margin-left: .15rem; }
 }
 main table { margin-bottom: .5rem; }
 
