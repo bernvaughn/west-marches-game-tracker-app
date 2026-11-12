@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.permissions import admin_or_gm_required, club_member_required
 from accounts.scoping import club_get_object_or_404, club_queryset
+from player_characters.selection import selected_character
 
 from .. import services
 from ..forms_requests import CreditRequestForm, VisitRequestForm
@@ -58,6 +59,11 @@ def _int(value):
         return 0
 
 
+def _default_character(request):
+    sel = selected_character(request)
+    return {"characters": [sel.pk]} if sel else {}
+
+
 @club_member_required
 def visit_new(request, club_slug, map_id):
     is_editor = is_map_editor(request.user, request.club)
@@ -86,7 +92,11 @@ def visit_new(request, club_slug, map_id):
     else:
         form = VisitRequestForm(
             characters_qs=chars,
-            initial={"q": _int(request.GET.get("q")), "r": _int(request.GET.get("r"))},
+            initial={
+                "q": _int(request.GET.get("q")),
+                "r": _int(request.GET.get("r")),
+                **_default_character(request),
+            },
         )
     return render(
         request,
@@ -130,7 +140,7 @@ def credit_new(request, club_slug, location_id, kind):
             messages.success(request, "Request sent.")
             return redirect("map:requests", club_slug=club_slug)
     else:
-        form = CreditRequestForm(characters_qs=chars)
+        form = CreditRequestForm(characters_qs=chars, initial=_default_character(request))
     if is_editor or location.pk in found_location_ids(chars):
         label = location.name
     else:

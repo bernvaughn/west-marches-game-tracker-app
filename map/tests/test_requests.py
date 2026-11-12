@@ -211,3 +211,34 @@ def test_demo_one_open_request(club, db):
     map_demo.seed(demo_club)
     assert MapRequest.objects.filter(club=demo_club, status="requested").count() == 1
     assert call_command is not None
+
+
+@pytest.mark.story("M12")
+def test_request_forms_default_to_selected_character(
+    login, club, hex_map, player, character, second_character, visible_location
+):
+    from accounts.models import Membership
+    from player_characters.models import SelectedCharacter
+
+    m = Membership.objects.get(user=player, club=club)
+    SelectedCharacter.objects.update_or_create(
+        membership=m, defaults={"character": second_character}
+    )
+    c = login(player)
+    pages = [
+        reverse("map:request_visit", args=[club.slug, hex_map.pk]),
+        reverse("map:request_credit", args=[club.slug, "explored", visible_location.pk]),
+    ]
+    for page in pages:
+        resp = c.get(page)
+        assert resp.status_code == 200
+        assert resp.context["form"]["characters"].value() == [second_character.pk]
+    resp = c.post(pages[1], {"characters": [character.pk], "date": "2026-01-01", "note": ""})
+    assert resp.status_code == 302
+    assert MapRequest.objects.get().characters.get() == character
+
+
+@pytest.mark.story("M12")
+def test_request_form_cross_club_isolation(login, club, hex_map, other_club_member):
+    resp = login(other_club_member).get(reverse("map:request_visit", args=[club.slug, hex_map.pk]))
+    assert resp.status_code == 404

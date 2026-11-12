@@ -27,6 +27,8 @@ def _map_context(request, hex_map, q, r, view, tile=None):
         "picked_ids": view["picked_ids"],
         "choices": view["choices"],
         "char_params": view["char_params"],
+        "view_param": view["view_param"],
+        "can_pick_own": view["can_pick_own"],
     }
 
 
@@ -112,6 +114,7 @@ def detail(request, club_slug, map_id):
         print_url=with_params(print_base, window, char_params),
         full_url=with_params(base, window),
         players_url=with_params(base, window, "view=players"),
+        mine_url=with_params(base, window, "view=mine"),
     )
     return render(request, "map/core/detail.html", ctx)
 
@@ -147,6 +150,7 @@ def tile(request, club_slug, map_id, q, r):
         placeholders=placeholders,
         back_url=with_params(back, urlencode({"q": q, "r": r}), view["char_params"]),
         players_url=with_params(request.path, "view=players"),
+        mine_url=with_params(request.path, "view=mine"),
         full_url=request.path,
     )
     return render(request, "map/core/tile.html", ctx)

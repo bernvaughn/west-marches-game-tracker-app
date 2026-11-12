@@ -1,13 +1,14 @@
 <div class="map-picker">
 {% if is_editor %}
-<p class="view-switch"><a href="{{ full_url }}">Full map</a> | <a href="{{ players_url }}">Players' view</a>{% if players_view %} (showing){% else %} (full map showing){% endif %}</p>
+<p class="view-switch"><a href="{{ full_url }}">Full map</a> | <a href="{{ players_url }}">Players' view</a>{% if can_pick_own %} | <a href="{{ mine_url }}">My characters</a>{% endif %}{% if view_param == "mine" %} (my characters showing){% elif players_view %} (players' view showing){% else %} (full map showing){% endif %}</p>
 {% endif %}
 {% if players_view %}
 <form method="get">
 {% if hex_map and radius %}<input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="r" value="{{ r }}"><input type="hidden" name="radius" value="{{ radius }}">{% endif %}
-{% if is_editor %}<input type="hidden" name="view" value="players">{% endif %}
+{% if view_param %}<input type="hidden" name="view" value="{{ view_param }}">{% endif %}
 {% for c in choices %}<label><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"{% if c.pk in picked_ids %} checked{% endif %}> {{ c.name }}</label> {% endfor %}
 <button class="btn btn-sm btn-outline-secondary" type="submit">Show</button>
+{% if view_param != "players" %}<small class="text-muted">Starts with the character you act as. Changing it here changes only the map.</small>{% endif %}
 </form>
 {% endif %}
 </div>

@@ -2,6 +2,8 @@ from urllib.parse import urlencode
 
 from accounts.permissions import is_club_admin, is_game_master
 from player_characters.models import Character
+from player_characters.selection import own_characters as _own_characters
+from player_characters.selection import selected_character
 
 from .models import FoundMark, Location, LocationCredit, TileVisit
 
@@ -11,10 +13,7 @@ def is_map_editor(user, club):
 
 
 def own_characters(request):
-    membership = getattr(request, "membership", None)
-    if membership is None:
-        return Character.objects.none()
-    return Character.objects.for_club(request.club).filter(owner=membership)
+    return _own_characters(request)
 
 
 def pick_characters(request, ids, allow_any):
@@ -40,33 +39,43 @@ def resolve_view(request, hex_map):
     """One place for the M8 and M10 rules. Returns the view state for a request."""
     is_editor = is_map_editor(request.user, request.club)
     ids = request.GET.getlist("characters")
-    wants_players = request.GET.get("view") == "players"
+    wanted = request.GET.get("view")
+    has_own = own_characters(request).exists()
+    can_pick_own = is_editor and has_own
+    if not is_editor or (wanted == "mine" and can_pick_own):
+        mode = "mine"
+    elif wanted == "players":
+        mode = "players"
+    else:
+        mode = "full"
     explicit = []
-    if is_editor and not wants_players:
-        players_view = False
+    if mode == "full":
         picked = []
         visible = None
-    elif is_editor:
-        players_view = True
+    elif mode == "players":
         explicit = list(pick_characters(request, ids, allow_any=True))
         picked = explicit
         visible = visible_positions(hex_map, picked)
     else:
-        players_view = True
         explicit = list(pick_characters(request, ids, allow_any=False))
-        picked = explicit or list(own_characters(request))
+        sel = selected_character(request)
+        picked = explicit or ([sel] if sel else [])
         visible = visible_positions(hex_map, picked)
-    if is_editor:
+    players_view = mode != "full"
+    if mode == "players":
         choices = Character.objects.for_club(request.club).order_by("name")
     else:
         choices = own_characters(request).order_by("name")
+    view_param = mode if is_editor and mode != "full" else ""
     pairs = [("characters", c.pk) for c in explicit]
-    if is_editor and players_view:
-        pairs.append(("view", "players"))
+    if view_param:
+        pairs.append(("view", view_param))
     return {
         "is_editor": is_editor,
         "players_view": players_view,
-        "show_gm": is_editor and not players_view,
+        "show_gm": mode == "full",
+        "view_param": view_param,
+        "can_pick_own": can_pick_own,
         "picked": picked,
         "picked_ids": {c.pk for c in picked},
         "choices": list(choices),

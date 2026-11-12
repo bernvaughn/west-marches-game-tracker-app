@@ -53,7 +53,7 @@ def test_player_picks_one_character(login, club, hex_map, two_visits, player, se
     assert f"characters={second_character.pk}" in body  # pan and tile links carry the pick
     default = get(login(player), "detail", club, hex_map.pk).content.decode()
     assert url("tile", club, hex_map.pk, 1, 0) in default
-    assert url("tile", club, hex_map.pk, 0, 2) in default
+    assert url("tile", club, hex_map.pk, 0, 2) not in default
 
 
 @pytest.mark.story("M8")
@@ -63,10 +63,9 @@ def test_player_foreign_character_ignored(
     body = get(
         login(player), "detail", club, hex_map.pk, query=f"?characters={other_character.pk}"
     ).content.decode()
-    assert url("tile", club, hex_map.pk, 1, 0) in body
-    assert url("tile", club, hex_map.pk, 0, 2) in body
+    assert url("tile", club, hex_map.pk, 1, 0) in body  # falls back to the selected character
+    assert url("tile", club, hex_map.pk, 0, 2) not in body
     assert "Cael" not in body
-    assert "Aria" in body and "Borin" in body
 
 
 @pytest.mark.story("M8")
@@ -173,3 +172,100 @@ def test_foreign_character_ignored_in_gm_view(
         query=f"?view=players&characters={foreign_character.pk}",
     ).content.decode()
     assert "Zorg" not in printed and "Old Watchtower" not in printed
+
+
+def _select(player, character):
+    from accounts.models import Membership
+    from player_characters.models import SelectedCharacter
+
+    m = Membership.objects.get(user=player, club=character.club)
+    SelectedCharacter.objects.update_or_create(membership=m, defaults={"character": character})
+
+
+@pytest.mark.story("M8")
+def test_default_is_selected_character(login, club, hex_map, two_visits, player, second_character):
+    _select(player, second_character)
+    c = login(player)
+    body = get(c, "detail", club, hex_map.pk).content.decode()
+    assert url("tile", club, hex_map.pk, 0, 2) in body
+    assert url("tile", club, hex_map.pk, 1, 0) not in body
+    assert get(c, "tile", club, hex_map.pk, 1, 0).status_code == 404
+    assert get(c, "tile", club, hex_map.pk, 0, 2).status_code == 200
+    printed = get(c, "print", club, hex_map.pk).content.decode()
+    assert "Hidden Cave" in printed and "Old Watchtower" not in printed
+
+
+@pytest.mark.story("M8")
+def test_override_does_not_change_selection(
+    login, club, hex_map, two_visits, player, player_character, second_character
+):
+    from player_characters.models import SelectedCharacter
+
+    _select(player, second_character)
+    c = login(player)
+    q = f"?characters={player_character.pk}"
+    body = get(c, "detail", club, hex_map.pk, query=q).content.decode()
+    assert url("tile", club, hex_map.pk, 1, 0) in body
+    assert url("tile", club, hex_map.pk, 0, 2) not in body
+    both = f"?characters={player_character.pk}&characters={second_character.pk}"
+    body = get(c, "detail", club, hex_map.pk, query=both).content.decode()
+    assert (
+        url("tile", club, hex_map.pk, 1, 0) in body and url("tile", club, hex_map.pk, 0, 2) in body
+    )
+    assert SelectedCharacter.objects.get().character_id == second_character.pk
+    body = get(c, "detail", club, hex_map.pk).content.decode()
+    assert url("tile", club, hex_map.pk, 1, 0) not in body
+
+
+@pytest.fixture
+def gm_character(club, game_master):
+    from accounts.models import Membership
+
+    m = Membership.objects.get(user=game_master, club=club)
+    return Character.objects.create(club=club, owner=m, name="Gwenna")
+
+
+@pytest.mark.story("M8")
+def test_gm_my_characters_view(
+    login, club, hex_map, two_visits, game_master, gm_character, player_character
+):
+    record_visits(hex_map, 0, 2, [gm_character])
+    add_found_marks(Location.objects.get(name="Hidden Cave"), [gm_character])
+    c = login(game_master)
+    page = get(c, "detail", club, hex_map.pk)
+    assert "My characters" in page.content.decode()
+    body = get(c, "detail", club, hex_map.pk, query="?view=mine").content.decode()
+    assert url("tile", club, hex_map.pk, 0, 2) in body
+    assert url("tile", club, hex_map.pk, 1, 0) not in body
+    assert "Cave GM secret" not in body
+    other = f"?view=mine&characters={player_character.pk}"
+    body = get(c, "detail", club, hex_map.pk, query=other).content.decode()
+    assert url("tile", club, hex_map.pk, 1, 0) not in body
+    assert "view=mine" in body
+    full = get(c, "detail", club, hex_map.pk).content.decode()
+    assert url("tile", club, hex_map.pk, 1, 0) in full
+
+
+@pytest.mark.story("M8")
+def test_gm_without_characters_has_no_mine(login, club, hex_map, two_visits, game_master):
+    c = login(game_master)
+    page = get(c, "detail", club, hex_map.pk).content.decode()
+    assert "My characters" not in page
+    body = get(c, "detail", club, hex_map.pk, query="?view=mine").content.decode()
+    assert (
+        url("tile", club, hex_map.pk, 1, 0) in body and url("tile", club, hex_map.pk, 0, 2) in body
+    )
+
+
+@pytest.mark.story("M8")
+def test_cross_club_picker_isolation(
+    login, club, hex_map, two_visits, player, foreign_character, other_club_member
+):
+    _select(other_club_member, foreign_character)
+    body = get(
+        login(player), "detail", club, hex_map.pk, query=f"?characters={foreign_character.pk}"
+    ).content.decode()
+    assert "Zorg" not in body
+    assert url("tile", club, hex_map.pk, 1, 0) in body
+    for name, args in (("detail", ()), ("print", ()), ("tile", (1, 0))):
+        assert get(login(other_club_member), name, club, hex_map.pk, *args).status_code == 404
