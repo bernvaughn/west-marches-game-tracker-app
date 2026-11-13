@@ -22,38 +22,28 @@
   <script src="{% static 'js/tooltips.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
-<nav class="site-header navbar navbar-expand-lg py-1">
-  <div class="container-fluid">
-    <a class="navbar-brand order-1" href="{% url 'home' %}">West Marches</a>
-    {% if club %}{% nav_entries as nav %}<ul class="navbar-nav wm-shortcuts flex-row order-1 no-print">
-      {% for l in nav.primary %}<li class="nav-item"><a class="nav-link wm-shortcut{% if l.active %} active{% endif %}" href="{{ l.url }}" aria-label="{{ l.label }}" title="{{ l.label }}" data-wm-tooltip{% if l.active %} aria-current="page"{% endif %}>{% if l.icon %}{% include "components/icon.html" with name=l.icon %}{% endif %}<span class="wm-shortcut-label">{{ l.label }}</span></a></li>{% endfor %}
-    </ul>{% endif %}
-    <div class="site-header-fixed d-flex align-items-center gap-2 order-3 order-lg-last ms-lg-auto">
-      <span class="d-none d-md-inline">{% include "accounts/_donate.html" %}</span>
-      {% if user.is_authenticated and club %}
-      <div class="dropdown club-switcher no-print d-none d-sm-block">
-        <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}">{{ club.name }}</a>
-        <ul class="dropdown-menu">
-          {% for c in user_clubs %}<li><a class="dropdown-item{% if c == club %} active{% endif %}" href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-      {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}"><span class="wm-avatar wm-avatar-sm d-xxl-none" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden d-xxl-none">{{ who }}</span><span class="d-none d-xxl-inline">{{ who }}</span></span>{% endwith %}{% endif %}
-      {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
-      {% if user.is_authenticated and not club %}
-      <form method="post" action="{% url 'logout' %}" class="logout">
-        {% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary" aria-label="Log out"><span class="d-none d-sm-inline">Log out</span><span class="d-sm-none">{% include "components/icon.html" with name="box-arrow-right" %}</span></button>
-      </form>
-      {% endif %}
-    </div>
-    {% if club or user.is_superuser %}
-    <button class="navbar-toggler no-print order-2 ms-auto" type="button" data-bs-toggle="collapse" data-bs-target="#site-header-menu" aria-controls="site-header-menu" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-    <div class="collapse navbar-collapse order-4" id="site-header-menu">
-      {% if club %}{% include "partials/nav.html" %}{% else %}{% include "partials/site_nav.html" %}{% endif %}
+<nav class="site-header navbar py-1" aria-label="Top bar">
+  <div class="container-fluid wm-topbar">
+    {% if user.is_authenticated %}<a class="navbar-toggler wm-hamburger no-print" href="{% if club %}{% url 'club_home' club.slug %}{% else %}{% url 'home' %}{% endif %}" role="button" data-bs-toggle="offcanvas" data-bs-target="#site-menu" aria-controls="site-menu" aria-label="Open menu">{% include "components/icon.html" with name="list" %}</a>{% endif %}
+    {% if user.is_authenticated and club %}
+    <div class="dropdown club-switcher no-print">
+      <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}">{{ club.name }}</a>
+      <ul class="dropdown-menu">
+        {% for c in user_clubs %}<li><a class="dropdown-item{% if c == club %} active{% endif %}" href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}
+      </ul>
     </div>
     {% endif %}
+    {% if club %}{% nav_entries as nav %}<ul class="navbar-nav wm-shortcuts flex-row no-print">
+      {% for l in nav.primary %}<li class="nav-item wm-shortcut-rank-{{ forloop.counter }}"><a class="nav-link wm-shortcut{% if l.active %} active{% endif %}" href="{{ l.url }}" aria-label="{{ l.label }}" title="{{ l.label }}" data-wm-tooltip{% if l.active %} aria-current="page"{% endif %}>{% if l.icon %}{% include "components/icon.html" with name=l.icon %}{% endif %}<span class="wm-shortcut-label">{{ l.label }}</span></a></li>{% endfor %}
+    </ul>{% endif %}
+    <div class="site-header-fixed d-flex align-items-center gap-2 ms-auto">
+      {% if not user.is_authenticated %}{% include "accounts/_donate.html" %}{% endif %}
+      {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}"><span class="wm-avatar wm-avatar-sm" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden">{{ who }}</span><span class="user-name-text" aria-hidden="true">{{ who }}</span></span>{% endwith %}{% endif %}
+      {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
+    </div>
   </div>
 </nav>
+{% if user.is_authenticated %}{% include "partials/side_menu.html" %}{% endif %}
 {% if messages %}<ul class="messages wm-messages wm-main pb-0">{% for m in messages %}<li class="alert alert-{% if m.level_tag == 'error' %}danger{% else %}{{ m.level_tag|default:'info' }}{% endif %} wm-alert {{ m.tags }}" role="{% if m.level_tag == 'error' or m.level_tag == 'warning' %}alert{% else %}status{% endif %}">{% if m.level_tag == 'error' %}{% include "components/icon.html" with name="x-octagon-fill" %}{% elif m.level_tag == 'warning' %}{% include "components/icon.html" with name="exclamation-triangle-fill" %}{% elif m.level_tag == 'success' %}{% include "components/icon.html" with name="check-circle-fill" %}{% else %}{% include "components/icon.html" with name="info-circle-fill" %}{% endif %}<div>{{ m }}</div></li>{% endfor %}</ul>{% endif %}
 <main class="wm-main {% block main_class %}{% endblock %}">{% block content %}{% endblock %}</main>
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>

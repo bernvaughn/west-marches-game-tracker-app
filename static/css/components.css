@@ -200,21 +200,6 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .modal-backdrop { --bs-backdrop-bg: var(--wm-text); }
 .wm-modal-subtitle { color: var(--wm-text-muted); font-size: var(--wm-text-sm); margin: 0; }
 
-/* ---- Top bar ---- */
-.site-header { background: var(--wm-surface-raised) !important; border-bottom: 1px solid var(--wm-border); box-shadow: var(--wm-shadow-1); }
-.site-header .navbar-brand { font-family: var(--wm-font-heading); font-weight: 700; font-size: var(--wm-text-lg); color: var(--wm-text); }
-.site-header .navbar-toggler { border-color: var(--wm-text-muted); color: var(--wm-text); }
-.site-header .navbar-text { color: var(--wm-text); }
-.wm-nav-label { display: none; }
-@media (max-width: 991.98px) {
-  .site-header .navbar-brand { order: 1; }
-  .site-header .navbar-toggler { order: 2; margin-left: auto; }
-  .site-header .site-header-fixed { order: 3; width: 100%; margin-left: 0 !important; }
-  .site-header .navbar-collapse { order: 4; width: 100%; }
-  .site-header .dropdown-menu { border: 0; box-shadow: none; background: var(--wm-surface-sunken); }
-  .site-header .navbar-nav .nav-item + .nav-item { border-top: 1px solid var(--wm-border); }
-}
-
 /* ---- Touch targets (phones) ---- */
 @media (max-width: 575.98px) {
   .btn, .btn-sm, .form-control, .form-control-sm, .form-select, .form-select-sm, .nav-link, .dropdown-item { min-height: var(--wm-size-touch); }
@@ -224,16 +209,6 @@ a.wm-chip:hover { color: var(--wm-accent); }
   .dropdown-item { display: flex; align-items: center; }
   .form-check-input { width: 1.25em; height: 1.25em; }
   .modal-dialog-scrollable .modal-body { overflow-y: auto; }
-}
-
-/* ---- Top bar: one row on desktop ---- */
-.site-header .navbar-text { font-size: var(--wm-text-sm); font-weight: 600; padding: 0; }
-@media (min-width: 1200px) {
-  .site-header > .container-fluid { flex-wrap: nowrap; gap: var(--wm-space-3); }
-  .site-header .navbar-collapse { flex: 1 1 auto; min-width: 0; }
-  .site-header .site-header-fixed { flex: none; }
-  .site-header .navbar-nav .nav-link { padding-inline: var(--wm-space-2); }
-  .site-header .navbar-brand { margin-right: 0; }
 }
 
 .wm-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: var(--wm-text-xs); flex: none; }
@@ -275,53 +250,58 @@ a.wm-chip:hover { color: var(--wm-accent); }
   .form-check .form-check-input { float: none; margin: 0; flex: none; }
 }
 
-/* ---- Top bar and donate link (moved from app.css, story 8) ---- */
+/* ---- Top bar (U61): one row, never wraps; CSS-only narrowing ---- */
+.site-header { background: var(--wm-surface-raised) !important; border-bottom: 1px solid var(--wm-border); box-shadow: var(--wm-shadow-1); }
+.site-header .navbar-text { color: var(--wm-text); font-size: var(--wm-text-sm); font-weight: 600; padding: 0; white-space: nowrap; }
 .donate { font-size: .875rem; }
-.site-header-fixed { flex-wrap: nowrap; min-width: 0; max-width: 100%; }
-.site-header-fixed > * { min-width: 0; }
-.site-header .user-name, .site-header .club-name, .site-header .character-name { white-space: nowrap; }
-.site-header .character-name { display: inline-block; vertical-align: middle; }
-.site-header .character-selector select { width: auto; max-width: 16rem; }
-@media (max-width: 575.98px) {
-  .site-header-fixed { flex-wrap: nowrap; justify-content: flex-start; }
-  /* Phone: the character name shows in full; the club and user names live in the menu / are hidden. */
-  .site-header .character-selector, .site-header .character-name { flex: 1 1 auto; }
-  .site-header .character-selector select { width: 100%; max-width: none; }
-  .site-header .character-name { white-space: normal; }
-  .site-header .approvals-menu { font-size: 0; }
-  .site-header .approvals-menu .badge { font-size: .75rem; }
-  .site-header .approvals-menu::after { margin-left: .15rem; }
-}
-
-/* ---- Top bar: shortcuts and grouped Menu (U60) ---- */
-.site-header > .container-fluid { row-gap: var(--wm-space-1); }
-.site-header .navbar-brand { padding-block: 0; margin-right: var(--wm-space-2); }
-.site-header .wm-shortcuts { gap: var(--wm-space-1); }
-.site-header .wm-shortcut { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem var(--wm-space-2); }
+.wm-topbar { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--wm-space-2); min-width: 0; }
+.wm-topbar > * { min-width: 0; }
+.site-header .wm-hamburger { display: inline-flex; flex: none; align-items: center; justify-content: center; padding: .25rem .5rem; min-width: var(--wm-size-touch); min-height: var(--wm-size-touch); border: 1px solid var(--wm-text-muted); color: var(--wm-text); }
+.site-header .wm-hamburger .wm-icon { width: 1.25em; height: 1.25em; }
+.site-header .club-switcher { flex: 0 1 auto; min-width: 0; }
+.site-header .club-name { display: block; max-width: min(14rem, 100%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-header .club-name::after { display: none; }
+.site-header .wm-shortcuts { flex: none; gap: var(--wm-space-1); flex-wrap: nowrap; }
+.site-header .wm-shortcut { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem var(--wm-space-2); min-height: var(--wm-size-touch); }
 .site-header .wm-shortcut .wm-icon { width: 1.1em; height: 1.1em; }
 .wm-shortcut-label { display: none; }
 @media (min-width: 1200px) { .wm-shortcut-label { display: inline; } }
-@media (max-width: 359.98px) { .site-header .wm-shortcuts { display: none !important; } }
-.site-header .navbar-toggler { padding: .25rem .5rem; height: calc(1.5em + .5rem + 2px); align-items: center; }
-.site-header .navbar-toggler-icon { width: 1.1em; height: 1.1em; }
-.wm-menu-panel .logout { margin: 0; }
-.wm-menu-panel .logout .dropdown-item { width: 100%; text-align: left; }
-.wm-menu-group .dropdown-header { padding-inline: var(--wm-space-3); }
-@media (max-width: 991.98px) {
-  .site-header .navbar-toggler { display: inline-flex; }
-  .site-header .wm-shortcuts .nav-item + .nav-item { border-top: 0; }
-  .site-header .navbar-nav .nav-menu > .dropdown-toggle { display: none; }
-  .site-header .wm-menu-panel { display: block; position: static; padding: 0; background: transparent; }
-  .site-header .site-header-fixed { padding-block: var(--wm-space-1); }
-  .site-header .navbar-collapse { order: 4; }
+.site-header .site-header-fixed { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
+.site-header-fixed > * { min-width: 0; }
+.site-header .user-name { flex: none; display: inline-flex; align-items: center; gap: var(--wm-space-1); }
+.site-header .user-name-text { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+.site-header .character-selector { flex: 0 1 auto; }
+.site-header .character-selector select { width: auto; max-width: 12rem; min-width: 0; text-overflow: ellipsis; }
+.site-header .character-name { display: inline-block; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-header .approvals-menu { white-space: nowrap; }
+.wm-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: var(--wm-text-xs); flex: none; }
+/* Shortcut icons leave from the right: Map, Trades, Quests, Shops, Character. */
+@media (max-width: 991.98px) { .wm-shortcut-rank-5 { display: none; } }
+@media (max-width: 767.98px) { .wm-shortcut-rank-4 { display: none; } }
+@media (max-width: 575.98px) { .wm-shortcut-rank-3 { display: none; } }
+@media (max-width: 479.98px) { .wm-shortcut-rank-2 { display: none; } }
+@media (max-width: 399.98px) { .wm-shortcut-rank-1 { display: none; } .site-header .user-name-text { display: none; } }
+@media (max-width: 575.98px) {
+  .wm-topbar { gap: var(--wm-space-1); }
+  .site-header .club-name { max-width: 7rem; }
+  .site-header .character-selector select, .site-header .character-name { max-width: 7rem; }
+  .site-header .approvals-menu { font-size: 0; padding-inline: .4rem; }
+  .site-header .approvals-menu .badge { font-size: .75rem; }
+  .site-header .approvals-menu::after { margin-left: .15rem; }
+  .site-header .wm-shortcut { padding-inline: .4rem; }
 }
-@media (min-width: 992px) {
-  .site-header > .container-fluid { position: relative; }
-  .site-header .nav-menu { position: static; }
-  .site-header .wm-menu-panel { left: auto; right: 0; top: 100%; }
-  .site-header .wm-menu-panel.show { display: grid; grid-template-columns: repeat(3, minmax(10rem, 1fr)); gap: var(--wm-space-2) var(--wm-space-3); width: min(42rem, calc(100vw - 2rem)); padding: var(--wm-space-2); }
+@media (max-width: 359.98px) {
+  .site-header .club-name { max-width: 4.5rem; }
+  .site-header .character-selector select, .site-header .character-name { max-width: 4.5rem; }
 }
-@media (min-width: 992px) and (max-width: 1199.98px) {
-  .site-header .site-header-fixed { order: 3; width: 100%; margin-left: 0 !important; }
-  .site-header .navbar-collapse { order: 2; flex: 1 1 auto; }
-}
+
+/* ---- Side menu (U61) ---- */
+.wm-side-menu { --bs-offcanvas-width: min(20rem, 85vw); background: var(--wm-surface-raised); }
+.wm-side-menu .offcanvas-header { border-bottom: 1px solid var(--wm-border); }
+.wm-side-menu .offcanvas-title { font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); margin: 0; }
+.wm-menu-group { margin-bottom: var(--wm-space-3); }
+.wm-menu-heading { font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--wm-text-muted); margin: 0 0 var(--wm-space-1); font-family: var(--wm-font-body, inherit); }
+.wm-menu-link { display: flex; align-items: center; min-height: var(--wm-size-touch); padding: .25rem var(--wm-space-2); border-radius: var(--wm-radius-md, .375rem); color: var(--wm-text); text-decoration: none; }
+.wm-menu-link:hover { background: var(--wm-surface-sunken); }
+.wm-menu-link.active { background: var(--wm-surface-sunken); font-weight: 600; }
+.wm-menu-logout { margin: var(--wm-space-3) 0 0; padding-top: var(--wm-space-3); border-top: 1px solid var(--wm-border); }

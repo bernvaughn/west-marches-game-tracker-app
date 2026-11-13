@@ -1,0 +1,41 @@
+{% load accounts_tags %}{% if club %}{% nav_entries as nav %}{% endif %}
+<div class="offcanvas offcanvas-start wm-side-menu no-print" id="site-menu" tabindex="-1" aria-labelledby="site-menu-title">
+  <div class="offcanvas-header">
+    <h2 class="offcanvas-title" id="site-menu-title">West Marches</h2>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close menu"></button>
+  </div>
+  <div class="offcanvas-body">
+    {% if club %}
+    {% for key, heading, links in nav|menu_sections %}
+    <section class="wm-menu-group wm-menu-group-{{ key }}">
+      <h3 class="wm-menu-heading">{{ heading }}</h3>
+      {% for l in links %}<a class="wm-menu-link{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a>{% endfor %}
+    </section>
+    {% endfor %}
+    {% endif %}
+    <section class="wm-menu-group wm-menu-group-account">
+      <h3 class="wm-menu-heading">Account</h3>
+      <a class="wm-menu-link" href="{% url 'home' %}">Your clubs</a>
+      <a class="wm-menu-link" href="{% url 'password_change' %}">Change password</a>
+      {% if donate_url %}<a class="wm-menu-link" href="{{ donate_url }}" target="_blank" rel="noopener">Donate</a>{% endif %}
+    </section>
+    {% if club and nav.gm %}
+    <section class="wm-menu-group wm-menu-group-gm">
+      <h3 class="wm-menu-heading">Game master</h3>
+      {% for l in nav.gm %}<a class="wm-menu-link{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a>{% endfor %}
+    </section>
+    {% endif %}
+    {% if club and nav.admin or user.is_superuser %}
+    <section class="wm-menu-group wm-menu-group-admin">
+      <h3 class="wm-menu-heading">{% if club %}Club admin{% else %}Site admin{% endif %}</h3>
+      {% if club %}{% for l in nav.admin %}<a class="wm-menu-link{% if l.active %} active{% endif %}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>{{ l.label }}</a>{% endfor %}{% endif %}
+      {% if user.is_superuser %}
+      <a class="wm-menu-link" href="{% url 'site_clubs' %}">Clubs</a>
+      <a class="wm-menu-link" href="{% url 'site_settings' %}">Site settings</a>
+      <a class="wm-menu-link" href="{% url 'site_design' %}">Design system</a>
+      {% endif %}
+    </section>
+    {% endif %}
+    <form method="post" action="{% url 'logout' %}" class="logout wm-menu-logout">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary w-100">Log out</button></form>
+  </div>
+</div>
