@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Downtime point requests{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Downtime point requests" %}
+<p><a class="btn btn-sm btn-primary" href="{% url 'downtime:request_new' club.slug %}" title="Ask for downtime points for your characters">Request points</a></p>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle">
+<thead><tr><th>Characters</th><th>Points</th><th>Note</th><th>Requested by</th><th>Created</th><th>Status</th><th>Decided</th>{% if is_editor %}<th></th>{% endif %}</tr></thead>
+<tbody>
+{% for req in requests %}
+<tr>
+<td>{% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</td>
+<td>{{ req.points }}</td>
+<td>{{ req.note|linebreaksbr }}</td>
+<td>{{ req.requested_by.user.display_name }}</td>
+<td>{{ req.created|date:"Y-m-d" }}</td>
+<td>{% include "components/status_badge.html" with value=req.status text=req.get_status_display %}</td>
+<td>{% if req.decided_at %}{{ req.decided_by.user.display_name|default:"" }} {{ req.decided_at|date:"Y-m-d H:i" }}{% endif %}</td>
+{% if is_editor %}<td class="actions">{% if req.status == "pending" %}
+<form method="post" class="d-inline" action="{% url 'downtime:request_approve' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit" title="Award the points to the listed characters">Approve</button></form>
+<form method="post" class="d-inline" action="{% url 'downtime:request_decline' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" title="Decline without awarding points">Decline</button></form>
+{% endif %}</td>{% endif %}
+</tr>
+{% empty %}{% if is_editor %}{% include "components/data_table_empty.html" with cols=8 text="No requests." %}{% else %}{% include "components/data_table_empty.html" with cols=7 text="No requests." %}{% endif %}{% endfor %}
+</tbody>
+</table></div>
+{% endblock %}

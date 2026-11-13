@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Request downtime points{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Request downtime points" %}
+{% if not has_characters %}{% include "components/alert.html" with level="info" text="You have no characters in this club, so you cannot make a request." %}{% endif %}
+{% include "components/card_open.html" only %}
+<form method="post" class="wm-form">{% csrf_token %}
+{{ form }}
+<div class="wm-form-actions">
+<button class="btn btn-primary" type="submit" title="Send this request to the game masters">Send request</button>
+<a class="btn btn-outline-secondary" href="{% url 'downtime:requests' club.slug %}" title="Back to the request list">Point requests</a>
+</div>
+</form>
+{% include "components/card_close.html" %}
+{% endblock %}

@@ -170,7 +170,7 @@ def test_spend_not_implemented(character, action):
 def test_urls_importable():
     from downtime import urls
 
-    assert urls.urlpatterns == []
+    assert isinstance(urls.urlpatterns, list)
     assert reverse  # url module loads through config.urls
 
 
