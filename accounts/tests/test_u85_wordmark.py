@@ -1,7 +1,6 @@
 import re
 
 import pytest
-from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.contrib.staticfiles.views import serve
 from django.test import Client, RequestFactory
@@ -17,7 +16,7 @@ def _css(name):
         return f.read()
 
 
-def test_font_and_licence_found_and_served():
+def test_font_and_licence_found_and_served(settings):
     assert finders.find("fonts/OFL.txt")
     assert finders.find(FONT)
     settings.DEBUG = True
