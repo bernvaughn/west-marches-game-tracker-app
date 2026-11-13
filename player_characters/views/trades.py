@@ -7,6 +7,7 @@ from django.urls import reverse
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_queryset
 
+from ..inventory import coin_summary, inventory_rows
 from ..models import Trade
 from ..selection import selected_character
 from ..trade_forms import ProposeTradeForm, TradeSideForm
@@ -78,5 +79,17 @@ def propose(request, club_slug):
     else:
         form = ProposeTradeForm(request.user, club, initial={"receiver": to})
         side = TradeSideForm(sender, prefix="offer")
-    ctx.update({"form": form, "side_form": side, "sender": sender})
+    offer_rows = [
+        (r, side[f"item_{r.item.pk}"] if f"item_{r.item.pk}" in side.fields else None)
+        for r in inventory_rows(sender)
+    ]
+    ctx.update(
+        {
+            "form": form,
+            "side_form": side,
+            "sender": sender,
+            "coins": coin_summary(sender),
+            "offer_rows": offer_rows,
+        }
+    )
     return render(request, template, ctx)

@@ -3,6 +3,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+APP_NAME = "Downtime Market"
+APP_TAGLINE = "Spend your loot between sessions."
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") not in ("0", "false", "False", "")
 ALLOWED_HOSTS = [
@@ -53,6 +56,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "accounts.context_processors.app_name",
                 "accounts.context_processors.clubs",
                 "player_characters.context_processors.selection",
                 "accounts.approvals.context_processor",
@@ -103,7 +107,7 @@ EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 OAUTH2_PROVIDER = {
-    "SCOPES": {"mcp": "Use the West Marches tools for one club"},
+    "SCOPES": {"mcp": f"Use the {APP_NAME} tools for one club"},
     "DEFAULT_SCOPES": ["mcp"],
     "PKCE_REQUIRED": True,
     "COMPLIANT_BCP_RFC9700_PKCE_METHOD": True,  # S256 only
@@ -112,6 +116,6 @@ OAUTH2_PROVIDER = {
     "ROTATE_REFRESH_TOKEN": True,
     "DCR_ENABLED": True,
     "DCR_REGISTRATION_PERMISSION_CLASSES": ("oauth2_provider.dcr.AllowAllDCRPermission",),
-    "OAUTH2_PROTECTED_RESOURCE_NAME": "West Marches MCP",
+    "OAUTH2_PROTECTED_RESOURCE_NAME": f"{APP_NAME} MCP",
 }
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
