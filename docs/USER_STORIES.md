@@ -485,6 +485,7 @@ From using the build after round 7 (U65–U68) and new ideas from the owner.
 - Each entry has a label, a weight (a whole number from 1 up) and a reward: coins, one or more catalogue items, or nothing. An entry's chance is its weight divided by the table's total weight, and the form shows each entry's chance as a percentage.
 - A player chooses an available action for their selected character (U27) and spends a point. The app picks an entry at random by weight, gives the reward straight away, and records it in the ledger.
 - A character with too few points can't spend. Only club admins manage actions and tables.
+- Downtime is a top-bar shortcut (U60, U61), with its own icon, placed before Trades: Character, Shops, Quests, Downtime, Trades, Map. It also appears in the side menu's Town group. As the bar narrows, shortcut icons still leave from the right: Map, Trades, Downtime, Quests, Shops, Character.
 
 **D3 The spinning wheel.** As a player, I want picking my downtime reward to be a little game, so spending a point feels exciting. *(downtime)*
 - Spending a point shows a wheel with one slice per table entry, each slice sized by its weight and labelled. The wheel spins and stops on the entry the server already picked; the reward then shows.
