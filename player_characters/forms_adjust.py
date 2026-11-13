@@ -47,7 +47,9 @@ class PlayerConsumeForm(forms.Form):
     def __init__(self, *args, available=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.available = available
-        self.fields["quantity"].widget.attrs.update(min=1, max=available)
+        self.fields["quantity"].widget.attrs.update(
+            {"min": 1, "max": available, "class": "wm-inline-number"}
+        )
 
     def clean_quantity(self):
         quantity = self.cleaned_data["quantity"]
