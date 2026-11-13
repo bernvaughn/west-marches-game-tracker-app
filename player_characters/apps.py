@@ -26,4 +26,5 @@ class PlayerCharactersConfig(AppConfig):
         )
         reg("trades", "Propose trade", "trades:propose", None, 30)
         reg("character", "New character", "characters:create", None, 50)
+        reg("character", "Character slips", "characters:slips", None, 57)
         reg("character", "Move items", "characters:transfer_start", None, 55)

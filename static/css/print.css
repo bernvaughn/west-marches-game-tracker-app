@@ -9,3 +9,11 @@ body:has(.wm-card-print) { margin: 0; padding: 0; }
 .wm-card-page, .wm-card-sheet { page: cards; margin: 0 auto; padding: 0.2in 0.35in; box-sizing: content-box; }
 .wm-card-sheet { break-after: page; }
 .wm-card-sheet:last-child { break-after: auto; }
+
+/* Character slips */
+@page slips { size: portrait; margin: 0; }
+.wm-slip-print { padding: 0 !important; max-width: none; }
+body:has(.wm-slip-print) { margin: 0; padding: 0; }
+.wm-slip-sheet { page: slips; margin: 0 auto; padding: 0.3in 0.2in; box-sizing: content-box; break-after: page; }
+.wm-slip-sheet:last-child { break-after: auto; }
+.wm-slip { break-inside: avoid; background: white; color: black; border-color: black; }

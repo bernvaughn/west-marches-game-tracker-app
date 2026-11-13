@@ -107,3 +107,10 @@
 .wm-sheet-abilities-form input[type=number] { max-width: 8rem; }
 .wm-character-form textarea { width: 100%; }
 @media print { .wm-sheet-ledger-box { display: none; } .wm-sheet-abilities { grid-template-columns: repeat(6, 1fr); } }
+
+/* Character slips: 2 x 6 per portrait page. Inch sizes are physical paper sizes. */
+.wm-slip-sheet { display: grid; grid-template-columns: repeat(2, 3.9in); grid-auto-rows: 1.7in; width: 7.8in; margin-bottom: var(--wm-space-4); }
+.wm-slip { border: 1px dashed var(--wm-text); box-sizing: border-box; overflow: hidden; padding: 0.1in 0.15in; font-size: 0.75rem; }
+.wm-slip h2 { font-family: var(--wm-font-heading); font-size: 1.5rem; margin: 0; line-height: 1.1; }
+.wm-slip-player { margin: 0 0 0.05in; }
+.wm-slip ul { list-style: none; margin: 0; padding: 0; columns: 2; }
