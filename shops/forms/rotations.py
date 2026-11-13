@@ -1,6 +1,7 @@
 from django import forms
 
 from shops.models import Rotation, Shop
+from shops.services import ordered_shops
 
 
 class RotationForm(forms.ModelForm):
@@ -15,7 +16,7 @@ class RotationForm(forms.ModelForm):
 
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["shops"].queryset = Shop.objects.for_club(club)
+        self.fields["shops"].queryset = ordered_shops(Shop.objects.for_club(club))
         self.fields["shops"].required = False
 
     def clean(self):

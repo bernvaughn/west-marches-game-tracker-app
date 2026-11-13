@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 
 from accounts.scoping import ClubScopedManager
 
@@ -60,7 +61,7 @@ class Shop(models.Model):
     objects = ClubScopedManager()
 
     class Meta:
-        ordering = ["name"]
+        ordering = [Lower("name"), Lower("keeper_name"), "id"]
 
     def __str__(self):
         return self.name

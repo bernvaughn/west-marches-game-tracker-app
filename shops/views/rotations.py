@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db.models import Prefetch
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -6,7 +7,8 @@ from django.views.decorators.http import require_POST
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 from shops.forms.rotations import RotationForm
-from shops.models import Rotation
+from shops.models import Rotation, Shop
+from shops.services import ordered_shops
 
 
 def rotation_status(rotation, today):
@@ -22,7 +24,9 @@ def rotation_status(rotation, today):
 @club_admin_required
 def rotation_list(request, club_slug):
     today = timezone.localdate()
-    rotations = club_queryset(request, Rotation).prefetch_related("shops")
+    rotations = club_queryset(request, Rotation).prefetch_related(
+        Prefetch("shops", queryset=ordered_shops(Shop.objects.all()))
+    )
     rows = [(r, rotation_status(r, today)) for r in rotations]
     return render(request, "shops/rotations/list.html", {"rows": rows})
 

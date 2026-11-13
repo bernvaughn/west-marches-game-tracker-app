@@ -8,7 +8,14 @@ from player_characters.inventory import coin_summary, inventory_rows
 from player_characters.junk import junk_rows, junk_value, junk_value_at
 from player_characters.selection import selected_character
 from shops.models import Shop, ShopStock
-from shops.services import is_open, open_shops, percent_price, sell_price
+from shops.services import (
+    is_open,
+    open_shops,
+    ordered_shops,
+    percent_price,
+    sell_price,
+    shop_sort_key,
+)
 
 
 def _load_shop(request, shop_id):
@@ -33,39 +40,32 @@ def _visible_rows(shop):
 
 
 STREET_ROW = 8
+MAX_GAP = 2
 SHAPE_KEYS = [v for v, _ in Shop.Building.choices]
 
 
 def street_lots(shops, per_row=STREET_ROW):
-    """Place open shops on numbered lots and pad the street to whole rows."""
-    shops = sorted(shops, key=lambda s: (s.name, s.id))
+    """Walk shops in street order, with at most two filler lots between them."""
+    shops = sorted(shops, key=shop_sort_key)
     if not shops:
         return []
-    cap = -(-len(shops) // per_row) * per_row + per_row
-    counts = {}
+    shop_lots, prev = [], -1
     for s in shops:
-        counts[s.street_position] = counts.get(s.street_position, 0) + 1
-    placed, rest = {}, []
-    for s in shops:
-        if counts[s.street_position] == 1 and 0 <= s.street_position < cap:
-            placed[s.street_position] = s
-        else:
-            rest.append(s)
-    lot = 0
-    for s in rest:
-        while lot in placed:
-            lot += 1
-        placed[lot] = s
-    size = -(-(max(placed) + 1) // per_row) * per_row
+        gap = max(s.street_position - prev - 1, 0)
+        shop_lots.extend([None] * min(gap, MAX_GAP))
+        shop_lots.append(s)
+        prev = s.street_position
+    size = -(-len(shop_lots) // per_row) * per_row
+    shop_lots.extend([None] * (size - len(shop_lots)))
     return [
-        {"shop": placed.get(i), "shape": SHAPE_KEYS[(i * 7 + 3) % len(SHAPE_KEYS)]}
-        for i in range(size)
+        {"shop": s, "shape": SHAPE_KEYS[(i * 7 + 3) % len(SHAPE_KEYS)]}
+        for i, s in enumerate(shop_lots)
     ]
 
 
 @club_member_required
 def index(request, club_slug):
-    shops = list(open_shops(request.club, timezone.localdate()))
+    shops = list(ordered_shops(open_shops(request.club, timezone.localdate())))
     return render(request, "shops/browse/index.html", {"shops": shops, "lots": street_lots(shops)})
 
 
