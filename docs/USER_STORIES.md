@@ -571,13 +571,13 @@ From using the build after round 8 (U69–U79, D1–D4). Kept as built: the spin
 
 **U82 Track item uses on paper and in the app.** As a player, I want to tick off uses of an item on its printed card and then record them in the app, so potions and other consumables stay accurate. *(player_characters, items, ledger)*
 - A printed item card for an item with a quantity above one has a "Used" section: one circle per item, for example five circles for five healing potions, to tick with a pen.
-- Players get a "Consume" icon button in the sheet's inventory table, beside Mark as junk and Print card, with the tooltip "Mark items as lost or used up, based on what happened during the session." Players can consume their own characters' items straight away, with a quantity and an optional note; it is recorded in the ledger as a consume by that player.
+- Players get a "Consume" icon button in the sheet's inventory table, beside Mark as junk and Print card, with the tooltip "Mark items as lost or used up, based on what happened during the session." Players can consume their own characters' items without game master or admin approval. The button opens a confirm modal, for example "Are you sure you want to consume 1 Healing potion?", with a quantity and an optional note. Confirming records it in the ledger as a consume by that player.
 - When anyone consumes or adjusts a character's items or coins (Consume, Adjust, or the player's Consume), the form shows that character's recent consumes and adjustments, from the last 30 days, by anyone, with date, who, what and note. This helps avoid recording the same use twice.
 
 ### Items
 
 **U83 Pricing guide for everyday goods, and reference items.** As a club admin or game master, I want rarity bands for non-magical goods and nearby prices to compare against, so I price everything fairly. *(items)*
-- The rarity dropdown (U73) has two groups. **Magic items**, from the 2014 Dungeon Master's Guide: Common 50–100 gp, Uncommon 101–500 gp, Rare 501–5,000 gp, Very rare 5,001–50,000 gp, Legendary 50,001 gp and up. **Everyday goods**, for non-magical items: Trivial 1–9 cp (a loaf of bread, a torch), Cheap 1–9 sp (a day's rations, a waterskin), Standard 1–10 gp (rope, a shovel), Fine 11–100 gp (a longsword, a riding horse), Luxury 101 gp and up (plate armour, a fine carriage).
+- The rarity dropdown (U73) has two groups. **Magic items**, from the 2014 Dungeon Master's Guide: Common 50–100 gp, Uncommon 101–500 gp, Rare 501–5,000 gp, Very rare 5,001–50,000 gp, Legendary 50,001 gp and up. **Everyday goods**, for non-magical items: Trivial 1–9 cp (a loaf of bread, a torch), Cheap 1–9 sp (a day's rations, a waterskin), Standard 1–10 gp (rope, a shovel), Fine 11–100 gp (a longsword, a riding horse), Luxury 101–1,000 gp (a fine carriage, a small boat), Exotic 1,001 gp and up (plate armour, a warship). A third group, **Special**, is for things that are hard to value, such as deeds, heirlooms and titles; it shows no suggested range.
 - Choosing a band shows its suggested range, as today, with its examples.
 - The item form shows reference items from the club's catalogue with their prices: items in the same band, and the items closest in value to the value being typed, up to about ten, updating as the value or band changes. There is also a quick search, so a game master can look up "bread" and "bacon" before pricing a sandwich.
 
@@ -599,7 +599,7 @@ From using the build after round 8 (U69–U79, D1–D4). Kept as built: the spin
 ### Branding
 
 **U85 A Downtime Market wordmark.** As anyone, I want the app's name to have its own distinctive look everywhere it appears, so Downtime Market feels like a brand. *(site-wide, player_characters)*
-- "Downtime Market" uses one distinctive display font, chosen for this: Uncial Antiqua, an open-licence (SIL OFL) fantasy font that stays readable. It is self-hosted with the app's other fonts, not loaded from a third-party site.
+- "Downtime Market" uses one distinctive display font, chosen by the owner: IM Fell English SC, an open-licence (SIL OFL) font with the look of an old printed book. It is self-hosted with the app's other fonts, not loaded from a third-party site.
 - It is used wherever the name appears: the side menu header (U61), the sign-in, signed-out and password pages (U65), and the item cards. Page text and headings keep their current fonts.
 - Each printed item card (U44, U82) has a small "Downtime Market" header at the top in the wordmark font, above the item's icon and name, and it prints well in black and white.
 
