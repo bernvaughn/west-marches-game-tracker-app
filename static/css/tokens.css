@@ -153,3 +153,11 @@
   --wm-stamp-ready: #1e7a3c;
   --wm-stamp-done: #1f5d8a;
 }
+
+/* Wordmark (U85). IM Fell English SC, SIL OFL, self-hosted in static/fonts. */
+@font-face {
+  font-family: "IM Fell English SC"; font-style: normal; font-weight: 400; font-display: swap;
+  src: url("../fonts/im-fell-english-sc-latin-400-normal.woff2") format("woff2");
+}
+:root { --wm-font-wordmark: "IM Fell English SC", var(--wm-font-heading); }
+.wm-wordmark { font-family: var(--wm-font-wordmark); font-weight: 400; letter-spacing: .02em; }
