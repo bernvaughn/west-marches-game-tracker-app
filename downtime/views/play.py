@@ -1,16 +1,18 @@
 """Downtime play views: list live actions, spend points, show the result."""
 
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
-from django.urls import path
+from django.urls import path, reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import can_view_inventory, club_member_required
 from accounts.scoping import club_get_object_or_404
 from downtime import services
 from downtime.models import DowntimeAction, DowntimeResult
+from downtime.wheel import wheel_payload
 from ledger import services as ledger_services
 from player_characters.selection import selected_character
 
@@ -46,6 +48,37 @@ def play(request, club_slug):
     )
 
 
+def _result_context(res):
+    entry = res.entry
+    items = list(entry.items.select_related("item")) if entry else []
+    return {
+        "result": res,
+        "entry": entry,
+        "items": items,
+        "wheel": wheel_payload(res),
+        "balance": services.balance(res.character),
+        "coin_balance": ledger_services.coin_balance(res.character),
+    }
+
+
+def _result_response(request, res):
+    return render_modal_or_page(
+        request,
+        "downtime/play/_result_modal.html",
+        "downtime/play/result.html",
+        _result_context(res),
+    )
+
+
+def _back_to_play(request):
+    url = reverse("downtime:play", args=[request.club.slug])
+    if is_htmx(request):
+        response = HttpResponse(status=204)
+        response["HX-Redirect"] = url
+        return response
+    return redirect(url)
+
+
 @club_member_required
 @require_POST
 def spend(request, club_slug, pk):
@@ -53,12 +86,14 @@ def spend(request, club_slug, pk):
     character = selected_character(request)
     if character is None:
         messages.error(request, "You have no character to spend points for.")
-        return redirect("downtime:play", club_slug=request.club.slug)
+        return _back_to_play(request)
     try:
         result = services.spend(character, action, request.user)
     except services.DowntimeError as exc:
         messages.error(request, str(exc))
-        return redirect("downtime:play", club_slug=request.club.slug)
+        return _back_to_play(request)
+    if is_htmx(request):
+        return _result_response(request, result)
     return redirect("downtime:result", club_slug=request.club.slug, pk=result.pk)
 
 
@@ -67,19 +102,7 @@ def result(request, club_slug, pk):
     res = club_get_object_or_404(request, DowntimeResult, pk=pk)
     if not can_view_inventory(request.user, res.character):
         raise Http404
-    entry = res.entry
-    items = list(entry.items.select_related("item")) if entry else []
-    return render(
-        request,
-        "downtime/play/result.html",
-        {
-            "result": res,
-            "entry": entry,
-            "items": items,
-            "balance": services.balance(res.character),
-            "coin_balance": ledger_services.coin_balance(res.character),
-        },
-    )
+    return _result_response(request, res)
 
 
 play_urls = [
