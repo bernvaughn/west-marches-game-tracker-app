@@ -1,0 +1,13 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{% url 'items:create' club.slug %}" hx-post="{% url 'items:create' club.slug %}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}New item{% endblock %}
+{% block body %}{{ form }}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Create item</button>
+{% endblock %}

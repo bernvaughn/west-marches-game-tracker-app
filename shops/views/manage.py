@@ -63,6 +63,10 @@ def shop_edit(request, club_slug, shop_id):
 def stock_add(request, club_slug, shop_id):
     shop = club_get_object_or_404(request, Shop, pk=shop_id)
     form = StockAddForm(request.POST or None, shop=shop)
+    if request.method != "POST":
+        preselect = request.GET.get("item", "")
+        if preselect.isdigit() and form.fields["item"].queryset.filter(pk=int(preselect)).exists():
+            form.initial["item"] = int(preselect)
     if request.method == "POST" and form.is_valid():
         stock = form.save(commit=False)
         stock.shop = shop
