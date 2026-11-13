@@ -34,6 +34,8 @@
 .wm-chalk-job p { margin: 0 0 .4rem; }
 .wm-chalk-muted, .wm-chalkboard .text-muted { color: var(--wm-chalk-muted) !important; }
 .wm-chalkboard a { color: var(--wm-chalk-accent); }
+/* Coin text in chalk; the coloured dot keeps the metal cue. .coin-pp keeps its own pill. */
+.wm-chalkboard .coin-cp, .wm-chalkboard .coin-sp, .wm-chalkboard .coin-gp { color: var(--wm-chalk); }
 .wm-chalkboard .wm-downtime-rewards { padding-left: 1.1rem; }
 .wm-chalk-button { background: transparent; color: var(--wm-chalk); border: 2px solid var(--wm-chalk); font-weight: 600; }
 .wm-chalk-button:hover, .wm-chalk-button:focus-visible { background: var(--wm-chalk); color: var(--wm-slate); border-color: var(--wm-chalk); }
