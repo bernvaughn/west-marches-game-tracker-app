@@ -51,6 +51,7 @@
 .wm-trade-sheet .wm-form-actions { margin-top: var(--wm-space-3); }
 .wm-form.wm-trade-form { max-width: none; }
 .wm-trade-sheet textarea { min-height: 6rem; height: 8rem; }
+.wm-trade-status-line { margin: 0 0 var(--wm-space-3); padding: var(--wm-space-2) var(--wm-space-3); border-left: 4px solid var(--wm-primary, currentColor); background: var(--wm-surface-subtle, transparent); font-weight: 600; }
 .wm-trade-row-unavailable td { color: var(--wm-text-muted); opacity: 0.7; }
 
 /* Ledger history: signed amounts. The sign text carries the meaning; colour is an extra cue. */

@@ -6,6 +6,7 @@ from accounts.scoping import club_queryset
 
 from ..models import Trade
 from ..trade_services import OPEN, can_view_trade, side_lines, side_of
+from ..trade_status_line import trade_status_line
 
 
 @club_member_required
@@ -25,6 +26,7 @@ def detail(request, club_slug, pk):
         {
             "trade": trade,
             "side": side,
+            "status_line": trade_status_line(trade, side),
             "can_act": side is not None and trade.status in OPEN,
             "sender_lines": side_lines(trade, "sender"),
             "receiver_lines": side_lines(trade, "receiver"),

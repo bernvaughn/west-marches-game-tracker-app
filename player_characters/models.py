@@ -97,6 +97,8 @@ class Trade(models.Model):
     note = models.TextField(blank=True)
     sender_approved = models.BooleanField(default=False)
     receiver_approved = models.BooleanField(default=False)
+    # Which side ("sender" or "receiver") last changed its lines. Cleared on approval.
+    sides_changed_by = models.CharField(max_length=8, blank=True, default="")
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

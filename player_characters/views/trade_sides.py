@@ -6,7 +6,10 @@ from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
+from items.models import Item
+from ledger.services import coin_balance, held_coins, held_items, item_quantities
 
+from ..inventory import CoinSummary, InventoryRow
 from ..models import Trade
 from ..trade_forms import TradeSideForm
 from ..trade_services import (
@@ -41,6 +44,17 @@ def _initial(trade, side):
     return initial
 
 
+def _offer_rows(character, trade, form):
+    """Owned items with holds from other trades only; this trade's own holds are free."""
+    owned = {i: q for i, q in item_quantities(character).items() if q > 0}
+    held = held_items(character, trade)
+    items = Item.objects.filter(pk__in=owned).order_by("name", "pk")
+    rows = [InventoryRow(item=i, owned=owned[i.pk], held=held.get(i.pk, 0)) for i in items]
+    return [
+        (r, form[f"item_{r.item.pk}"] if f"item_{r.item.pk}" in form.fields else None) for r in rows
+    ]
+
+
 @club_member_required
 @require_http_methods(["GET", "POST"])
 def edit_side(request, club_slug, pk):
@@ -65,10 +79,19 @@ def edit_side(request, club_slug, pk):
             else:
                 messages.success(request, "Your side is saved.")
             return detail
+    other = trade.receiver if side == "sender" else trade.sender
     return render(
         request,
         "player_characters/trades/edit_side.html",
-        {"trade": trade, "side": side, "character": character, "form": form},
+        {
+            "trade": trade,
+            "side": side,
+            "character": character,
+            "other": other,
+            "form": form,
+            "coins": CoinSummary(owned=coin_balance(character), held=held_coins(character, trade)),
+            "offer_rows": _offer_rows(character, trade, form),
+        },
     )
 
 

@@ -29,9 +29,7 @@ class TradeSideForm(forms.Form):
                 label=f"{item.name} ({qty} available)",
             )
         self.available_coins = available_coins(character, exclude_trade)
-        self.fields["coins"] = CoinsField(
-            required=False, label=f"Coins ({format_coins(self.available_coins)} available)"
-        )
+        self.fields["coins"] = CoinsField(required=False, label="Coins to give")
 
     def clean_coins(self):
         coins = self.cleaned_data.get("coins") or 0

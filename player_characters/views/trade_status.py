@@ -18,7 +18,7 @@ from ..trade_services import (
 )
 
 
-def _act(request, club_slug, pk, service, done):
+def _act(request, club_slug, pk, service, done, success_url="trades:detail"):
     trade = club_get_object_or_404(request, Trade, pk=pk)
     if not can_view_trade(request.user, trade):
         raise Http404
@@ -30,13 +30,21 @@ def _act(request, club_slug, pk, service, done):
         messages.error(request, str(e))
     else:
         messages.success(request, done)
+        return redirect(success_url, club_slug, trade.pk)
     return redirect("trades:detail", club_slug, trade.pk)
 
 
 @club_member_required
 @require_POST
 def accept(request, club_slug, pk):
-    return _act(request, club_slug, pk, accept_trade, "Trade accepted.")
+    return _act(
+        request,
+        club_slug,
+        pk,
+        accept_trade,
+        "Trade accepted. Choose what you give.",
+        success_url="trades:edit_side",
+    )
 
 
 @club_member_required

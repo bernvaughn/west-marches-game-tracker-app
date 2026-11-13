@@ -1,11 +1,37 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block title %}Edit my side{% endblock %}
-{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title="Edit my side" subtitle="Saving a change clears both approvals." %}
-<p>{{ character.name }} trades with
-  {% if side == "sender" %}{{ trade.receiver.name }}{% else %}{{ trade.sender.name }}{% endif %}.</p>
-{% if not form.items %}<p class="text-body-secondary">No items available.</p>{% endif %}
-{% url 'trades:detail' club.slug trade.pk as back %}
-{% include "components/form_layout.html" with form=form submit_label="Save my side" cancel_url=back %}
+<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
+  <li><a href="{% url 'trades:index' club.slug %}">Trades</a></li>
+  <li><a href="{% url 'trades:detail' club.slug trade.pk %}">Trade {{ trade.pk }}</a></li>
+  <li><span aria-current="page">Edit my side</span></li>
+</ol></nav>
+<form method="post" class="wm-form wm-trade-form">
+  {% csrf_token %}
+  <article class="wm-sheet wm-trade-sheet">
+    <header class="wm-sheet-header">
+      <h1>Edit my side</h1>
+      <p><strong>{{ character.name }}</strong> trades with <strong>{{ other.name }}</strong></p>
+      <p class="wm-sheet-note">Saving a change clears both approvals.</p>
+      {{ form.non_field_errors }}
+    </header>
+    <div class="wm-sheet-grid">
+      <section class="wm-sheet-box wm-sheet-coins" aria-labelledby="offer-coins-title">
+        <h2 class="wm-sheet-box-title" id="offer-coins-title">Coins</h2>
+        <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+        <p class="wm-sheet-note">Available: {{ coins.available|coins }}</p>
+        {{ form.coins.as_field_group }}
+      </section>
+      <section class="wm-sheet-box wm-sheet-full" aria-labelledby="offer-items-title">
+        <h2 class="wm-sheet-box-title" id="offer-items-title">Inventory</h2>
+        {% include "player_characters/trades/_offer_table.html" with rows=offer_rows column="Give" %}
+      </section>
+    </div>
+    <div class="wm-form-actions">
+      <button class="btn btn-primary" type="submit">Save my side</button>
+      <a class="btn btn-outline-secondary" href="{% url 'trades:detail' club.slug trade.pk %}">Cancel</a>
+    </div>
+  </article>
+</form>
 {% endblock %}

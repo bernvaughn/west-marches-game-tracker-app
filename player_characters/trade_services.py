@@ -179,7 +179,15 @@ def set_side(trade, side, lines, actor):
             _write_lines(trade, side == "sender", new)
             trade.sender_approved = False
             trade.receiver_approved = False
-            trade.save(update_fields=["sender_approved", "receiver_approved", "updated"])
+            trade.sides_changed_by = side
+            trade.save(
+                update_fields=[
+                    "sender_approved",
+                    "receiver_approved",
+                    "sides_changed_by",
+                    "updated",
+                ]
+            )
     return trade
 
 
@@ -194,7 +202,8 @@ def approve_trade(trade, side, actor):
         if not trade.lines.exists():
             raise TradeError("Add something to the trade before approving.")
         setattr(trade, f"{side}_approved", True)
-        trade.save(update_fields=[f"{side}_approved", "updated"])
+        trade.sides_changed_by = ""
+        trade.save(update_fields=[f"{side}_approved", "sides_changed_by", "updated"])
     if trade.sender_approved and trade.receiver_approved:
         complete_trade(trade, actor)
     return trade
