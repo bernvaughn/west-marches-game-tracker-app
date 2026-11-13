@@ -30,22 +30,19 @@
   -webkit-mask: var(--wm-building-src) center bottom / contain no-repeat;
   mask: var(--wm-building-src) center bottom / contain no-repeat;
 }
-/* Wide screens: the sign sits over the wall area of the building. Narrow lots: it sits below (U54). */
+/* Signs sit below the building at every width (U77; replaces U54's wide-screen layout). */
 .wm-street-sign {
-  position: absolute; left: calc(var(--wm-space-2) + 10%); right: calc(var(--wm-space-2) + 10%);
-  top: 57.5%; min-height: 13.75%; display: flex; align-items: center; justify-content: center; gap: .25rem;
+  position: static; margin: var(--wm-space-1) 0; padding: .125rem 1px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0; overflow: visible;
   background: var(--wm-shop-tint); color: var(--wm-text); border: 2px solid var(--wm-shop-edge);
-  border-radius: var(--wm-radius-sm); font-size: var(--wm-text-sm); line-height: 1.1; text-align: center; overflow: hidden;
+  border-radius: var(--wm-radius-sm); font-size: var(--wm-text-sm); line-height: 1.1; text-align: center;
 }
 .wm-street-name { overflow-wrap: break-word; hyphens: auto; min-width: 0; max-width: 100%; }
 .wm-building-swatch .wm-building { width: 64px; height: 64px; color: var(--wm-shop-parchment-deep); }
 @media (prefers-reduced-motion: reduce) { .wm-street-link { transition: none; } .wm-street-link:hover { transform: none; } }
 @media (max-width: 1199px) {
   .wm-street-link { padding-left: var(--wm-space-1); padding-right: var(--wm-space-1); }
-  .wm-street-sign {
-    position: static; margin: var(--wm-space-1) 0; padding: .125rem 1px; flex-direction: column; gap: 0;
-    font-size: .6875rem; overflow: visible;
-  }
+  .wm-street-sign { font-size: .6875rem; }
 }
 /* The narrowest lots: 8 per row at 768-991 px, and 4 per row below 360 px. */
 @media (max-width: 359px), (min-width: 768px) and (max-width: 991px) { .wm-street-sign { font-size: .625rem; } }

@@ -20,6 +20,9 @@ def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look)
         shop.building = look.get("building", shop.building)
         shop.street_position = look.get("street_position", 0)
         shop.save(update_fields=["building", "street_position"])
+    if not shop.description and look.get("description"):
+        shop.description = look["description"]
+        shop.save(update_fields=["description"])
     for item_name, qty in stock:
         item = Item.objects.get(club=club, name=item_name)
         ShopStock.objects.get_or_create(shop=shop, item=item, defaults={"quantity": qty})
@@ -42,6 +45,9 @@ def seed(club):
         date(2026, 1, 1),
         None,
         {
+            "description": (
+                "A warm inn at the head of the street. Marta sells rope, torches and the odd blade."
+            ),
             "keeper_description": "A broad woman with flour-dusted hands and a sharp eye for coin.",
             "color": "ember",
             "silhouette": "burly_innkeeper",
@@ -59,6 +65,10 @@ def seed(club):
         today - timedelta(days=3),
         today + timedelta(days=4),
         {
+            "description": (
+                "A caravan of striped tents that rolls in for a week at a time, "
+                "heavy with potions and charms."
+            ),
             "keeper_description": "A veiled trader who arrives with the dust and leaves by dawn.",
             "color": "violet",
             "silhouette": "veiled_merchant",

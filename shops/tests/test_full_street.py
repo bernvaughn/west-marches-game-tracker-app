@@ -96,5 +96,7 @@ def test_css_columns():
 def test_signs_fit_narrow_lots():
     css = CSS.read_text()
     assert "overflow-wrap: anywhere" not in css
-    narrow = css[css.index("@media (max-width: 1199px)") :]
-    assert "position: static" in narrow[: narrow.index("\n}\n")]
+    screen = css.split("@media print")[0]
+    sign_rules = [r for r in screen.split("}") if ".wm-street-sign" in r.split("{")[0]]
+    assert sign_rules and all("position: absolute" not in r for r in sign_rules)
+    assert "position: static" in sign_rules[0]
