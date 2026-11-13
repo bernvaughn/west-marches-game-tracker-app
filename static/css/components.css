@@ -302,7 +302,7 @@ a.wm-chip:hover { color: var(--wm-accent); }
 /* ---- Side menu (U61) ---- */
 .wm-side-menu { --bs-offcanvas-width: min(20rem, 85vw); background: var(--wm-surface-raised); }
 .wm-side-menu .offcanvas-header { border-bottom: 1px solid var(--wm-border); }
-.wm-side-menu .offcanvas-title { font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); margin: 0; }
+.wm-side-menu .offcanvas-title { font-size: var(--wm-text-lg); margin: 0; }
 .wm-menu-group { margin-bottom: var(--wm-space-3); }
 .wm-menu-heading { font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--wm-text-muted); margin: 0 0 var(--wm-space-1); font-family: var(--wm-font-body, inherit); }
 .wm-menu-link { display: flex; align-items: center; min-height: var(--wm-size-touch); padding: .25rem var(--wm-space-2); border-radius: var(--wm-radius-md, .375rem); color: var(--wm-text); text-decoration: none; }

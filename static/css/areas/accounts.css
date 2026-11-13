@@ -9,7 +9,7 @@
 
 /* Sign-in and password pages */
 .wm-auth-card { max-width: var(--wm-size-narrow); margin: var(--wm-space-6) auto; padding: var(--wm-space-5); background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-lg); box-shadow: var(--wm-shadow-1); }
-.wm-auth-brand { margin: 0 0 var(--wm-space-2); font-family: var(--wm-font-heading); font-size: var(--wm-text-lg); color: var(--wm-accent); }
+.wm-auth-brand { margin: 0 0 var(--wm-space-2); font-size: var(--wm-text-lg); color: var(--wm-accent); }
 .wm-auth-tagline { margin: 0 0 var(--wm-space-3); font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
 .wm-auth-card h1 { margin-bottom: var(--wm-space-2); }
 .wm-auth-card .wm-page-subtitle { margin-bottom: var(--wm-space-4); }
