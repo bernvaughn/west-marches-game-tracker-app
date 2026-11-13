@@ -2,22 +2,29 @@
 {% load static %}
 {% block title %}{{ shop.name }}{% endblock %}
 {% block content %}
-<h1 class="wm-shop-title">{% if shop.symbol %}<span class="wm-shop-symbol" aria-hidden="true">{{ shop.symbol }}</span> {% endif %}{{ shop.name }}</h1>
+<div class="wm-shop-title-row">
+  <span class="wm-shop-title-side" aria-hidden="true">{% if shop.symbol %}<span class="wm-shop-symbol">{{ shop.symbol }}</span>{% endif %}</span>
+  <h1 class="wm-shop-title">{{ shop.name }}</h1>
+  <span class="wm-shop-title-side" aria-hidden="true"></span>
+</div>
 {% if not is_open %}<p class="wm-shop-closed">{% include "components/badge.html" with status="warning" text="Closed" %}</p>{% endif %}
 <div class="wm-shop-banner wm-shop-banner--{{ shop.color }}">
   <figure class="wm-shop-keeper-figure">
-    {% if shop.keeper_name %}<figcaption class="wm-shop-keeper-name">{{ shop.keeper_name }}</figcaption>{% endif %}
+    {% if shop.keeper_description %}<button type="button" class="wm-shop-keeper-name wm-shop-keeper-toggle" aria-controls="keeper-about" aria-expanded="true">{{ shop.keeper_name|default:"Shopkeeper" }}</button>
+    {% elif shop.keeper_name %}<figcaption class="wm-shop-keeper-name">{{ shop.keeper_name }}</figcaption>{% endif %}
     <img class="wm-shop-silhouette" src="{% static 'shops/silhouettes/'|add:shop.silhouette|add:'.svg' %}" alt="" height="160">
   </figure>
   {% if shop.description or shop.keeper_description %}
-  <div id="shop-about" class="wm-shop-about-box">
-    {% if shop.description %}{{ shop.description|linebreaks }}{% endif %}
-    {% if shop.keeper_description %}{% if shop.keeper_name %}<h2>{{ shop.keeper_name }}</h2>{% endif %}{{ shop.keeper_description|linebreaks }}{% endif %}
+  <div class="wm-shop-about">
+    {% if shop.description %}<div id="shop-about" class="wm-shop-about-box">{{ shop.description|linebreaks }}</div>{% endif %}
+    {% if shop.keeper_description %}<div id="keeper-about" class="wm-shop-about-box">{% if shop.keeper_name %}<h2>{{ shop.keeper_name }}</h2>{% endif %}{{ shop.keeper_description|linebreaks }}</div>{% endif %}
   </div>
   {% endif %}
   <div class="wm-shop-actions">
-    {% if shop.description or shop.keeper_description %}<button type="button" class="btn btn-outline-secondary btn-sm wm-shop-about-toggle" aria-controls="shop-about" aria-expanded="true" hidden>Hide description</button>{% endif %}
-    <div class="wm-shop-sellbar d-flex gap-2 flex-wrap justify-content-end"><a class="btn btn-outline-secondary" href="{% url 'shops:index' club.slug %}">{% include "components/icon.html" with name="box-arrow-left" %} Leave</a><a class="btn btn-primary" href="{% url 'shops:sell' club.slug shop.id %}">{% include "components/icon.html" with name="coin" %} {% if shop.keeper_name %}Sell to {{ shop.keeper_name }}{% else %}Sell to this shop{% endif %}</a></div>
+    <div class="wm-shop-iconbar d-flex gap-2 justify-content-end">
+      {% if shop.description %}<button type="button" class="btn btn-outline-secondary wm-shop-about-toggle" aria-controls="shop-about" aria-expanded="true" aria-label="Shop description" title="Shop description" data-wm-tooltip>{% include "components/icon.html" with name="info-circle" %}</button>{% endif %}
+      <a class="btn btn-outline-secondary" href="{% url 'shops:index' club.slug %}" aria-label="Leave the shop" title="Leave the shop" data-wm-tooltip>{% include "components/icon.html" with name="box-arrow-left" %}</a>
+    </div>
   </div>
 </div>
 <div id="stock" class="wm-shop-counter" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>

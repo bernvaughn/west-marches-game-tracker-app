@@ -177,7 +177,6 @@ def _build_pages() -> list[Page]:
             action="buy_modal",
             modal_url=_c("shops:buy", "caravan.pk", "stock.pk"),
         ),
-        P("shops-sell", "alice", _c("shops:sell", "caravan.pk")),
         P("shops-manage-list", "gm", _c("shops:manage_list")),
         P("shops-manage-create", "gm", _c("shops:manage_create")),
         P("shops-manage-edit", "gm", _c("shops:manage_edit", "caravan.pk")),

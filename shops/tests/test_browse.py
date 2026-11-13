@@ -40,7 +40,7 @@ def test_detail_shows_price_and_quantity(login, player, club, shop, always_open,
     assert format_coins(100) in body
     assert "Rope" in body
     assert ">2<" in body
-    assert url("sell", club, shop.id) in body
+    assert "Sell to" not in body
     assert url("buy", club, shop.id, stock.id) in body
 
 
@@ -121,7 +121,7 @@ def test_detail_banner_silhouette_and_keeper(login, player, club, shop, always_o
     assert "wm-shop-banner" in body
     assert "shops/silhouettes/dwarf_smith.svg" in body
     assert '<figcaption class="wm-shop-keeper-name">Marta</figcaption>' in body
-    assert "Sell to Marta" in body
+    assert "Sell to" not in body
 
 
 @pytest.mark.story("U36")
@@ -130,7 +130,6 @@ def test_detail_without_keeper(login, player, club, shop, always_open):
     body = login(player).get(url("detail", club, shop.id)).content.decode()
     assert "shops/silhouettes/hooded_trader.svg" in body
     assert "wm-shop-keeper-name" not in body
-    assert "Sell to this shop" in body
 
 
 @pytest.mark.story("C1")

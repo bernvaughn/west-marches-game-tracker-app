@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from ledger.models import LedgerEntry
@@ -13,27 +14,17 @@ def loot(character, item):
     return item
 
 
-def url(club, shop):
-    return reverse("shops:sell", args=[club.slug, shop.id])
+def url(club, shop, item):
+    return reverse("shops:sell_item", args=[club.slug, shop.id, item.id])
 
 
 def post(client, club, shop, character, item, quantity, **extra):
-    data = {"character": character.id, "item": item.id, "quantity": quantity, **extra}
-    return client.post(url(club, shop), data)
+    data = {"character": character.id, "quantity": quantity, **extra}
+    return client.post(url(club, shop, item), data)
 
 
 def sales():
     return LedgerEntry.objects.filter(kind="sale").count()
-
-
-@pytest.mark.story("U57")
-def test_banner_leave_and_sell(club, player, login, shop, always_open):
-    r = login(player).get(reverse("shops:detail", args=[club.slug, shop.id]))
-    html = r.content.decode()
-    index = reverse("shops:index", args=[club.slug])
-    assert f'class="btn btn-outline-secondary" href="{index}"' in html
-    assert "Leave" in html
-    assert f'class="btn btn-primary" href="{url(club, shop)}"' in html
 
 
 @pytest.mark.story("U58")
@@ -48,8 +39,8 @@ def test_non_junk_asks_to_confirm(club, player, login, character, shop, always_o
 def test_htmx_confirm_is_modal(club, player, login, character, shop, always_open, loot):
     c = login(player)
     r = c.post(
-        url(club, shop),
-        {"character": character.id, "item": loot.id, "quantity": 1},
+        url(club, shop, loot),
+        {"character": character.id, "quantity": 1},
         HTTP_HX_REQUEST="true",
     )
     assert r.status_code == 200
@@ -68,8 +59,8 @@ def test_confirmed_sells(club, player, login, character, shop, always_open, loot
 @pytest.mark.story("U58")
 def test_confirmed_htmx(club, player, login, character, shop, always_open, loot):
     r = login(player).post(
-        url(club, shop),
-        {"character": character.id, "item": loot.id, "quantity": 1, "confirmed": "1"},
+        url(club, shop, loot),
+        {"character": character.id, "quantity": 1, "confirmed": "1"},
         HTTP_HX_REQUEST="true",
     )
     assert r.status_code == 204
@@ -110,17 +101,17 @@ def test_cancel_goes_back_and_sells_nothing(
 ):
     c = login(player)
     r = post(c, club, shop, character, loot, 1)
-    assert f'href="{url(club, shop)}">Cancel' in r.content.decode()
-    assert c.get(url(club, shop)).status_code == 200
+    back = reverse("shops:detail", args=[club.slug, shop.id])
+    assert f'href="{back}">Cancel' in r.content.decode()
+    assert c.get(back).status_code == 200
     assert sales() == 0
 
 
 @pytest.mark.story("U58")
 def test_over_available_errors(club, player, login, character, shop, always_open, loot):
     r = post(login(player), club, shop, character, loot, 9)
-    assert r.status_code == 200
-    assert b"Not enough Rope available to sell." in r.content
-    assert b"marked as junk" not in r.content
+    assert r.status_code == 302
+    assert "Not enough Rope available to sell." in [str(m) for m in get_messages(r.wsgi_request)]
     assert sales() == 0
 
 

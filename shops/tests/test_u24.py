@@ -63,36 +63,17 @@ def test_buy_isolation(login, club, other_club, player, two, shop, always_open, 
 
 
 # --- shop sell
-def test_sell_default_and_override(login, club, player, two, shop, always_open):
-    aria, wren = two
-    c = login(player)
-    url = reverse("shops:sell", args=[club.slug, shop.pk])
-    assert c.get(url).context["character"] == wren
-    assert c.get(url, {"character": aria.pk}).context["character"] == wren
-    assert "Sell as" not in c.get(url).content.decode()  # nothing to sell yet
-    assert "Selling as <strong>Wren</strong>" in c.get(url).content.decode()
-    assert _stored(player, club) == wren
-
-
-def test_sell_no_character_and_isolation(login, club, other_club, other_player, shop, always_open):
-    url = reverse("shops:sell", args=[club.slug, shop.pk])
-    assert NONE in login(other_player).get(url).content.decode()
-    Membership.objects.create(user=other_player, club=other_club)
-    foreign = _mk(other_club, other_player, "Far")
-    r = login(other_player).get(url, {"character": foreign.pk})
-    assert NONE in r.content.decode()
-    assert login(other_player).post(url, {"item": 1, "quantity": 1}).status_code in (200, 404)
+def test_sell_no_character_posts_nothing(login, club, other_player, shop, always_open, item):
+    url = reverse("shops:sell_item", args=[club.slug, shop.pk, item.pk])
+    r = login(other_player).post(url, {"quantity": 1, "confirmed": "1"})
+    assert r.status_code == 302
 
 
 @pytest.mark.story("U27")
-def test_u27_buy_sell_pages_have_no_character_field(
-    login, club, player, two, shop, always_open, stock
-):
+def test_u27_buy_page_has_no_character_field(login, club, player, two, shop, always_open, stock):
     c = login(player)
     buy_html = c.get(reverse("shops:buy", args=[club.slug, shop.pk, stock.pk])).content.decode()
-    sell_html = c.get(reverse("shops:sell", args=[club.slug, shop.pk])).content.decode()
-    for html in (buy_html, sell_html):
-        assert 'name="character"' not in html.split("<h1")[1]
+    assert 'name="character"' not in buy_html.split("<h1")[1]
     assert "Buying as <strong>Wren</strong>" in buy_html
 
 

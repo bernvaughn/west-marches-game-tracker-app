@@ -1,15 +1,26 @@
 (function () {
-  var button = document.querySelector(".wm-shop-about-toggle");
-  var box = document.getElementById("shop-about");
-  if (!button || !box) return;
-  function set(open) {
-    box.hidden = !open;
-    button.setAttribute("aria-expanded", open ? "true" : "false");
-    button.textContent = open ? "Hide description" : "Show description";
+  var toggles = Array.prototype.slice.call(
+    document.querySelectorAll(".wm-shop-banner [aria-controls]")
+  );
+  var pairs = toggles
+    .map(function (button) {
+      return { button: button, box: document.getElementById(button.getAttribute("aria-controls")) };
+    })
+    .filter(function (p) {
+      return p.box;
+    });
+  if (!pairs.length) return;
+  function show(open) {
+    pairs.forEach(function (p) {
+      var isOpen = p === open;
+      p.box.hidden = !isOpen;
+      p.button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    });
   }
-  button.hidden = false;
-  set(false);
-  button.addEventListener("click", function () {
-    set(box.hidden);
+  show(null);
+  pairs.forEach(function (p) {
+    p.button.addEventListener("click", function () {
+      show(p.box.hidden ? p : null);
+    });
   });
 })();
