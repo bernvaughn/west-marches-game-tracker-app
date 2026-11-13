@@ -18,9 +18,27 @@ ROLES = {
     "gm": "gm@example.com",
     "alice": "alice@example.com",
     "bob": "bob@example.com",
+    # Created by `extra_fixtures()`, not `seed_demo`.
+    "gm_only": "gm-only@example.com",  # game master, not club admin
+    "club_admin": "clubadmin@example.com",  # club admin, not game master
 }
 BOTH = (1280, 390)
-MODAL_ACTIONS = {"buy_modal", "tile_modal", "grant_modal"}
+# Click targets for the modal actions. `screenshots._act` reads this; it has no Playwright import.
+MODAL_SELECTORS = {
+    "buy_modal": "a[data-app-modal]",
+    "tile_modal": "svg a[data-app-modal]",
+    "grant_modal": 'a[data-app-modal][href*="/give/coins/"]',
+    "sell_junk_modal": 'a[data-app-modal][href*="/sell-junk/"]',
+    "junk_modal": 'a[data-app-modal][href*="/junk/"]',
+    "consume_modal": 'a[data-app-modal][href*="/consume/"]',
+    "stall_buy_modal": 'a[data-app-modal][href*="/stall/"]',
+    "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
+    "status_modal": 'a[data-app-modal][href*="/status/"]',
+    "where_to_buy_modal": 'a[data-app-modal][href*="/where-to-buy/"]',
+    "agenda_add_modal": "a.agenda-plus[data-app-modal]",
+}
+# `sell_modal` submits a form (the confirm modal comes from a POST), so it has no link selector.
+MODAL_ACTIONS = set(MODAL_SELECTORS) | {"sell_modal"}
 
 
 @dataclass(frozen=True)
@@ -30,27 +48,97 @@ class Page:
     url: Callable[[SimpleNamespace], str]
     action: str | None = None
     widths: tuple[int, ...] = BOTH
+    # Widths for `--audit` and `--widths`. None means every chosen width.
+    audit_widths: tuple[int, ...] | None = None
     # For modal actions: the fragment URL that the smoke test fetches with HX-Request.
     modal_url: Callable[[SimpleNamespace], str] | None = None
 
 
-def extra_fixtures():
-    """Add objects that `seed_demo` lacks. Safe to run twice."""
-    from player_characters.models import Character, Trade
+PROPOSED_TRADE_NOTE = "Swap for the pelts?"
+
+
+def _role_users(club):
+    """A game master who is not a club admin, and a club admin who is not a game master."""
+    from accounts.demo import _user
+    from accounts.models import Membership
+
+    for email, name, gm, admin in (
+        ("gm-only@example.com", "Gale the Game Master", True, False),
+        ("clubadmin@example.com", "Cleo the Club Admin", False, True),
+    ):
+        Membership.objects.get_or_create(
+            user=_user(email, name),
+            club=club,
+            defaults={"is_game_master": gm, "is_club_admin": admin},
+        )
+
+
+def _junk(aria):
+    """Aria sets aside one of her five torches, so the sell-junk page has a row."""
+    from items.models import Item
+    from player_characters.models import JunkMark
+
+    torch = Item.objects.filter(club=aria.club, name="Torch").first()
+    if torch:
+        JunkMark.objects.get_or_create(character=aria, item=torch, defaults={"quantity": 1})
+
+
+def _point_request(club, aria):
+    from accounts.models import Membership
+    from downtime.models import DowntimePointRequest
+
+    alice = Membership.objects.get(user__email="alice@example.com", club=club)
+    note = "We cleared the goblin cave together."
+    if not DowntimePointRequest.objects.filter(club=club, note=note).exists():
+        request = DowntimePointRequest.objects.create(
+            club=club, requested_by=alice, points=2, note=note
+        )
+        request.characters.add(aria)
+
+
+def _downtime_result(aria):
+    """A past bakery result. Made directly, so Aria's points and ledger stay as seeded."""
+    from downtime.models import DowntimeAction, DowntimeResult
+
+    action = DowntimeAction.objects.filter(club=aria.club, name="Work at a bakery").first()
+    entry = action.entries.first() if action else None
+    if entry:
+        DowntimeResult.objects.get_or_create(
+            character=aria, action=action, defaults={"entry": entry}
+        )
+
+
+def _proposed_trade(aria, borin):
+    from ledger.services import Line
+    from player_characters.models import Trade
     from player_characters.trade_services import propose_trade
 
-    if Trade.objects.exists():
-        return
-    from ledger.services import Line
+    if not Trade.objects.filter(club=aria.club, note=PROPOSED_TRADE_NOTE).exists():
+        propose_trade(aria, borin, [Line(coins=100)], PROPOSED_TRADE_NOTE, aria.owner.user)
 
-    aria = Character.objects.get(name="Aria Windrunner")
-    borin = Character.objects.get(name="Borin Stonefist")
-    propose_trade(aria, borin, [Line(coins=100)], "Swap for the pelts?", aria.owner.user)
+
+def extra_fixtures():
+    """Add objects that `seed_demo` lacks. Safe to run twice.
+
+    Each helper is a `get_or_create`, so a second run changes nothing.
+    """
+    from accounts.models import Club
+    from player_characters.models import Character
+
+    club = Club.objects.get(slug="demo")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    _role_users(club)
+    _junk(aria)
+    _point_request(club, aria)
+    _downtime_result(aria)
+    _proposed_trade(aria, borin)
 
 
 def demo_objects() -> SimpleNamespace:
     from accounts.models import Club, Membership, Message
     from agent_access.models import ProposedBatch, ProposedItem
+    from downtime.models import DowntimeAction, DowntimePointRequest, DowntimeResult
     from items.models import Item
     from ledger.services import available_items
     from map.models import Encounter, HexMap, Location, MapRequest
@@ -88,8 +176,59 @@ def demo_objects() -> SimpleNamespace:
         alice_membership=Membership.objects.get(user__email="alice@example.com", club=club),
         map_request=MapRequest.objects.first(),
         item=Item.objects.filter(club=club).order_by("name").first(),
-        trade=Trade.objects.first(),
+        # The seeded accepted trade. `extra_fixtures` adds a newer, requested one.
+        trade=Trade.objects.filter(status=Trade.Status.ACCEPTED).first(),
+        requested_trade=Trade.objects.filter(note=PROPOSED_TRADE_NOTE).first(),
+        torch=Item.objects.get(club=club, name="Torch"),
+        result=DowntimeResult.objects.first(),
+        point_request=DowntimePointRequest.objects.first(),
+        bakery=DowntimeAction.objects.get(club=club, name="Work at a bakery"),
     )
+
+
+EXCLUDED = {
+    "favicon": "An icon file, not a page.",
+    "logout": "POST only.",
+    "mcp": "A JSON-RPC endpoint, not a page.",
+    "oauth2_provider:oauth-server-metadata": "A JSON metadata document.",
+    "oauth2_provider:oauth-resource-metadata": "A JSON metadata document.",
+    "oauth2_provider:oauth-resource-metadata-path": "A JSON metadata document.",
+    "oauth2_provider:authorize": "Needs a registered OAuth client and PKCE parameters.",
+    "oauth2_provider:token": "A JSON API.",
+    "oauth2_provider:revoke-token": "A JSON API.",
+    "oauth2_provider:dcr-register": "A JSON API.",
+    "oauth2_provider:dcr-register-management": "A JSON API.",
+    "accounts:message_status": "POST only.",
+    "characters:select": "POST only.",
+    "characters:shop_toggle": "POST only.",
+    "trades:accept": "POST only.",
+    "trades:decline": "POST only.",
+    "trades:cancel": "POST only.",
+    "trades:approve": "POST only.",
+    "items:retire": "POST only.",
+    "items:restore": "POST only.",
+    "items:delete": "POST only.",
+    "shops:street_settings": "POST only.",
+    "shops:stock_remove": "POST only.",
+    "shops:rotation_delete": "POST only.",
+    "shops:sell_item": "GET redirects to the shop; `shops-sell-modal` captures the confirm modal.",
+    "shops:stock_fragment": "An htmx partial with no layout; `shops-detail-*` shows it.",
+    "map:request_approve": "POST only.",
+    "map:request_decline": "POST only.",
+    "quests:turn_in": "POST only; turn-in is an inline form on `quests-detail`.",
+    "quests:delete": "POST only.",
+    "downtime:spend": "POST only.",
+    "downtime:request_approve": "POST only.",
+    "downtime:request_decline": "POST only.",
+    "agent_access:connection_revoke": "POST only.",
+    "agent_access:batch_confirm": "POST only.",
+    "agent_access:batch_discard": "POST only.",
+    "agent_access:batch_line_edit": "POST only.",
+    "agent_access:batch_line_remove": "POST only.",
+    "agent_access:batch_reverse": "POST only.",
+    "agent_access:proposed_item_approve": "POST only.",
+    "agent_access:proposed_item_reject": "POST only.",
+}
 
 
 def _c(name, *args):
@@ -128,6 +267,7 @@ def _build_pages() -> list[Page]:
             lambda d: reverse("club_home", args=[d.slug]),
             action="menu_open",
             widths=(390,),
+            audit_widths=(768, 390),  # the toggler only shows below 992 px
         ),
         # accounts
         P("accounts-index", "gm", _c("accounts:index")),
@@ -261,6 +401,183 @@ def _build_pages() -> list[Page]:
             "gm",
             _c("agent_access:proposed_item_detail", "proposed_item.pk"),
         ),
+        # --- Added for the U84 audit: every other GET page, and role variants ---
+        # auth
+        P("password-change-done", "alice", lambda d: reverse("password_change_done")),
+        P("password-reset", "anon", lambda d: reverse("password_reset")),
+        P("password-reset-done", "anon", lambda d: reverse("password_reset_done")),
+        P("password-reset-complete", "anon", lambda d: reverse("password_reset_complete")),
+        P(
+            "password-reset-confirm-invalid",
+            "anon",
+            lambda d: reverse("password_reset_confirm", args=["x", "bad"]),
+        ),
+        # characters. Alice has characters, so `mine` and `transfer_start` redirect for her.
+        P("characters-mine-empty", "gm_only", _c("characters:mine")),
+        P("characters-transfer-start-empty", "gm_only", _c("characters:transfer_start")),
+        P("characters-slips-print", "alice", _c("characters:slips_print")),
+        P(
+            "characters-slips-print-aria",
+            "alice",
+            lambda d: reverse("characters:slips_print", args=[d.slug]) + f"?characters={d.aria.pk}",
+        ),
+        P(
+            "characters-print-item-choose",
+            "alice",
+            _c("characters:print_item", "aria.pk", "owned_item.pk"),
+        ),
+        P(
+            "characters-print-item-full",
+            "alice",
+            lambda d: (
+                reverse("characters:print_item", args=[d.slug, d.aria.pk, d.owned_item.pk])
+                + "?layout=full"
+            ),
+        ),
+        P(
+            "characters-print-item-grid",
+            "alice",
+            lambda d: (
+                reverse("characters:print_item", args=[d.slug, d.aria.pk, d.owned_item.pk])
+                + "?layout=grid"
+            ),
+        ),
+        P("characters-junk", "alice", _c("characters:junk", "aria.pk", "torch.pk")),
+        P(
+            "characters-junk-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="junk_modal",
+            modal_url=_c("characters:junk", "aria.pk", "torch.pk"),
+        ),
+        P(
+            "characters-consume-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="consume_modal",
+            modal_url=_c("characters:player_consume", "aria.pk", "owned_item.pk"),
+        ),
+        # shops
+        P("shops-stall-borin", "alice", _c("shops:player_shop", "borin.pk")),
+        P("shops-stall-own", "bob", _c("shops:player_shop", "borin.pk")),
+        P("shops-stall-buy", "alice", _c("shops:player_shop_buy", "borin.pk", "torch.pk")),
+        P(
+            "shops-stall-buy-modal",
+            "alice",
+            _c("shops:player_shop", "borin.pk"),
+            action="stall_buy_modal",
+            modal_url=_c("shops:player_shop_buy", "borin.pk", "torch.pk"),
+        ),
+        P("shops-sell-junk", "alice", _c("shops:sell_junk", "caravan.pk")),
+        P(
+            "shops-sell-junk-modal",
+            "alice",
+            _c("shops:detail", "caravan.pk"),
+            action="sell_junk_modal",
+            modal_url=_c("shops:sell_junk", "caravan.pk"),
+        ),
+        # The confirm modal comes from a POST, so there is no fragment URL to fetch.
+        P("shops-sell-modal", "alice", _c("shops:detail", "caravan.pk"), action="sell_modal"),
+        # items
+        P("items-references", "gm", _c("items:references")),
+        P(
+            "items-where-to-buy-modal",
+            "alice",
+            _c("items:index"),
+            action="where_to_buy_modal",
+            modal_url=_c("items:where_to_buy", "item.pk"),
+        ),
+        # downtime
+        P("downtime-requests-alice", "alice", _c("downtime:requests")),
+        P("downtime-requests-gm-only", "gm_only", _c("downtime:requests")),
+        P("downtime-request-new", "alice", _c("downtime:request_new")),
+        P("downtime-points-award", "gm_only", _c("downtime:points_award")),
+        P("downtime-result", "alice", _c("downtime:result", "result.pk")),
+        P("downtime-action-edit", "gm", _c("downtime:action_edit", "bakery.pk")),
+        P("downtime-agenda-add", "gm", _c("downtime:agenda_add")),
+        P("downtime-agenda-action-edit", "gm", _c("downtime:agenda_action_edit", "bakery.pk")),
+        P(
+            "downtime-agenda-add-modal",
+            "gm",
+            _c("downtime:agenda"),
+            action="agenda_add_modal",
+            # The "+" trigger is hidden at 390 px (the agenda is a list there).
+            widths=(1280,),
+            audit_widths=(1920, 1280, 768),
+            modal_url=_c("downtime:agenda_add"),
+        ),
+        # map
+        P(
+            "map-visits",
+            "gm",
+            lambda d: reverse(
+                "map:visits", args=[d.slug, d.map.pk, d.location.tile.q, d.location.tile.r]
+            ),
+        ),
+        P("map-found", "gm", _c("map:found", "location.pk")),
+        P(
+            "map-credit",
+            "gm",
+            lambda d: reverse("map:credit", args=[d.slug, d.location.pk, "discovered"]),
+        ),
+        # trades
+        P("trades-detail-requested", "alice", _c("trades:detail", "requested_trade.pk")),
+        P("trades-edit-side", "alice", _c("trades:edit_side", "trade.pk")),
+        # inbox gives
+        P("accounts-message-give-items", "gm", _c("accounts:message_give_items", "message.pk")),
+        P("accounts-message-give-map", "gm", _c("accounts:message_give_map", "message.pk")),
+        P(
+            "accounts-message-status-confirm",
+            "gm",
+            lambda d: reverse(
+                "accounts:message_status_confirm", args=[d.slug, d.message.pk, "handled"]
+            ),
+        ),
+        P(
+            "inbox-give-items-modal",
+            "gm",
+            _c("accounts:message_inbox"),
+            action="give_items_modal",
+            modal_url=_c("accounts:message_give_items", "message.pk"),
+        ),
+        P(
+            "inbox-status-modal",
+            "gm",
+            _c("accounts:message_inbox"),
+            action="status_modal",
+            modal_url=lambda d: reverse(
+                "accounts:message_status_confirm", args=[d.slug, d.message.pk, "handled"]
+            ),
+        ),
+        # Quest turn-in is NOT a modal: it is an inline card with a POST form on the quest
+        # detail page, so `quests-detail` already captures it.
+    ]
+    # Role variants. A page that a role cannot reach (403) is left out.
+    for role, suffix in (("gm_only", "gm-only"), ("club_admin", "club-admin")):
+        pages += [
+            P(f"club-home-{suffix}", role, lambda d: reverse("club_home", args=[d.slug])),
+            P(f"home-{suffix}", role, lambda d: reverse("home")),
+            P(f"items-index-{suffix}", role, _c("items:index")),
+            P(f"items-detail-{suffix}", role, _c("items:detail", "item.pk")),
+            P(f"shops-index-{suffix}", role, _c("shops:index")),
+            P(f"shops-detail-caravan-{suffix}", role, _c("shops:detail", "caravan.pk")),
+            P(f"quests-index-{suffix}", role, _c("quests:index")),
+            P(f"quests-detail-{suffix}", role, _c("quests:detail", "quest.pk")),
+            P(f"downtime-play-{suffix}", role, lambda d: reverse("downtime:play", args=[d.slug])),
+            P(f"map-index-{suffix}", role, _c("map:index")),
+            P(f"map-detail-{suffix}", role, _c("map:detail", "map.pk")),
+            P(f"ledger-index-{suffix}", role, _c("ledger:index")),
+        ]
+    pages += [
+        P("characters-index-gm-only", "gm_only", _c("characters:index")),
+        P("characters-detail-gm-only", "gm_only", _c("characters:detail", "aria.pk")),
+        P("agent-index-gm-only", "gm_only", _c("agent_access:index")),
+        P("agent-batches-gm-only", "gm_only", _c("agent_access:batches")),
+        P("accounts-index-club-admin", "club_admin", _c("accounts:index")),
+        P("accounts-message-inbox-club-admin", "club_admin", _c("accounts:message_inbox")),
+        P("shops-manage-list-club-admin", "club_admin", _c("shops:manage_list")),
+        P("quests-manage-club-admin", "club_admin", _c("quests:manage")),
+        P("downtime-agenda-club-admin", "club_admin", _c("downtime:agenda")),
     ]
     names = [p.name for p in pages]
     assert len(names) == len(set(names)), "duplicate page names"
