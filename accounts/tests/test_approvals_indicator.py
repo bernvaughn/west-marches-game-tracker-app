@@ -124,4 +124,4 @@ def test_demo_gwen_badge(login):
     assert "approvals-menu" in html
     for label in ("Agent batches", "Proposed items", "Map requests", "Messages"):
         assert label in html
-    assert 'approvals-total">4<' in html
+    assert 'approvals-total">5<' in html

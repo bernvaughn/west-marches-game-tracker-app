@@ -12,6 +12,7 @@ urlpatterns = [
         name="reset_password",
     ),
     path("messages/new/", inbox.message_new, name="message_new"),
+    path("messages/stock/new/", inbox.stock_request_new, name="stock_request_new"),
     path("messages/", inbox.message_inbox, name="message_inbox"),
     path("messages/<int:pk>/status/", inbox.message_status, name="message_status"),
     path(

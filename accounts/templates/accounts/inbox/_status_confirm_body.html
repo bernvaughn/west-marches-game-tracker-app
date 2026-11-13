@@ -1,5 +1,6 @@
 {% csrf_token %}
 <input type="hidden" name="filter" value="{{ filter }}">
+<input type="hidden" name="kind" value="{{ kind }}">
 <input type="hidden" name="status" value="{{ status }}">
 <p>{{ action }}: the message from <strong>{{ msg.sender.user.display_name }}</strong>?</p>
 <p class="text-muted mb-0">{{ msg.body|truncatechars:80 }}</p>

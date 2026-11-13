@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Request stock{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Request stock" subtitle="Ask the club admins to make something available to buy." %}
+{% if is_member %}
+{% if form %}
+<div class="wm-narrow-block">
+{% include "components/card_open.html" with title="New stock request" %}
+<p class="text-muted">Request as <strong>{{ character.name }}</strong></p>
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form }}
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Send as {{ character.name }}</button></div>
+</form>
+{% include "components/card_close.html" %}
+</div>
+{% else %}
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
+{% endif %}
+{% include "components/section_open.html" with title="Your stock requests" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Date</th><th>Character</th><th class="wm-msg-col">Message</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for m in sent %}
+  <tr>
+    <td>{{ m.created|date:"Y-m-d H:i" }}</td>
+    <td>{{ m.character.name|default:"-" }}</td>
+    <td class="wm-msg-col">{{ m.body|linebreaksbr }}</td>
+    <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
+  </tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=4 text="No stock requests yet." %}
+  {% endfor %}
+  </tbody>
+</table></div>
+{% include "components/section_close.html" %}
+{% else %}
+{% include "components/empty_state.html" with text="Only club members can send stock requests." icon="lock" %}
+{% endif %}
+{% endblock %}

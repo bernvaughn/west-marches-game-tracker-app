@@ -39,6 +39,7 @@ class AccountsConfig(AppConfig):
         reg = navigation.register
         reg("club", "People", "accounts:index", not_admin, 100)
         reg("club", "Message the admins", "accounts:message_new", is_member, 60)
+        reg("club", "Request stock", "accounts:stock_request_new", is_member, 65)
         reg("admin", "Members", "accounts:index", is_admin, 10)
         reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20)
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)

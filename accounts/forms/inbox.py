@@ -11,6 +11,16 @@ class MessageForm(forms.ModelForm):
         fields = ["body"]
 
 
+class StockRequestForm(MessageForm):
+    body = forms.CharField(
+        label="Request",
+        max_length=2000,
+        widget=forms.Textarea(
+            attrs={"rows": 4, "placeholder": "I want to be able to buy some super cool armor!"}
+        ),
+    )
+
+
 class StatusForm(forms.Form):
     status = forms.ChoiceField(choices=Message.Status.choices)
 

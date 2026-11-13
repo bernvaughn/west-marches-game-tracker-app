@@ -198,7 +198,7 @@ def test_cross_club_isolation(club, club_admin, other_club, character, msg, logi
 def test_demo_message_has_character():
     call_command("seed_demo")
     call_command("seed_demo")
-    assert Message.objects.count() == 1
-    m = Message.objects.get()
+    assert Message.objects.count() == 2
+    m = Message.objects.get(kind=Message.Kind.MESSAGE)
     assert m.character.name == "Aria Windrunner"
     assert Character.objects.filter(name="Aria Windrunner").count() == 1

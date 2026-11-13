@@ -18,37 +18,78 @@ from player_characters.models import Character
 from player_characters.selection import selected_character
 
 from ..forms.grants import GRANT_FORMS, GRANT_TITLES, MapGrantForm
-from ..forms.inbox import STATUS_ACTIONS, MessageForm, StatusForm, allowed_statuses
+from ..forms.inbox import (
+    STATUS_ACTIONS,
+    MessageForm,
+    StatusForm,
+    StockRequestForm,
+    allowed_statuses,
+)
 from ..htmx import is_htmx, render_modal_or_page
 from ..models import Message
 from ..permissions import club_admin_required, club_member_required
 from ..scoping import club_get_object_or_404, club_queryset
 
 FILTERS = ("open", "handled", "closed", "all")
+KIND_FILTERS = (
+    ("all", "All"),
+    ("message", "Messages"),
+    ("stock_request", "Stock requests"),
+)
 
 
-@club_member_required
-def message_new(request, club_slug):
+def _send(request, club_slug, *, kind, form_class, template, url_name, flash_text):
     membership = request.membership
     if membership is None:
         if request.method == "POST":
             raise PermissionDenied
-        return render(request, "accounts/inbox/message_new.html", {"form": None, "sent": []})
+        return render(request, template, {"form": None, "sent": []})
     character = selected_character(request)
-    form = MessageForm(request.POST or None) if character is not None else None
+    form = form_class(request.POST or None) if character is not None else None
     if request.method == "POST" and form is not None and form.is_valid():
         msg = form.save(commit=False)
         msg.character = character
         msg.club = request.club
         msg.sender = membership
+        msg.kind = kind
         msg.save()
-        flash.success(request, "Message sent to the club admins.")
-        return redirect("accounts:message_new", club_slug=club_slug)
-    sent = club_queryset(request, Message).filter(sender=membership).select_related("character")
+        flash.success(request, flash_text)
+        return redirect(url_name, club_slug=club_slug)
+    sent = (
+        club_queryset(request, Message)
+        .filter(sender=membership, kind=kind)
+        .select_related("character")
+    )
     return render(
         request,
-        "accounts/inbox/message_new.html",
+        template,
         {"form": form, "sent": sent, "character": character, "is_member": True},
+    )
+
+
+@club_member_required
+def message_new(request, club_slug):
+    return _send(
+        request,
+        club_slug,
+        kind=Message.Kind.MESSAGE,
+        form_class=MessageForm,
+        template="accounts/inbox/message_new.html",
+        url_name="accounts:message_new",
+        flash_text="Message sent to the club admins.",
+    )
+
+
+@club_member_required
+def stock_request_new(request, club_slug):
+    return _send(
+        request,
+        club_slug,
+        kind=Message.Kind.STOCK_REQUEST,
+        form_class=StockRequestForm,
+        template="accounts/inbox/stock_request_new.html",
+        url_name="accounts:stock_request_new",
+        flash_text="Stock request sent to the club admins.",
     )
 
 
@@ -71,8 +112,11 @@ def message_inbox(request, club_slug):
             "granted_found_marks__character",
         )
     )
+    kind = _kind_of(request.GET)
     if status != "all":
         qs = qs.filter(status=status)
+    if kind != "all":
+        qs = qs.filter(kind=kind)
     return render(
         request,
         "accounts/inbox/inbox.html",
@@ -80,6 +124,8 @@ def message_inbox(request, club_slug):
             "messages_list": qs,
             "status": status,
             "filters": FILTERS,
+            "kind": kind,
+            "kind_filters": KIND_FILTERS,
         },
     )
 
@@ -89,8 +135,13 @@ def _filter_of(data):
     return back if back in FILTERS else "open"
 
 
-def _inbox_url(club_slug, back):
-    return f"{reverse('accounts:message_inbox', args=[club_slug])}?status={back}"
+def _kind_of(data):
+    kind = data.get("kind", "all")
+    return kind if kind in {k for k, _ in KIND_FILTERS} else "all"
+
+
+def _inbox_url(club_slug, back, kind="all"):
+    return f"{reverse('accounts:message_inbox', args=[club_slug])}?status={back}&kind={kind}"
 
 
 def _modal_done():
@@ -109,6 +160,7 @@ def message_status_confirm(request, club_slug, pk, status):
         "status": status,
         "action": STATUS_ACTIONS[status],
         "filter": _filter_of(request.GET),
+        "kind": _kind_of(request.GET),
     }
     return render_modal_or_page(
         request,
@@ -129,7 +181,7 @@ def message_status(request, club_slug, pk):
     msg.save(update_fields=["status"])
     if is_htmx(request):
         return _modal_done()
-    return redirect(_inbox_url(club_slug, _filter_of(request.POST)))
+    return redirect(_inbox_url(club_slug, _filter_of(request.POST), _kind_of(request.POST)))
 
 
 def _apply_grant(request, msg, kind, data, lines):
@@ -198,6 +250,8 @@ _NOT_CARRIED = {"csrfmiddlewaretoken", "confirmed", "edit"}
 @club_admin_required
 def message_give(request, club_slug, pk, kind):
     msg = club_get_object_or_404(request, Message, pk=pk)
+    if msg.kind == Message.Kind.STOCK_REQUEST:
+        raise Http404
     post = request.method == "POST"
     data = request.POST if post else None
     kwargs = {

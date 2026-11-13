@@ -111,12 +111,17 @@ class Message(models.Model):
         HANDLED = "handled", "Handled"
         CLOSED = "closed", "Closed"
 
+    class Kind(models.TextChoices):
+        MESSAGE = "message", "Message"
+        STOCK_REQUEST = "stock_request", "Stock request"
+
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name="messages")
     character = models.ForeignKey(
         "player_characters.Character", null=True, blank=True, on_delete=models.SET_NULL
     )
     body = models.TextField()
+    kind = models.CharField(max_length=20, choices=Kind, default=Kind.MESSAGE)
     status = models.CharField(max_length=10, choices=Status, default=Status.OPEN)
     created = models.DateTimeField(auto_now_add=True)
 

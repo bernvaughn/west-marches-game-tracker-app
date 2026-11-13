@@ -4,7 +4,10 @@
 {% block content %}
 {% include "components/page_header.html" with title="Inbox" subtitle="Messages from players to the club admins." %}
 <nav class="wm-filter-pills" aria-label="Filter by status">
-  {% for f in filters %}<a class="btn btn-sm {% if f == status %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?status={{ f }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>{% endfor %}
+  {% for f in filters %}<a class="btn btn-sm {% if f == status %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?status={{ f }}&kind={{ kind }}"{% if f == status %} aria-current="page"{% endif %}>{{ f|capfirst }}</a>{% endfor %}
+</nav>
+<nav class="wm-filter-pills" aria-label="Filter by kind">
+  {% for value, label in kind_filters %}<a class="btn btn-sm {% if value == kind %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?status={{ status }}&kind={{ value }}"{% if value == kind %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
 </nav>
 <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
@@ -14,7 +17,7 @@
   <tr>
     <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div></td>
     <td>{{ m.character.name|default:"-" }}</td>
-    <td class="wm-msg-col">{{ m.body|linebreaksbr }}
+    <td class="wm-msg-col">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% endif %}{{ m.body|linebreaksbr }}
       {% if m.granted_entries.all or m.granted_visits.all or m.granted_credits.all or m.granted_found_marks.all %}
       <div class="wm-granted"><strong>Granted</strong>
         <ul>
@@ -31,14 +34,16 @@
     <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
     <td class="actions">
       {% if m.status == "open" %}
-      {% url 'accounts:message_status_confirm' request.club.slug m.pk "handled" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Mark handled</a>
-      {% url 'accounts:message_status_confirm' request.club.slug m.pk "closed" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Close</a>
+      {% url 'accounts:message_status_confirm' request.club.slug m.pk "handled" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal>Mark handled</a>
+      {% url 'accounts:message_status_confirm' request.club.slug m.pk "closed" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal>Close</a>
       {% else %}
-      {% url 'accounts:message_status_confirm' request.club.slug m.pk "open" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Reopen</a>
+      {% url 'accounts:message_status_confirm' request.club.slug m.pk "open" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal>Reopen</a>
       {% endif %}
-      {% url 'accounts:message_give_coins' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Give coins</a>
-      {% url 'accounts:message_give_items' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Give items</a>
-      {% url 'accounts:message_give_map' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}" hx-get="{{ u }}?filter={{ status }}" hx-target="#app-modal .modal-content" data-app-modal>Give map credit</a>
+      {% if m.kind != "stock_request" %}
+      {% url 'accounts:message_give_coins' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal>Give coins</a>
+      {% url 'accounts:message_give_items' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal>Give items</a>
+      {% url 'accounts:message_give_map' request.club.slug m.pk as u %}<a class="btn btn-sm btn-outline-primary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal>Give map credit</a>
+      {% endif %}
     </td>
   </tr>
   {% empty %}
