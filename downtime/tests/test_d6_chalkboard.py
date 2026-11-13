@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.contrib.staticfiles import finders
 from django.urls import reverse
@@ -55,3 +57,18 @@ def test_css_has_phone_and_print_rules():
 def test_design_reference_has_chalkboard(login, site_admin):
     body = login(site_admin).get("/site/design/").content.decode()
     assert 'id="downtime-chalkboard"' in body
+
+
+def test_chalkboard_coin_text_meets_contrast():
+    with open(finders.find("css/areas/downtime.css"), encoding="utf-8") as fh:
+        css = fh.read()
+    m = re.search(
+        r"\.wm-chalkboard \.coin-cp, \.wm-chalkboard \.coin-sp, \.wm-chalkboard \.coin-gp"
+        r" \{ color: var\((--wm-[a-z-]+)\); \}",
+        css,
+    )
+    assert m, "chalkboard coin rule missing"
+    t = read_tokens()
+    assert contrast_ratio(t[m.group(1)], t["--wm-slate"]) >= 4.5
+    # .coin-pp keeps its own pill: its text must pass on its own background.
+    assert contrast_ratio(t["--wm-coin-pp"], t["--wm-coin-pp-bg"]) >= 4.5
