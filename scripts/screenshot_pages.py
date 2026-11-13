@@ -78,7 +78,7 @@ def demo_objects() -> SimpleNamespace:
         batch=batch,
         line=batch.lines.first(),
         proposed_item=ProposedItem.objects.first(),
-        message=Message.objects.first(),
+        message=Message.objects.filter(kind=Message.Kind.MESSAGE).first(),
         alice_membership=Membership.objects.get(user__email="alice@example.com", club=club),
         map_request=MapRequest.objects.first(),
         item=Item.objects.filter(club=club).order_by("name").first(),
@@ -128,6 +128,7 @@ def _build_pages() -> list[Page]:
         P("accounts-whitelist", "gm", _c("accounts:whitelist")),
         P("accounts-reset-password", "gm", _c("accounts:reset_password", "alice_membership.pk")),
         P("accounts-message-new", "alice", _c("accounts:message_new")),
+        P("accounts-stock-request-new", "alice", _c("accounts:stock_request_new")),
         P("accounts-message-inbox", "gm", _c("accounts:message_inbox")),
         P("accounts-message-grant", "gm", _c("accounts:message_give_coins", "message.pk")),
         P(

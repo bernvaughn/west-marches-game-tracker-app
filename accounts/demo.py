@@ -36,6 +36,13 @@ def seed():
         body="I think Gwen forgot the silver ring from the goblin cave.",
         defaults={"character": aria},
     )
+    Message.objects.get_or_create(
+        club=club,
+        sender=alice,
+        kind=Message.Kind.STOCK_REQUEST,
+        body="I want to be able to buy some super cool armor!",
+        defaults={"character": aria},
+    )
     if msg.character_id is None:
         msg.character = aria
         msg.save(update_fields=["character"])
