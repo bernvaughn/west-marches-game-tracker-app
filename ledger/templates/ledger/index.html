@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins downtime_points %}
 {% block title %}{% if no_character %}Ledger{% else %}Club ledger{% endif %}{% endblock %}
 {% block content %}
 {% if no_character %}
@@ -56,5 +56,6 @@
   {% if page_obj.has_next %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}
 </nav>
 {% endif %}
+{% downtime_points_section %}
 {% endif %}
 {% endblock %}

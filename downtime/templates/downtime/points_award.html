@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Downtime points{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% load downtime_points %}
+{% block content %}
+{% include "components/page_header.html" with title="Downtime points" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <fieldset class="mb-3">
+    <legend class="h6">Characters</legend>
+    {{ form.characters.errors }}
+    {% for checkbox in form.characters %}
+    <div class="form-check">
+      {{ checkbox.tag }}
+      <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}
+        <span class="text-muted small">({{ balances|lookup:checkbox.data.value }})</span></label>
+    </div>
+    {% empty %}
+    <p class="wm-sheet-note">No characters in this club.</p>
+    {% endfor %}
+  </fieldset>
+  {% for field in form.visible_fields %}{% if field.name != "characters" %}
+  <div class="mb-3">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {{ field }}
+    {{ field.errors }}
+  </div>
+  {% endif %}{% endfor %}
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit" data-wm-tooltip title="Give or take the points for every ticked character.">Save</button>
+  </div>
+</form>
+{% endblock %}
