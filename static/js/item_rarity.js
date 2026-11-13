@@ -16,6 +16,9 @@
   document.addEventListener("change", function (e) {
     if (e.target.matches && e.target.matches("select[data-rarity-select]")) update(e.target);
   });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target.matches && e.target.matches("[data-ref-search]")) e.preventDefault();
+  });
   document.addEventListener("DOMContentLoaded", init);
   document.body && document.body.addEventListener("htmx:afterSettle", init);
   document.addEventListener("htmx:afterSettle", init);

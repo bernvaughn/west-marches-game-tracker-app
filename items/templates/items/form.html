@@ -8,13 +8,22 @@
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ next_url }}">
   {{ form }}
+  {% include "items/_references_panel.html" %}
   <div class="wm-form-actions">
     <button type="submit" class="btn btn-primary">Save</button>
     <a class="btn btn-outline-secondary" href="{{ next_url }}">Cancel</a>
   </div>
 </form>
 {% else %}
-{% include "components/form_layout.html" with form=form cancel_url=back_url %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form }}
+  {% include "items/_references_panel.html" %}
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a>
+  </div>
+</form>
 {% endif %}
 {% load static %}<script src="{% static 'js/item_rarity.js' %}" defer></script>
 {% endblock %}

@@ -19,13 +19,18 @@ class ItemForm(forms.ModelForm):
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
         self.club = club
-        self.fields["rarity"].choices = [("", "—"), *rarity.Rarity.choices]
+        self.fields["rarity"].choices = [("", "—"), *rarity.GROUPS]
         self.fields["value"].help_text = format_html(
-            '<span class="wm-rarity-hint" data-rarity-hint>Suggested value (2014 DMG):{}</span>',
+            '<span class="wm-rarity-hint" data-rarity-hint>Suggested value:{}'
+            '<span data-rarity-item="special" style="display:block">'
+            "No suggested range.</span></span>",
             format_html_join(
                 "",
-                '<span data-rarity-item="{}" style="display:block">{} {}</span>',
-                rarity.ranges(),
+                '<span data-rarity-item="{}" style="display:block">{} {}{}</span>',
+                (
+                    (key, name, text, f" — e.g. {ex}" if ex else "")
+                    for key, name, text, ex in rarity.ranges()
+                ),
             ),
         )
         if self.instance.pk:

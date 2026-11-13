@@ -16,11 +16,14 @@ from accounts.permissions import (
     is_game_master,
 )
 from accounts.scoping import club_get_object_or_404, club_queryset
+from ledger.coins import CP_PER_GP, CP_PER_PP, CP_PER_SP
 
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
 from .forms import ItemForm
 from .models import Item
+from .rarity import Rarity
+from .references import reference_items
 from .services import delete_or_retire
 from .usage import ownership_counts
 
@@ -98,6 +101,35 @@ def _with_item(target, pk):
     parts = urlsplit(target)
     query = [(k, v) for k, v in parse_qsl(parts.query) if k != "item"] + [("item", str(pk))]
     return urlunsplit(("", "", parts.path, urlencode(query), parts.fragment))
+
+
+def _int(raw):
+    try:
+        return max(int(raw), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+@club_admin_required
+def references(request, club_slug):
+    g = request.GET
+    value_cp = (
+        _int(g.get("value_pp")) * CP_PER_PP
+        + _int(g.get("value_gp")) * CP_PER_GP
+        + _int(g.get("value_sp")) * CP_PER_SP
+        + _int(g.get("value_cp"))
+    )
+    band = g.get("rarity", "")
+    if band not in Rarity.values:
+        band = ""
+    items = reference_items(
+        request.club,
+        band,
+        value_cp,
+        g.get("ref_q", ""),
+        exclude_pk=_int(g.get("exclude")) or None,
+    )
+    return render(request, "items/_references.html", {"items": items})
 
 
 @club_admin_required
