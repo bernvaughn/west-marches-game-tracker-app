@@ -4,6 +4,8 @@ from items.models import Item
 from ledger.coins import display_parts
 from ledger.services import coin_balance, held_coins, held_items, item_quantities
 
+USE_CIRCLE_CAP = 30
+
 
 @dataclass(frozen=True)
 class InventoryRow:
@@ -14,6 +16,15 @@ class InventoryRow:
     @property
     def available(self):
         return self.owned - self.held
+
+    @property
+    def use_circles(self):
+        """One empty circle per item for a printed card, only when owning several."""
+        return range(min(self.owned, USE_CIRCLE_CAP)) if self.owned > 1 else range(0)
+
+    @property
+    def use_overflow(self):
+        return max(self.owned - USE_CIRCLE_CAP, 0) if self.owned > 1 else 0
 
 
 @dataclass(frozen=True)

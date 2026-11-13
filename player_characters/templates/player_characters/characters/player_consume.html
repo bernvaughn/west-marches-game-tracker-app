@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Consume item{% endblock %}
+{% block content %}
+{% url "characters:detail" request.club.slug character.pk as back_url %}{% include "components/page_header.html" with title="Consume item" back_url=back_url back_label="Back to "|add:character.name %}
+{% include "components/card_open.html" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {% include "player_characters/characters/_consume_body.html" %}
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Consume</button></div>
+</form>
+{% include "components/card_close.html" %}
+{% endblock %}

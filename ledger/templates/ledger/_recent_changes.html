@@ -1,0 +1,16 @@
+{% load coins %}<section class="wm-recent-changes" aria-labelledby="recent-changes-title">
+  <h2 class="h6" id="recent-changes-title">Recent changes (last 30 days)</h2>
+  {% if recent %}
+  <ul class="wm-compact-list">
+    {% for e in recent %}
+    <li><span class="wm-sheet-date">{{ e.date|date:"Y-m-d" }}</span>
+      {% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}:
+      {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+      {% if e.note %}&mdash; {{ e.note }}{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="wm-sheet-note">No consumes or adjustments in the last 30 days.</p>
+  {% endif %}
+</section>

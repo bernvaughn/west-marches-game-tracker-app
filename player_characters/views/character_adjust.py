@@ -4,7 +4,14 @@ from django.shortcuts import redirect, render
 from accounts.permissions import admin_or_gm_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
-from ledger.services import LedgerError, Line, available_coins, available_items, record
+from ledger.services import (
+    LedgerError,
+    Line,
+    available_coins,
+    available_items,
+    recent_changes,
+    record,
+)
 
 from ..forms import formset_lines, item_line_formset
 from ..forms_adjust import AdjustForm, ConsumeForm
@@ -55,7 +62,12 @@ def adjust(request, club_slug, pk):
     return render(
         request,
         "player_characters/characters/adjust.html",
-        {"character": character, "form": form, "formset": formset},
+        {
+            "character": character,
+            "form": form,
+            "formset": formset,
+            "recent": recent_changes(character),
+        },
     )
 
 
@@ -79,6 +91,7 @@ def consume(request, club_slug, pk):
             "character": character,
             "form": form,
             "formset": formset,
+            "recent": recent_changes(character),
             "coins_available": available_coins(character),
             "available": [(item, avail[item.pk]) for item in items.order_by("name")],
         },

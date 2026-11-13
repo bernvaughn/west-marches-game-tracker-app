@@ -1,7 +1,9 @@
 {% load coins %}<article class="wm-item-card{% if full %} wm-item-card--full{% endif %}">
   <div class="wm-item-card-body">
+  <p class="wm-item-card-brand wm-wordmark">Downtime Market</p>
   <h2>{% include "items/_item_name.html" with item=row.item %}{% if row.item.retired %} (Retired){% endif %}</h2>
   <p>Quantity: {{ row.owned }}</p>
+  {% if row.use_circles %}<div class="wm-item-card-uses"><strong>Used</strong> <span class="visually-hidden">{{ row.owned }} boxes to tick</span>{% for _ in row.use_circles %}<span class="wm-use-circle" aria-hidden="true"></span>{% endfor %}{% if row.use_overflow %} <span class="wm-use-more">+{{ row.use_overflow }}</span>{% endif %}</div>{% endif %}
   <p>Value: {{ row.item.value_cp|coins_text }}</p>
   {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
   {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}

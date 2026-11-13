@@ -95,6 +95,7 @@
             {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
             {% url 'characters:print_item' club.slug character.pk r.item.pk as print_url %}
             <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ r.item.name }}">
+              {% if is_owner and r.available > 0 %}{% url 'characters:player_consume' club.slug character.pk r.item.pk as consume_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ consume_url }}" hx-get="{{ consume_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark items as lost or used up, based on what happened during the session." aria-label="Consume">{% include "components/icon.html" with name="dash-circle" %}</a>{% endif %}
               <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Set aside items to sell later, in shops or your own stall." aria-label="Mark as junk">{% include "components/icon.html" with name="tag" %}</a>
               <div class="btn-group btn-group-sm" role="group">
                 <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print this one item's card, as a full page or in one spot of a card sheet." aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>

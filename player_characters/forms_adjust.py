@@ -38,3 +38,22 @@ class ConsumeForm(_DateNoteMixin):
 
     def clean_note(self):
         return self.cleaned_data["note"].strip() or "Consumed"
+
+
+class PlayerConsumeForm(forms.Form):
+    quantity = forms.IntegerField(min_value=1, initial=1)
+    note = forms.CharField(max_length=500, required=False)
+
+    def __init__(self, *args, available=1, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.available = available
+        self.fields["quantity"].widget.attrs.update(min=1, max=available)
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data["quantity"]
+        if quantity > self.available:
+            raise forms.ValidationError(f"Only {self.available} available to consume.")
+        return quantity
+
+    def clean_note(self):
+        return self.cleaned_data["note"].strip() or "Consumed"
