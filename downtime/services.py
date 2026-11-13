@@ -27,7 +27,11 @@ def award(characters, delta, note="", date=None, by=None, kind="award", source="
     """Write one point entry per character; refuse a negative resulting balance."""
     if isinstance(characters, Character):
         characters = [characters]
-    characters = list(characters)
+    # One entry and one balance check per character, even if listed twice.
+    unique = {}
+    for c in characters:
+        unique.setdefault(c.pk, c)
+    characters = list(unique.values())
     if not characters:
         raise DowntimeError("No characters given.")
     if not delta:

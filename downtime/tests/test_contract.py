@@ -172,3 +172,13 @@ def test_urls_importable():
 
     assert urls.urlpatterns == []
     assert reverse  # url module loads through config.urls
+
+
+@pytest.mark.story("D1")
+def test_award_dedupes_characters(character):
+    assert len(services.award([character, character], 1)) == 1
+    assert services.balance(character) == 1
+    with pytest.raises(services.InsufficientPoints):
+        services.award([character, character], -2, kind="remove")
+    services.award([character, character], -1, kind="remove")
+    assert services.balance(character) == 0
