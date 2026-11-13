@@ -36,6 +36,8 @@
       {% endif %}
     </section>
     {% endif %}
-    <form method="post" action="{% url 'logout' %}" class="logout wm-menu-logout">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary w-100">Log out</button></form>
+  </div>
+  <div class="wm-side-menu-footer">
+      <form method="post" action="{% url 'logout' %}" class="logout wm-menu-logout">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary w-100">Log out</button></form>
   </div>
 </div>

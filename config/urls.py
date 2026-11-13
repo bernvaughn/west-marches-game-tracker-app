@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from accounts import views as account_views
+from config import views as config_views
 
 club_patterns = [
     path("", account_views.club_home, name="club_home"),
@@ -17,6 +18,7 @@ club_patterns = [
 ]
 
 urlpatterns = [
+    path("favicon.ico", config_views.favicon, name="favicon"),
     path("", account_views.home, name="home"),
     path("", include("accounts.urls_site")),
     path("accounts/", include("django.contrib.auth.urls")),

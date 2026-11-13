@@ -102,6 +102,11 @@ FORM_RENDERER = "config.form_renderer.BootstrapFormRenderer"
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Static URLs carry ?v=<content hash>: no stale CSS/JS, no collectstatic needed.
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "config.static_storage.VersionedStaticFilesStorage"},
+}
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

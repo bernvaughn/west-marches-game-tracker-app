@@ -305,4 +305,6 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .wm-menu-link { display: flex; align-items: center; min-height: var(--wm-size-touch); padding: .25rem var(--wm-space-2); border-radius: var(--wm-radius-md, .375rem); color: var(--wm-text); text-decoration: none; }
 .wm-menu-link:hover { background: var(--wm-surface-sunken); }
 .wm-menu-link.active { background: var(--wm-surface-sunken); font-weight: 600; }
-.wm-menu-logout { margin: var(--wm-space-3) 0 0; padding-top: var(--wm-space-3); border-top: 1px solid var(--wm-border); }
+.wm-side-menu .offcanvas-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.wm-side-menu-footer { flex: 0 0 auto; padding: var(--wm-space-3); border-top: 1px solid var(--wm-border); background: var(--wm-surface-raised); }
+.wm-menu-logout { margin: 0; }
