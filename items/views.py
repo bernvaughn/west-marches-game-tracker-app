@@ -1,8 +1,13 @@
+import json
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from django.contrib import messages
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
+from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import club_admin_required, club_member_required, is_club_admin
 from accounts.scoping import club_get_object_or_404, club_queryset
 
@@ -43,9 +48,43 @@ def _form_view(request, instance):
     return render(request, "items/form.html", {"form": form, "item": instance})
 
 
+def _safe_next(request):
+    target = request.POST.get("next") or request.GET.get("next")
+    if target and url_has_allowed_host_and_scheme(
+        target, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return target
+    return None
+
+
+def _with_item(target, pk):
+    parts = urlsplit(target)
+    query = [(k, v) for k, v in parse_qsl(parts.query) if k != "item"] + [("item", str(pk))]
+    return urlunsplit(("", "", parts.path, urlencode(query), parts.fragment))
+
+
 @club_admin_required
 def create(request, club_slug):
-    return _form_view(request, None)
+    next_url = _safe_next(request)
+    form = ItemForm(request.POST or None, club=request.club)
+    if request.method == "POST" and form.is_valid():
+        item = form.save()
+        if is_htmx(request):
+            response = HttpResponse(status=204)
+            response["HX-Trigger"] = json.dumps(
+                {"appModalClose": True, "itemCreated": {"id": item.pk, "name": item.name}}
+            )
+            return response
+        messages.success(request, f"Saved {item.name}.")
+        if next_url:
+            return redirect(_with_item(next_url, item.pk))
+        return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
+    return render_modal_or_page(
+        request,
+        "items/_form_modal.html",
+        "items/form.html",
+        {"form": form, "item": None, "next_url": next_url},
+    )
 
 
 @club_admin_required

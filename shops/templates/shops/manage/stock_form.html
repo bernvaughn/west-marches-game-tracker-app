@@ -1,7 +1,24 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{% if stock %}Edit stock{% else %}Add item{% endif %}{% endblock %}
 {% block content %}
 {% url "shops:manage_edit" club.slug shop.pk as back_url %}
-{% if stock %}{% include "components/page_header.html" with title="Edit stock: "|add:stock.item.name back_url=back_url back_label="Back to "|add:shop.name %}{% else %}{% include "components/page_header.html" with title="Add item to "|add:shop.name back_url=back_url back_label="Back to "|add:shop.name %}{% endif %}
+{% if stock %}{% include "components/page_header.html" with title="Edit stock: "|add:stock.item.name back_url=back_url back_label="Back to "|add:shop.name %}
 {% include "components/form_layout.html" with form=form cancel_url=back_url %}
+{% else %}{% include "components/page_header.html" with title="Add item to "|add:shop.name back_url=back_url back_label="Back to "|add:shop.name %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="d-flex align-items-end gap-2">
+    <div class="flex-grow-1">{% include "forms/field.html" with field=form.item %}</div>
+    <a class="btn btn-outline-secondary mb-3" href="{% url 'items:create' club.slug %}?next={{ request.get_full_path|urlencode }}" hx-get="{% url 'items:create' club.slug %}" hx-target="#app-modal .modal-content" data-app-modal>{% include "components/icon.html" with name="plus-lg" %} New item</a>
+  </div>
+  {% for field in form %}{% if field.name != "item" %}{% include "forms/field.html" with field=field %}{% endif %}{% endfor %}
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a>
+  </div>
+</form>
+<script src="{% static 'js/stock_new_item.js' %}" defer></script>
+{% endif %}
 {% endblock %}
