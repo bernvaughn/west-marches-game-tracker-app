@@ -165,6 +165,7 @@ def _build_pages() -> list[Page]:
         P("items-index-gm", "gm", _c("items:index")),
         P("items-create", "gm", _c("items:create")),
         P("items-detail", "alice", _c("items:detail", "item.pk")),
+        P("items-where-to-buy", "alice", _c("items:where_to_buy", "item.pk")),
         P("items-edit", "gm", _c("items:edit", "item.pk")),
         # shops
         P("shops-index", "alice", _c("shops:index")),

@@ -9,7 +9,7 @@
   {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}</p>
 {% endif %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th class="num">Value</th><th>Rarity</th><th>Traits</th></tr></thead>
+  <thead><tr><th>Name</th><th class="num">Value</th><th>Rarity</th><th>Traits</th>{% if show_counts %}<th class="num">Characters</th><th class="num">Held</th>{% endif %}<th class="actions"><span class="visually-hidden">Where to buy</span></th></tr></thead>
   <tbody>
   {% for i in items %}
     <tr>
@@ -17,9 +17,11 @@
       <td class="num">{{ i.value_cp|coins }}</td>
       <td>{{ i.get_rarity_display|default:"—" }}</td>
       <td>{{ i.traits }}</td>
+      {% if show_counts %}<td class="num">{{ i.owner_count }}</td><td class="num">{{ i.held_total }}</td>{% endif %}
+      <td class="actions">{% if i.for_sale and not i.retired %}{% url 'items:where_to_buy' club.slug i.pk as wtb_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ wtb_url }}" hx-get="{{ wtb_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Where to buy" aria-label="Where to buy {{ i.name }}">{% include "components/icon.html" with name="shop" %}</a>{% endif %}</td>
     </tr>
   {% empty %}
-    {% include "components/data_table_empty.html" with cols=4 text="No items." %}
+    {% include "components/data_table_empty.html" with cols=5 text="No items." %}
   {% endfor %}
   </tbody>
 </table></div>

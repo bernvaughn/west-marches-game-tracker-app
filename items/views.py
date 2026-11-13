@@ -4,16 +4,25 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from accounts.htmx import is_htmx, render_modal_or_page
-from accounts.permissions import club_admin_required, club_member_required, is_club_admin
+from accounts.permissions import (
+    club_admin_required,
+    club_member_required,
+    is_club_admin,
+    is_game_master,
+)
 from accounts.scoping import club_get_object_or_404, club_queryset
 
+from .availability import available_item_ids
+from .availability import where_to_buy as find_where_to_buy
 from .forms import ItemForm
 from .models import Item
 from .services import delete_or_retire
+from .usage import ownership_counts
 
 
 @club_member_required
@@ -23,10 +32,38 @@ def index(request, club_slug):
     items = club_queryset(request, Item)
     if not show_retired:
         items = items.filter(retired=False)
+    items = list(items)
+    for_sale = available_item_ids(request.club, timezone.localdate())
+    show_counts = is_admin or is_game_master(request.user, request.club)
+    counts = ownership_counts(request.club) if show_counts else {}
+    for i in items:
+        i.for_sale = i.pk in for_sale
+        own = counts.get(i.pk)
+        i.owner_count = own.characters if own else 0
+        i.held_total = own.held if own else 0
     return render(
         request,
         "items/index.html",
-        {"items": items, "is_admin": is_admin, "show_retired": show_retired},
+        {
+            "items": items,
+            "is_admin": is_admin,
+            "show_retired": show_retired,
+            "show_counts": show_counts,
+        },
+    )
+
+
+@club_member_required
+def where_to_buy(request, club_slug, pk):
+    item = club_get_object_or_404(request, Item, pk=pk)
+    if item.retired and not is_club_admin(request.user, request.club):
+        raise Http404
+    offers = find_where_to_buy(request.club, item, timezone.localdate(), request.user)
+    return render_modal_or_page(
+        request,
+        "items/_where_to_buy_modal.html",
+        "items/where_to_buy.html",
+        {"item": item, "offers": offers},
     )
 
 
