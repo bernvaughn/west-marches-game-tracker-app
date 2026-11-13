@@ -3,6 +3,7 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Adjust "|add:character.name %}
+{% include "ledger/_recent_changes.html" %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   {{ form }}

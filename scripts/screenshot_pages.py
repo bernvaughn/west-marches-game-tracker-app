@@ -52,6 +52,7 @@ def demo_objects() -> SimpleNamespace:
     from accounts.models import Club, Membership, Message
     from agent_access.models import ProposedBatch, ProposedItem
     from items.models import Item
+    from ledger.services import available_items
     from map.models import Encounter, HexMap, Location, MapRequest
     from player_characters.models import Character, Trade
     from quests.models import Quest
@@ -61,7 +62,12 @@ def demo_objects() -> SimpleNamespace:
     batch = ProposedBatch.objects.get(idempotency_key="demo-session-1")
     wolf_den = Location.objects.get(name="Wolf Den")
     caravan = Shop.objects.get(name="Wandering Caravan")
+    aria = Character.objects.get(name="Aria Windrunner")
+    owned_item = Item.objects.filter(
+        pk__in=[i for i, q in available_items(aria).items() if q > 0]
+    ).first()
     return SimpleNamespace(
+        owned_item=owned_item,
         club=club,
         slug=club.slug,
         aria=Character.objects.get(name="Aria Windrunner"),
@@ -155,6 +161,11 @@ def _build_pages() -> list[Page]:
         P("characters-handover", "gm", _c("characters:handover", "aria.pk")),
         P("characters-adjust", "gm", _c("characters:adjust", "aria.pk")),
         P("characters-consume", "gm", _c("characters:consume", "aria.pk")),
+        P(
+            "characters-consume-player",
+            "alice",
+            _c("characters:player_consume", "aria.pk", "owned_item.pk"),
+        ),
         P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
         # downtime

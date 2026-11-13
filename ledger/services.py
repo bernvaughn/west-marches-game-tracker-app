@@ -3,7 +3,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 
-from django.db import transaction
+from django.db import models, transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
@@ -204,3 +204,21 @@ def record_many(specs):
                 )
             entries.append(entry)
         return entries
+
+
+RECENT_KINDS = ("consumed", "adjustment", "award")
+
+
+def recent_changes(character, days=30, limit=20):
+    """Consume and adjust entries (any actor) in the last `days`, newest first."""
+    since = timezone.localdate() - timezone.timedelta(days=days)
+    return list(
+        LedgerEntry.objects.filter(character=character, kind__in=RECENT_KINDS, date__gte=since)
+        .select_related("created_by")
+        .prefetch_related(
+            models.Prefetch(
+                "lines", queryset=LedgerLine.objects.select_related("item").order_by("id")
+            )
+        )
+        .order_by("-date", "-id")[:limit]
+    )

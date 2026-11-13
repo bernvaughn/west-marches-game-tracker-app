@@ -8,6 +8,7 @@
 <ul class="wm-compact-list">
   {% for item, qty in available %}<li>{% include "items/_item_name.html" with item=item %}: {{ qty }}</li>{% empty %}<li>No items available to consume.</li>{% endfor %}
 </ul>
+{% include "ledger/_recent_changes.html" %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   {{ form }}
