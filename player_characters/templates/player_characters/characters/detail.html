@@ -23,7 +23,8 @@
 <article class="wm-sheet">
   <header class="wm-sheet-header">
     <h1>{{ character.name }}</h1>
-    <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %} &middot; Played by {{ owner_name }} &middot; {{ club.name }}</p>
+    <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %}{% if character.char_class %} &middot; {{ character.char_class }}{% endif %}{% if character.species %} &middot; {{ character.species }}{% endif %}{% if character.pronouns %} &middot; {{ character.pronouns }}{% endif %}{% if character.alignment %} &middot; {{ character.alignment }}{% endif %}</p>
+    <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
   </header>
   {% if can_view %}
   <div class="wm-sheet-grid">
@@ -33,20 +34,26 @@
       {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
       {% if coins.has_holds %}<p class="wm-sheet-note"><a href="{% url 'trades:index' club.slug %}">In open trades</a>: {{ coins.held|coins }} &middot; Available: {{ coins.available|coins }}</p>{% endif %}
     </section>
-    {% if character.stats %}
-    <section class="wm-sheet-box" aria-labelledby="sheet-stats">
-      <h2 class="wm-sheet-box-title" id="sheet-stats">Stats</h2>
-      <p>{{ character.stats|linebreaksbr }}</p>
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-abilities">
+      <h2 class="wm-sheet-box-title" id="sheet-abilities">Abilities</h2>
+      <ul class="wm-sheet-abilities">
+        {% for a in abilities %}
+        <li class="wm-sheet-ability"><span class="wm-sheet-ability-abbr" title="{{ a.label }}">{{ a.abbr }}</span><span class="wm-sheet-ability-score">{{ a.score }}</span><span class="wm-sheet-ability-mod">{{ a.modifier }}</span></li>
+        {% endfor %}
+      </ul>
     </section>
-    {% endif %}
-    <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-notes">
-      <h2 class="wm-sheet-box-title" id="sheet-notes">Notes</h2>
-      {% if character.notes %}{{ character.notes|linebreaks }}
-      {% else %}<p class="wm-sheet-note">No notes yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}</p>{% endif %}
-      {% if character.details %}
-      <h3 class="wm-sheet-subtitle">Details</h3>
-      {{ character.details|linebreaks }}
-      {% endif %}
+    <section class="wm-sheet-box" aria-labelledby="sheet-combat">
+      <h2 class="wm-sheet-box-title" id="sheet-combat">Combat</h2>
+      <dl class="wm-sheet-stats">
+        <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Passive Perception</dt><dd>{{ passive_perception }}</dd>
+        <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
+      </dl>
+    </section>
+    <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-description">
+      <h2 class="wm-sheet-box-title" id="sheet-description">Description</h2>
+      {% if character.description %}{{ character.description|linebreaks }}
+      {% else %}<p class="wm-sheet-note">No description yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}</p>{% endif %}
     </section>
     <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-items">
       <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
@@ -82,7 +89,7 @@
             <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ r.item.name }}">
               <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark as junk" aria-label="Mark as junk">{% include "components/icon.html" with name="tag" %}</a>
               <div class="btn-group btn-group-sm" role="group">
-                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" aria-expanded="false" data-wm-tooltip title="Print card" aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
+                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print card" aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
                 <ul class="dropdown-menu dropdown-menu-end">
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=full">Full page</a></li>
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=grid">Grid spot</a></li>
@@ -98,7 +105,7 @@
       <p class="wm-sheet-note">No items.</p>
       {% endif %}
     </section>
-    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-ledger">
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-ledger-box" aria-labelledby="sheet-ledger">
       <h2 class="wm-sheet-box-title" id="sheet-ledger">Recent ledger entries</h2>
       <ul class="wm-sheet-ledger">
       {% for e in recent_entries %}

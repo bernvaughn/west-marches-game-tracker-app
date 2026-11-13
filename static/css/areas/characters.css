@@ -89,3 +89,20 @@
 /* U59: inventory row actions stay on one line */
 .wm-row-actions-cell { white-space: nowrap; width: 1%; }
 .wm-row-actions { flex-wrap: nowrap; white-space: nowrap; }
+
+/* U69: ability scores, combat stats and the sheet-style edit page */
+.wm-sheet-abilities { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--wm-space-2); grid-template-columns: repeat(3, 1fr); }
+.wm-sheet-ability { display: flex; flex-direction: column; align-items: center; padding: var(--wm-space-1); border: 1px solid var(--wm-border, currentColor); border-radius: var(--wm-radius-md, 6px); }
+.wm-sheet-ability-abbr { font-size: var(--wm-text-sm); color: var(--wm-text-muted); font-weight: 600; }
+.wm-sheet-ability-score { font-size: var(--wm-text-xl); font-weight: 600; line-height: 1.2; }
+.wm-sheet-ability-mod { font-size: var(--wm-text-sm); font-variant-numeric: tabular-nums; }
+.wm-sheet-stats { display: grid; grid-template-columns: auto 1fr; gap: var(--wm-space-1) var(--wm-space-3); margin: 0; }
+.wm-sheet-stats dt { font-weight: 400; color: var(--wm-text-muted); }
+.wm-sheet-stats dd { margin: 0; font-weight: 600; }
+@media (min-width: 48rem) { .wm-sheet-abilities { grid-template-columns: repeat(6, 1fr); } }
+.wm-sheet-ledger-box { margin-top: var(--wm-space-4); }
+.wm-form.wm-character-form { max-width: none; }
+.wm-sheet-header-fields, .wm-sheet-abilities-form { display: grid; gap: var(--wm-space-2); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin-top: var(--wm-space-2); }
+.wm-sheet-abilities-form input[type=number] { max-width: 8rem; }
+.wm-character-form textarea { width: 100%; }
+@media print { .wm-sheet-ledger-box { display: none; } .wm-sheet-abilities { grid-template-columns: repeat(6, 1fr); } }

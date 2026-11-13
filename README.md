@@ -98,7 +98,7 @@ Planned split. Names are tentative; a Django app name must be a valid Python nam
 | App | What it holds |
 | --- | --- |
 | `accounts` | User accounts, each club's email whitelist, who holds which permission in which club, and messages to club admins (a separate messaging app may make sense later) |
-| `player_characters` | The characters players play as (a player can have several; game masters can have them too): notes, stats, coins, owned items, and trades between characters |
+| `player_characters` | The characters players play as (a player can have several; game masters can have them too): sheet details (ability scores, class, species), coins, owned items, and trades between characters |
 | `items` | Each club's item catalogue: names, descriptions, traits and other details, and prices |
 | `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), shop rotations (open and close dates only; inventory and stock stay with the shop), and buying and selling at percentages of an item's value, with per-item overrides |
 | `ledger` | The history of every gain or loss of items or coins for a character, each with a note and a date |

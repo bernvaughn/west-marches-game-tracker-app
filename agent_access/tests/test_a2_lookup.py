@@ -14,7 +14,7 @@ pytestmark = [pytest.mark.story("A2"), pytest.mark.django_db]
 def world(club, other_club, character, item, other_player, gm_connection, other_club_gm_connection):
     owner = Membership.objects.get(user=other_player, club=club)
     Character.objects.filter(pk=character.pk).update(name="Aria")
-    Character.objects.create(club=club, owner=owner, name="Bram", notes="SECRET NOTE")
+    Character.objects.create(club=club, owner=owner, name="Bram", description="SECRET NOTE")
     Character.objects.create(club=club, owner=owner, name="aragorn")
     Item.objects.create(
         club=club, name="Healing Potion", description="restores hp", details="HIDDEN DETAIL"

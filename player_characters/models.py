@@ -1,8 +1,26 @@
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from accounts.scoping import ClubScopedManager
+
+ABILITIES = [
+    ("strength", "STR", "Strength"),
+    ("dexterity", "DEX", "Dexterity"),
+    ("constitution", "CON", "Constitution"),
+    ("intelligence", "INT", "Intelligence"),
+    ("wisdom", "WIS", "Wisdom"),
+    ("charisma", "CHA", "Charisma"),
+]
+
+
+def _ability_field():
+    return models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(30)],
+        help_text="Optional. Whole number from 1 to 30.",
+    )
 
 
 class Character(models.Model):
@@ -13,15 +31,37 @@ class Character(models.Model):
         "accounts.Membership", on_delete=models.PROTECT, related_name="characters"
     )
     name = models.CharField(max_length=200)
-    notes = models.TextField(blank=True)
-    stats = models.TextField(blank=True)
-    details = models.TextField(blank=True)
     level = models.PositiveSmallIntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(1)],
         help_text="Optional. Whole number from 1.",
     )
+    char_class = models.CharField("Class", max_length=60, blank=True)
+    species = models.CharField(max_length=60, blank=True)
+    alignment = models.CharField(max_length=60, blank=True)
+    pronouns = models.CharField(max_length=60, blank=True)
+    strength = _ability_field()
+    dexterity = _ability_field()
+    constitution = _ability_field()
+    intelligence = _ability_field()
+    wisdom = _ability_field()
+    charisma = _ability_field()
+    armor_class = models.PositiveSmallIntegerField(
+        "AC",
+        null=True,
+        blank=True,
+        validators=[MaxValueValidator(40)],
+        help_text="Optional. Whole number from 0 to 40.",
+    )
+    perception_bonus = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(-20), MaxValueValidator(30)],
+        help_text="Optional. May be negative. Passive Perception is 10 plus this.",
+    )
+    xp = models.PositiveIntegerField("XP", null=True, blank=True)
+    description = models.TextField(blank=True)
     shop_open = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
