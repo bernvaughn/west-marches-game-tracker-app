@@ -254,11 +254,11 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .site-header { background: var(--wm-surface-raised) !important; border-bottom: 1px solid var(--wm-border); box-shadow: var(--wm-shadow-1); }
 .site-header .navbar-text { color: var(--wm-text); font-size: var(--wm-text-sm); font-weight: 600; padding: 0; white-space: nowrap; }
 .donate { font-size: .875rem; }
-.wm-topbar { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--wm-space-2); min-width: 0; }
-.wm-topbar > * { min-width: 0; }
+.site-header > .wm-topbar { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--wm-space-2); min-width: 0; }
+.site-header > .wm-topbar > * { min-width: 0; }
 .site-header .wm-hamburger { display: inline-flex; flex: none; align-items: center; justify-content: center; padding: .25rem .5rem; min-width: var(--wm-size-touch); min-height: var(--wm-size-touch); border: 1px solid var(--wm-text-muted); color: var(--wm-text); }
 .site-header .wm-hamburger .wm-icon { width: 1.25em; height: 1.25em; }
-.site-header .club-switcher { flex: 0 1 auto; min-width: 0; }
+.site-header .club-switcher { flex: 0 1 auto; min-width: 3rem; }
 .site-header .club-name { display: block; max-width: min(14rem, 100%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-header .club-name::after { display: none; }
 .site-header .wm-shortcuts { flex: none; gap: var(--wm-space-1); flex-wrap: nowrap; }
@@ -268,13 +268,14 @@ a.wm-chip:hover { color: var(--wm-accent); }
 @media (min-width: 1200px) { .wm-shortcut-label { display: inline; } }
 .site-header .site-header-fixed { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
 .site-header-fixed > * { min-width: 0; }
-.site-header .user-name { flex: none; display: inline-flex; align-items: center; gap: var(--wm-space-1); }
-.site-header .user-name-text { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
-.site-header .character-selector { flex: 0 1 auto; }
+/* When space runs out, the user name gives way first, then the club and character names. */
+.site-header .user-name { flex: 0 4 auto; min-width: 1.75rem; display: inline-flex; align-items: center; gap: var(--wm-space-1); }
+.site-header .user-name-text { flex: 0 1 auto; min-width: 0; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+.site-header .character-selector, .site-header .character-name { flex: 0 1 auto; min-width: 3rem; }
+.site-header .site-header-fixed > .dropdown { flex: none; }
 .site-header .character-selector select { width: auto; max-width: 12rem; min-width: 0; text-overflow: ellipsis; }
 .site-header .character-name { display: inline-block; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-header .approvals-menu { white-space: nowrap; }
-.wm-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: var(--wm-text-xs); flex: none; }
 /* Shortcut icons leave from the right: Map, Trades, Quests, Shops, Character. */
 @media (max-width: 991.98px) { .wm-shortcut-rank-5 { display: none; } }
 @media (max-width: 767.98px) { .wm-shortcut-rank-4 { display: none; } }
@@ -282,8 +283,8 @@ a.wm-chip:hover { color: var(--wm-accent); }
 @media (max-width: 479.98px) { .wm-shortcut-rank-2 { display: none; } }
 @media (max-width: 399.98px) { .wm-shortcut-rank-1 { display: none; } .site-header .user-name-text { display: none; } }
 @media (max-width: 575.98px) {
-  .wm-topbar { gap: var(--wm-space-1); }
-  .site-header .club-name { max-width: 7rem; }
+  .site-header > .wm-topbar { gap: var(--wm-space-1); }
+  .site-header .club-name { max-width: 7rem; line-height: calc(var(--wm-size-touch) - .5rem - 2px); }
   .site-header .character-selector select, .site-header .character-name { max-width: 7rem; }
   .site-header .approvals-menu { font-size: 0; padding-inline: .4rem; }
   .site-header .approvals-menu .badge { font-size: .75rem; }
