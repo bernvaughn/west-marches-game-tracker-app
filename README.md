@@ -15,6 +15,8 @@ uv run python manage.py seed_demo
 uv run python manage.py runserver
 ```
 
+Static URLs carry `?v=<content hash>` automatically, so edited CSS and JS show up without a hard refresh. Runserver and the tests need no `collectstatic`; production runs it as usual.
+
 Open http://127.0.0.1:8000/ and sign in with a demo login. The password for all of them is `demo-password`.
 
 | Email | Role |
