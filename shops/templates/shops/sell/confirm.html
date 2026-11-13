@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Sell to {{ shop.name }}{% endblock %}
 {% block content %}
-{% url "shops:sell" request.club.slug shop.pk as back_url %}{% include "components/page_header.html" with title="Sell "|add:item.name back_url=back_url back_label="Back to selling" %}
+{% url "shops:detail" request.club.slug shop.pk as back_url %}{% url "shops:sell_item" request.club.slug shop.pk item.pk as sell_url %}{% include "components/page_header.html" with title="Sell "|add:item.name back_url=back_url back_label="Back to "|add:shop.name %}
 {% include "components/card_open.html" %}
-<form method="post" action="{{ back_url }}" class="wm-form">
+<form method="post" action="{{ sell_url }}" class="wm-form">
   {% csrf_token %}
   {% include "shops/sell/_confirm_body.html" %}
   <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Sell as {{ character.name }}</button> <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a></div>

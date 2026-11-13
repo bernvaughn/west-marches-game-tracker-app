@@ -32,18 +32,11 @@ def banner(body):
 def test_silhouette_and_name_in_left_slot(login, player, club, open_shop):
     b = banner(detail(login(player), club, open_shop))
     fig = b.index("wm-shop-keeper-figure")
-    assert fig < b.index("wm-shop-sellbar")
+    assert fig < b.index("wm-shop-iconbar")
     figure = b[fig : b.index("</figure>")]
     assert "wm-shop-silhouette" in figure
     assert f"{open_shop.silhouette}.svg" in figure
     assert f'wm-shop-keeper-name">{open_shop.keeper_name}<' in figure
-
-
-@pytest.mark.story("U39")
-def test_sell_button_keeps_place(login, player, club, open_shop):
-    b = banner(detail(login(player), club, open_shop))
-    sell = b[b.index("wm-shop-sellbar") :]
-    assert f"Sell to {open_shop.keeper_name}" in sell
 
 
 @pytest.mark.story("U39")

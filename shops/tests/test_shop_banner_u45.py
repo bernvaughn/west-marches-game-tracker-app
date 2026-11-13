@@ -36,7 +36,7 @@ def test_toggle_attributes_and_order(login, player, club, open_shop):
     start = b.index("<button", b.index("wm-shop-actions"))
     toggle = b[start : b.index("</button>", start)]
     assert 'aria-expanded="true"' in toggle and 'aria-controls="shop-about"' in toggle
-    assert b.index("wm-shop-about-toggle") < b.index("wm-shop-sellbar")
+    assert b.index("wm-shop-iconbar") < b.index("wm-shop-about-toggle")
 
 
 @pytest.mark.story("U45")
@@ -46,6 +46,7 @@ def test_box_in_banner_visible_without_js_and_not_below_table(login, player, clu
     box = before[before.index('id="shop-about"') :]
     assert "Fine wares." in box and "Gruff but fair." in box
     assert 'id="shop-about" class="wm-shop-about-box">' in before
+    assert 'id="keeper-about" class="wm-shop-about-box">' in before
     assert "Fine wares." not in after and "Gruff but fair." not in after
 
 

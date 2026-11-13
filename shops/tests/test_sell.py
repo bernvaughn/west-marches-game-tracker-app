@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from items.models import Item
@@ -80,29 +81,14 @@ def test_other_club_shop_refused(character, other_shop, loot):
         sell(character, other_shop, loot, 1)
 
 
-def url(club, shop):
-    return reverse("shops:sell", args=[club.slug, shop.id])
-
-
-def test_get_lists_items(club, player, login, character, shop, always_open, loot):
-    r = login(player).get(url(club, shop), {"character": character.id})
-    assert r.status_code == 200
-    assert b"Rope" in r.content and b"5 sp" in r.content
-
-
-def test_get_shows_reduced_for_held(
-    club, player, login, character, other_character, shop, always_open, loot
-):
-    trade = Trade.objects.create(club=club, sender=character, receiver=other_character)
-    TradeLine.objects.create(trade=trade, from_sender=True, item=loot, quantity=1)
-    r = login(player).get(url(club, shop), {"character": character.id})
-    assert r.context["rows"][0]["quantity"] == 2
+def url(club, shop, item):
+    return reverse("shops:sell_item", args=[club.slug, shop.id, item.id])
 
 
 def test_post_success(club, player, login, character, shop, always_open, loot):
     r = login(player).post(
-        url(club, shop),
-        {"character": character.id, "item": loot.id, "quantity": 2, "confirmed": "1"},
+        url(club, shop, loot),
+        {"character": character.id, "quantity": 2, "confirmed": "1"},
     )
     assert r.status_code == 302
     assert r.url == reverse("shops:detail", args=[club.slug, shop.id])
@@ -114,41 +100,37 @@ def test_post_held_item_message(
     club, player, login, character, other_character, shop, always_open, loot
 ):
     _hold(character, other_character, loot, club)
-    r = login(player).post(
-        url(club, shop), {"character": character.id, "item": loot.id, "quantity": 1}
-    )
-    assert r.status_code == 200
-    assert b"Not enough Rope available to sell." in r.content
+    r = login(player).post(url(club, shop, loot), {"character": character.id, "quantity": 1})
+    assert r.status_code == 302
+    assert "Not enough Rope available to sell." in [str(m) for m in get_messages(r.wsgi_request)]
     assert not LedgerEntry.objects.filter(kind="sale").exists()
 
 
 def test_closed_shop_404(club, player, login, character, closed_shop, loot):
     c = login(player)
-    assert c.get(url(club, closed_shop)).status_code == 404
-    r = c.post(url(club, closed_shop), {"character": character.id, "item": loot.id})
+    assert c.get(url(club, closed_shop, loot)).status_code == 404
+    r = c.post(url(club, closed_shop, loot), {"character": character.id})
     assert r.status_code == 404
 
 
-def test_cross_club_shop_404(club, player, login, other_shop):
-    assert login(player).get(url(club, other_shop)).status_code == 404
+def test_cross_club_shop_404(club, player, login, other_shop, loot):
+    assert login(player).post(url(club, other_shop, loot), {"quantity": 1}).status_code == 404
 
 
-def test_other_owner_character_ignored(club, player, login, other_character, shop, always_open):
-    r = login(player).get(url(club, shop), {"character": other_character.id})
-    assert r.status_code == 200
-    assert r.context["character"] != other_character
+def test_get_redirects_to_shop(club, player, login, shop, always_open, loot):
+    r = login(player).get(url(club, shop, loot))
+    assert r.status_code == 302
+    assert r.url == reverse("shops:detail", args=[club.slug, shop.id])
 
 
 def test_other_club_item_404(club, player, login, character, shop, always_open, other_item):
-    r = login(player).post(
-        url(club, shop), {"character": character.id, "item": other_item.id, "quantity": 1}
-    )
+    r = login(player).post(url(club, shop, other_item), {"character": character.id, "quantity": 1})
     assert r.status_code == 404
     assert not LedgerEntry.objects.filter(kind="sale").exists()
 
 
-def test_non_member_404(club, other_club, login, shop, always_open, site_admin):
+def test_non_member_404(club, other_club, login, shop, always_open, site_admin, loot):
     from accounts.models import User
 
     stranger = User.objects.create_user("x@example.com", password="pw", display_name="X")
-    assert login(stranger).get(url(club, shop)).status_code == 404
+    assert login(stranger).post(url(club, shop, loot), {"quantity": 1}).status_code == 404

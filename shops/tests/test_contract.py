@@ -19,7 +19,7 @@ VIEWS = {
     "detail": browse.shop_detail,
     "stock_fragment": browse.stock_fragment,
     "buy": buy_views.buy,
-    "sell": sell_views.sell,
+    "sell_item": sell_views.sell_item,
     "manage_list": manage.shop_list,
     "manage_create": manage.shop_create,
     "manage_edit": manage.shop_edit,
@@ -31,7 +31,7 @@ VIEWS = {
     "rotation_edit": rotations.rotation_edit,
     "rotation_delete": rotations.rotation_delete,
 }
-MEMBER = ["index", "detail", "stock_fragment", "buy", "sell"]
+MEMBER = ["index", "detail", "stock_fragment", "buy", "sell_item"]
 ADMIN_GET = [
     "manage_list", "manage_create", "manage_edit", "stock_add", "stock_edit",
     "rotation_list", "rotation_create", "rotation_edit",
@@ -41,9 +41,11 @@ ADMIN_POST = ["stock_remove", "rotation_delete"]
 
 def url(name, club, shop, stock, rotation):
     kwargs = {"club_slug": club.slug}
-    if name in {"detail", "stock_fragment", "buy", "sell", "manage_edit", "stock_add",
+    if name in {"detail", "stock_fragment", "buy", "sell_item", "manage_edit", "stock_add",
                 "stock_edit", "stock_remove"}:  # fmt: skip
         kwargs["shop_id"] = shop.pk
+    if name == "sell_item":
+        kwargs["item_id"] = stock.item_id
     if name in {"buy", "stock_edit", "stock_remove"}:
         kwargs["stock_id"] = stock.pk
     if name in {"rotation_edit", "rotation_delete"}:
@@ -67,7 +69,8 @@ def test_urls_resolve(ctx):
 
 def test_member_urls_ok(login, player, ctx):
     for name in MEMBER:
-        assert get(login(player), name, ctx).status_code == 200
+        expected = 302 if name == "sell_item" else 200  # GET redirects to the shop page
+        assert get(login(player), name, ctx).status_code == expected
 
 
 @pytest.mark.parametrize("who", ["club_admin", "site_admin"])
@@ -111,7 +114,7 @@ def test_cross_club_ids_404(login, club_admin, club, ctx, other_club, other_shop
     sibling = Shop.objects.create(club=club, name="Sibling")
     sibling_stock = ShopStock.objects.create(shop=sibling, item=stock.item, quantity=1)
     client = login(club_admin)
-    shop_names = ["detail", "stock_fragment", "sell", "manage_edit", "stock_add"]
+    shop_names = ["detail", "stock_fragment", "sell_item", "manage_edit", "stock_add"]
     stock_names = ["buy", "stock_edit", "stock_remove"]
     rot_names = ["rotation_edit", "rotation_delete"]
     checks = [(n, other_shop, stock, rotation) for n in shop_names + stock_names]

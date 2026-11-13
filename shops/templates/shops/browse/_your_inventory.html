@@ -12,10 +12,10 @@
   {% if inventory_rows %}
   <div class="wm-table-scroll">
     <table class="table table-sm wm-data-table">
-      <thead><tr><th scope="col">Item</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}<th scope="col">{% if shop.keeper_name %}{{ shop.keeper_name }}{% else %}This shop{% endif %} pays (each)</th></tr></thead>
+      <thead><tr><th scope="col">Item</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}{% if is_open %}<th scope="col"><span class="visually-hidden">Sell</span></th>{% endif %}</tr></thead>
       <tbody>
       {% for row in inventory_rows %}
-        <tr><td>{{ row.item.name }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}<td>{{ row.price|coins }}</td></tr>
+        <tr><td>{{ row.item.name }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}{% if is_open %}<td>{% if row.available %}{% url 'shops:sell_item' club.slug shop.id row.item.pk as sell_url %}<form method="post" action="{{ sell_url }}" hx-post="{{ sell_url }}" hx-target="#app-modal .modal-content" class="wm-inline-form wm-sell-form">{% csrf_token %}<input type="number" name="quantity" value="1" min="1" max="{{ row.available }}" class="form-control form-control-sm" aria-label="Quantity of {{ row.item.name }}"><button type="submit" class="btn btn-sm btn-primary">Sell for {{ row.price|coins }}</button></form>{% endif %}</td>{% endif %}</tr>
       {% endfor %}
       </tbody>
     </table>
