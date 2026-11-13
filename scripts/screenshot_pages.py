@@ -147,6 +147,8 @@ def _build_pages() -> list[Page]:
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
         P("characters-create", "alice", _c("characters:create")),
+        P("characters-slips-gm", "gm", _c("characters:slips")),
+        P("characters-slips-alice", "alice", _c("characters:slips")),
         P("characters-detail-alice", "alice", _c("characters:detail", "aria.pk")),
         P("characters-detail-gm", "gm", _c("characters:detail", "aria.pk")),
         P("characters-edit", "alice", _c("characters:edit", "aria.pk")),

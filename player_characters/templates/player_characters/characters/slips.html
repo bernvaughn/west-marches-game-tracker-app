@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Character slips{% endblock %}
+{% block content %}
+<h1>Character slips</h1>
+<p class="text-muted">Tick the characters to print slips for drawing tables. 12 slips fit on a page.</p>
+{% if form.errors %}<div class="alert alert-danger" role="alert">{% for e in form.characters.errors %}{{ e }} {% endfor %}</div>{% endif %}
+{% if characters %}
+<form method="get" action="{% url 'characters:slips_print' club.slug %}">
+  <table class="table">
+    <thead><tr><th scope="col">Print</th><th scope="col">Name</th><th scope="col">Player</th><th scope="col">Level</th><th scope="col">Class</th><th scope="col">Species</th></tr></thead>
+    <tbody>
+    {% for c in characters %}
+      <tr>
+        <td><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}" id="slip-{{ c.pk }}" aria-label="Print slip for {{ c.name }}"></td>
+        <td><label for="slip-{{ c.pk }}">{{ c.name }}</label></td>
+        <td>{{ c.owner.user.display_name|default:c.owner.user.email }}</td>
+        <td>{{ c.level|default_if_none:"—" }}</td>
+        <td>{{ c.char_class|default:"—" }}</td>
+        <td>{{ c.species|default:"—" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <button class="btn btn-primary" type="submit">{% include "components/icon.html" with name="printer" %} Print slips</button>
+</form>
+{% else %}
+{% include "components/empty_state.html" with text="No characters." %}
+{% endif %}
+{% endblock %}

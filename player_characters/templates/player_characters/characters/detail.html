@@ -17,6 +17,7 @@
   {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}">Hand over</a>{% endif %}
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}">History</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}">Print item cards</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}" data-wm-tooltip title="Print a slip for drawing tables: name, pronouns, passive Perception, level, class and species.">Print slip</a>
   <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
 </div>
 {% endif %}

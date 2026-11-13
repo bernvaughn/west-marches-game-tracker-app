@@ -36,7 +36,9 @@ def test_row_actions_are_icon_buttons(club, login, player, sheet):
     for label in ("Mark as junk", "Print card"):
         assert f'aria-label="{label}"' in html and f'title="{label}"' in html
     # The top-bar shortcuts (U60) carry the attribute too; count the page body only.
-    assert html[html.index("<main") :].count("data-wm-tooltip") == 2
+    assert (
+        html[html.index("<main") :].count("data-wm-tooltip") == 3
+    )  # row buttons + Print slip (U70)
     assert "#tag" in html and "#printer" in html
     assert "layout=full" in html and "layout=grid" in html
     assert "js/tooltips.js" in html
