@@ -24,6 +24,7 @@ from ..junk import junk_rows, junk_value
 from ..models import Character, Trade
 from ..player_shop import listed_quantity
 from ..selection import selected_character
+from ..sheet import ability_rows, passive_perception_label
 from ..trade_services import OPEN
 
 
@@ -130,6 +131,8 @@ def detail(request, club_slug, pk):
         and Character.objects.for_club(request.club).filter(owner=character.owner).count() >= 2,
     }
     if can_view:
+        ctx["abilities"] = ability_rows(character)
+        ctx["passive_perception"] = passive_perception_label(character.perception_bonus)
         ctx["rows"] = inventory_rows(character)
         ctx["coins"] = coin_summary(character)
         ctx["show_held"] = any(r.held for r in ctx["rows"])

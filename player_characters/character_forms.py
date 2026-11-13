@@ -2,7 +2,7 @@ from django import forms
 
 from accounts.models import Membership
 
-from .models import Character
+from .models import ABILITIES, Character
 
 
 class _OwnerChoice(forms.ModelChoiceField):
@@ -19,12 +19,26 @@ def _club_members(club):
 class CharacterForm(forms.ModelForm):
     class Meta:
         model = Character
-        fields = ["name", "level", "notes", "stats", "details"]
+        fields = [
+            "name",
+            "level",
+            "char_class",
+            "species",
+            "pronouns",
+            "alignment",
+            *[a[0] for a in ABILITIES],
+            "armor_class",
+            "perception_bonus",
+            "xp",
+            "description",
+        ]
         widgets = {
             "level": forms.NumberInput(attrs={"min": 1}),
-            "notes": forms.Textarea(attrs={"rows": 5}),
-            "stats": forms.Textarea(attrs={"rows": 5}),
-            "details": forms.Textarea(attrs={"rows": 5}),
+            **{a[0]: forms.NumberInput(attrs={"min": 1, "max": 30}) for a in ABILITIES},
+            "armor_class": forms.NumberInput(attrs={"min": 0, "max": 40}),
+            "perception_bonus": forms.NumberInput(attrs={"min": -20, "max": 30}),
+            "xp": forms.NumberInput(attrs={"min": 0}),
+            "description": forms.Textarea(attrs={"rows": 6}),
         }
 
     def __init__(self, *args, club, choose_owner=False, **kwargs):
@@ -33,7 +47,7 @@ class CharacterForm(forms.ModelForm):
         self.choose_owner = choose_owner
         if choose_owner:
             self.fields["owner"] = _OwnerChoice(queryset=_club_members(club))
-            self.order_fields(["owner", "name", "level", "notes", "stats", "details"])
+            self.order_fields(["owner", *self.Meta.fields])
 
     def save(self, commit=True):
         self.instance.club = self.club

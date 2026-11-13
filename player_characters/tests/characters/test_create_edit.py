@@ -57,11 +57,11 @@ def test_edit_allowed(club, login, request, character, who):
     owner = character.owner
     r = login(request.getfixturevalue(who)).post(
         u("characters:edit", club, character.pk),
-        {"name": "Renamed", "notes": "n", "stats": "s", "details": "d"},
+        {"name": "Renamed", "description": "n"},
     )
     assert r.status_code == 302
     character.refresh_from_db()
-    assert character.name == "Renamed" and character.notes == "n"
+    assert character.name == "Renamed" and character.description == "n"
     assert character.owner == owner
 
 

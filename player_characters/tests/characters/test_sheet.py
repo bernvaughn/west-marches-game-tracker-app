@@ -13,7 +13,7 @@ def u(name, club, pk=None):
 
 @pytest.fixture
 def sheet(funded):
-    funded.notes = "Secret backstory"
+    funded.description = "Secret backstory"
     funded.save()
     return funded
 
@@ -107,11 +107,11 @@ def test_sheet_header_and_print_button(club, login, player, sheet):
 
 
 @pytest.mark.story("U37")
-def test_empty_notes_one_line(club, login, player, sheet):
-    sheet.notes = ""
+def test_empty_description_one_line(club, login, player, sheet):
+    sheet.description = ""
     sheet.save()
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "No notes yet." in html
+    assert "No description yet." in html
 
 
 @pytest.mark.story("U37")

@@ -18,6 +18,53 @@ GEAR = {
 }
 
 
+SHEETS = {
+    "Aria Windrunner": {
+        "char_class": "Ranger",
+        "species": "Elf",
+        "alignment": "Neutral good",
+        "pronouns": "she/her",
+        "strength": 10,
+        "dexterity": 18,
+        "constitution": 12,
+        "intelligence": 11,
+        "wisdom": 16,
+        "charisma": 9,
+        "armor_class": 15,
+        "perception_bonus": 5,
+        "xp": 6500,
+        "description": "A wary scout who guards the road north.",
+    },
+    "Wren Thistledown": {
+        "char_class": "Rogue",
+        "species": "Halfling",
+        "alignment": "Chaotic neutral",
+        "pronouns": "they/them",
+        "dexterity": 17,
+        "charisma": 14,
+        "armor_class": 13,
+        "xp": 300,
+        "description": "Quick fingers and a quicker tongue.",
+    },
+    "Borin Stonefist": {
+        "char_class": "Fighter",
+        "species": "Dwarf",
+        "alignment": "Lawful good",
+        "pronouns": "he/him",
+        "strength": 17,
+        "dexterity": 8,
+        "constitution": 16,
+        "intelligence": 10,
+        "wisdom": 8,
+        "charisma": 11,
+        "armor_class": 18,
+        "perception_bonus": -1,
+        "xp": 2700,
+        "description": "A shield-bearer who never leaves a torch unlit.",
+    },
+}
+
+
 def seed(club):
     for email, name, level in CHARACTERS:
         owner = Membership.objects.get(club=club, user__email=email)
@@ -27,6 +74,14 @@ def seed(club):
         if character.level is None:
             character.level = level
             character.save(update_fields=["level"])
+        # Fill sheet fields only while blank, so a user's later edit survives a re-run.
+        changed = []
+        for field, value in SHEETS.get(name, {}).items():
+            if getattr(character, field) in (None, ""):
+                setattr(character, field, value)
+                changed.append(field)
+        if changed:
+            character.save(update_fields=changed)
     _give_gear(club)
     _open_demo_stall(club)
 

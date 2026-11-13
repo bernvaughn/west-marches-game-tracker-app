@@ -66,7 +66,7 @@ A player's email is shown only to club admins (U17).
 
 ### player_characters
 
-- **Character**: belongs to a club and is owned by a membership. Name plus notes, stats, and other details the player keeps (U2), and an optional level from 1 (U52, not tied to XP). Handing a character to another player changes the owner (U18).
+- **Character**: belongs to a club and is owned by a membership. Name and an optional level from 1 (U52, not tied to XP). The sheet (U2, U69) adds optional class, species, alignment, pronouns, a description, the six ability scores (1 to 30, with the modifier worked out as (score - 10) // 2), armor class (0 to 40), a Perception bonus (may be negative; passive Perception is 10 plus the bonus, blank shows a dash), and XP. Handing a character to another player changes the owner (U18).
 - **Inventory entry**: a character, an item, and a quantity. Visible only to the owner, game masters, and club admins (U19).
 - **Junk mark**: a character, an item, and a quantity the player set aside to sell (U47). One per character and item. The quantity is capped at the number owned when read, so it needs no cleanup when items leave. It never touches the ledger.
 - **Trade**: a sending character, a receiving character, a status (requested, accepted, completed, declined, cancelled), the sender's note, and one approval for each side (U16).

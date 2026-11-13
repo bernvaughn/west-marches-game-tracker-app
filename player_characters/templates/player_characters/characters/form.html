@@ -1,8 +1,56 @@
 {% extends "base.html" %}
 {% block title %}{{ title }}{% endblock %}
-{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title=title %}
 {% if character %}{% url 'characters:detail' club.slug character.pk as back %}{% else %}{% url 'characters:mine' club.slug as back %}{% endif %}
-{% include "components/form_layout.html" with form=form cancel_url=back %}
+<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
+  <li><a href="{{ back }}">{% if character %}{{ character.name }}{% else %}Characters{% endif %}</a></li>
+  <li><span aria-current="page">{{ title }}</span></li>
+</ol></nav>
+<form method="post" class="wm-form wm-character-form">
+  {% csrf_token %}
+  <article class="wm-sheet">
+    <header class="wm-sheet-header">
+      <h1>{{ title }}</h1>
+      {{ form.non_field_errors }}
+      <div class="wm-sheet-header-fields">
+        {% if form.owner %}{{ form.owner.as_field_group }}{% endif %}
+        {{ form.name.as_field_group }}
+        {{ form.level.as_field_group }}
+        {{ form.char_class.as_field_group }}
+        {{ form.species.as_field_group }}
+        {{ form.pronouns.as_field_group }}
+        {{ form.alignment.as_field_group }}
+      </div>
+    </header>
+    <div class="wm-sheet-grid">
+      <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-abilities">
+        <h2 class="wm-sheet-box-title" id="form-abilities">Abilities</h2>
+        <div class="wm-sheet-abilities-form">
+          {{ form.strength.as_field_group }}
+          {{ form.dexterity.as_field_group }}
+          {{ form.constitution.as_field_group }}
+          {{ form.intelligence.as_field_group }}
+          {{ form.wisdom.as_field_group }}
+          {{ form.charisma.as_field_group }}
+        </div>
+      </section>
+      <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-combat">
+        <h2 class="wm-sheet-box-title" id="form-combat">Combat</h2>
+        <div class="wm-sheet-abilities-form">
+          {{ form.armor_class.as_field_group }}
+          {{ form.perception_bonus.as_field_group }}
+          {{ form.xp.as_field_group }}
+        </div>
+      </section>
+      <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-description">
+        <h2 class="wm-sheet-box-title" id="form-description">Description</h2>
+        {{ form.description.as_field_group }}
+      </section>
+    </div>
+    <div class="wm-form-actions">
+      <button class="btn btn-primary" type="submit">Save</button>
+      <a class="btn btn-outline-secondary" href="{{ back }}">Cancel</a>
+    </div>
+  </article>
+</form>
 {% endblock %}
