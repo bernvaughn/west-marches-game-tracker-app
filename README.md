@@ -1,4 +1,6 @@
-# D&D Money Tracker: Shopping List and Infrastructure Plan
+# Downtime Market: Shopping List and Infrastructure Plan
+
+Downtime Market is a game tracker for West Marches style D&D clubs.
 
 Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Prices come from DigitalOcean's own docs where noted and otherwise from third-party summaries; confirm them on the signup page.
 

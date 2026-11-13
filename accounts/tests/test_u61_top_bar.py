@@ -23,9 +23,9 @@ def test_hamburger_first_club_name_second_no_brand(login, club, player):
     body = home(login, player, club)
     b = bar(body)
     assert b.index("wm-hamburger") < b.index("club-switcher") < b.index("wm-shortcuts")
-    assert "West Marches" not in b
-    assert "<title>" in body and "West Marches" in body[: body.index("</title>")]
-    assert 'id="site-menu-title">West Marches<' in body
+    assert "Downtime Market" not in b and "West Marches" not in b
+    assert "<title>" in body and "Downtime Market" in body[: body.index("</title>")]
+    assert 'id="site-menu-title">Downtime Market<' in body
 
 
 def test_hamburger_accessibility_and_panel(login, club, player):

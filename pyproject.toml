@@ -1,7 +1,7 @@
 [project]
 name = "west-marches-game-tracker"
 version = "0.1.0"
-description = "West Marches game tracker"
+description = "Downtime Market: a game tracker for West Marches style campaigns"
 requires-python = ">=3.12"
 dependencies = [
     "Django>=5.2,<5.3",
