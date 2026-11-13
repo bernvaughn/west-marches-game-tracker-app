@@ -56,7 +56,7 @@ def test_wrapper_polls_when_visible(login, player, club, shop, always_open):
     body = login(player).get(url("detail", club, shop.id)).content.decode()
     assert f'hx-get="{url("stock_fragment", club, shop.id)}"' in body
     assert "every 5s [document.visibilityState === 'visible']" in body
-    assert "visibilitychange" in body
+    assert "visibilitychange[document.visibilityState === 'visible'] from:document" in body
 
 
 @pytest.mark.story("C4")
