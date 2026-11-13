@@ -25,8 +25,8 @@ def hrefs(body):
 
 
 def nav_html(body):
-    start = body.index('id="site-header-menu"')
-    return body[start : body.index("</nav>", start)]
+    start = body.index('id="site-menu"')
+    return body[start : body.index("wm-menu-logout", start)]
 
 
 GM_ONLY = ("agent_access:batches", "agent_access:connections")
@@ -35,7 +35,7 @@ GM_ONLY = ("agent_access:batches", "agent_access:connections")
 @pytest.mark.story("U29")
 def test_player_sees_menu_only(login, club, player):
     nav = nav_html(page(login, player, club))
-    assert ">Menu</a>" in nav
+    assert "wm-menu-group-character" in nav
     assert "Game master" not in nav and "Club admin" not in nav
     for name in (
         "accounts:whitelist",
@@ -146,7 +146,7 @@ class _Tree(HTMLParser):
             return
         a = dict(attrs)
         classes = (a.get("class") or "").split()
-        in_collapse = any(c for _, c in self.stack if "navbar-collapse" in c)
+        in_collapse = any(c for _, c in self.stack if "offcanvas" in c)
         for key in (
             "user-name",
             "club-name",
@@ -154,8 +154,6 @@ class _Tree(HTMLParser):
             "character-name",
             "approvals-menu",
             "logout",
-            "nav-menu",
-            "nav-gm",
         ):
             if key in classes:
                 self.inside[key] = in_collapse
@@ -181,8 +179,9 @@ def test_always_visible_items_outside_collapse(login, club, game_master, charact
     tree.feed(header)
     for key in ("user-name", "club-name", "character-name"):
         assert tree.inside.get(key) is False, key
-    assert tree.inside["logout"] is True  # U60: Log out lives in the Menu
-    assert tree.inside["nav-menu"] is True and tree.inside["nav-gm"] is True
+    assert "logout" not in tree.inside  # U61: Log out lives in the side panel
+    for dead in ("nav-menu", "nav-gm", "nav-admin", "navbar-collapse"):
+        assert dead not in header
 
 
 @pytest.mark.story("U34")
@@ -204,7 +203,7 @@ def test_busy_header_keeps_everything_outside_collapse(login, club, club_admin, 
     tree.feed(header)
     for key in ("user-name", "club-name", "character-selector", "approvals-menu"):
         assert tree.inside.get(key) is False, key
-    assert ">Log out</button>" in header  # U60: in the Menu's Account group
+    assert "Log out" not in header  # U61: in the side panel
 
 
 @pytest.mark.story("U29")

@@ -2,7 +2,7 @@
 
 Usage:
     uv run python scripts/screenshots.py --out /tmp/shots/before \
-        [--pages 'shops-*'] [--width 1280|390] [--keep-db]
+        [--pages 'shops-*'] [--width 1280|992|768|390|320] [--keep-db]
 
 The tool builds a fresh SQLite database in a temp directory, runs `seed_demo`,
 starts the dev server on a free port, signs in as each demo role and writes
@@ -31,7 +31,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-HEIGHTS = {1280: 800, 390: 844}
+HEIGHTS = {1280: 800, 992: 800, 768: 1024, 390: 844, 320: 640}
 # Content that a container hides or scrolls inside itself. The page does not
 # scroll sideways, but the content is still cut off.
 CLIPPED_JS = """() => {

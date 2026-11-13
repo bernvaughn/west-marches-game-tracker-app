@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from accounts import navigation
 
-pytestmark = [pytest.mark.django_db, pytest.mark.story("U60")]
+pytestmark = [pytest.mark.django_db, pytest.mark.story("U61")]
 
 SHORTCUTS = {
     "Character": ("characters:mine", "character"),
@@ -32,7 +32,7 @@ def section(body, key):
 
 
 class _Outside(HTMLParser):
-    """Collect shortcut anchors and whether each sits inside .navbar-collapse."""
+    """Collect shortcut anchors and whether each sits inside the offcanvas."""
 
     def __init__(self):
         super().__init__()
@@ -44,7 +44,7 @@ class _Outside(HTMLParser):
         a = dict(attrs)
         classes = (a.get("class") or "").split()
         if "wm-shortcut" in classes:
-            self.found.append((a, any("navbar-collapse" in c for _, c in self.stack)))
+            self.found.append((a, any("offcanvas" in c for _, c in self.stack)))
         self.stack.append((tag, classes))
 
     def handle_endtag(self, tag):
@@ -65,7 +65,7 @@ def test_shortcuts_have_icon_label_tooltip_outside_collapse(login, club, player)
         assert "data-wm-tooltip" in a and a["title"] == label
         assert a["href"] == reverse(name, args=[club.slug])
     assert body.count("wm-shortcut-label") == 5
-    assert body.index("wm-shortcuts") < body.index("navbar-collapse")
+    assert "navbar-collapse" not in body
     assert "<svg" in body[body.index("nav-link wm-shortcut") : body.index("wm-shortcut-label")]
 
 
@@ -98,24 +98,25 @@ def test_empty_group_hidden(login, club, player, monkeypatch):
     monkeypatch.setattr(
         navigation, "_entries", [e for e in navigation._entries if e.group != "map"]
     )
-    assert "wm-menu-group-map" not in header(home(login, player, club))
+    assert "wm-menu-group-map" not in home(login, player, club)
 
 
 def test_agent_access_only_in_game_master_menu(login, club, player, game_master):
     url = reverse("agent_access:index", args=[club.slug])
-    nav = header(home(login, game_master, club))
-    gm = nav[nav.index("nav-gm") :]
-    assert url in gm
-    assert url not in nav[: nav.index("nav-gm")]
-    assert url not in header(home(login, player, club))
+    body = home(login, game_master, club)
+    assert url in section(body, "gm")
+    assert url not in header(body)
+    assert url not in home(login, player, club)
 
 
-def test_logout_last_in_account_group_by_post(login, club, player):
+def test_logout_last_in_panel_by_post(login, club, player):
     body = home(login, player, club)
     account = section(body, "account")
-    assert account.rstrip().endswith("</form>")
-    assert 'method="post"' in account and reverse("logout") in account
-    assert account.index("dropdown-divider") < account.index("<form")
+    panel = body[body.index('id="site-menu"') :]
+    form = panel[panel.index('<form method="post"') : panel.index("</form>")]
+    assert reverse("logout") in form
+    assert panel.count("<form") == 1 and "wm-menu-logout" in form
+    assert "Log out" not in account
     client = login(player)
     client.post(reverse("logout"))
     assert client.get(reverse("club_home", args=[club.slug])).status_code == 302
