@@ -8,17 +8,21 @@
 {% include "components/form_layout.html" with form=street_form action=street_url %}
 {% include "components/card_close.html" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-<thead><tr><th>Name</th><th>Symbol</th><th>Status</th><th class="num">Stock</th></tr></thead>
+<thead><tr><th>Name</th><th class="num">Street position</th><th>Shopkeeper</th><th class="num">Sell %</th><th class="num">Buy %</th><th>Symbol</th><th>Status</th><th class="num">Stock</th></tr></thead>
 <tbody>
 {% for shop, is_open in rows %}
 <tr>
 <td><a href="{% url 'shops:manage_edit' club.slug shop.pk %}">{{ shop.name }}</a></td>
+<td class="num">{{ shop.street_position }}</td>
+<td>{{ shop.keeper_name|default:"—" }}</td>
+<td class="num">{{ shop.sell_percent }}%</td>
+<td class="num">{{ shop.buy_percent }}%</td>
 <td>{{ shop.symbol }}</td>
 <td>{% if is_open %}{% include "components/badge.html" with status="success" text="Open" %}{% else %}{% include "components/badge.html" with status="neutral" text="Closed" %}{% endif %}</td>
 <td class="num">{{ shop.stock_count }}</td>
 </tr>
 {% empty %}
-{% include "components/data_table_empty.html" with cols=4 text="No shops yet." %}
+{% include "components/data_table_empty.html" with cols=8 text="No shops yet." %}
 {% endfor %}
 </tbody>
 </table></div>
