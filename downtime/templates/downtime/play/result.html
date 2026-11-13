@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}Downtime result{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title=result.action.name subtitle="Downtime result" %}
+<section class="card mb-3" id="downtime-result">
+  <div class="card-body">
+    <h2 class="h4">{% if entry %}{{ entry.label }}{% else %}No reward{% endif %}</h2>
+    {% if entry.coins %}<p>{{ entry.coins|coins }}</p>{% endif %}
+    {% for ei in items %}<p>{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}</p>{% endfor %}
+    {% if entry and not entry.coins and not items %}<p class="text-muted">Nothing this time.</p>{% endif %}
+    <p>{{ result.character.name }} now has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>
+  </div>
+</section>
+<a class="btn btn-outline-secondary" href="{% url 'downtime:play' club.slug %}">Back to Downtime</a>
+{% endblock %}

@@ -11,11 +11,12 @@ pytestmark = pytest.mark.story("U79")
 
 def test_logout_in_footer_outside_body(django_user_model):
     from django.template.loader import render_to_string
+
     html = render_to_string("partials/side_menu.html", {"user": django_user_model(), "club": None})
     assert html.count("<form") == 1
     body_end = html.index("</div>", html.index("offcanvas-body"))
     assert html.index("wm-side-menu-footer") > body_end
-    footer = html[html.index("wm-side-menu-footer"):]
+    footer = html[html.index("wm-side-menu-footer") :]
     assert "wm-menu-logout" in footer
     assert "wm-menu-logout" not in html[: html.index("wm-side-menu-footer")]
 
