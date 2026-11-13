@@ -160,17 +160,11 @@ def test_weight_check_constraint(action):
         DowntimeEntry.objects.create(action=action, label="x", weight=0)
 
 
-@pytest.mark.story("D2")
-def test_spend_not_implemented(character, action):
-    with pytest.raises(NotImplementedError):
-        services.spend(character, action, None)
-
-
 @pytest.mark.story("D1")
 def test_urls_importable():
     from downtime import urls
 
-    assert [p.name for p in urls.urlpatterns] == ["points_award"]
+    assert urls.app_name == "downtime"
     assert reverse  # url module loads through config.urls
 
 

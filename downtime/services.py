@@ -1,11 +1,15 @@
 """Downtime point services."""
 
+import secrets
+
 from django.db import transaction
 from django.db.models import Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
-from downtime.models import DowntimePointEntry
+from downtime.models import DowntimePointEntry, DowntimeResult
+from ledger.services import Line
+from ledger.services import record as ledger_record
 from player_characters.models import Character
 
 
@@ -64,14 +68,57 @@ def award(characters, delta, note="", date=None, by=None, kind="award", source="
         ]
 
 
-def spend(character, action, by, rng=None):
+def chances(entries):
+    """[(entry, percent)] with percent = weight / total weight * 100 (unrounded)."""
+    entries = list(entries)
+    total = sum(e.weight for e in entries)
+    if not total:
+        return [(e, 0) for e in entries]
+    return [(e, e.weight * 100 / total) for e in entries]
+
+
+def spend(character, action, by, rng=None, *, today=None):
     """Spend points on an action and return the DowntimeResult.
 
-    Contract (epic spec section 2): in one transaction, lock the character's point
-    rows, check the action is live today and has entries, check the balance covers
-    action.cost, pick an entry weighted by weight (``rng`` defaults to
-    ``secrets.SystemRandom()``), write a ``spend`` entry, give coins and items through
-    ``ledger.services.record`` and store a DowntimeResult. Raise InsufficientPoints
-    or DowntimeError on refusal.
+    In one transaction: lock the character, check the action is live and has entries,
+    check the balance covers action.cost, pick an entry weighted by weight, write a
+    ``spend`` entry, give coins and items through ``ledger.services.record`` (kind
+    "award") and store a DowntimeResult. Raise InsufficientPoints or DowntimeError on
+    refusal.
     """
-    raise NotImplementedError
+    if action.club_id != character.club_id:
+        raise DowntimeError("That action is not available in this club.")
+    today = today or timezone.localdate()
+    with transaction.atomic():
+        list(Character.objects.select_for_update().filter(pk=character.pk))
+        if not action.is_live_on(today):
+            raise DowntimeError(f"{action.name} is not available today.")
+        entries = list(action.entries.prefetch_related("items__item"))
+        if not entries:
+            raise DowntimeError(f"{action.name} has no rewards yet.")
+        if balance(character) < action.cost:
+            raise InsufficientPoints(f"{character} does not have enough downtime points.")
+        rng = rng or secrets.SystemRandom()
+        entry = rng.choices(entries, weights=[e.weight for e in entries], k=1)[0]
+        DowntimePointEntry.objects.create(
+            character=character,
+            delta=-action.cost,
+            note=f"{action.name}: {entry.label}",
+            date=today,
+            kind=DowntimePointEntry.Kind.SPEND,
+            created_by=by,
+            source=f"downtime_action:{action.pk}",
+        )
+        lines = []
+        if entry.coins:
+            lines.append(Line(coins=entry.coins))
+        lines.extend(Line(ei.item, ei.quantity) for ei in entry.items.all())
+        if lines:
+            ledger_record(
+                character,
+                "award",
+                lines,
+                note=f"Downtime: {action.name} - {entry.label}",
+                actor=by,
+            )
+        return DowntimeResult.objects.create(character=character, action=action, entry=entry)

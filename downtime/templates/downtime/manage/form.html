@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}{% if action %}Edit {{ action.name }}{% else %}New downtime action{% endif %}{% endblock %}
+{% block content %}
+{% if action %}{% include "components/page_header.html" with title="Edit "|add:action.name %}{% else %}{% include "components/page_header.html" with title="New downtime action" %}{% endif %}
+<form method="post" class="wm-form" data-downtime-entries>{% csrf_token %}
+  {{ form }}
+  <h2>Reward table</h2>
+  <p class="text-muted">Each entry's chance is its weight divided by the total weight. Leave all entries out to hide the action from players.</p>
+  {{ entries.management_form }}
+  {{ entries.non_form_errors }}
+  {% for f in entries %}
+  <fieldset class="wm-quest-row" data-entry-row>
+    {{ f.non_field_errors }}{{ f }}
+    <p>Chance: <strong data-chance>{% if f.chance is not None %}{{ f.chance|floatformat:1 }}%{% else %}-{% endif %}</strong></p>
+    <h3 class="h6">Items</h3>
+    {{ f.nested.management_form }}
+    {{ f.nested.non_form_errors }}
+    {% for n in f.nested %}<div>{{ n.non_field_errors }}{{ n }}</div>{% endfor %}
+  </fieldset>
+  {% endfor %}
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" href="{% url 'downtime:actions' club.slug %}">Cancel</a>
+  </div>
+</form>
+<script src="{% static 'js/downtime_chances.js' %}" defer></script>
+{% endblock %}
