@@ -3,11 +3,11 @@
 {% block content %}
 {% include "components/page_header.html" with title="Character directory" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th>Level</th><th>Class</th><th>Species</th><th>Player</th>{% if selected %}<th>Trades with {{ selected.name }}</th>{% endif %}</tr></thead>
+  <thead><tr><th>Name</th><th>Species</th><th>Class</th><th>Level</th>{% if selected %}<th>Trades with {{ selected.name }}</th>{% endif %}<th>Player</th></tr></thead>
   <tbody>
   {% for r in rows %}
-  <tr><td><span class="wm-chip"><span class="wm-avatar" aria-hidden="true">{{ r.character.name|first|upper }}</span>{% if r.url %}<a href="{{ r.url }}">{{ r.character.name }}</a>{% else %}<span>{{ r.character.name }}</span>{% endif %}</span></td><td>{% if r.character.level %}Level {{ r.character.level }}{% else %}&mdash;{% endif %}</td><td>{{ r.character.char_class|default:"—" }}</td><td>{{ r.character.species|default:"—" }}</td><td>{{ r.character.owner.user.display_name }}</td>
-  {% if selected %}<td>{% if r.own %}&mdash;{% else %}{% for t in r.trades %}<a href="{% url 'trades:detail' request.club.slug t.pk %}">{% include "player_characters/trades/_status_badge.html" %}</a> {% endfor %}<a href="{{ r.propose_url }}">Propose trade</a>{% endif %}</td>{% endif %}</tr>
+  <tr><td><span class="wm-chip"><span class="wm-avatar" aria-hidden="true">{{ r.character.name|first|upper }}</span>{% if r.url %}<a href="{{ r.url }}">{{ r.character.name }}</a>{% else %}<span>{{ r.character.name }}</span>{% endif %}</span></td><td>{{ r.character.species|default:"—" }}</td><td>{{ r.character.char_class|default:"—" }}</td><td>{% if r.character.level %}Level {{ r.character.level }}{% else %}&mdash;{% endif %}</td>
+  {% if selected %}<td>{% if r.own %}&mdash;{% else %}{% for t in r.trades %}<a href="{% url 'trades:detail' request.club.slug t.pk %}">{% include "player_characters/trades/_status_badge.html" %}</a> {% endfor %}<a href="{{ r.propose_url }}">Propose trade</a>{% endif %}</td>{% endif %}<td>{{ r.character.owner.user.display_name }}</td></tr>
   {% empty %}
   {% include "components/data_table_empty.html" with cols=6 text="No characters yet." %}
   {% endfor %}

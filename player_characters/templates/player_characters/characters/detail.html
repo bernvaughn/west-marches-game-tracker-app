@@ -21,15 +21,15 @@
   <button class="btn btn-sm btn-primary" type="button" data-wm-tooltip title="Print this character sheet in black and white." onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
 </div>
 {% endif %}
-<article class="wm-sheet">
+<article class="wm-sheet wm-sheet--page">
   <header class="wm-sheet-header">
     <h1>{{ character.name }}</h1>
     <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %}{% if character.char_class %} &middot; {{ character.char_class }}{% endif %}{% if character.species %} &middot; {{ character.species }}{% endif %}{% if character.pronouns %} &middot; {{ character.pronouns }}{% endif %}{% if character.alignment %} &middot; {{ character.alignment }}{% endif %}</p>
     <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
   </header>
   {% if can_view %}
-  <div class="wm-sheet-grid">
-    <section class="wm-sheet-box wm-sheet-coins" aria-labelledby="sheet-coins">
+  <div class="wm-sheet-grid wm-sheet-layout">
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-coins" aria-labelledby="sheet-coins">
       <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
       <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
       {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
@@ -43,7 +43,7 @@
         {% endfor %}
       </ul>
     </section>
-    <section class="wm-sheet-box" aria-labelledby="sheet-combat">
+    <section class="wm-sheet-box wm-sheet-half" aria-labelledby="sheet-combat">
       <h2 class="wm-sheet-box-title" id="sheet-combat">Combat</h2>
       <dl class="wm-sheet-stats">
         <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
@@ -56,12 +56,12 @@
         {% endif %}
       </dl>
     </section>
-    <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-description">
+    <section class="wm-sheet-box wm-sheet-half" aria-labelledby="sheet-description">
       <h2 class="wm-sheet-box-title" id="sheet-description">Description</h2>
       {% if character.description %}{{ character.description|linebreaks }}
       {% else %}<p class="wm-sheet-note">No description yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}</p>{% endif %}
     </section>
-    <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-items">
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-items">
       <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
       {% if can_view %}
       <div class="no-print wm-sheet-shop">
@@ -78,7 +78,7 @@
       </div>
       {% endif %}
       {% if rows %}
-      <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
+      <div class="wm-table-scroll wm-sheet-inventory"><table class="table table-sm wm-data-table wm-sheet-table">
         <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num">In open trades</th>{% endif %}<th class="num">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         {% for r in rows %}
