@@ -1,4 +1,4 @@
-<div id="agenda-body" hx-get="{{ request.get_full_path }}" hx-trigger="agendaChanged from:body" hx-swap="outerHTML">
+<div id="agenda-body" hx-get="{{ request.get_full_path }}" hx-trigger="agendaChanged from:body" hx-swap="outerHTML" hx-disinherit="hx-swap hx-target">
   <nav class="agenda-nav" aria-label="Month">
     <a class="btn btn-sm btn-outline-secondary" href="?month={{ prev_month }}">&laquo; Previous</a>
     <h2 class="agenda-month">{{ month|date:"F Y" }}</h2>

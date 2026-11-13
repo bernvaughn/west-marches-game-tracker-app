@@ -261,3 +261,12 @@ def test_quest_modal_and_prefill(admin, club, item):
     assert r.status_code == 204, r.content.decode()[-1500:]
     assert "agendaChanged" in r["HX-Trigger"]
     assert Quest.objects.filter(club=club, name="Q").exists()
+
+
+def test_body_swap_does_not_leak_into_modal_links(admin, club, stuff):
+    """The body's outerHTML swap must not reach bars, list rows or "+" links (U72 review)."""
+    html = admin.get(url("agenda", club), {"month": "2030-03"}, **HX).content.decode()
+    opening = html[: html.index(">")]
+    assert 'id="agenda-body"' in opening
+    assert 'hx-disinherit="hx-swap hx-target"' in opening
+    assert html.count("data-app-modal") > 3
