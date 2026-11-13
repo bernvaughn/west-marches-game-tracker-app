@@ -2,6 +2,8 @@ from django.db import models
 
 from accounts.scoping import ClubScopedManager
 
+from .rarity import Rarity
+
 
 class Item(models.Model):
     club_path = "club"
@@ -12,6 +14,7 @@ class Item(models.Model):
     description = models.TextField(blank=True)
     traits = models.TextField(blank=True)
     details = models.TextField(blank=True)
+    rarity = models.CharField(max_length=16, choices=Rarity.choices, blank=True)
     value_cp = models.PositiveIntegerField(default=0)
     retired = models.BooleanField(default=False)
 

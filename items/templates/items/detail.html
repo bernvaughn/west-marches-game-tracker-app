@@ -7,7 +7,7 @@
 {% if is_admin %}{% include "components/page_header.html" with title=item.name back_url=list_url back_label="Back to items" action_url=edit_url action_label="Edit" action_icon="pencil" %}{% else %}{% include "components/page_header.html" with title=item.name back_url=list_url back_label="Back to items" %}{% endif %}
 {% if item.retired %}<p>{% include "components/badge.html" with status="neutral" text="Retired" %}</p>{% endif %}
 {% include "components/card_open.html" %}
-<dl class="wm-dl">{% if item.symbol %}<dt>Symbol</dt><dd>{{ item.symbol }}</dd>{% endif %}<dt>Value</dt><dd>{{ item.value_cp|coins }}</dd></dl>
+<dl class="wm-dl">{% if item.symbol %}<dt>Symbol</dt><dd>{{ item.symbol }}</dd>{% endif %}{% if item.rarity %}<dt>Rarity</dt><dd>{{ item.get_rarity_display }}</dd>{% endif %}<dt>Value</dt><dd>{{ item.value_cp|coins }}</dd></dl>
 {% if item.description %}<h2 class="wm-card-title">Description</h2>{{ item.description|linebreaks }}{% endif %}
 {% if item.traits %}<h2 class="wm-card-title">Traits</h2>{{ item.traits|linebreaks }}{% endif %}
 {% if item.details %}<h2 class="wm-card-title">Details</h2>{{ item.details|linebreaks }}{% endif %}

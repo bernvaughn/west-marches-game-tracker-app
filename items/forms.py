@@ -1,7 +1,9 @@
 from django import forms
+from django.utils.html import format_html, format_html_join
 
 from ledger.coins import CoinsField
 
+from . import rarity
 from .models import Item
 
 
@@ -10,11 +12,22 @@ class ItemForm(forms.ModelForm):
 
     class Meta:
         model = Item
-        fields = ["name", "symbol", "description", "traits", "details"]
+        fields = ["name", "symbol", "description", "traits", "details", "rarity"]
+        field_order = ["name", "symbol", "description", "traits", "details", "rarity", "value"]
+        widgets = {"rarity": forms.Select(attrs={"data-rarity-select": ""})}
 
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
         self.club = club
+        self.fields["rarity"].choices = [("", "—"), *rarity.Rarity.choices]
+        self.fields["value"].help_text = format_html(
+            '<span class="wm-rarity-hint" data-rarity-hint>Suggested value (2014 DMG):{}</span>',
+            format_html_join(
+                "",
+                '<span data-rarity-item="{}" style="display:block">{} {}</span>',
+                rarity.ranges(),
+            ),
+        )
         if self.instance.pk:
             self.initial["value"] = self.instance.value_cp
 
