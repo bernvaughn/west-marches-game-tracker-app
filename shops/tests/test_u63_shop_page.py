@@ -83,3 +83,10 @@ def test_js_toggles_one_box_at_a_time():
     js = open(finders.find("js/shop_banner.js")).read()
     assert "[aria-controls]" in js and "aria-expanded" in js
     assert "show(p.box.hidden ? p : null)" in js
+
+
+def test_sell_form_does_not_inherit_inventory_swap(login, player, club, open_shop, loot, character):
+    html = page(login, player, club, open_shop)
+    start = html.index('class="wm-inline-form wm-sell-form"')
+    form = html[html.rindex("<form", 0, start) : start]
+    assert 'hx-select="unset"' in form and 'hx-swap="innerHTML"' in form
