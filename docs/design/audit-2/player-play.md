@@ -90,4 +90,8 @@ Walk-only check: `walk-slips-3-print-screen@390` also overflows (page 765 px wid
 
 Console sweep (`scripts/console_sweep.py --widths 1920,1280,768,390`):
 
-CONSOLE_PLACEHOLDER
+```
+Done: 0 problem(s).
+```
+
+The sweep covered every demo page and modal trigger at the four audit widths. It found no console error for the owned pages.
