@@ -553,6 +553,57 @@ From using the build after round 7 (U65–U68) and new ideas from the owner.
 - Static CSS and JavaScript URLs carry a version or content hash, so browsers load new styles after every update without a hard refresh.
 - The app has a favicon that fits Downtime Market, so browsers stop asking for a missing `/favicon.ico`.
 
+## Round 9: stories from the eighth look (2026-11-13)
+
+From using the build after round 8 (U69–U79, D1–D4). Kept as built: the spinning wheel (D3), and "Request downtime points" showing only to players (game masters and club admins award points themselves).
+
+### Characters
+
+**U80 Character sheet layout and centred pages.** As anyone, I want pages to use wide screens well, so nothing is squished or scrolls sideways. *(player_characters, site-wide)*
+- On the character sheet at desktop width, Combat and Description sit side by side in one row, and Inventory goes below them at full width, with no sideways scroll bar.
+- On wide screens, page content is centred, with even space on both sides, instead of sitting against the left edge. This applies to every page.
+- The character directory's columns are, in order: name, species, class, level, trades, player.
+
+**U81 Nicer character slips.** As a game master, I want the character slips (U70) to look as good as they work, so drawing tables feels like part of the game. *(player_characters)*
+- Less white space and bigger text: the character's name is large, and the other details are easy to read from arm's length. Still 12 per page in 2 columns and 6 rows.
+- A touch of visual flair that suits Downtime Market, for example a thin decorative border, a small emblem or the hourglass mark, and a parchment-style frame that still prints well in black and white.
+- "Print slip" from a character sheet leads back to that character sheet, not to the slips page. From the slips page, it leads back to the slips page.
+
+**U82 Track item uses on paper and in the app.** As a player, I want to tick off uses of an item on its printed card and then record them in the app, so potions and other consumables stay accurate. *(player_characters, items, ledger)*
+- A printed item card for an item with a quantity above one has a "Used" section: one circle per item, for example five circles for five healing potions, to tick with a pen.
+- Players get a "Consume" icon button in the sheet's inventory table, beside Mark as junk and Print card, with the tooltip "Mark items as lost or used up, based on what happened during the session." Players can consume their own characters' items straight away, with a quantity and an optional note; it is recorded in the ledger as a consume by that player.
+- When anyone consumes or adjusts a character's items or coins (Consume, Adjust, or the player's Consume), the form shows that character's recent consumes and adjustments, from the last 30 days, by anyone, with date, who, what and note. This helps avoid recording the same use twice.
+
+### Items
+
+**U83 Pricing guide for everyday goods, and reference items.** As a club admin or game master, I want rarity bands for non-magical goods and nearby prices to compare against, so I price everything fairly. *(items)*
+- The rarity dropdown (U73) has two groups. **Magic items**, from the 2014 Dungeon Master's Guide: Common 50–100 gp, Uncommon 101–500 gp, Rare 501–5,000 gp, Very rare 5,001–50,000 gp, Legendary 50,001 gp and up. **Everyday goods**, for non-magical items: Trivial 1–9 cp (a loaf of bread, a torch), Cheap 1–9 sp (a day's rations, a waterskin), Standard 1–10 gp (rope, a shovel), Fine 11–100 gp (a longsword, a riding horse), Luxury 101 gp and up (plate armour, a fine carriage).
+- Choosing a band shows its suggested range, as today, with its examples.
+- The item form shows reference items from the club's catalogue with their prices: items in the same band, and the items closest in value to the value being typed, up to about ten, updating as the value or band changes. There is also a quick search, so a game master can look up "bread" and "bacon" before pricing a sandwich.
+
+### Downtime
+
+**D5 Easier downtime points.** As a player, game master or club admin, I want requesting and awarding downtime points to be quick, so it happens right after a session. *(downtime, player_characters)*
+- On the character sheet, next to the downtime points line, the character's owner sees a "Request points" link with the line "Earned downtime during a session? Ask your game master for the points." It opens the request form (D4) with that character picked. Game masters and club admins don't see it.
+- Game masters and club admins award points to many characters at once: a list of every character in the club with tick boxes, like the character slips page (U70), with select all and clear, plus the number of points, a note and a date. One click awards them all. This replaces or reworks the D1 award page.
+
+**D6 A themed Downtime page.** As a player, I want the Downtime page to have its own look, as distinct as the shop street (U49) and the quest board (U48), so choosing how to spend my time feels like part of the town. *(downtime)*
+- The page looks like a tavern chalkboard of odd jobs: a dark slate board in a wooden frame, with each available downtime action chalked on it, its cost, a short description and its possible rewards. It must feel clearly different from the quest board's pinned parchment notices.
+- Each action has a "Take the job" button (spending a point, D2), which opens the spinning wheel (D3) as today. The hourglass from the top-bar icon can appear as a small chalk motif.
+- Text stays readable (light chalk text on dark slate with enough contrast), it works on a phone with one job per row, and it prints plainly.
+
+**D7 Downtime rewards in the ledger.** As anyone reading a ledger, I want rewards from downtime to name the action, so I can see where an item or coins came from. *(downtime, ledger)*
+- In a character's history and the club ledger (U50), an entry from a downtime reward reads, for example, "Downtime: Work at a bakery", and links to the result.
+- The club ledger can be filtered to downtime entries.
+
+### Initiative
+
+**U84 A UI consistency pass.** As anyone using the app, I want every screen and workflow to look and behave consistently, so the app feels finished. *(site-wide)*
+- A separate initiative, like the design overhaul (U35), that goes through every screen and workflow for players, game masters and club admins, at desktop and phone widths: layouts, page widths and centring, spacing, buttons, tables, modals, empty states, tooltips and wording.
+- It starts with an audit, with screenshots, of every page and the main workflows (buying, selling, junk, trades, quest turn-ins, downtime, inbox, awards, agenda), and lists the problems found, ranked.
+- It fixes them in small pieces, each with before and after screenshots, and keeps the console-error sweep clean.
+- It doesn't add features or change how things work, only how they look and read.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
