@@ -3,6 +3,10 @@
 {% block content %}
 {% url 'shops:manage_create' club.slug as create_url %}
 {% include "components/page_header.html" with title="Manage shops" action_url=create_url action_label="New shop" action_icon="plus-lg" %}
+{% url 'shops:street_settings' club.slug as street_url %}
+{% include "components/card_open.html" with title="Street settings" subtitle="How many empty buildings sit between shops, and before player stalls." %}
+{% include "components/form_layout.html" with form=street_form action=street_url %}
+{% include "components/card_close.html" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
 <thead><tr><th>Name</th><th>Symbol</th><th>Status</th><th class="num">Stock</th></tr></thead>
 <tbody>

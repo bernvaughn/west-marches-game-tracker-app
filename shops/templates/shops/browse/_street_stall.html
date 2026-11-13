@@ -1,0 +1,6 @@
+  <li class="wm-street-lot wm-street-lot--stall">
+    <a class="wm-street-link" href="{% url 'shops:player_shop' club.slug stall.pk %}">
+      {% include "shops/_building.html" with key="player_stall" %}
+      <span class="wm-street-sign"><span class="wm-street-name">{{ stall.name }}'s stall</span></span>
+    </a>
+  </li>

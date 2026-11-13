@@ -8,6 +8,9 @@
   column-gap: 0; row-gap: var(--wm-space-4);
 }
 .wm-street-lot--filler .wm-street-link { color: var(--wm-shop-slate-deep); }
+.wm-street-lot--stall .wm-street-link { color: var(--wm-stall-deep); }
+.wm-player-shop-figure .wm-building { width: 88px; height: 88px; color: var(--wm-stall-deep); }
+@media (min-width: 576px) { .wm-player-shop-figure .wm-building { width: 160px; height: 160px; } }
 .wm-street-lot--filler .wm-street-link:hover { transform: none; }
 @media (min-width: 768px) { .wm-street { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
 .wm-street-lot { position: relative; margin: 0; padding: 0; min-width: 0; }

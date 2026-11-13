@@ -73,7 +73,9 @@ def test_same_html_every_load(login, player, club):
 def test_every_building_has_an_svg_and_no_strays():
     assert 8 <= len(KEYS) <= 10
     assert Shop._meta.get_field("building").default == "general_store"
-    assert {p.name for p in BUILDINGS.iterdir()} == {f"{k}.svg" for k in KEYS}
+    assert {p.name for p in BUILDINGS.iterdir()} == {f"{k}.svg" for k in KEYS} | {
+        "player_stall.svg"
+    }
     for key in KEYS:
         assert finders.find(f"shops/buildings/{key}.svg"), key
         text = (BUILDINGS / f"{key}.svg").read_text()

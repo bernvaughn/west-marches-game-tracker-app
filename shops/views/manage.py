@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
-from shops.forms.manage import ShopForm, StockAddForm, StockEditForm
+from shops.forms.manage import ShopForm, StockAddForm, StockEditForm, StreetSettingsForm
 from shops.models import Shop, ShopStock
 from shops.services import open_shops, ordered_shops, percent_price
 
@@ -15,12 +15,28 @@ def _back(club_slug, shop):
     return redirect("shops:manage_edit", club_slug=club_slug, shop_id=shop.pk)
 
 
-@club_admin_required
-def shop_list(request, club_slug):
+def _list_context(request, street_form):
     shops = ordered_shops(club_queryset(request, Shop)).annotate(stock_count=Count("stock"))
     open_ids = set(open_shops(request.club, timezone.localdate()).values_list("pk", flat=True))
     rows = [(shop, shop.pk in open_ids) for shop in shops]
-    return render(request, "shops/manage/list.html", {"rows": rows})
+    return {"rows": rows, "street_form": street_form}
+
+
+@club_admin_required
+def shop_list(request, club_slug):
+    context = _list_context(request, StreetSettingsForm(instance=request.club))
+    return render(request, "shops/manage/list.html", context)
+
+
+@club_admin_required
+@require_POST
+def street_settings(request, club_slug):
+    form = StreetSettingsForm(request.POST, instance=request.club)
+    if form.is_valid():
+        form.save()
+        messages.success(request, "Street settings saved.")
+        return redirect("shops:manage_list", club_slug=club_slug)
+    return render(request, "shops/manage/list.html", _list_context(request, form))
 
 
 @club_admin_required
