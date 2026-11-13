@@ -62,6 +62,23 @@ def _watch(page, problems, label):
     page.on("response", lambda r: add("http", f"{r.status} {r.url}") if r.status >= 400 else None)
 
 
+def _wait_modal(page, problems, label, what) -> bool:
+    """Wait for the shared modal to show content, then close it with Escape."""
+    try:
+        page.wait_for_selector("#app-modal.show", timeout=5000)
+        page.wait_for_function(
+            "document.querySelector('#app-modal .modal-content').children.length > 0",
+            timeout=5000,
+        )
+    except Exception as exc:
+        problems.append(f"{label}: {what} did not open: {type(exc).__name__}")
+        return False
+    page.wait_for_timeout(300)
+    page.keyboard.press("Escape")
+    page.wait_for_timeout(300)
+    return True
+
+
 def _open_modals(page, base, path, problems, label):
     """Open each modal trigger on a freshly loaded page, then close it."""
     # One trigger per URL shape: `/shops/1/sell/5/` and `/shops/1/sell/6/` count as one.
@@ -81,19 +98,14 @@ def _open_modals(page, base, path, problems, label):
         if not trigger.is_visible():
             continue
         trigger.dispatch_event("click")  # SVG tiles can overlap, so a real click may miss
-        try:
-            page.wait_for_selector("#app-modal.show", timeout=5000)
-            page.wait_for_function(
-                "document.querySelector('#app-modal .modal-content').children.length > 0",
-                timeout=5000,
-            )
-        except Exception as exc:
-            problems.append(f"{label}: modal {i} did not open: {type(exc).__name__}")
-            continue
-        opened = True
-        page.wait_for_timeout(300)
-        page.keyboard.press("Escape")
-        page.wait_for_timeout(300)
+        opened = _wait_modal(page, problems, label, f"modal {i}") or opened
+    # The sell confirm modal opens from a form post, not a [data-app-modal] link.
+    # Submit the first sell form only; never submit the confirm form, so the seed stays put.
+    if page.locator("form.wm-sell-form").count():
+        if opened:
+            page.goto(base + path, wait_until="load")
+        page.locator("form.wm-sell-form [type=submit]").first.click()
+        _wait_modal(page, problems, label, "sell confirm modal")
 
 
 def sweep(pages_glob="*", width=1280) -> list[str]:
