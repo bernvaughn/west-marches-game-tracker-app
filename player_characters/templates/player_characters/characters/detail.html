@@ -52,7 +52,9 @@
         {% if can_view %}{% downtime_balance character as dt_points %}{% downtime_play_url club as dt_play_url %}
         <dt>Downtime points</dt><dd>{{ dt_points }}
           {% if dt_play_url %}<a class="no-print small" href="{{ dt_play_url }}" data-wm-tooltip title="Spend downtime points on a downtime action.">Spend</a>{% endif %}
-          {% if can_adjust %}<a class="no-print small" href="{% url 'downtime:points_award' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Give or take downtime points for this character.">Award points</a>{% endif %}</dd>
+          {% if can_adjust %}<a class="no-print small" href="{% url 'downtime:points_award' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Give or take downtime points for this character.">Award points</a>{% endif %}
+          {% if can_request_points %}<a class="no-print small" href="{% url 'downtime:request_new' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Ask your game master for downtime points.">Request points</a>
+          <span class="no-print small text-muted d-block">Earned downtime during a session? Ask your game master for the points.</span>{% endif %}</dd>
         {% endif %}
       </dl>
     </section>

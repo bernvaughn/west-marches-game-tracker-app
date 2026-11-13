@@ -62,7 +62,9 @@ def request_new(request, club_slug):
             messages.success(request, "Point request sent.")
             return redirect("downtime:requests", club_slug=club_slug)
     else:
-        sel = selected_character(request)
+        wanted = request.GET.get("character", "")
+        pick = chars.filter(pk=wanted).first() if wanted.isdigit() else None
+        sel = pick or selected_character(request)
         form = PointRequestForm(
             characters_qs=chars, initial={"characters": [sel.pk]} if sel else {}
         )

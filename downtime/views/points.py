@@ -54,11 +54,18 @@ def award_points(request, club_slug):
         .values_list("character")
         .annotate(total=Sum("delta"))
     )
-    balances = {c.pk: totals.get(c.pk, 0) for c in form.fields["characters"].queryset}
+    if request.method == "POST":
+        ticked = set(request.POST.getlist("characters"))
+    else:
+        ticked = {str(c.pk) for c in preselected}
+    rows = [
+        {"character": c, "balance": totals.get(c.pk, 0), "checked": str(c.pk) in ticked}
+        for c in form.fields["characters"].queryset.select_related("owner__user")
+    ]
     return render(
         request,
         "downtime/points_award.html",
-        {"form": form, "balances": balances, "club": club},
+        {"form": form, "rows": rows, "club": club},
     )
 
 
