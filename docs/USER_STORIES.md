@@ -420,7 +420,8 @@ Ideas from the owner while round 6 was being built.
 - Player shops have no rotations or open dates; they are open whenever they show on the street.
 
 **U67 Player shops on the street.** As a player, I want player shops to look different from the club's shops and sit at the end of the street, so I can tell a player's stall from a real shopkeeper. *(shops)*
-- Player shops come after all of the club's own shops on the street, ordered by character name, with one filler building between the last club shop and the first player shop. Filler then pads the row as usual (U54, U62).
+- Player shops come after all of the club's own shops on the street, ordered by character name. Filler then pads the row as usual (U54).
+- A club admin sets "Minimum empty buildings between shops" for the club, from 0 up, starting at 0. It applies between every two neighbouring shops on the street, club and player shops alike, including between the last club shop and the first player shop. Where street positions (U62) would leave fewer empty buildings, more are added; where they would leave more, U62's cap of two still applies, unless the minimum is higher than two, in which case the minimum wins.
 - Each player shop has its own look that is clearly not a club shop: for example a market stall with a striped awning, in one shared colour. The sign shows "<character name>'s stall".
 - A player shop's page has no shopkeeper silhouette and no keeper name. Its banner shows the character's name and the stall look, then the table of listed items with Buy buttons, and the buyer's Your inventory card (U46) below.
 - A player looking at their own character's shop sees "This is your shop", no Buy buttons, and a link to the character sheet to change what is listed.
