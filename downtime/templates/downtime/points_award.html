@@ -1,25 +1,36 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Downtime points{% endblock %}
-{% block main_class %}wm-main--narrow{% endblock %}
-{% load downtime_points %}
 {% block content %}
 {% include "components/page_header.html" with title="Downtime points" %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   {{ form.non_field_errors }}
-  <fieldset class="mb-3">
-    <legend class="h6">Characters</legend>
-    {{ form.characters.errors }}
-    {% for checkbox in form.characters %}
-    <div class="form-check">
-      {{ checkbox.tag }}
-      <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}
-        <span class="text-muted small">({{ balances|lookup:checkbox.data.value }})</span></label>
-    </div>
-    {% empty %}
-    <p class="wm-sheet-note">No characters in this club.</p>
-    {% endfor %}
-  </fieldset>
+  <h2 class="h6">Characters</h2>
+  {{ form.characters.errors }}
+  {% if rows %}
+  <div class="mb-2 no-print">
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-check-all hidden>Select all</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-check-none hidden>Clear</button>
+  </div>
+  <div class="wm-table-scroll"><table class="table table-sm wm-data-table">
+    <thead><tr><th scope="col">Award</th><th scope="col">Name</th><th scope="col">Player</th><th scope="col">Level</th><th scope="col">Class</th><th scope="col">Points</th></tr></thead>
+    <tbody>
+    {% for r in rows %}{% with c=r.character %}
+      <tr>
+        <td><input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}" id="award-{{ c.pk }}" aria-label="Award points to {{ c.name }}"{% if r.checked %} checked{% endif %}></td>
+        <td><label for="award-{{ c.pk }}">{{ c.name }}</label></td>
+        <td>{{ c.owner.user.display_name|default:c.owner.user.email }}</td>
+        <td>{{ c.level|default_if_none:"—" }}</td>
+        <td>{{ c.char_class|default:"—" }}</td>
+        <td>{{ r.balance }}</td>
+      </tr>
+    {% endwith %}{% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="wm-sheet-note">No characters in this club.</p>
+  {% endif %}
   {% for field in form.visible_fields %}{% if field.name != "characters" %}
   <div class="mb-3">
     <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
@@ -31,4 +42,5 @@
     <button class="btn btn-primary" type="submit" data-wm-tooltip title="Give or take the points for every ticked character.">Save</button>
   </div>
 </form>
+<script src="{% static 'js/check_all.js' %}" defer></script>
 {% endblock %}

@@ -126,6 +126,8 @@ def detail(request, club_slug, pk):
         "can_view": can_view,
         "can_edit": can_view,
         "can_adjust": admin or is_game_master(request.user, request.club),
+        "can_request_points": owns_character(request.user, character)
+        and not (admin or is_game_master(request.user, request.club)),
         "can_handover": admin,
         "can_transfer": owns_character(request.user, character)
         and Character.objects.for_club(request.club).filter(owner=character.owner).count() >= 2,
