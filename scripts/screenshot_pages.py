@@ -173,6 +173,9 @@ def _build_pages() -> list[Page]:
         P("items-detail", "alice", _c("items:detail", "item.pk")),
         P("items-where-to-buy", "alice", _c("items:where_to_buy", "item.pk")),
         P("items-edit", "gm", _c("items:edit", "item.pk")),
+        # downtime agenda
+        P("downtime-agenda", "gm", _c("downtime:agenda")),
+        P("downtime-agenda-action-new", "gm", _c("downtime:agenda_action_create")),
         # shops
         P("shops-index", "alice", _c("shops:index")),
         P("shops-detail-lantern", "alice", _c("shops:detail", "lantern.pk")),

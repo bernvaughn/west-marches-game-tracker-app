@@ -1,0 +1,13 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ request.get_full_path }}" hx-post="{{ request.get_full_path }}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{% if action %}Edit {{ action.name }}{% else %}New downtime action{% endif %}{% endblock %}
+{% block body %}{{ form }}{% if extra_url %}<p class="mt-3"><a href="{{ extra_url }}">Open full editor</a></p>{% endif %}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Save</button>
+{% endblock %}

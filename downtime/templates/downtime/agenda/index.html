@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Agenda{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/agenda.css' %}">
+{% include "components/page_header.html" with title="Agenda" subtitle="Rotations, quests and downtime actions by date" %}
+<div class="agenda-actions mb-3">
+  {% url 'shops:rotation_create' club.slug as u1 %}<a class="btn btn-outline-secondary" href="{{ u1 }}" hx-get="{{ u1 }}" hx-target="#app-modal .modal-content" data-app-modal>Add rotation</a>
+  {% url 'quests:create' club.slug as u2 %}<a class="btn btn-outline-secondary" href="{{ u2 }}" hx-get="{{ u2 }}" hx-target="#app-modal .modal-content" data-app-modal>Add quest</a>
+  {% url 'downtime:agenda_action_create' club.slug as u3 %}<a class="btn btn-outline-secondary" href="{{ u3 }}" hx-get="{{ u3 }}" hx-target="#app-modal .modal-content" data-app-modal>Add downtime action</a>
+</div>
+<ul class="agenda-legend list-inline">
+  <li class="list-inline-item"><span class="agenda-swatch agenda-bar--rotation"></span> Shop rotation</li>
+  <li class="list-inline-item"><span class="agenda-swatch agenda-bar--quest"></span> Quest</li>
+  <li class="list-inline-item"><span class="agenda-swatch agenda-bar--action"></span> Downtime action</li>
+</ul>
+{% include "downtime/agenda/_body.html" %}
+{% endblock %}

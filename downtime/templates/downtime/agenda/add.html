@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Add to the agenda{% endblock %}
+{% block content %}
+{% url 'downtime:agenda' club.slug as back_url %}
+{% include "components/page_header.html" with title="Add to the agenda" back_url=back_url back_label="Agenda" %}
+{% include "downtime/agenda/_add_choices.html" %}
+{% endblock %}

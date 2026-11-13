@@ -1,0 +1,33 @@
+<div id="agenda-body" hx-get="{{ request.get_full_path }}" hx-trigger="agendaChanged from:body" hx-swap="outerHTML">
+  <nav class="agenda-nav" aria-label="Month">
+    <a class="btn btn-sm btn-outline-secondary" href="?month={{ prev_month }}">&laquo; Previous</a>
+    <h2 class="agenda-month">{{ month|date:"F Y" }}</h2>
+    <a class="btn btn-sm btn-outline-secondary" href="?month={{ next_month }}">Next &raquo;</a>
+  </nav>
+  <div class="agenda-grid d-none d-md-block" role="region" aria-label="Month view">
+    <div class="agenda-row agenda-head">{% for w in weekdays %}<div class="agenda-cell-head">{{ w }}</div>{% endfor %}</div>
+    {% for week in weeks %}
+    <div class="agenda-week">
+      <div class="agenda-row agenda-days">
+        {% for d in week.days %}<div class="agenda-day{% if not d.in_month %} agenda-day--other{% endif %}{% if d.date == today %} agenda-day--today{% endif %}">
+          <span class="agenda-daynum">{{ d.date.day }}</span>
+          {% if d.in_month %}<a class="agenda-plus" href="{% url 'downtime:agenda_add' club.slug %}?date={{ d.date|date:'Y-m-d' }}" hx-get="{% url 'downtime:agenda_add' club.slug %}?date={{ d.date|date:'Y-m-d' }}" hx-target="#app-modal .modal-content" data-app-modal aria-label="Add on {{ d.date|date:'j F' }}">+</a>{% endif %}
+        </div>{% endfor %}
+      </div>
+      <div class="agenda-bars" style="--lanes: {{ week.lane_count }}">
+        {% for b in week.bars %}<a class="agenda-bar agenda-bar--{{ b.kind }}{% if b.continues_left %} agenda-bar--left{% endif %}{% if b.continues_right %} agenda-bar--right{% endif %}" style="grid-column: {{ b.col_start }} / span {{ b.span }}; grid-row: {{ b.lane|add:1 }}" href="{{ b.edit_url }}" hx-get="{{ b.edit_url }}" hx-target="#app-modal .modal-content" data-app-modal title="{{ b.label }}: {{ b.range_text }}">{{ b.label }}</a>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="agenda-list d-md-none">
+    {% for i in items %}
+    <a class="agenda-list-row" href="{{ i.edit_url }}" hx-get="{{ i.edit_url }}" hx-target="#app-modal .modal-content" data-app-modal>
+      <span class="agenda-badge agenda-bar--{{ i.kind }}">{% if i.kind == "action" %}Downtime{% else %}{{ i.kind|capfirst }}{% endif %}</span>
+      <strong>{{ i.label }}</strong>
+      <span class="text-muted">{{ i.range_text }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% if not items %}{% include "components/empty_state.html" with text="Nothing is scheduled this month." %}{% endif %}
+</div>
