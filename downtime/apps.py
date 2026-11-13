@@ -13,6 +13,7 @@ class DowntimeConfig(AppConfig):
         approvals.register(pending_point_requests)
 
         reg = navigation.register
+        reg("gm", "Downtime points", "downtime:points_award", is_gm_or_admin, 15)
         # Each slice adds its own navigation lines here.
         reg("character", "Request downtime points", "downtime:requests", not_gm_or_admin, 80)
         reg("gm", "Downtime point requests", "downtime:requests", is_gm_or_admin, 80)

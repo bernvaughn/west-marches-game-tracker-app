@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins downtime_points %}
 {% block title %}History of {{ character.name }}{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="History of "|add:character.name back_url=back_url back_label=back_label %}
@@ -35,4 +35,5 @@
 {% else %}
 {% include "components/empty_state.html" with text="No history yet." %}
 {% endif %}
+{% downtime_points_section character=character %}
 {% endblock %}

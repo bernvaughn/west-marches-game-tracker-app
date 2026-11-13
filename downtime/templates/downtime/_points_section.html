@@ -1,0 +1,38 @@
+<section class="mt-4" aria-labelledby="points-section-title">
+  <h2 class="h5" id="points-section-title">Downtime points</h2>
+  <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-2 no-print">
+    {% for k, v in hidden %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    <div><label class="form-label small mb-0" for="points-kind">Kind</label>
+    <select class="form-select form-select-sm" name="points_kind" id="points-kind">
+      <option value="">Any kind</option>
+      {% for value, label in kinds %}<option value="{{ value }}"{% if value == kind %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select></div>
+    <button class="btn btn-sm btn-primary" type="submit" data-wm-tooltip title="Show only point entries of this kind.">Filter</button>
+  </form>
+  {% if page_obj.object_list %}
+  <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+    <thead><tr><th>Date</th>{% if show_character %}<th>Character</th>{% endif %}<th>Kind</th><th>Points</th><th>Note</th><th>By</th></tr></thead>
+    <tbody>
+    {% for e in page_obj %}
+    <tr>
+      <td>{{ e.date|date:"Y-m-d" }}</td>
+      {% if show_character %}<td>{{ e.character.name }}</td>{% endif %}
+      <td>{{ e.get_kind_display }}</td>
+      <td><span class="{% if e.delta > 0 %}wm-credit{% else %}wm-debit{% endif %}">{{ e.delta|stringformat:"+d" }}</span></td>
+      <td>{{ e.note }}</td>
+      <td>{% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="wm-history-pager" aria-label="Downtime point pages">
+    {% if page_obj.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring points_page=page_obj.previous_page_number %}">Previous</a>{% endif %}
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring points_page=page_obj.next_page_number %}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+  {% else %}
+  {% include "components/empty_state.html" with text="No downtime point entries." %}
+  {% endif %}
+</section>

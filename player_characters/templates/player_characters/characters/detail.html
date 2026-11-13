@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins downtime_points %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
 <nav class="wm-breadcrumbs no-print" aria-label="Breadcrumb"><ol>
@@ -49,6 +49,11 @@
         <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
         <dt>Passive Perception</dt><dd>{{ passive_perception }}</dd>
         <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
+        {% if can_view %}{% downtime_balance character as dt_points %}{% downtime_play_url club as dt_play_url %}
+        <dt>Downtime points</dt><dd>{{ dt_points }}
+          {% if dt_play_url %}<a class="no-print small" href="{{ dt_play_url }}" data-wm-tooltip title="Spend downtime points on a downtime action.">Spend</a>{% endif %}
+          {% if can_adjust %}<a class="no-print small" href="{% url 'downtime:points_award' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Give or take downtime points for this character.">Award points</a>{% endif %}</dd>
+        {% endif %}
       </dl>
     </section>
     <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-description">
