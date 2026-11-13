@@ -1,0 +1,25 @@
+{% load coins %}
+<section id="your-inventory" class="wm-your-inventory card" aria-labelledby="your-inventory-title">
+  <h2 id="your-inventory-title" class="h4">Your inventory</h2>
+  {% if buyer %}
+  <p class="wm-your-inventory-name"><strong>{{ buyer.name }}</strong></p>
+  <p class="wm-your-inventory-coins">{{ inventory_coins.owned|coins }}</p>
+  {% if inventory_coins.has_holds %}<p class="wm-sheet-note"><a href="{% url 'trades:index' club.slug %}">In open trades</a>: {{ inventory_coins.held|coins }} &middot; Available: {{ inventory_coins.available|coins }}</p>{% endif %}
+  {% if inventory_rows %}
+  <div class="wm-table-scroll">
+    <table class="table table-sm wm-data-table">
+      <thead><tr><th scope="col">Item</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}</tr></thead>
+      <tbody>
+      {% for row in inventory_rows %}
+        <tr><td>{{ row.item.name }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}</tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  {% include "components/empty_state.html" with text="No items yet." icon="bag" %}
+  {% endif %}
+  {% else %}
+  {% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
+  {% endif %}
+</section>

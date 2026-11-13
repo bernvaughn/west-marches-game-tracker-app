@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}{{ seller.name }}'s shop{% endblock %}
+{% block content %}
+{% block banner %}{% include "shops/player/_banner.html" %}{% endblock %}
+{% if is_own %}
+<div class="alert alert-info wm-alert wm-alert--info" role="status">
+  <div><strong>This is your shop.</strong>{% if not seller.shop_open %} It is closed.{% endif %}
+  <a href="{% url 'characters:detail' club.slug seller.pk %}">Change what is listed on the character sheet</a>.</div>
+</div>
+{% endif %}
+<div class="wm-shop-counter">
+{% if rows %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
+  <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{% include "items/_item_name.html" with item=row.item %}{% if row.item.description %}<small class="d-block text-muted">{{ row.item.description }}</small>{% endif %}</td>
+      <td class="num">{{ row.price|coins }}</td>
+      <td class="num">{{ row.quantity }}</td>
+      <td class="actions">{% if not is_own %}{% url 'shops:player_shop_buy' club.slug seller.pk row.item.pk as buy_url %}<a class="btn btn-sm btn-primary" href="{{ buy_url }}" hx-get="{{ buy_url }}" hx-target="#app-modal .modal-content" data-app-modal>Buy</a>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}
+{% include "components/empty_state.html" with text="Nothing is listed right now." icon="bag" %}
+{% endif %}
+</div>
+{% include "shops/player/_your_inventory.html" %}
+{% endblock %}

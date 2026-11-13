@@ -1,0 +1,25 @@
+{% load coins %}
+<h2 class="h5">{% include "items/_item_name.html" with item=item %}</h2>
+{% if item.description %}<p>{{ item.description }}</p>{% endif %}
+<p>Price each: {{ price|coins }}</p>
+<p>Remaining: {{ listed }} listed</p>
+{% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
+{% if not buyer %}
+<p>You have no character in this club.</p>
+{% elif can_buy %}
+<p>Buying as <strong>{{ buyer.name }}</strong></p>
+{% if coins.has_holds %}<p class="wm-sheet-note"><a href="{% url 'trades:index' request.club.slug %}">In open trades</a>: {{ coins.held|coins }} &middot; Available: {{ coins.available|coins }}</p>{% endif %}
+{% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
+<p>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <input type="number" name="quantity" id="{{ form.quantity.id_for_label }}" min="1" max="{{ max_quantity }}" value="{{ quantity }}" class="form-control w-auto"
+    hx-get="{% url 'shops:player_shop_buy' request.club.slug seller.pk item.pk %}" hx-trigger="input changed delay:300ms" hx-target="#buy-summary" hx-select="#buy-summary" hx-swap="outerHTML" hx-include="closest form">
+</p>
+<div id="buy-summary">
+  <dl class="wm-dl">
+    <dt>Total</dt><dd>{{ total|coins }}</dd>
+    <dt>Coins before</dt><dd>{{ before|coins }}</dd>
+    <dt>Coins after</dt><dd>{% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</dd>
+  </dl>
+</div>
+{% endif %}

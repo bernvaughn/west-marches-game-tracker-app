@@ -1,0 +1,8 @@
+<div class="wm-shop-banner wm-player-shop-banner">
+  <h1 class="wm-shop-title">{{ seller.name }}'s shop</h1>
+  <div class="wm-shop-actions">
+    <div class="wm-shop-iconbar d-flex gap-2 justify-content-end">
+      <a class="btn btn-outline-secondary" href="{% url 'shops:index' club.slug %}" aria-label="Leave the shop" title="Leave the shop" data-wm-tooltip>{% include "components/icon.html" with name="box-arrow-left" %}</a>
+    </div>
+  </div>
+</div>
