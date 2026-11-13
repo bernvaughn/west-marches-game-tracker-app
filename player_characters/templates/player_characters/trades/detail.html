@@ -3,6 +3,7 @@
 {% block content %}
 <div id="trade-live" hx-get="{% url 'trades:detail' club.slug trade.pk %}" hx-select="#trade-live" hx-swap="outerHTML" hx-trigger="every 5s [document.visibilityState === 'visible']">
 {% url "trades:index" club.slug as list_url %}{% include "components/page_header_open.html" with title="Trade: "|add:trade.sender.name|add:" and "|add:trade.receiver.name back_url=list_url back_label="Back to trades" %}<span>Status: {% include "player_characters/trades/_status_badge.html" with t=trade %}</span>{% include "components/page_header_close.html" %}
+<p class="wm-trade-status-line" role="status">{{ status_line }}</p>
 <div class="wm-trade-approvals">
   <span>{{ trade.sender.name }} ({{ trade.sender.owner.user.display_name }}): {% if trade.sender_approved %}{% include "components/badge.html" with status="success" text="approved" %}{% else %}{% include "components/badge.html" with text="not approved" %}{% endif %}</span>
   <span>{{ trade.receiver.name }} ({{ trade.receiver.owner.user.display_name }}): {% if trade.receiver_approved %}{% include "components/badge.html" with status="success" text="approved" %}{% else %}{% include "components/badge.html" with text="not approved" %}{% endif %}</span>

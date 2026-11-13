@@ -30,35 +30,13 @@
       </section>
       <section class="wm-sheet-box" aria-labelledby="offer-note-title">
         <h2 class="wm-sheet-box-title" id="offer-note-title">Note</h2>
-        {{ form.note.as_field_group }}
+        <label class="visually-hidden" for="{{ form.note.id_for_label }}">Note</label>
+        {{ form.note }}
+        {{ form.note.errors }}
       </section>
       <section class="wm-sheet-box wm-sheet-full" aria-labelledby="offer-items-title">
         <h2 class="wm-sheet-box-title" id="offer-items-title">Inventory</h2>
-        {% if offer_rows %}
-        <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
-          <thead><tr><th>Item</th><th class="num">Owned</th><th class="num">Available</th><th class="num">Offer</th></tr></thead>
-          <tbody>
-          {% for r, field in offer_rows %}
-          <tr{% if not field %} class="wm-trade-row-unavailable"{% endif %}>
-            <td>{% include "items/_item_name.html" with item=r.item %}</td>
-            <td class="num">{{ r.owned }}</td>
-            <td class="num">{{ r.available }}</td>
-            <td class="num">
-              {% if field %}
-              <label class="visually-hidden" for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {{ field }}
-              {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
-              {% else %}
-              <input type="number" class="form-control form-control-sm" value="0" disabled aria-label="Offer {{ r.item.name }} (none available)">
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-          </tbody>
-        </table></div>
-        {% else %}
-        <p class="wm-sheet-note">No items.</p>
-        {% endif %}
+        {% include "player_characters/trades/_offer_table.html" with rows=offer_rows column="Offer" %}
       </section>
     </div>
     <div class="wm-form-actions">

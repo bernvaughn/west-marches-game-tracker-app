@@ -4,7 +4,7 @@ from ledger import demo as ledger_demo
 from ledger.models import LedgerEntry
 from ledger.services import Line, record
 
-from .models import Character, JunkMark
+from .models import Character, JunkMark, Trade, TradeLine
 
 CHARACTERS = [
     ("alice@example.com", "Aria Windrunner", 5),
@@ -84,6 +84,7 @@ def seed(club):
             character.save(update_fields=changed)
     _give_gear(club)
     _open_demo_stall(club)
+    _open_demo_trade(club)
 
 
 def _give_gear(club):
@@ -112,3 +113,25 @@ def _open_demo_stall(club):
     if created:  # only on first create, so a user's later change survives a re-run
         borin.shop_open = True
         borin.save(update_fields=["shop_open"])
+
+
+def _open_demo_trade(club):
+    """An accepted trade where Bob changed his side, so both must approve again."""
+    aria = Character.objects.filter(club=club, name="Aria Windrunner").first()
+    borin = Character.objects.filter(club=club, name="Borin Stonefist").first()
+    torch = Item.objects.filter(club=club, name="Torch").first()
+    rope = Item.objects.filter(club=club, name="Rope").first()
+    if aria is None or borin is None or torch is None or rope is None:
+        return
+    if Trade.objects.filter(sender=aria, receiver=borin).exists():
+        return
+    trade = Trade.objects.create(
+        club=club,
+        sender=aria,
+        receiver=borin,
+        status=Trade.Status.ACCEPTED,
+        note="Rope for torches?",
+        sides_changed_by="receiver",
+    )
+    TradeLine.objects.create(trade=trade, from_sender=True, item=rope, quantity=1)
+    TradeLine.objects.create(trade=trade, from_sender=False, item=torch, quantity=2)

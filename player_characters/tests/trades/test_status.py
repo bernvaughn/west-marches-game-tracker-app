@@ -34,7 +34,7 @@ def status(trade):
 
 def test_receiver_accepts(login, club, trade, other_player):
     r = login(other_player).post(url(club, trade, "accept"))
-    assert r.status_code == 302 and r.url == url(club, trade)
+    assert r.status_code == 302 and r.url == url(club, trade, "edit_side")
     assert status(trade) == "accepted"
 
 

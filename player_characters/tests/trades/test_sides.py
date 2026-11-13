@@ -39,7 +39,7 @@ def test_get_form_lists_own_items_only(login, club, trade, other_player, charact
     record(character, "award", [Line(item=other, quantity=1)], note="x")
     html = login(other_player).get(url(club, trade)).content.decode()
     assert "Rope" not in html and "Hidden Lamp" not in html
-    assert "No items available." in html
+    assert "No items." in html
     assert "coins_gp" in html
 
 
@@ -192,20 +192,23 @@ def test_get_approve_not_allowed(login, club, trade, player):
 
 def test_side_actions_shown_then_hidden(login, club, trade, player, game_master):
     html = login(player).get(url(club, trade, "detail")).content.decode()
-    assert "Edit my side" in html and "Approve as" in html
+    assert "Change what you give" in html and "Approve the trade as shown above" in html
     html = login(game_master).get(url(club, trade, "detail")).content.decode()
-    assert "Edit my side" not in html and "Approve as" not in html
+    assert "Change what you give" not in html and "Approve the trade as shown above" not in html
     login(player).post(url(club, trade, "approve"))
     html = login(player).get(url(club, trade, "detail")).content.decode()
-    assert "Edit my side" not in html and "Approve as" not in html
-    assert "Waiting for the other player" in html
+    assert "Change what you give" not in html and "Approve the trade as shown above" not in html
+    assert (
+        "You have approved. Waiting for Bram's player to approve as well." in html
+        or "to approve as well." in html
+    )
 
 
 def test_completed_note(login, club, trade, player, game_master):
     Trade.objects.filter(pk=trade.pk).update(status="completed")
     for u in (player, game_master):
         html = login(u).get(url(club, trade, "detail")).content.decode()
-        assert "Trade completed." in html
+        assert "This trade was completed on" in html
 
 
 def test_full_flow(login, club, character, other_character, item, give, player, other_player):
