@@ -107,8 +107,13 @@ def test_sheet_link(login, club, player, character):
 
 
 def test_menu_entry(login, club, player, game_master, character):
+    detail = reverse("characters:detail", args=[club.slug, character.pk])
+    link = f'href="{picker(club)}"'
     for u in (player, game_master):
-        assert "Character slips" in login(u).get(picker(club)).content.decode()
+        body = login(u).get(detail).content.decode()
+        assert re.search(
+            r'<a class="wm-menu-link[^"]*" ' + re.escape(link) + r"[^>]*>Character slips</a>", body
+        )
 
 
 def test_no_selection(login, club, player, character):

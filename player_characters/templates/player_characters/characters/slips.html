@@ -6,7 +6,7 @@
 {% if form.errors %}<div class="alert alert-danger" role="alert">{% for e in form.characters.errors %}{{ e }} {% endfor %}</div>{% endif %}
 {% if characters %}
 <form method="get" action="{% url 'characters:slips_print' club.slug %}">
-  <table class="table">
+  <div class="wm-table-scroll"><table class="table table-sm wm-data-table">
     <thead><tr><th scope="col">Print</th><th scope="col">Name</th><th scope="col">Player</th><th scope="col">Level</th><th scope="col">Class</th><th scope="col">Species</th></tr></thead>
     <tbody>
     {% for c in characters %}
@@ -20,7 +20,7 @@
       </tr>
     {% endfor %}
     </tbody>
-  </table>
+  </table></div>
   <button class="btn btn-primary" type="submit">{% include "components/icon.html" with name="printer" %} Print slips</button>
 </form>
 {% else %}
