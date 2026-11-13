@@ -401,6 +401,37 @@ From using the build after round 5 (U54–U60) landed. Kept as built: a phone st
 - The modal follows the same rules as creating an item from the catalogue page. Only club admins can use it.
 - Without JavaScript, the button links to the new item page and returns to the stock form after saving.
 
+## Round 7: new features (2026-11-12)
+
+Ideas from the owner while round 6 was being built.
+
+**U65 The app is called Downtime Market.** As a club admin, I want the app to have its own memorable name that says what it is for, D&D clubs whose players spend their loot between sessions, so it is easy to recommend and doesn't clash with names others already use. *(site-wide)*
+- Everywhere the app names itself, it says "Downtime Market" instead of "West Marches": the browser tab title, the side menu's header (U61), the sign-in, signed-out and password pages, the design reference page, the MCP server's instructions and OAuth names (A1), the project description, and the README.
+- "West Marches" stays where it means the style of campaign, not the app, for example "the West Marches XP table" (M13).
+- The sign-in page has a one-line tagline under the name, for example "Spend your loot between sessions."
+- The repository, folders and code names do not change.
+
+**U66 Player shops.** As a player, I want my character to sell its junk from its own shop on the street, so other players can buy what I don't need while I'm away. *(player_characters, shops, ledger)*
+- A player shop belongs to a character. On the character sheet, the owner, a game master or a club admin can switch "Sell my junk in my shop" on or off. It starts off.
+- When it is on, the shop lists every item the character has marked as junk (U47), at the junk quantity. Items, or parts of a quantity, that are in an open trade or otherwise held (U56) are left out, and come back on their own once released, for example when a trade falls through. So a player can list an item and offer it in a trade at the same time.
+- A character's shop shows on the street (U49) only while its switch is on and at least one item is listed.
+- Another character buys an item at its base value (U8), and the whole price goes to the seller. The sale is instant: coins and the item move straight away, with no approval, and both characters' ledgers show it. The seller's junk mark drops by the quantity sold. The usual buy confirm (U33) and "can't afford" rules apply.
+- A player can open their own characters' shops to see what is listed, but can't buy from them. To move items between their own characters, they use Move items (U15).
+- Player shops have no rotations or open dates; they are open whenever they show on the street.
+
+**U67 Player shops on the street.** As a player, I want player shops to look different from the club's shops and sit at the end of the street, so I can tell a player's stall from a real shopkeeper. *(shops)*
+- Player shops come after all of the club's own shops on the street, ordered by character name, with one filler building between the last club shop and the first player shop. Filler then pads the row as usual (U54, U62).
+- Each player shop has its own look that is clearly not a club shop: for example a market stall with a striped awning, in one shared colour. The sign shows "<character name>'s stall".
+- A player shop's page has no shopkeeper silhouette and no keeper name. Its banner shows the character's name and the stall look, then the table of listed items with Buy buttons, and the buyer's Your inventory card (U46) below.
+- A player looking at their own character's shop sees "This is your shop", no Buy buttons, and a link to the character sheet to change what is listed.
+
+**U68 Propose trade looks like a character sheet.** As a player, I want the Propose trade page to look like my character sheet, so picking what to offer feels familiar and fits on one screen. *(player_characters)*
+- The flow does not change: I fill in only my side (what I offer), and the other character fills in theirs afterwards.
+- A header box, like the sheet's, names my character and the character I'm trading with (picked from a dropdown, or preselected from the character directory, U51).
+- A coins box, like the sheet's, shows my coins and what is available, with the coin inputs for my offer beside them.
+- An inventory table, like the sheet's, lists my items with owned and available counts and a small quantity input per row for what I offer. Items with nothing available are shown greyed out.
+- The note sits in its own small box, and the Propose button sits below the boxes. At desktop width the boxes sit in a two-column grid, as on the sheet; on a phone they stack.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
