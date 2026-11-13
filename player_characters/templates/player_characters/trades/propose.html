@@ -1,22 +1,71 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block title %}Propose trade{% endblock %}
-{% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title="Propose trade" %}
 {% if not sender %}
+{% include "components/page_header.html" with title="Propose trade" %}
 {% url 'characters:create' club.slug as create_url %}
 {% include "components/empty_state.html" with text="You have no character in this club. Create a character first." action_url=create_url action_label="New character" %}
 {% else %}
-<p>From <strong>{{ sender.name }}</strong></p>
-<form method="post" class="wm-form">
+<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
+  <li><a href="{% url 'trades:index' club.slug %}">Trades</a></li>
+  <li><span aria-current="page">Propose trade</span></li>
+</ol></nav>
+<form method="post" class="wm-form wm-trade-form">
   {% csrf_token %}
-  {{ form }}
-  <h2 class="h5">Offer</h2>
-  {{ side_form }}
-  <div class="wm-form-actions">
-    <button class="btn btn-primary" type="submit">Propose trade as {{ sender.name }}</button>
-    <a class="btn btn-outline-secondary" href="{% url 'trades:index' club.slug %}">Cancel</a>
-  </div>
+  <article class="wm-sheet wm-trade-sheet">
+    <header class="wm-sheet-header">
+      <h1>Propose trade</h1>
+      <p>From <strong>{{ sender.name }}</strong></p>
+      {{ form.non_field_errors }}
+      {{ side_form.non_field_errors }}
+      {{ form.receiver.as_field_group }}
+    </header>
+    <div class="wm-sheet-grid">
+      <section class="wm-sheet-box wm-sheet-coins" aria-labelledby="offer-coins-title">
+        <h2 class="wm-sheet-box-title" id="offer-coins-title">Coins</h2>
+        <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+        <p class="wm-sheet-note">Available: {{ coins.available|coins }}</p>
+        {{ side_form.coins.as_field_group }}
+      </section>
+      <section class="wm-sheet-box" aria-labelledby="offer-note-title">
+        <h2 class="wm-sheet-box-title" id="offer-note-title">Note</h2>
+        {{ form.note.as_field_group }}
+      </section>
+      <section class="wm-sheet-box wm-sheet-full" aria-labelledby="offer-items-title">
+        <h2 class="wm-sheet-box-title" id="offer-items-title">Inventory</h2>
+        {% if offer_rows %}
+        <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
+          <thead><tr><th>Item</th><th class="num">Owned</th><th class="num">Available</th><th class="num">Offer</th></tr></thead>
+          <tbody>
+          {% for r, field in offer_rows %}
+          <tr{% if not field %} class="wm-trade-row-unavailable"{% endif %}>
+            <td>{% include "items/_item_name.html" with item=r.item %}</td>
+            <td class="num">{{ r.owned }}</td>
+            <td class="num">{{ r.available }}</td>
+            <td class="num">
+              {% if field %}
+              <label class="visually-hidden" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for e in field.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+              {% else %}
+              <input type="number" class="form-control form-control-sm" value="0" disabled aria-label="Offer {{ r.item.name }} (none available)">
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table></div>
+        {% else %}
+        <p class="wm-sheet-note">No items.</p>
+        {% endif %}
+      </section>
+    </div>
+    <div class="wm-form-actions">
+      <button class="btn btn-primary" type="submit">Propose trade as {{ sender.name }}</button>
+      <a class="btn btn-outline-secondary" href="{% url 'trades:index' club.slug %}">Cancel</a>
+    </div>
+  </article>
 </form>
 {% endif %}
 {% endblock %}

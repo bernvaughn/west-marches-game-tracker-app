@@ -46,6 +46,12 @@
 @media (min-width: 768px) { .wm-trade-sides { grid-template-columns: 1fr 1fr; } }
 .wm-trade-approvals { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-2); }
 .wm-trade-lines { list-style: none; margin: 0; padding: 0; }
+.wm-trade-sheet .wm-sheet-table input[type=number] { width: 5rem; margin-left: auto; }
+.wm-trade-sheet .wm-sheet-coins .wm-field-group, .wm-trade-sheet .wm-sheet-coins .wm-coins { flex-wrap: wrap; }
+.wm-trade-sheet .wm-form-actions { margin-top: var(--wm-space-3); }
+.wm-form.wm-trade-form { max-width: none; }
+.wm-trade-sheet textarea { min-height: 6rem; height: 8rem; }
+.wm-trade-row-unavailable td { color: var(--wm-text-muted); opacity: 0.7; }
 
 /* Ledger history: signed amounts. The sign text carries the meaning; colour is an extra cue. */
 .wm-credit { color: var(--wm-success); }
