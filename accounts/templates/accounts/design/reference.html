@@ -193,4 +193,16 @@
     </ul>
   </div>
 </section>
+<section id="downtime-chalkboard" class="wm-section">
+  <h3>Chalkboard</h3>
+  <p>The Downtime page is a slate board in a wooden frame. Chalk text on slate keeps at least 4.5:1 contrast. Print is plain black on white.</p>
+  <link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
+  <div class="wm-chalkboard">
+    <div class="wm-chalk-header"><span class="wm-chalk-hourglass" aria-hidden="true">{% include "components/icon.html" with name="hourglass-split" %}</span><h2>Jobs on the board</h2><p class="wm-chalk-balance">Alice has <strong>3</strong> downtime points.</p></div>
+    <ul class="wm-chalk-list">
+      <li class="wm-chalk-job"><h3>Work at a bakery</h3><p>Knead dough before dawn.</p><p>Cost: <strong>1</strong> point</p><h4>Possible rewards</h4><ul class="wm-downtime-rewards"><li>Fresh bread <span class="text-muted">(75.0%)</span></li><li>Nothing <span class="text-muted">(25.0%)</span></li></ul><button class="btn wm-chalk-button" type="button">Take the job</button></li>
+      <li class="wm-chalk-job"><h3>Guard the caravan</h3><p>Walk beside the wagons.</p><p>Cost: <strong>2</strong> points</p><h4>Possible rewards</h4><ul class="wm-downtime-rewards"><li>Wages <span class="text-muted">(100.0%)</span></li></ul><button class="btn wm-chalk-button" type="button" disabled>Take the job</button> <span class="text-muted">Not enough points.</span></li>
+    </ul>
+  </div>
+</section>
 {% endblock %}

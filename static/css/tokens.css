@@ -161,3 +161,14 @@
 }
 :root { --wm-font-wordmark: "IM Fell English SC", var(--wm-font-heading); }
 .wm-wordmark { font-family: var(--wm-font-wordmark); font-weight: 400; letter-spacing: .02em; }
+
+/* Downtime chalkboard */
+:root {
+  --wm-slate: #263530;
+  --wm-slate-edge: #1b2723;
+  --wm-chalk: #f2f0e6;
+  --wm-chalk-muted: #c4cbc2;
+  --wm-chalk-accent: #f3d77a;
+  --wm-board-wood: #6b4527;
+  --wm-board-wood-dark: #4a2e19;
+}

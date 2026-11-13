@@ -5,33 +5,40 @@
 <link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
 <script src="{% static 'js/downtime_wheel.js' %}" defer></script>
 {% include "components/page_header.html" with title="Downtime" subtitle="Spend downtime points on an action." %}
-{% if character %}
-<p class="wm-downtime-balance">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>
-{% else %}
+{% if not character %}
 {% include "components/alert.html" with text="You need a character to spend downtime points." %}
 {% endif %}
-{% for card in cards %}
-<section class="card mb-3">
-  <div class="card-body">
-    <h2 class="h4">{{ card.action.name }}</h2>
-    {% if card.action.description %}<p>{{ card.action.description|linebreaksbr }}</p>{% endif %}
-    <p>Cost: <strong>{{ card.action.cost }}</strong> point{{ card.action.cost|pluralize }}</p>
-    <h3 class="h6">Possible rewards</h3>
-    <ul class="wm-downtime-rewards">
-      {% for r in card.rewards %}
-      <li>{{ r.entry.label }} <span class="text-muted">({{ r.percent|floatformat:1 }}%)</span>
-        {% if r.entry.coins %}{{ r.entry.coins|coins }}{% endif %}
-        {% for ei in r.items %}{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}{% if not forloop.last %}, {% endif %}{% endfor %}
-      </li>
-      {% endfor %}
-    </ul>
-    <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
-      <button class="btn btn-primary" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Spend {{ card.action.cost }} point{{ card.action.cost|pluralize }}</button>
-      {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
-    </form>
+<div class="wm-chalkboard">
+  <div class="wm-chalk-header">
+    <span class="wm-chalk-hourglass" aria-hidden="true">{% include "components/icon.html" with name="hourglass-split" %}</span>
+    <h2>Jobs on the board</h2>
+    {% if character %}<p class="wm-chalk-balance wm-downtime-balance">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>{% endif %}
   </div>
-</section>
-{% empty %}
-{% include "components/empty_state.html" with text="No downtime actions are available right now." icon="hourglass-split" %}
-{% endfor %}
+  {% if cards %}
+  <ul class="wm-chalk-list">
+    {% for card in cards %}
+    <li class="wm-chalk-job">
+      <h3>{{ card.action.name }}</h3>
+      {% if card.action.description %}<p>{{ card.action.description|linebreaksbr }}</p>{% endif %}
+      <p>Cost: <strong>{{ card.action.cost }}</strong> point{{ card.action.cost|pluralize }}</p>
+      <h4>Possible rewards</h4>
+      <ul class="wm-downtime-rewards">
+        {% for r in card.rewards %}
+        <li>{{ r.entry.label }} <span class="text-muted">({{ r.percent|floatformat:1 }}%)</span>
+          {% if r.entry.coins %}{{ r.entry.coins|coins }}{% endif %}
+          {% for ei in r.items %}{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </li>
+        {% endfor %}
+      </ul>
+      <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
+        <button class="btn wm-chalk-button" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Take the job</button>
+        {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
+      </form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="wm-chalk-muted mb-0">No downtime actions are available right now.</p>
+  {% endif %}
+</div>
 {% endblock %}
