@@ -437,6 +437,121 @@ Ideas from the owner while round 6 was being built.
 - An inventory table, like the sheet's, lists my items with owned and available counts and a small quantity input per row for what I offer. Items with nothing available are shown greyed out.
 - The note sits in its own small box, and the Propose button sits below the boxes. At desktop width the boxes sit in a two-column grid, as on the sheet; on a phone they stack.
 
+## Round 8: stories from the seventh look and new features (2026-11-13)
+
+From using the build after round 7 (U65–U68) and new ideas from the owner.
+
+### Characters
+
+**U69 A fuller character sheet.** As a player, I want my character sheet to hold the details my table uses, so the app can stand in for a paper sheet between sessions. *(player_characters)*
+- New fields, all optional: the six ability scores (Strength, Dexterity, Constitution, Intelligence, Wisdom, Charisma), each its own whole-number field; class; species; alignment; pronouns; description; XP; AC; and Perception bonus.
+- XP and AC are conveniences that players type. They are not tied to level (U52), the XP table (M13) or equipment.
+- Passive Perception shows as 10 + the Perception bonus, with the formula, for example "Passive Perception 13 (10 + 3)". This follows D&D 5e (2014 and 2024): passive checks are 10 + the check's bonus.
+- The app says "species", the D&D 2024 term, never "race".
+- The Notes, Details and old free-text Stats fields are removed, and their text is dropped. The app hasn't launched, so there is nothing to keep.
+- The sheet (U37) shows the new fields in sheet-style boxes: a header with name, level, class, species, pronouns and player; an abilities box with each score and its modifier; a box with AC, passive Perception and XP; and a description box.
+- The edit character page looks like the sheet, with the same boxes holding the inputs.
+- The character directory (U41, U51) shows class and species to everyone.
+
+**U70 Character slips for drawing tables.** As a game master or club admin, I want to pick the characters at a session and print slips to cut out and draw, so we can make parties at random. *(player_characters)*
+- A "Character slips" page for game masters and club admins lists every character in the club with a tick box, then prints a slip for each ticked character.
+- Each slip shows the player's name, the character's name, pronouns, passive Perception, level, class and species.
+- 12 slips fit on one portrait Letter or A4 page, in 2 columns and 6 rows, with cut lines. More characters continue on more pages.
+- Players can print slips for their own characters from the sheet or the slips page.
+
+**U71 Character page tooltips.** As a player, I want every button on the character page to explain what it's for, so I know which one to use. *(player_characters)*
+- Each button has a tooltip on hover and keyboard focus, using this wording:
+  - Edit: "Change this character's details: name, level, class, ability scores and more."
+  - Transfer: "Move items or coins from this character to another of your characters."
+  - History and Full ledger: "See every change to this character's coins and items."
+  - Print item cards: "Print cards for all items, nine to a page, to bring to the table."
+  - Print sheet: "Print this character sheet in black and white."
+  - Adjust: "Add or remove coins and items, for example loot from a session or a correction."
+  - Consume: "Mark items as lost or used up, based on what happened during the session."
+  - Hand over: "Give this character to another player."
+  - Mark as junk: "Set aside items to sell later, in shops or your own stall."
+  - Print card: "Print this one item's card, as a full page or in one spot of a card sheet."
+  - Sell my junk in my shop: "List your junk in your own stall on the street for other players to buy."
+- New buttons added later get a tooltip in the same style.
+
+### Downtime
+
+**D1 Downtime action points.** As a game master or club admin, I want to award characters downtime action points, so players have something to spend between adventures. *(player_characters, ledger)*
+- Game masters and club admins award or remove points for one or several characters, with a note and a date, like coin awards (U14).
+- Each character's points show on its sheet. Every award, removal and spend is recorded in the character's history and the club ledger (U50).
+
+**D2 Downtime actions and reward tables.** As a club admin, I want to set up downtime actions, each with a table of weighted rewards, so spending a point gives a fun, varied outcome. *(new downtime area, items, ledger)*
+- A downtime action has a name, a description, a cost in points (usually 1), and a table of entries. Example: "Work at a bakery" with 10 entries.
+- Each entry has a label, a weight (a whole number from 1 up) and a reward: coins, one or more catalogue items, or nothing. An entry's chance is its weight divided by the table's total weight, and the form shows each entry's chance as a percentage.
+- A player chooses an available action for their selected character (U27) and spends a point. The app picks an entry at random by weight, gives the reward straight away, and records it in the ledger.
+- A character with too few points can't spend. Only club admins manage actions and tables.
+
+**D3 The spinning wheel.** As a player, I want picking my downtime reward to be a little game, so spending a point feels exciting. *(downtime)*
+- Spending a point shows a wheel with one slice per table entry, each slice sized by its weight and labelled. The wheel spins and stops on the entry the server already picked; the reward then shows.
+- The result is decided on the server before the wheel spins, so the animation can't change it.
+- With reduced motion turned on, or without JavaScript, the result shows straight away with no spin.
+
+**D4 Requesting downtime action points.** As a player, I want to ask for downtime action points if my game master forgets to award them, so I don't miss out. *(downtime, player_characters)*
+- A player asks for a number of points for one or several of their characters, with a note, like map credit requests (M12).
+- A game master or club admin approves or declines. Approving awards the points (D1). Pending requests count in the approvals indicator (U26).
+
+**U72 One agenda for rotations.** As a club admin, I want one agenda to plan which quests, shops and downtime actions are available on which dates, so I can see and change a season at a glance. *(shops, quests, downtime)*
+- A club admin page shows a calendar-style agenda of what is available when: shop rotations (S2), quest start and end dates (Q2), and downtime action availability.
+- Downtime actions have availability dates like quests: a start date and an optional end date. Only actions available today can be spent on (D2).
+- From the agenda, an admin can add or change a rotation, a quest's dates, or a downtime action's dates, in a modal, without leaving the agenda.
+- The existing rotations pages keep working; the agenda is the main way in.
+
+### Items
+
+**U73 Item rarity with suggested values.** As a club admin, I want to give each catalogue item a rarity and see a suggested value for it, so prices stay consistent. *(items)*
+- The item form has a Rarity dropdown: Common, Uncommon, Rare, Very rare, Legendary. It is optional.
+- Choosing a rarity shows its suggested value range from the 2014 Dungeon Master's Guide: Common 50–100 gp, Uncommon 101–500 gp, Rare 501–5,000 gp, Very rare 5,001–50,000 gp, Legendary 50,001 gp and up. It is a hint only; any value can be saved.
+- Rarity shows in the catalogue and on the item page.
+
+**U74 How many characters own each item.** As a club admin or game master, I want to see how many characters own each item, so I can spot items nobody uses. *(items)*
+- Each row of the admin item catalogue shows how many characters in the club own at least one, and the total quantity they hold. Retired items show their counts too.
+- It counts characters, not players. Players' read-only item list doesn't show the counts (U19).
+
+**U75 Where can I buy this item?** As a player, I want to see where an item is for sale, so I can seek out what I need. *(items, shops)*
+- In both item lists (the admin catalogue and the players' item list), an item for sale right now shows a shop icon button with a tooltip.
+- "For sale" means in stock at a club shop that is open today (S2), or listed in a player's stall (U66).
+- The button opens a modal listing each shop and stall that has it, with the shop's symbol and name, the price there (the shop's sell price, or the base value at a stall), the quantity available, and a link to the shop. The player's own stall is marked "your stall".
+
+**U76 Stock requests.** As a player, I want to ask the club admins to make something available to buy, so the shops can grow with what players want. *(accounts)*
+- From the Club group in the menu, a player sends a free-text stock request as their selected character (U27), for example "I want to be able to buy some super cool armor!"
+- It arrives in the admins' inbox labelled "Stock request", and the inbox can be filtered by it. Admins can mark it handled or closed. It has no Give buttons, since nothing is granted. It counts in the approvals indicator (U26).
+- Club admins only, like the rest of the inbox (U13).
+
+### Shops and trades
+
+**U77 Shop tidy-ups.** As anyone using shops, I want the shop pages and admin list to be easier to read. *(shops)*
+- On the street, each sign sits below its building at every width, for club shops and player stalls alike. This changes U54's wide-screen layout.
+- The Manage shops list shows street position, shopkeeper name, sell percentage and buy percentage as columns, so shops can be compared.
+- The "Your inventory" card shows item icons (U44), and its Sell buttons are outline buttons, lighter than the red Buy buttons.
+- A shop with no shop description shows no description button (as today), and the demo shops all have descriptions so the button can be tried.
+
+**U78 Clearer trades.** As a player, I want trade buttons that say exactly what they do and a status that says who the trade is waiting on, so I always know what to do next. *(player_characters)*
+- Buttons: "Accept trade request and propose items" (opens Edit my side), "Decline this trade request", "Cancel this trade", "Change what you give" (Edit my side), and "Approve the trade as shown above".
+- A status line, naming the other player, for each stage:
+  - Requested, seen by the receiver: "<player> wants to trade with <character>. Accept to choose what you give, or decline."
+  - Requested, seen by the sender: "Waiting for <player> to accept."
+  - Accepted, nobody has approved: "Both sides can change what they give. Approve when the trade looks right."
+  - I approved: "You have approved. Waiting for <player> to approve as well."
+  - The other side approved: "<player> has approved. Approve to complete the trade."
+  - Completed, declined or cancelled: says so, with the date.
+- Changing the items or coins on either side clears both approvals, and the status says so, for example "Bob changed their side. Both of you need to approve again."
+- The Edit my side page gets the character-sheet look of Propose trade (U68).
+- On Propose trade, "Note" shows once, and the available coins show once.
+
+### Site-wide
+
+**U79 Small site fixes.** *(site-wide)*
+- In the side menu (U61), Log out is pinned to the bottom of the panel like a footer and stays visible while the groups above scroll.
+- On the character sheet, the Recent ledger entries box has a little more space above it, and Print sheet leaves the ledger out.
+- On the character sheet, the single-card print menu (U59) opens over the page instead of being clipped inside the inventory table.
+- Static CSS and JavaScript URLs carry a version or content hash, so browsers load new styles after every update without a hard refresh.
+- The app has a favicon that fits Downtime Market, so browsers stop asking for a missing `/favicon.ico`.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
