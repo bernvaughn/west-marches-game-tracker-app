@@ -91,3 +91,9 @@ def test_reduced_motion_guards():
     base = Path(settings.BASE_DIR)
     assert "prefers-reduced-motion" in (base / "static/js/downtime_wheel.js").read_text()
     assert "prefers-reduced-motion" in (base / "static/css/areas/downtime.css").read_text()
+
+
+def test_modal_spin_waits_until_shown():
+    """A transition on a display:none modal never runs; the browser check proves the spin."""
+    js = (Path(settings.BASE_DIR) / "static/js/downtime_wheel.js").read_text()
+    assert "shown.bs.modal" in js
