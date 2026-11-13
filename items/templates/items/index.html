@@ -9,16 +9,17 @@
   {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}</p>
 {% endif %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th class="num">Value</th><th>Traits</th></tr></thead>
+  <thead><tr><th>Name</th><th class="num">Value</th><th>Rarity</th><th>Traits</th></tr></thead>
   <tbody>
   {% for i in items %}
     <tr>
       <td><a href="{% url 'items:detail' club.slug i.pk %}">{% include "items/_item_name.html" with item=i %}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}</td>
       <td class="num">{{ i.value_cp|coins }}</td>
+      <td>{{ i.get_rarity_display|default:"—" }}</td>
       <td>{{ i.traits }}</td>
     </tr>
   {% empty %}
-    {% include "components/data_table_empty.html" with cols=3 text="No items." %}
+    {% include "components/data_table_empty.html" with cols=4 text="No items." %}
   {% endfor %}
   </tbody>
 </table></div>

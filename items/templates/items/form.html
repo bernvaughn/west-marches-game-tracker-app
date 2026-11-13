@@ -16,4 +16,5 @@
 {% else %}
 {% include "components/form_layout.html" with form=form cancel_url=back_url %}
 {% endif %}
+{% load static %}<script src="{% static 'js/item_rarity.js' %}" defer></script>
 {% endblock %}
