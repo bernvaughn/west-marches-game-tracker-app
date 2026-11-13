@@ -3,6 +3,7 @@ from django.db import transaction
 
 from accounts import demo as accounts_demo
 from agent_access import demo as agent_demo
+from downtime import demo as downtime_demo
 from items import demo as items_demo
 from ledger import demo as ledger_demo
 from map import demo as map_demo
@@ -24,6 +25,7 @@ class Command(BaseCommand):
                 quests_demo,
                 map_demo,
                 ledger_demo,
+                downtime_demo,
                 agent_demo,
             ):
                 module.seed(club)
