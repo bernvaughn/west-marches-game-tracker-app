@@ -113,12 +113,15 @@ def spend(character, action, by, rng=None, *, today=None):
         if entry.coins:
             lines.append(Line(coins=entry.coins))
         lines.extend(Line(ei.item, ei.quantity) for ei in entry.items.all())
+        ledger_entry = None
         if lines:
-            ledger_record(
+            ledger_entry = ledger_record(
                 character,
                 "award",
                 lines,
                 note=f"Downtime: {action.name} - {entry.label}",
                 actor=by,
             )
-        return DowntimeResult.objects.create(character=character, action=action, entry=entry)
+        return DowntimeResult.objects.create(
+            character=character, action=action, entry=entry, ledger_entry=ledger_entry
+        )

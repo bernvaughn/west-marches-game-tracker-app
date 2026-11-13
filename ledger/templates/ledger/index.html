@@ -9,8 +9,12 @@
 {% include "components/page_header.html" with title="Club ledger" %}
 <form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3 no-print">
   {% for field in form %}
+  {% if field.field.widget.input_type == "checkbox" %}
+  <div class="form-check mb-2">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+  {% else %}
   <div><label class="form-label small mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
   {{ field }}</div>
+  {% endif %}
   {% endfor %}
   <button class="btn btn-primary" type="submit">Filter</button>
   <a class="btn btn-outline-secondary" href="{% url 'ledger:index' club.slug %}">Clear</a>
@@ -35,7 +39,7 @@
       </ul>
     </td>
     <td>{{ e.get_kind_display }} (#{{ e.id }}){% if e.reverses_id %} <span class="wm-badge wm-badge--neutral">reverses #{{ e.reverses_id }}</span>{% endif %}</td>
-    <td>{{ e.note }}</td>
+    <td>{% include "ledger/_note.html" %}</td>
     <td>{% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}{% if e.via_agent %} {% include "components/badge.html" with text="agent" %}{% endif %}</td>
     <td>
       {% if e.shop_id %}<a href="{% url 'shops:detail' club.slug e.shop_id %}">{{ e.shop.name }}</a>{% endif %}

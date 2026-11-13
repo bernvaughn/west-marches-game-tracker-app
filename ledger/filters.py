@@ -11,7 +11,7 @@ from player_characters.models import Character
 
 from .models import LedgerEntry
 
-FIELDS = ("character", "player", "kind", "item", "recorded_by", "date_from", "date_to")
+FIELDS = ("character", "player", "kind", "item", "recorded_by", "date_from", "date_to", "downtime")
 
 
 class LedgerFilterForm(forms.Form):
@@ -22,6 +22,8 @@ class LedgerFilterForm(forms.Form):
     recorded_by = forms.ModelChoiceField(get_user_model().objects.none(), required=False)
     date_from = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
     date_to = forms.DateField(required=False, widget=forms.DateInput(attrs={"type": "date"}))
+
+    downtime = forms.BooleanField(required=False, label="Downtime only")
 
     def __init__(self, data, club):
         super().__init__(data or None)
@@ -39,6 +41,9 @@ class LedgerFilterForm(forms.Form):
         self.fields["date_from"].label = "From"
         self.fields["date_to"].label = "To"
         for f in self.fields.values():
+            if isinstance(f, forms.BooleanField):
+                f.widget.attrs["class"] = "form-check-input"
+                continue
             cls = (
                 "form-select"
                 if isinstance(f, (forms.ModelChoiceField, forms.ChoiceField))
@@ -55,7 +60,7 @@ class LedgerFilterForm(forms.Form):
             if name in self.errors:
                 continue
             value = self.cleaned_data.get(name)
-            if value not in (None, ""):
+            if value not in (None, "", False):
                 cleaned[name] = value
         return cleaned
 
@@ -75,6 +80,8 @@ class LedgerFilterForm(forms.Form):
             qs = qs.filter(date__gte=v["date_from"])
         if "date_to" in v:
             qs = qs.filter(date__lte=v["date_to"])
+        if "downtime" in v:
+            qs = qs.filter(downtime_result__isnull=False)
         return qs
 
     def querystring(self):

@@ -134,6 +134,13 @@ class DowntimeResult(models.Model):
     entry = models.ForeignKey(
         DowntimeEntry, null=True, blank=True, on_delete=models.SET_NULL, related_name="results"
     )
+    ledger_entry = models.OneToOneField(
+        "ledger.LedgerEntry",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="downtime_result",
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     objects = ClubScopedManager()

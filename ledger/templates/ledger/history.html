@@ -11,7 +11,7 @@
   <tr>
     <td>{{ e.date|date:"Y-m-d" }}</td>
     <td>{{ e.get_kind_display }} (#{{ e.id }}){% if e.reverses_id %} <span class="wm-badge wm-badge--neutral">reverses #{{ e.reverses_id }}</span>{% endif %}</td>
-    <td>{{ e.note }}</td>
+    <td>{% include "ledger/_note.html" %}</td>
     <td>
       <ul class="wm-ledger-lines">
         {% for line in e.lines.all %}

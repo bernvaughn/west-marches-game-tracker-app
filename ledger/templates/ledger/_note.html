@@ -1,0 +1,1 @@
+{% if e.downtime_result %}<a href="{% url 'downtime:result' club.slug e.downtime_result.pk %}">Downtime: {{ e.downtime_result.action.name }}</a>{% else %}{{ e.note }}{% endif %}
