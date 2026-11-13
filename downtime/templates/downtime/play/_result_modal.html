@@ -1,0 +1,10 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}{{ result.action.name }}{% endblock %}
+{% block body %}
+{% if wheel %}{% include "downtime/play/_wheel.html" with json_id="downtime-wheel-data-modal" %}{% endif %}
+{% include "downtime/play/_result_body.html" %}
+{% endblock %}
+{% block footer %}
+<a class="btn btn-primary" href="{% url 'downtime:play' request.club.slug %}">Back to Downtime</a>
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+{% endblock %}

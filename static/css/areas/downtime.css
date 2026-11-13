@@ -1,0 +1,12 @@
+/* Downtime wheel (D3) */
+.wm-wheel { max-width: 320px; margin: 0 auto 1rem; }
+.wm-wheel svg { width: 100%; height: auto; display: block; }
+.wm-wheel-disc { transform-origin: 0 0; transform-box: view-box; }
+.wm-wheel-label { fill: #fff; font-size: 7px; pointer-events: none; }
+.wm-wheel-pointer { fill: var(--wm-text, #222); stroke: #fff; stroke-width: 1; }
+.wm-wheel-legend li { display: flex; gap: .4rem; align-items: center; }
+.wm-wheel-swatch { width: .9rem; height: .9rem; border-radius: 2px; flex: none; }
+.wm-wheel-result[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wm-wheel-disc { transition: none !important; }
+}

@@ -1,0 +1,8 @@
+{% load coins %}
+<div class="wm-wheel-result" data-wheel-result aria-live="polite" tabindex="-1">
+  <h2 class="h4">{% if entry %}{{ entry.label }}{% else %}No reward{% endif %}</h2>
+  {% if entry.coins %}<p>{{ entry.coins|coins }}</p>{% endif %}
+  {% for ei in items %}<p>{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}</p>{% endfor %}
+  {% if entry and not entry.coins and not items %}<p class="text-muted">Nothing this time.</p>{% endif %}
+  <p>{{ result.character.name }} now has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>
+</div>

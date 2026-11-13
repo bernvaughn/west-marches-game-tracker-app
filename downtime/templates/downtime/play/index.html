@@ -1,7 +1,9 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins static %}
 {% block title %}Downtime{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
+<script src="{% static 'js/downtime_wheel.js' %}" defer></script>
 {% include "components/page_header.html" with title="Downtime" subtitle="Spend downtime points on an action." %}
 {% if character %}
 <p class="wm-downtime-balance">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>
@@ -23,7 +25,7 @@
       </li>
       {% endfor %}
     </ul>
-    <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}">{% csrf_token %}
+    <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
       <button class="btn btn-primary" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Spend {{ card.action.cost }} point{{ card.action.cost|pluralize }}</button>
       {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
     </form>
