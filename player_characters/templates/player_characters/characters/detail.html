@@ -8,16 +8,16 @@
 </ol></nav>
 {% if can_view %}
 <div class="wm-toolbar no-print" role="toolbar" aria-label="Sheet actions">
-  {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}
+  {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}
   {% if can_adjust %}
-    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:adjust' club.slug character.pk %}">Adjust</a>
-    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:consume' club.slug character.pk %}">Consume</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:adjust' club.slug character.pk %}" data-wm-tooltip title="Add or remove coins and items, for example loot from a session or a correction.">Adjust</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:consume' club.slug character.pk %}" data-wm-tooltip title="Mark items as lost or used up, based on what happened during the session.">Consume</a>
   {% endif %}
-  {% if can_transfer %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:transfer' club.slug character.pk %}">Transfer</a>{% endif %}
-  {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}">Hand over</a>{% endif %}
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}">History</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}">Print item cards</a>
-  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
+  {% if can_transfer %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:transfer' club.slug character.pk %}" data-wm-tooltip title="Move items or coins from this character to another of your characters.">Transfer</a>{% endif %}
+  {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}" data-wm-tooltip title="Give this character to another player.">Hand over</a>{% endif %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">History</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
+  <button class="btn btn-sm btn-primary" type="button" data-wm-tooltip title="Print this character sheet in black and white." onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
 </div>
 {% endif %}
 <article class="wm-sheet">
@@ -53,7 +53,7 @@
     <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-description">
       <h2 class="wm-sheet-box-title" id="sheet-description">Description</h2>
       {% if character.description %}{{ character.description|linebreaks }}
-      {% else %}<p class="wm-sheet-note">No description yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}">Edit</a>{% endif %}</p>{% endif %}
+      {% else %}<p class="wm-sheet-note">No description yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}</p>{% endif %}
     </section>
     <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-items">
       <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
@@ -62,7 +62,7 @@
         {% url 'characters:shop_toggle' club.slug character.pk as toggle_url %}
         <form method="post" action="{{ toggle_url }}" hx-post="{{ toggle_url }}" hx-trigger="change" class="d-flex flex-wrap align-items-center gap-2">
           {% csrf_token %}
-          <div class="form-check form-switch">
+          <div class="form-check form-switch" data-wm-tooltip title="List your junk in your own stall on the street for other players to buy.">
             <input class="form-check-input" type="checkbox" role="switch" name="shop_open" id="shop-open"{% if character.shop_open %} checked{% endif %}>
             <label class="form-check-label" for="shop-open">Sell my junk in my shop</label>
           </div>
@@ -87,9 +87,9 @@
             {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
             {% url 'characters:print_item' club.slug character.pk r.item.pk as print_url %}
             <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ r.item.name }}">
-              <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark as junk" aria-label="Mark as junk">{% include "components/icon.html" with name="tag" %}</a>
+              <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Set aside items to sell later, in shops or your own stall." aria-label="Mark as junk">{% include "components/icon.html" with name="tag" %}</a>
               <div class="btn-group btn-group-sm" role="group">
-                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print card" aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
+                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print this one item's card, as a full page or in one spot of a card sheet." aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
                 <ul class="dropdown-menu dropdown-menu-end">
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=full">Full page</a></li>
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=grid">Grid spot</a></li>
@@ -116,7 +116,7 @@
         <li class="wm-sheet-note">No entries yet.</li>
       {% endfor %}
       </ul>
-      <a class="no-print" href="{% url 'ledger:character_history' club.slug character.pk %}">Full ledger</a>
+      <a class="no-print" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">Full ledger</a>
     </section>
   </div>
   {% else %}
