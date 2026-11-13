@@ -8,7 +8,7 @@ from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 from shops.forms.manage import ShopForm, StockAddForm, StockEditForm
 from shops.models import Shop, ShopStock
-from shops.services import open_shops, percent_price
+from shops.services import open_shops, ordered_shops, percent_price
 
 
 def _back(club_slug, shop):
@@ -17,7 +17,7 @@ def _back(club_slug, shop):
 
 @club_admin_required
 def shop_list(request, club_slug):
-    shops = club_queryset(request, Shop).annotate(stock_count=Count("stock"))
+    shops = ordered_shops(club_queryset(request, Shop)).annotate(stock_count=Count("stock"))
     open_ids = set(open_shops(request.club, timezone.localdate()).values_list("pk", flat=True))
     rows = [(shop, shop.pk in open_ids) for shop in shops]
     return render(request, "shops/manage/list.html", {"rows": rows})

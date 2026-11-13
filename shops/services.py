@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.db.models.functions import Lower
 
 from shops.models import Shop, ShopStock
 
@@ -23,6 +24,18 @@ def buy_price(shop, item):
     else:
         percent = shop.buy_percent
     return percent_price(item.value_cp, percent)
+
+
+SHOP_TIEBREAK = (Lower("name"), Lower("keeper_name"), "id")
+
+
+def ordered_shops(qs):
+    """Street order: position, then name, keeper name (case-insensitive), id."""
+    return qs.order_by("street_position", *SHOP_TIEBREAK)
+
+
+def shop_sort_key(shop):
+    return (shop.street_position, shop.name.casefold(), shop.keeper_name.casefold(), shop.id)
 
 
 def open_shops(club, today):
