@@ -1,5 +1,6 @@
 <article class="wm-slip">
-  <h2>{{ slip.name }}</h2>
+  <span class="wm-slip-mark" aria-hidden="true">{% include "components/icon.html" with name="hourglass-split" %}</span>
+  <h2{% if slip.name|length > 20 %} class="wm-slip-name--long wm-slip-name--xlong"{% elif slip.name|length > 13 %} class="wm-slip-name--long"{% endif %}>{{ slip.name }}</h2>
   <p class="wm-slip-player">{{ slip.player }}</p>
   <ul>
     <li>Pronouns: {{ slip.pronouns }}</li>

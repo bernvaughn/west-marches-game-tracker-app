@@ -1,5 +1,6 @@
 from django.db.models.functions import Lower
 from django.shortcuts import render
+from django.urls import reverse
 
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_queryset
@@ -36,6 +37,14 @@ def _slip(c):
     }
 
 
+def _back_link(request, qs, club_slug):
+    """Back to the sheet when sent from one (and the id is visible to the user), else to slips."""
+    raw = request.GET.get("character", "")
+    if request.GET.get("from") == "sheet" and raw.isdigit() and qs.filter(pk=int(raw)).exists():
+        return reverse("characters:detail", args=[club_slug, int(raw)]), "Back to sheet"
+    return reverse("characters:slips", args=[club_slug]), "Back to slips"
+
+
 @club_member_required
 def slips(request, club_slug):
     qs = slip_queryset(request)
@@ -51,4 +60,9 @@ def slips_print(request, club_slug):
     chosen = sorted(form.cleaned_data["characters"], key=lambda c: c.name.lower())
     items = [_slip(c) for c in chosen]
     sheets = [items[i : i + SLIPS_PER_SHEET] for i in range(0, len(items), SLIPS_PER_SHEET)]
-    return render(request, T + "slips_print.html", {"sheets": sheets})
+    back_url, back_label = _back_link(request, qs, club_slug)
+    return render(
+        request,
+        T + "slips_print.html",
+        {"sheets": sheets, "back_url": back_url, "back_label": back_label},
+    )
