@@ -83,7 +83,7 @@ def test_stall_page_lists_items_with_buy(login, club, seller, buyer, item):
     resp = login(buyer.owner.user).get(stall(club, seller))
     body = resp.content.decode()
     assert resp.status_code == 200
-    assert "Aria&#x27;s shop" in body or "Aria's shop" in body
+    assert "Aria&#x27;s stall" in body or "Aria's stall" in body
     assert item.name in body
     assert buy_url(club, seller, item) in body
     assert "Your inventory" in body

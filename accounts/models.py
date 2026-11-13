@@ -47,6 +47,15 @@ class Club(models.Model):
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True)
     created = models.DateTimeField(auto_now_add=True)
+    street_min_gap = models.PositiveSmallIntegerField(
+        "Minimum empty buildings between shops", default=0
+    )
+    street_max_gap = models.PositiveSmallIntegerField(
+        "Maximum empty buildings between shops", default=2
+    )
+    street_stall_gap = models.PositiveSmallIntegerField(
+        "Minimum empty buildings before player stalls", default=1
+    )
 
     class Meta:
         ordering = ["name"]

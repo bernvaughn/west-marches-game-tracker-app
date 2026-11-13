@@ -2,7 +2,7 @@
 {% block title %}Shops{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Shops" %}
-{% if shops %}
+{% if shops or stalls %}
 {% include "shops/browse/_street.html" %}
 {% else %}
 {% include "components/empty_state.html" with text="No shops are open today." icon="shop" %}

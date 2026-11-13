@@ -1,6 +1,7 @@
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from accounts.models import Club
 from items.models import Item
 from shops.models import Shop, ShopStock
 
@@ -81,3 +82,16 @@ class StockEditForm(_StockPercentMixin, forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._setup_percent()
+
+
+class StreetSettingsForm(forms.ModelForm):
+    class Meta:
+        model = Club
+        fields = ["street_min_gap", "street_max_gap", "street_stall_gap"]
+
+    def clean(self):
+        data = super().clean()
+        low, high = data.get("street_min_gap"), data.get("street_max_gap")
+        if low is not None and high is not None and high < low:
+            self.add_error("street_max_gap", "The maximum can't be lower than the minimum.")
+        return data

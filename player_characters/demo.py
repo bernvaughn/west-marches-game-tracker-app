@@ -4,7 +4,7 @@ from ledger import demo as ledger_demo
 from ledger.models import LedgerEntry
 from ledger.services import Line, record
 
-from .models import Character
+from .models import Character, JunkMark
 
 CHARACTERS = [
     ("alice@example.com", "Aria Windrunner", 5),
@@ -28,6 +28,7 @@ def seed(club):
             character.level = level
             character.save(update_fields=["level"])
     _give_gear(club)
+    _open_demo_stall(club)
 
 
 def _give_gear(club):
@@ -42,3 +43,17 @@ def _give_gear(club):
         if not lines:  # items are seeded separately; skip if they are not there yet
             continue
         record(character, "award", lines, note=GEAR_NOTE, actor=gm)
+
+
+def _open_demo_stall(club):
+    """Borin sells two spare torches. Aria's switch stays off for the walk-through."""
+    borin = Character.objects.filter(club=club, name="Borin Stonefist").first()
+    torch = Item.objects.filter(club=club, name="Torch").first()
+    if borin is None or torch is None:
+        return
+    _, created = JunkMark.objects.get_or_create(
+        character=borin, item=torch, defaults={"quantity": 2}
+    )
+    if created:  # only on first create, so a user's later change survives a re-run
+        borin.shop_open = True
+        borin.save(update_fields=["shop_open"])

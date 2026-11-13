@@ -6,6 +6,7 @@
 .wm-shop-banner--ember, .wm-shop-card--ember { --wm-shop-tint: var(--wm-shop-ember-soft); --wm-shop-edge: var(--wm-shop-ember-deep); }
 .wm-shop-banner--ocean, .wm-shop-card--ocean { --wm-shop-tint: var(--wm-shop-ocean-soft); --wm-shop-edge: var(--wm-shop-ocean-deep); }
 .wm-shop-banner--violet, .wm-shop-card--violet { --wm-shop-tint: var(--wm-shop-violet-soft); --wm-shop-edge: var(--wm-shop-violet-deep); }
+.wm-shop-banner--stall, .wm-street-lot--stall { --wm-shop-tint: var(--wm-stall-soft); --wm-shop-edge: var(--wm-stall-deep); }
 .wm-shop-banner--slate, .wm-shop-card--slate { --wm-shop-tint: var(--wm-shop-slate-soft); --wm-shop-edge: var(--wm-shop-slate-deep); }
 
 /* ---- Shop list ---- */
