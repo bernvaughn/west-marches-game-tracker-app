@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from .models import Club, SiteSettings
 
 
@@ -14,3 +16,7 @@ def clubs(request):
         "club": getattr(request, "club", None),
         "donate_url": SiteSettings.load().donate_url,
     }
+
+
+def app_name(request):
+    return {"APP_NAME": settings.APP_NAME, "APP_TAGLINE": settings.APP_TAGLINE}

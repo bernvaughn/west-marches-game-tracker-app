@@ -25,7 +25,7 @@ __all__ = ["AgentContext", "ToolError", "agent_tool", "get_agent_context", "mcp_
 server = MCPServer(
     "west-marches",
     instructions=(
-        "Tools for one West Marches club. You can look up characters and items and propose "
+        "Tools for one Downtime Market club. You can look up characters and items and propose "
         "changes. Nothing you propose changes a balance until a game master confirms it."
     ),
 )
