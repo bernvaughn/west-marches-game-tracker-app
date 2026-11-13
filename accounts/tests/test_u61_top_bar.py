@@ -79,3 +79,17 @@ def test_no_club_user_gets_panel_and_logout(login, player):
 def test_site_admin_without_club_sees_site_links(login, site_admin):
     p = panel(login(site_admin).get(reverse("home")).content.decode())
     assert reverse("site_clubs") in p and reverse("site_settings") in p
+
+
+def test_nowrap_beats_bootstrap_flex_wrap_inherit(login, club, player):
+    """Bootstrap sets flex-wrap: inherit at (0,2,0); our nowrap rule must match it."""
+    import re
+    from pathlib import Path
+
+    from django.conf import settings
+
+    b = bar(home(login, player, club))
+    assert re.match(r'<nav class="site-header[^>]*>\s*<div class="container-fluid wm-topbar"', b)
+    css = (Path(settings.BASE_DIR) / "static/css/components.css").read_text()
+    rule = re.search(r"\.site-header > \.wm-topbar \{([^}]*)\}", css)
+    assert rule and "flex-wrap: nowrap" in rule.group(1)
