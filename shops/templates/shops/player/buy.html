@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Buy from {{ seller.name }}{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Buy from "|add:seller.name back_url=stall_url back_label="Back to "|add:seller.name|add:"'s shop" %}
+{% include "components/card_open.html" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {% include "shops/player/_confirm_body.html" %}
+  {% if buyer and can_buy %}<div class="wm-form-actions"><button class="btn btn-primary" type="submit">Buy as {{ buyer.name }}</button></div>{% endif %}
+</form>
+{% include "components/card_close.html" %}
+{% endblock %}

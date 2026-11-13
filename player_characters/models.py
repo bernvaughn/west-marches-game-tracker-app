@@ -22,6 +22,7 @@ class Character(models.Model):
         validators=[MinValueValidator(1)],
         help_text="Optional. Whole number from 1.",
     )
+    shop_open = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     objects = ClubScopedManager()

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import browse, buy, manage, rotations, sell, sell_junk
+from .views import browse, buy, manage, player_shop, rotations, sell, sell_junk
 
 app_name = "shops"
 urlpatterns = [
@@ -10,6 +10,12 @@ urlpatterns = [
     path("<int:shop_id>/buy/<int:stock_id>/", buy.buy, name="buy"),
     path("<int:shop_id>/sell/<int:item_id>/", sell.sell_item, name="sell_item"),
     path("<int:shop_id>/sell-junk/", sell_junk.sell_junk, name="sell_junk"),
+    path("stall/<int:character_id>/", player_shop.player_shop, name="player_shop"),
+    path(
+        "stall/<int:character_id>/buy/<int:item_id>/",
+        player_shop.buy,
+        name="player_shop_buy",
+    ),
     path("manage/", manage.shop_list, name="manage_list"),
     path("manage/new/", manage.shop_create, name="manage_create"),
     path("manage/<int:shop_id>/", manage.shop_edit, name="manage_edit"),

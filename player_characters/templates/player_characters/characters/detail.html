@@ -50,6 +50,20 @@
     </section>
     <section class="wm-sheet-box wm-sheet-wide" aria-labelledby="sheet-items">
       <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
+      {% if can_view %}
+      <div class="no-print wm-sheet-shop">
+        {% url 'characters:shop_toggle' club.slug character.pk as toggle_url %}
+        <form method="post" action="{{ toggle_url }}" hx-post="{{ toggle_url }}" hx-trigger="change" class="d-flex flex-wrap align-items-center gap-2">
+          {% csrf_token %}
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" name="shop_open" id="shop-open"{% if character.shop_open %} checked{% endif %}>
+            <label class="form-check-label" for="shop-open">Sell my junk in my shop</label>
+          </div>
+          <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Save</button></noscript>
+        </form>
+        {% if character.shop_open %}<p class="wm-sheet-note">Listed in your shop: <a href="{% url 'shops:player_shop' club.slug character.pk %}">{{ shop_listed }} item{{ shop_listed|pluralize }}</a></p>{% endif %}
+      </div>
+      {% endif %}
       {% if rows %}
       <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
         <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num">In open trades</th>{% endif %}<th class="num">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>

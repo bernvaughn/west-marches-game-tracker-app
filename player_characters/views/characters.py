@@ -22,6 +22,7 @@ from ..character_forms import CharacterForm, HandoverForm
 from ..inventory import coin_summary, inventory_rows
 from ..junk import junk_rows, junk_value
 from ..models import Character, Trade
+from ..player_shop import listed_quantity
 from ..selection import selected_character
 from ..trade_services import OPEN
 
@@ -137,6 +138,8 @@ def detail(request, club_slug, pk):
         ctx["junk_value"] = junk_value(character, junk)
         needs = needed_by_open_quests(character) if junk else {}
         ctx["quest_needs"] = {pk: needs[pk] for pk in ctx["junk"] if pk in needs}
+        if character.shop_open:
+            ctx["shop_listed"] = listed_quantity(character)
         ctx["recent_entries"] = (
             LedgerEntry.objects.filter(character=character)
             .select_related("created_by")
