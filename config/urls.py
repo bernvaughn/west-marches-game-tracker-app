@@ -14,6 +14,7 @@ club_patterns = [
     path("ledger/", include("ledger.urls")),
     path("map/", include("map.urls")),
     path("quests/", include("quests.urls")),
+    path("downtime/", include("downtime.urls")),
     path("agent/", include("agent_access.urls")),
 ]
 

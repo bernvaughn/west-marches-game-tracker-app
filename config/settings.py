@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "ledger",
     "map",
     "quests",
+    "downtime",
     "agent_access",
 ]
 

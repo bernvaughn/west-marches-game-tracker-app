@@ -30,6 +30,12 @@ erDiagram
     LOCATION ||--o{ ENCOUNTER : "happens at"
     CLUB ||--o{ XP_LEVEL : sets
     CHARACTER ||--o{ MAP_REQUEST : asks
+    CHARACTER ||--o{ DOWNTIME_POINT_ENTRY : holds
+    CLUB ||--o{ DOWNTIME_ACTION : offers
+    DOWNTIME_ACTION ||--o{ DOWNTIME_ENTRY : "rewards with"
+    DOWNTIME_ENTRY ||--o{ DOWNTIME_ENTRY_ITEM : gives
+    CHARACTER ||--o{ DOWNTIME_RESULT : gets
+    CHARACTER }o--o{ DOWNTIME_POINT_REQUEST : "asked for"
     CHARACTER ||--o{ LOCATION_CREDIT : makes
     LOCATION ||--o{ LOCATION_CREDIT : "progress on"
     HEX_MAP ||--o{ TILE_VISIT : records
@@ -91,6 +97,15 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **Quest requirement**: an item and a quantity a player must turn in. All requirements must be met in one turn-in, and the items are always used up.
 - **Quest reward**: an item and quantity, or an amount of coins. A quest can have several.
 - **Quest completion**: a quest, a character, and a date. The limits are counted from these. Completing one writes ledger entries for the turn-in and the reward.
+
+### downtime
+
+- **Downtime point entry**: a character, a change in points (positive or negative), a note, a date, a kind (award, remove, spend, request), who made it, and a free-text source such as "result:12". Append-only. The balance is the sum of the changes and never goes below zero.
+- **Downtime action**: belongs to a club. Name, description, a cost in points (at least 1), and a start and end date, with the same live rules as quests.
+- **Downtime entry**: one possible reward of an action. A label, a weight (at least 1) that sets its chance, an amount of coins, and an order.
+- **Downtime entry item**: an item and a quantity (at least 1) that an entry gives.
+- **Downtime result**: a character, the action they spent points on, and the entry that came up.
+- **Downtime point request**: a club, the member who asked, the characters, the points (at least 1), a note, a status (pending, approved, declined), and who decided and when.
 
 ### agent_access
 
