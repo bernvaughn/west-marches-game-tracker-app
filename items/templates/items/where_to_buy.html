@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Where to buy {{ item.name }}{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Where to buy "|add:item.name %}
+{% include "items/_where_to_buy_body.html" %}
+<p class="mt-3"><a href="{% url 'items:index' club.slug %}">Back to items</a></p>
+{% endblock %}

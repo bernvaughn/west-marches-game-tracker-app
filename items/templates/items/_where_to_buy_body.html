@@ -1,0 +1,35 @@
+{% load coins %}
+{% if offers %}
+{% if offers.shops %}
+<h3 class="h6">Shops</h3>
+<table class="table table-sm wm-data-table">
+  <thead><tr><th>Shop</th><th class="num">Price</th><th class="num">Quantity</th></tr></thead>
+  <tbody>
+  {% for o in offers.shops %}
+    <tr>
+      <td><a href="{{ o.url }}">{% if o.shop.symbol %}<span class="wm-item-symbol" aria-hidden="true">{{ o.shop.symbol }}</span> {% endif %}{{ o.shop.name }}</a></td>
+      <td class="num">{{ o.price|coins }}</td>
+      <td class="num">{% if o.quantity is None %}Unlimited{% else %}{{ o.quantity }}{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% if offers.stalls %}
+<h3 class="h6">Player stalls</h3>
+<table class="table table-sm wm-data-table">
+  <thead><tr><th>Stall</th><th class="num">Base value</th><th class="num">Quantity</th></tr></thead>
+  <tbody>
+  {% for o in offers.stalls %}
+    <tr>
+      <td><a href="{{ o.url }}">{{ o.character.name }}</a>{% if o.is_own %} {% include "components/badge.html" with status="info" text="your stall" %}{% endif %}</td>
+      <td class="num">{{ o.price|coins }}</td>
+      <td class="num">{{ o.quantity }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% else %}
+<p class="text-muted mb-0">Not for sale anywhere today.</p>
+{% endif %}
