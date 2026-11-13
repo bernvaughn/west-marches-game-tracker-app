@@ -1,7 +1,8 @@
 """Sweep every demo page for browser problems.
 
 Usage:
-    uv run python scripts/console_sweep.py [--pages 'shops-*'] [--width 1280]
+    uv run python scripts/console_sweep.py [--pages 'shops-*']
+        [--width 1280 | --widths 1920,1280,768,390 | --audit]
 
 The tool builds a fresh SQLite database, runs `seed_demo`, starts the dev server
 and visits each page in `screenshot_pages.py` as its role. It also opens every
@@ -26,14 +27,20 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from scripts.screenshots import _free_port, _wait_for  # noqa: E402
+from scripts.screenshots import (  # noqa: E402
+    AUDIT_WIDTHS,
+    HEIGHTS,
+    _free_port,
+    _wait_for,
+    parse_widths,
+)
 
 MAX_MODALS = 12
 LOG_MARKERS = ("Traceback", "Internal Server Error", " ERROR ", "Not Found:", "Bad Request:")
 
 
 def _login(browser, base, email, password, width):
-    ctx = browser.new_context(viewport={"width": width, "height": 800})
+    ctx = browser.new_context(viewport={"width": width, "height": HEIGHTS.get(width, 800)})
     if email:
         pg = ctx.new_page()
         pg.goto(f"{base}/accounts/login/")
@@ -104,11 +111,16 @@ def _open_modals(page, base, path, problems, label):
     if page.locator("form.wm-sell-form").count():
         if opened:
             page.goto(base + path, wait_until="load")
-        page.locator("form.wm-sell-form [type=submit]").first.click()
+        # Fill the max quantity: one above the junk count opens the confirm modal. A smaller
+        # one sells at once, which would change the seed.
+        form = page.locator("form.wm-sell-form").first
+        qty = form.locator("input[type=number]").first
+        qty.fill(qty.get_attribute("max") or "1")
+        form.locator("[type=submit]").first.click()
         _wait_modal(page, problems, label, "sell confirm modal")
 
 
-def sweep(pages_glob="*", width=1280) -> list[str]:
+def sweep(pages_glob="*", width=1280, widths=None) -> list[str]:
     """Return a list of problem strings. An empty list means a clean sweep."""
     tmp = Path(tempfile.mkdtemp(prefix="sweep-db-"))
     env = {
@@ -166,28 +178,35 @@ def sweep(pages_glob="*", width=1280) -> list[str]:
 
             with sync_playwright() as pw:
                 browser = pw.chromium.launch()
-                contexts = {}
-                for p in pages:
-                    if p.role not in contexts:
-                        contexts[p.role] = _login(
-                            browser, base, ROLES[p.role], DEMO_PASSWORD, width
+                for w in widths or (width,):
+                    contexts = {}
+                    for p in pages:
+                        if p.role not in contexts:
+                            contexts[p.role] = _login(
+                                browser, base, ROLES[p.role], DEMO_PASSWORD, w
+                            )
+                        if widths and p.audit_widths and w not in p.audit_widths:
+                            continue
+                        page = contexts[p.role].new_page()
+                        label = f"{p.name} ({p.role})" + (
+                            f" @{w}" if widths and len(widths) > 1 else ""
                         )
-                    page = contexts[p.role].new_page()
-                    label = f"{p.name} ({p.role})"
-                    _watch(page, problems, label)
-                    try:
-                        resp = page.goto(base + urls[p.name], wait_until="networkidle")
-                        if resp is None or resp.status != 200:
-                            problems.append(f"{label}: status {resp.status if resp else None}")
-                        else:
-                            if p.action == "menu_open":
-                                page.click(".navbar-toggler")
-                                page.wait_for_timeout(300)
-                            _open_modals(page, base, urls[p.name], problems, label)
-                    except Exception as exc:
-                        problems.append(f"{label}: {type(exc).__name__}: {exc}")
-                    finally:
-                        page.close()
+                        _watch(page, problems, label)
+                        try:
+                            resp = page.goto(base + urls[p.name], wait_until="networkidle")
+                            if resp is None or resp.status != 200:
+                                problems.append(f"{label}: status {resp.status if resp else None}")
+                            else:
+                                if p.action == "menu_open":
+                                    page.click(".navbar-toggler")
+                                    page.wait_for_timeout(300)
+                                _open_modals(page, base, urls[p.name], problems, label)
+                        except Exception as exc:
+                            problems.append(f"{label}: {type(exc).__name__}: {exc}")
+                        finally:
+                            page.close()
+                    for ctx in contexts.values():
+                        ctx.close()
                 browser.close()
         finally:
             server.terminate()
@@ -202,9 +221,12 @@ def sweep(pages_glob="*", width=1280) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--pages", default="*")
-    ap.add_argument("--width", type=int, default=1280)
+    group = ap.add_mutually_exclusive_group()
+    group.add_argument("--width", type=int, default=1280)
+    group.add_argument("--widths", type=parse_widths, help="comma list, e.g. 1920,1280,768,390")
+    group.add_argument("--audit", action="store_true", help="the same as the audit widths")
     args = ap.parse_args()
-    problems = sweep(args.pages, args.width)
+    problems = sweep(args.pages, args.width, AUDIT_WIDTHS if args.audit else args.widths)
     for line in problems:
         print(line)
     print(f"Done: {len(problems)} problem(s).")
