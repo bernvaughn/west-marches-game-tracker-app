@@ -33,6 +33,15 @@
   .wm-sheet-box { break-inside: avoid; margin-bottom: var(--wm-space-3); }
   .wm-sheet-full { column-span: all; }
 }
+/* U80: sheet page layout. Combat and Description share row 1; Inventory spans row 2. */
+.wm-sheet--page { max-width: none; }
+@media screen and (min-width: 768px) {
+  .wm-sheet-layout { display: grid; grid-template-columns: 1fr 1fr; column-count: auto; column-gap: var(--wm-space-3); align-items: stretch; }
+  .wm-sheet-layout > .wm-sheet-box { margin-bottom: 0; }
+  .wm-sheet-layout > .wm-sheet-full { grid-column: 1 / -1; }
+  .wm-sheet-inventory { overflow-x: visible; background: none; }
+  .wm-sheet-inventory .wm-sheet-table { width: 100%; }
+}
 @media (max-width: 767.98px) {
   .wm-history-pager .btn { min-height: var(--wm-size-touch); display: inline-flex; align-items: center; }
   .wm-sheet-header h1 { font-size: var(--wm-text-2xl); }

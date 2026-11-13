@@ -111,9 +111,11 @@ fieldset.wm-field > legend { float: none; width: auto; padding: 0; font-size: va
 .wm-messages li { margin-bottom: var(--wm-space-2); }
 
 /* ---- Page layout ---- */
-.wm-main { padding: var(--wm-space-4); }
+.wm-main { padding: var(--wm-space-4); max-width: 72rem; margin-inline: auto; }
 @media (min-width: 576px) { .wm-main { padding: var(--wm-space-5) var(--wm-space-6); } }
 .wm-main--narrow { max-width: 72rem; margin-inline: auto; }
+.wm-main--full { max-width: none; }
+@media print { .wm-main { max-width: none; } }
 .wm-page-header { margin-bottom: var(--wm-space-5); }
 .wm-page-header-row { display: flex; flex-wrap: wrap; gap: var(--wm-space-3); align-items: center; justify-content: space-between; }
 .wm-page-header h1 { margin: 0; }
