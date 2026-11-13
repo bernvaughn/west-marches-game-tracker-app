@@ -6,7 +6,7 @@
 </form>
 {% endblock %}
 {% block title %}New item{% endblock %}
-{% block body %}{% load static %}{{ form }}<script src="{% static 'js/item_rarity.js' %}"></script>{% endblock %}
+{% block body %}{% load static %}{{ form }}{% include 'items/_references_panel.html' %}<script src="{% static 'js/item_rarity.js' %}"></script>{% endblock %}
 {% block footer %}
 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
 <button class="btn btn-primary" type="submit">Create item</button>

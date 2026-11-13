@@ -1,11 +1,11 @@
 from .models import Item
 
 ITEMS = [
-    ("Rope", 100, "🪢", ""),
+    ("Rope", 100, "🪢", "standard"),
     ("Healing potion", 5000, "🧪", "common"),
-    ("Torch", 1, "🔥", ""),
-    ("Longsword", 1500, "🗡\ufe0f", ""),
-    ("Wolf pelt", 200, "🐺", ""),
+    ("Torch", 1, "🔥", "trivial"),
+    ("Longsword", 1500, "🗡\ufe0f", "fine"),
+    ("Wolf pelt", 200, "🐺", "standard"),
     ("Moonstone amulet", 25000, "🌙", "uncommon"),
 ]
 

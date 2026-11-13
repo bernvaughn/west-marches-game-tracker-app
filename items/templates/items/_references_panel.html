@@ -1,0 +1,11 @@
+<div class="wm-references" data-references-panel
+     hx-get="{% url 'items:references' club.slug %}"
+     hx-trigger="load, change from:closest form, input from:closest form delay:300ms, search from:closest form"
+     hx-include="closest form"
+     hx-target="#item-references"
+     hx-swap="innerHTML"
+     {% if item %}hx-vals='{"exclude": "{{ item.pk }}"}'{% endif %}>
+  <h3 class="h6">Reference items</h3>
+  <input type="search" name="ref_q" class="form-control form-control-sm" placeholder="Search items by name" aria-label="Search reference items" data-ref-search autocomplete="off">
+  <div id="item-references" class="mt-2">{% include "items/_references.html" %}</div>
+</div>
