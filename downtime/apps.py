@@ -14,4 +14,5 @@ class DowntimeConfig(AppConfig):
         reg(
             "town", "Downtime", "downtime:play", None, 35, icon="hourglass-split", shortcut_order=35
         )
+        reg("admin", "Agenda", "downtime:agenda", is_admin, 54)
         reg("admin", "Downtime actions", "downtime:actions", is_admin, 70)

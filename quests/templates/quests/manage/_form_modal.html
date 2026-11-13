@@ -1,0 +1,23 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ request.get_full_path }}" hx-post="{{ request.get_full_path }}" hx-target="#app-modal .modal-content" class="wm-form">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{% if quest %}Edit {{ quest.name }}{% else %}New quest{% endif %}{% endblock %}
+{% block body %}
+{{ form }}
+<h3>Requirements</h3>
+{{ reqs.management_form }}
+{{ reqs.non_form_errors }}
+{% for f in reqs %}<fieldset class="wm-quest-row">{{ f.non_field_errors }}{{ f }}</fieldset>{% endfor %}
+<h3>Rewards</h3>
+{{ rews.management_form }}
+{{ rews.non_form_errors }}
+{% for f in rews %}<fieldset class="wm-quest-row">{{ f.non_field_errors }}{{ f }}</fieldset>{% endfor %}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Save</button>
+{% endblock %}

@@ -1,10 +1,15 @@
+import json
+from datetime import date
+
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404
 from quests.forms import QuestForm, RequirementFormSet, RewardFormSet
@@ -32,12 +37,22 @@ def quest_list(request, club_slug):
     return render(request, "quests/manage/list.html", {"rows": rows})
 
 
+def _date_param(request):
+    try:
+        return date.fromisoformat(request.GET.get("date", ""))
+    except ValueError:
+        return None
+
+
 def _form_view(request, quest):
     club = request.club
     instance = quest or Quest(club=club)
+    initial = {}
+    if quest is None and (day := _date_param(request)):
+        initial["start_date"] = day
     kwargs = {"instance": instance, "form_kwargs": {"club": club}}
     data = request.POST if request.method == "POST" else None
-    form = QuestForm(data, instance=instance, club=club)
+    form = QuestForm(data, instance=instance, club=club, initial=initial)
     reqs = RequirementFormSet(data, prefix="req", **kwargs)
     rews = RewardFormSet(data, prefix="rew", **kwargs)
     if request.method == "POST":
@@ -50,9 +65,13 @@ def _form_view(request, quest):
                 reqs.save()
                 rews.save()
             messages.success(request, f"Saved quest {saved.name}.")
+            if is_htmx(request):
+                trigger = json.dumps({"appModalClose": True, "agendaChanged": True})
+                return HttpResponse(status=204, headers={"HX-Trigger": trigger})
             return redirect("quests:manage", club_slug=club.slug)
-    return render(
+    return render_modal_or_page(
         request,
+        "quests/manage/_form_modal.html",
         "quests/manage/form.html",
         {"form": form, "reqs": reqs, "rews": rews, "quest": quest},
     )

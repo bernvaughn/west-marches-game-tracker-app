@@ -1,0 +1,6 @@
+<p>{% if day %}Add something on {{ day|date:"j F Y" }}:{% else %}What do you want to add?{% endif %}</p>
+<div class="d-grid gap-2">
+  {% url 'shops:rotation_create' club.slug as u1 %}<a class="btn btn-outline-secondary" href="{{ u1 }}{{ date_query }}" hx-get="{{ u1 }}{{ date_query }}" hx-target="#app-modal .modal-content" data-app-modal>Shop rotation</a>
+  {% url 'quests:create' club.slug as u2 %}<a class="btn btn-outline-secondary" href="{{ u2 }}{{ date_query }}" hx-get="{{ u2 }}{{ date_query }}" hx-target="#app-modal .modal-content" data-app-modal>Quest</a>
+  {% url 'downtime:agenda_action_create' club.slug as u3 %}<a class="btn btn-outline-secondary" href="{{ u3 }}{{ date_query }}" hx-get="{{ u3 }}{{ date_query }}" hx-target="#app-modal .modal-content" data-app-modal>Downtime action</a>
+</div>
