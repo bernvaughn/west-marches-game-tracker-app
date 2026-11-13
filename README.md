@@ -26,6 +26,10 @@ Open http://127.0.0.1:8000/ and sign in with a demo login. The password for all 
 
 Run the checks with `uv run pytest` and `uv run ruff check`.
 
+The browser console guard is slow and needs Chromium, so `uv run pytest` skips it.
+Run it with `uv run playwright install chromium` once, then `uv run pytest -m browser`.
+For a list of problems per page, run `uv run python scripts/console_sweep.py`.
+
 ### Agent access
 
 `seed_demo` also creates a local agent token and a pending batch, so you can try the MCP endpoint with the MCP Inspector:

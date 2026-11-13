@@ -24,8 +24,8 @@ package = false
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
-markers = ["story(id): user story id"]
-addopts = "--strict-markers"
+markers = ["story(id): user story id", "browser: needs Chromium; run with -m browser"]
+addopts = "--strict-markers -m \"not browser\""
 
 [tool.ruff]
 target-version = "py312"

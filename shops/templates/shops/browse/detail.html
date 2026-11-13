@@ -27,7 +27,7 @@
     </div>
   </div>
 </div>
-<div id="stock" class="wm-shop-counter" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange from:document [document.visibilityState === 'visible']" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
+<div id="stock" class="wm-shop-counter" hx-get="{% url 'shops:stock_fragment' club.slug shop.id %}" hx-trigger="shopStockChanged from:body, every 5s [document.visibilityState === 'visible'], visibilitychange[document.visibilityState === 'visible'] from:document" hx-swap="innerHTML">{% include "shops/browse/_stock.html" %}</div>
 {% include "shops/browse/_your_inventory.html" %}
 <script src="{% static 'js/shop_banner.js' %}" defer></script>
 {% endblock %}
