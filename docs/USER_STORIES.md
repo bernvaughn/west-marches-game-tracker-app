@@ -596,6 +596,13 @@ From using the build after round 8 (U69–U79, D1–D4). Kept as built: the spin
 - In a character's history and the club ledger (U50), an entry from a downtime reward reads, for example, "Downtime: Work at a bakery", and links to the result.
 - The club ledger can be filtered to downtime entries.
 
+### Branding
+
+**U85 A Downtime Market wordmark.** As anyone, I want the app's name to have its own distinctive look everywhere it appears, so Downtime Market feels like a brand. *(site-wide, player_characters)*
+- "Downtime Market" uses one distinctive display font, chosen for this: Uncial Antiqua, an open-licence (SIL OFL) fantasy font that stays readable. It is self-hosted with the app's other fonts, not loaded from a third-party site.
+- It is used wherever the name appears: the side menu header (U61), the sign-in, signed-out and password pages (U65), and the item cards. Page text and headings keep their current fonts.
+- Each printed item card (U44, U82) has a small "Downtime Market" header at the top in the wordmark font, above the item's icon and name, and it prints well in black and white.
+
 ### Initiative
 
 **U84 A UI consistency pass.** As anyone using the app, I want every screen and workflow to look and behave consistently, so the app feels finished. *(site-wide)*
