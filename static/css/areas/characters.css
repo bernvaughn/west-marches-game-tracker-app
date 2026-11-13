@@ -119,7 +119,12 @@
 
 /* Character slips: 2 x 6 per portrait page. Inch sizes are physical paper sizes. */
 .wm-slip-sheet { display: grid; grid-template-columns: repeat(2, 3.9in); grid-auto-rows: 1.7in; width: 7.8in; margin-bottom: var(--wm-space-4); }
-.wm-slip { border: 1px dashed var(--wm-text); box-sizing: border-box; overflow: hidden; padding: 0.1in 0.15in; font-size: 0.75rem; }
-.wm-slip h2 { font-family: var(--wm-font-heading); font-size: 1.5rem; margin: 0; line-height: 1.1; }
+.wm-slip { position: relative; border: 1px dashed var(--wm-text); box-sizing: border-box; overflow: hidden; padding: 0.12in 0.16in; font-size: 0.85rem; line-height: 1.2; }
+.wm-slip::before { content: ""; position: absolute; inset: 0.05in; border: 3px double currentColor; pointer-events: none; }
+.wm-slip h2 { font-family: var(--wm-font-heading); font-size: 2.3rem; margin: 0; padding-right: 1.2em; line-height: 1.05; }
+.wm-slip h2.wm-slip-name--long { font-size: 1.7rem; overflow-wrap: anywhere; }
+.wm-slip h2.wm-slip-name--xlong { font-size: 1.25rem; }
+.wm-slip-mark { position: absolute; top: 0.12in; right: 0.16in; font-size: 1.1rem; }
 .wm-slip-player { margin: 0 0 0.05in; }
+.wm-slip li { white-space: nowrap; }
 .wm-slip ul { list-style: none; margin: 0; padding: 0; columns: 2; }
