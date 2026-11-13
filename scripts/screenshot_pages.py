@@ -157,6 +157,10 @@ def _build_pages() -> list[Page]:
         P("characters-consume", "gm", _c("characters:consume", "aria.pk")),
         P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
+        # downtime
+        P("downtime-play", "alice", lambda d: reverse("downtime:play", args=[d.slug])),
+        P("downtime-actions", "gm", lambda d: reverse("downtime:actions", args=[d.slug])),
+        P("downtime-action-new", "gm", lambda d: reverse("downtime:action_new", args=[d.slug])),
         # trades
         P("trades-index", "alice", _c("trades:index")),
         P("trades-propose", "alice", _c("trades:propose")),

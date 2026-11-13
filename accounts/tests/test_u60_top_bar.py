@@ -12,6 +12,7 @@ SHORTCUTS = {
     "Character": ("characters:mine", "character"),
     "Shops": ("shops:index", "town"),
     "Quests": ("quests:index", "town"),
+    "Downtime": ("downtime:play", "town"),
     "Trades": ("trades:index", "trades"),
     "Map": ("map:index", "map"),
 }
@@ -64,7 +65,7 @@ def test_shortcuts_have_icon_label_tooltip_outside_collapse(login, club, player)
         assert inside is False
         assert "data-wm-tooltip" in a and a["title"] == label
         assert a["href"] == reverse(name, args=[club.slug])
-    assert body.count("wm-shortcut-label") == 5
+    assert body.count("wm-shortcut-label") == 6
     assert "navbar-collapse" not in body
     assert "<svg" in body[body.index("nav-link wm-shortcut") : body.index("wm-shortcut-label")]
 
