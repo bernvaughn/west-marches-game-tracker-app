@@ -378,7 +378,7 @@ From using the build after round 5 (U54–U60) landed. Kept as built: a phone st
 - This changes U29, U34 and U60.
 
 **U62 Short gaps on the street.** As a player, I want at most two empty buildings between shops, so a big gap in street positions doesn't leave a long empty street. *(shops)*
-- Between two shops in a row, and before the first shop, at most two filler buildings appear, however far apart their street positions are. Shops keep their order by position.
+- Between two shops in a row, and before the first shop, at most two filler buildings appear, however far apart their street positions are. Shops keep their order by position. U67 turns the two into a club setting, with a minimum as well.
 - Filler after the last shop still fills the rest of the row (U54), and a second row that is all filler is fine.
 - Ties in street position are broken by shop name, then by shopkeeper name (U64).
 - This changes how U54 places shops.
@@ -421,7 +421,11 @@ Ideas from the owner while round 6 was being built.
 
 **U67 Player shops on the street.** As a player, I want player shops to look different from the club's shops and sit at the end of the street, so I can tell a player's stall from a real shopkeeper. *(shops)*
 - Player shops come after all of the club's own shops on the street, ordered by character name. Filler then pads the row as usual (U54).
-- A club admin sets "Minimum empty buildings between shops" for the club, from 0 up, starting at 0. It applies between every two neighbouring shops on the street, club and player shops alike, including between the last club shop and the first player shop. Where street positions (U62) would leave fewer empty buildings, more are added; where they would leave more, U62's cap of two still applies, unless the minimum is higher than two, in which case the minimum wins.
+- A club admin sets three street settings for the club, each a whole number from 0 up:
+  - **Minimum empty buildings between shops**, starting at 0: the fewest empty buildings between any two neighbouring shops, of any type.
+  - **Maximum empty buildings between shops**, starting at 2: the most empty buildings between any two neighbouring shops, of any type, and before the first shop. This replaces the fixed two in U62. It can't be lower than the minimum; the form says so.
+  - **Minimum empty buildings before player stalls**, starting at 1: the fewest empty buildings between the last club shop and the first player stall. Where this is higher than the maximum, it wins for that one gap.
+- Between club shops, the empty buildings come from their street positions (U62), then are raised to the minimum or lowered to the maximum. Player stalls have no street positions, so neighbouring stalls get the minimum.
 - Each player shop has its own look that is clearly not a club shop: for example a market stall with a striped awning, in one shared colour. The sign shows "<character name>'s stall".
 - A player shop's page has no shopkeeper silhouette and no keeper name. Its banner shows the character's name and the stall look, then the table of listed items with Buy buttons, and the buyer's Your inventory card (U46) below.
 - A player looking at their own character's shop sees "This is your shop", no Buy buttons, and a link to the character sheet to change what is listed.
