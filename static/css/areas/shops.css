@@ -57,7 +57,6 @@
 /* U84 S4: shop customer pages */
 .wm-shop-closed { text-align: left; margin: 0 0 var(--wm-space-3); }
 .wm-sell-form { justify-content: flex-end; }
-.wm-your-inventory td:last-child { text-align: inherit; }
 .wm-your-inventory-junk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wm-space-2) var(--wm-space-3); margin-bottom: var(--wm-space-3); }
 .wm-your-inventory-junk .wm-sheet-note { margin: 0; }
 .wm-your-inventory-name, .wm-your-inventory-coins { margin: 0 0 var(--wm-space-2); }
