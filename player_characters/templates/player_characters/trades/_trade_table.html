@@ -1,13 +1,14 @@
 {# Context: trades (queryset), empty_text. Rows link to the trade. #}
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>From</th><th>To</th><th>Status</th><th>Date</th></tr></thead>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-trade-table">
+  <colgroup><col class="wm-trade-col-from"><col class="wm-trade-col-to"><col class="wm-trade-col-status"><col class="wm-trade-col-date"></colgroup>
+  <thead><tr><th>From</th><th>To</th><th>Status</th><th class="wm-date">Date</th></tr></thead>
   <tbody>
   {% for t in trades %}
   <tr>
-    <td><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }}</a> <span class="text-body-secondary">({{ t.sender.owner.user.display_name }})</span></td>
-    <td>{{ t.receiver.name }} <span class="text-body-secondary">({{ t.receiver.owner.user.display_name }})</span></td>
+    <td><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }}</a><span class="d-block small text-body-secondary">{{ t.sender.owner.user.display_name }}</span></td>
+    <td>{{ t.receiver.name }}<span class="d-block small text-body-secondary">{{ t.receiver.owner.user.display_name }}</span></td>
     <td>{% include "player_characters/trades/_status_badge.html" %}</td>
-    <td>{{ t.created|date }}</td>
+    <td class="wm-date">{{ t.created|date }}</td>
   </tr>
   {% empty %}
   {% include "components/data_table_empty.html" with cols=4 text=empty_text %}

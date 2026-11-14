@@ -78,7 +78,7 @@ def test_selected_character_with_two_characters(login, player, club, character, 
         propose_url(club), {"from": second.pk, "to": other_character.pk}
     ).content.decode()
     assert 'name="from"' not in html and 'name="sender"' not in html
-    assert "From <strong>Aria" in html or f"From <strong>{character.name}</strong>" in html
+    assert f"From {character.name}" in html
     assert f"Propose trade as {character.name}" in html
     assert f'value="{other_character.pk}" selected' in html
 

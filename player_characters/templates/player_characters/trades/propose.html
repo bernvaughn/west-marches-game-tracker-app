@@ -7,26 +7,17 @@
 {% url 'characters:create' club.slug as create_url %}
 {% include "components/empty_state.html" with text="You have no character in this club. Create a character first." action_url=create_url action_label="New character" %}
 {% else %}
-<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
-  <li><a href="{% url 'trades:index' club.slug %}">Trades</a></li>
-  <li><span aria-current="page">Propose trade</span></li>
-</ol></nav>
-<form method="post" class="wm-form wm-trade-form">
+{% url 'trades:index' club.slug as list_url %}
+{% with from_text="From "|add:sender.name %}{% include "components/page_header.html" with title="Propose trade" subtitle=from_text back_url=list_url back_label="Back to trades" %}{% endwith %}
+<form method="post" class="wm-form wm-trade-form" novalidate>
   {% csrf_token %}
-  <article class="wm-sheet wm-trade-sheet">
-    <header class="wm-sheet-header">
-      <h1>Propose trade</h1>
-      <p>From <strong>{{ sender.name }}</strong></p>
-      {{ form.non_field_errors }}
-      {{ side_form.non_field_errors }}
-      {{ form.receiver.as_field_group }}
-    </header>
-    <div class="wm-sheet-grid">
-      <section class="wm-sheet-box wm-sheet-coins" aria-labelledby="offer-coins-title">
-        <h2 class="wm-sheet-box-title" id="offer-coins-title">Coins</h2>
-        <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
-        <p class="wm-sheet-note">Available: {{ coins.available|coins }}</p>
-        {{ side_form.coins.as_field_group }}
+  <article class="wm-sheet wm-sheet--page wm-trade-sheet">
+    {{ form.non_field_errors }}
+    {{ side_form.non_field_errors }}
+    <div class="wm-sheet-grid wm-sheet-layout">
+      <section class="wm-sheet-box" aria-labelledby="offer-to-title">
+        <h2 class="wm-sheet-box-title" id="offer-to-title">Trade with</h2>
+        {{ form.receiver.as_field_group }}
       </section>
       <section class="wm-sheet-box" aria-labelledby="offer-note-title">
         <h2 class="wm-sheet-box-title" id="offer-note-title">Note</h2>
@@ -34,7 +25,13 @@
         {{ form.note }}
         {{ form.note.errors }}
       </section>
-      <section class="wm-sheet-box wm-sheet-full" aria-labelledby="offer-items-title">
+      <section class="wm-sheet-box wm-sheet-coins wm-sheet-full" aria-labelledby="offer-coins-title">
+        <h2 class="wm-sheet-box-title" id="offer-coins-title">Coins</h2>
+        <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+        <p class="wm-sheet-note">Available: {{ coins.available|coins }}</p>
+        {{ side_form.coins.as_field_group }}
+      </section>
+      <section class="wm-sheet-box wm-sheet-full wm-sheet-inventory" aria-labelledby="offer-items-title">
         <h2 class="wm-sheet-box-title" id="offer-items-title">Inventory</h2>
         {% include "player_characters/trades/_offer_table.html" with rows=offer_rows column="Offer" %}
       </section>

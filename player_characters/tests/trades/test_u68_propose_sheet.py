@@ -25,8 +25,8 @@ def page(login, player, club, query=""):
 
 def test_header_box_and_preselect(login, player, club, stocked, other_character):
     html = page(login, player, club, f"?to={other_character.pk}")
-    assert "wm-sheet-header" in html
-    assert "From <strong>Aria" in html or f"From <strong>{stocked.name}</strong>" in html
+    assert "wm-page-header" in html
+    assert f"From {stocked.name}" in html
     assert f'<option value="{other_character.pk}" selected' in html
 
 
