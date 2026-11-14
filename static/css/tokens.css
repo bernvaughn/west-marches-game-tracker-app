@@ -100,6 +100,7 @@
   /* Bootstrap bridge */
   --bs-body-bg: var(--wm-surface);
   --bs-body-color: var(--wm-text);
+  --bs-code-color: var(--wm-text);
   --bs-body-color-rgb: 43, 38, 34;
   --bs-body-font-family: var(--wm-font-body);
   --bs-heading-color: var(--wm-text);

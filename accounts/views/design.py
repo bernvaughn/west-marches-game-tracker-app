@@ -2,6 +2,8 @@ import datetime
 
 from django import forms
 from django.shortcuts import render
+from django.template.loader import render_to_string
+from django.utils.safestring import mark_safe
 
 from ledger.coins import CoinsField
 
@@ -24,6 +26,14 @@ class DemoForm(forms.Form):
 
 class CoinDemoForm(forms.Form):
     price = CoinsField(required=False, initial=5025)
+
+
+def _demoted_sample(template, context):
+    """Render a header sample without a request (no flash is consumed) and
+    demote its h1 to an h2 styled as h1, so the page keeps a single h1."""
+    html = render_to_string(template, context)
+    html = html.replace("<h1>", '<h2 class="h1 m-0">').replace("</h1>", "</h2>")
+    return mark_safe(html)
 
 
 @site_admin_required
@@ -56,6 +66,13 @@ def design_reference(request):
         "dl_items": [("Class", "Fighter"), ("Level", 3), ("Home", "Rivermouth")],
         "breadcrumbs": [{"url": "/", "label": "Home"}, {"url": "", "label": "Design system"}],
         "secondary": [{"url": "#", "label": "Export"}],
+        "page_header_sample": _demoted_sample(
+            "accounts/design/_sample_page_header.html",
+            {"secondary": [{"url": "#", "label": "Export"}]},
+        ),
+        "page_header_pair_sample": _demoted_sample(
+            "accounts/design/_sample_page_header_pair.html", {}
+        ),
         "sprite_icons": [
             "plus-lg",
             "inbox",
