@@ -124,6 +124,8 @@
   --bs-danger-text-emphasis: var(--wm-danger);
   --bs-danger-bg-subtle: var(--wm-danger-bg);
   --bs-danger-border-subtle: #eab9b5;
+  --bs-form-invalid-color: var(--wm-danger);
+  --bs-form-invalid-border-color: var(--wm-danger);
   --bs-warning: var(--wm-warning);
   --bs-warning-rgb: 138, 90, 0;
   --bs-warning-text-emphasis: var(--wm-warning);
