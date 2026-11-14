@@ -13,4 +13,6 @@ urlpatterns = [
     path("<int:pk>/retire/", views.retire, name="retire"),
     path("<int:pk>/restore/", views.restore, name="restore"),
     path("<int:pk>/delete/", views.delete, name="delete"),
+    path("loot-cards/", views.loot_cards_picker, name="loot_cards_picker"),
+    path("loot-cards/print/", views.loot_cards_print, name="loot_cards_print"),
 ]

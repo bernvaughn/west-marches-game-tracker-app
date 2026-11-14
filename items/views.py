@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import (
+    admin_or_gm_required,
     club_admin_required,
     club_member_required,
     is_club_admin,
@@ -27,11 +28,13 @@ from .rarity import Rarity
 from .references import reference_items
 from .services import delete_or_retire
 from .usage import ownership_counts
+from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 
 
 @club_member_required
 def index(request, club_slug):
     is_admin = is_club_admin(request.user, request.club)
+    is_gm = is_game_master(request.user, request.club)
     show_retired = is_admin and request.GET.get("retired") == "1"
     items = club_queryset(request, Item)
     if not show_retired:
@@ -45,7 +48,7 @@ def index(request, club_slug):
         magic_type = ""
     items = list(items)
     for_sale = available_item_ids(request.club, timezone.localdate())
-    show_counts = is_admin or is_game_master(request.user, request.club)
+    show_counts = is_admin or is_gm
     counts = ownership_counts(request.club) if show_counts else {}
     for i in items:
         i.for_sale = i.pk in for_sale
@@ -58,6 +61,7 @@ def index(request, club_slug):
         {
             "items": items,
             "is_admin": is_admin,
+            "is_game_master": is_gm,
             "show_retired": show_retired,
             "show_counts": show_counts,
             "magic_type": magic_type,
@@ -202,3 +206,65 @@ def delete(request, club_slug, pk):
         return redirect("items:index", club_slug=request.club.slug)
     messages.warning(request, f"{name} is in use, so it was retired instead.")
     return redirect("items:detail", club_slug=request.club.slug, pk=pk)
+
+
+@admin_or_gm_required
+def loot_cards_picker(request, club_slug):
+    """Picker page for selecting catalogue items and quantities to print as loot cards."""
+    is_admin = is_club_admin(request.user, request.club)
+    show_retired = is_admin and request.GET.get("retired") == "1"
+    items = club_queryset(request, Item)
+    if not show_retired:
+        items = items.filter(retired=False)
+    q = request.GET.get("q", "").strip()
+    if q:
+        items = items.filter(name__icontains=q)
+    items = list(items)
+    return render(
+        request,
+        "items/loot_cards_picker.html",
+        {
+            "items": items,
+            "is_admin": is_admin,
+            "show_retired": show_retired,
+            "search_query": q,
+            "retired_qs": f"&retired=1" if show_retired else "",
+        },
+    )
+
+
+@admin_or_gm_required
+def loot_cards_print(request, club_slug):
+    """Print page for loot cards, reusing the U90 item card design."""
+    copies = request.GET.get("copies", "type")
+    if copies not in ("type", "item"):
+        copies = "type"
+    items = club_queryset(request, Item).filter(retired=False)
+    pairs = []
+    for item in items:
+        qty = request.GET.get(f"qty_{item.pk}", "0")
+        try:
+            qty = max(int(qty), 0)
+        except (TypeError, ValueError):
+            qty = 0
+        if qty > 0:
+            pairs.append((item, qty))
+    over = too_many(pairs, copies)
+    cards = [] if over else build_cards(pairs, copies)
+    sheets = [] if over else chunk(cards)
+    empty_cells = range((-len(cards)) % CARDS_PER_SHEET) if not over else range(0)
+    return render(
+        request,
+        "items/loot_cards_print.html",
+        {
+            "sheets": sheets,
+            "cards": cards,
+            "copies": copies,
+            "too_many": over,
+            "card_cap": CARD_CAP,
+            "printed_on": timezone.localdate(),
+            "owner": None,
+            "empty_cells": empty_cells,
+            "layout": "grid",
+        },
+    )

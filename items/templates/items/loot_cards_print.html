@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load coins static %}
+{% block title %}Print loot cards{% endblock %}
+{% block main_class %}wm-card-print{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+{% url "items:loot_cards_picker" club.slug as picker_url %}
+<div class="no-print">{% include "components/page_header.html" with title="Print loot cards" back_url=picker_url back_label="Back to picker" %}</div>
+<div class="wm-toolbar no-print" role="toolbar" aria-label="Loot card actions">
+  <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+</div>
+<p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
+
+{% if too_many %}{% include "items/_loot_too_many.html" %}{% endif %}
+
+{% for sheet in sheets %}
+<section class="wm-card-sheet">
+{% for card in sheet %}{% include "player_characters/characters/_item_card.html" with full=False %}{% endfor %}
+{% if forloop.last %}{% for _ in empty_cells %}<div class="wm-card-cell" aria-hidden="true"></div>{% endfor %}{% endif %}
+</section>
+{% empty %}
+{% if not too_many %}{% include "components/empty_state.html" with text="No items selected." %}{% endif %}
+{% endfor %}
+{% endblock %}

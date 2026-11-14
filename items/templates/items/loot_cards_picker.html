@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block title %}Print loot cards{% endblock %}
+{% block content %}
+{% url "items:index" club.slug as index_url %}
+{% include "components/page_header.html" with title="Print loot cards" back_url=index_url back_label="Back to catalogue" %}
+
+<form method="get" action="{% url 'items:loot_cards_print' club.slug %}" class="no-print">
+  <div class="mb-3">
+    <label for="id_q" class="form-label">Search</label>
+    <div class="input-group">
+      <input type="text" name="q" id="id_q" class="form-control" value="{{ search_query }}" placeholder="Filter by name">
+      {% if show_retired %}<input type="hidden" name="retired" value="1">{% endif %}
+      <input type="hidden" name="copies" id="id_copies" value="type">
+      <button class="btn btn-outline-secondary" type="button" id="btn-copies-type" onclick="document.getElementById('id_copies').value='type'; this.classList.add('active'); document.getElementById('btn-copies-item').classList.remove('active')">One card per item type</button>
+      <button class="btn btn-outline-secondary" type="button" id="btn-copies-item" onclick="document.getElementById('id_copies').value='item'; this.classList.add('active'); document.getElementById('btn-copies-type').classList.remove('active')">One card per item</button>
+    </div>
+    <div class="form-text">Choose how cards are generated. "One card per item type" creates one card per catalogue entry with a quantity. "One card per item" expands each quantity into individual cards (max 90 cards).</div>
+  </div>
+
+  <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th class="wm-col-optional">Rarity</th>
+        <th class="wm-col-optional">Magic type</th>
+        <th class="num">Value</th>
+        <th class="num" style="width: 100px;">Quantity</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for i in items %}
+      <tr>
+        <td><a href="{% url 'items:detail' club.slug i.pk %}">{% include "items/_item_name.html" with item=i %}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}</td>
+        <td class="wm-col-optional">{{ i.get_rarity_display|default:"—" }}</td>
+        <td class="wm-col-optional">{{ i.get_magic_type_display|default:"—" }}</td>
+        <td class="num">{{ i.value_cp|coins }}</td>
+        <td class="num">
+          <input type="number" name="qty_{{ i.pk }}" value="0" min="0" class="form-control form-control-sm wm-qty-input" style="width: 80px;">
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">{% include "components/empty_state.html" with text="No items." %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+
+  <div class="mt-3 no-print">
+    <button type="submit" class="btn btn-primary">{% include "components/icon.html" with name="printer" %} Print loot cards</button>
+    <a href="{{ index_url }}" class="btn btn-outline-secondary ms-2">{% include "components/icon.html" with name="arrow-left" %} Back</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const typeBtn = document.getElementById('btn-copies-type');
+  const itemBtn = document.getElementById('btn-copies-item');
+  const copiesInput = document.getElementById('id_copies');
+  if (typeBtn && itemBtn && copiesInput) {
+    const initial = copiesInput.value;
+    if (initial === 'item') {
+      itemBtn.classList.add('active');
+      typeBtn.classList.remove('active');
+    } else {
+      typeBtn.classList.add('active');
+      itemBtn.classList.remove('active');
+    }
+  }
+});
+</script>
+{% endblock %}
