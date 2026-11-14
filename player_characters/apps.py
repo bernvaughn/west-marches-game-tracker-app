@@ -22,7 +22,14 @@ class PlayerCharactersConfig(AppConfig):
         reg("character", "Character directory", "characters:directory", None, 15)
         reg("gm", "All characters", "characters:index", is_gm_or_admin, 60)
         reg(
-            "trades", "Trades", "trades:index", None, 20, icon="arrow-left-right", shortcut_order=40
+            "trades",
+            "My trades",
+            "trades:index",
+            None,
+            20,
+            icon="arrow-left-right",
+            shortcut_order=40,
+            shortcut_label="Trades",
         )
         reg("trades", "Propose trade", "trades:propose", None, 30)
         reg("character", "New character", "characters:create", None, 50)

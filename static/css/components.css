@@ -198,6 +198,7 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .wm-club-card:hover { box-shadow: var(--wm-shadow-2); border-color: var(--wm-text-muted); }
 .wm-club-card h2 { margin: 0 0 var(--wm-space-2); font-size: var(--wm-text-xl); }
 .wm-club-card h2 a { color: var(--wm-text); text-decoration: none; }
+.wm-club-open { display: flex; align-items: center; gap: var(--wm-space-1); margin: var(--wm-space-3) 0 0; color: var(--wm-accent); font-weight: 600; }
 .wm-club-card:focus-within { outline: var(--wm-focus-outline); outline-offset: 2px; }
 .wm-club-card h2 a:focus-visible { outline: none; }
 .wm-club-roles { display: flex; flex-wrap: wrap; gap: var(--wm-space-1); margin-bottom: var(--wm-space-3); }
@@ -221,7 +222,7 @@ a.wm-chip:hover { color: var(--wm-accent); }
 /* ---- Touch targets (phones) ---- */
 @media (max-width: 575.98px) {
   .btn, .btn-sm, .form-control, .form-control-sm, .form-select, .form-select-sm, .nav-link, .dropdown-item { min-height: var(--wm-size-touch); }
-  .btn, .btn-sm { display: inline-flex; align-items: center; justify-content: center; }
+  .btn, .btn-sm { display: inline-flex; align-items: center; justify-content: center; gap: var(--wm-space-1); }
   .site-header .btn { justify-content: flex-start; }
   .site-header .btn.approvals-menu, .site-header .logout .btn { justify-content: center; }
   .dropdown-item { display: flex; align-items: center; }
@@ -288,7 +289,8 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .site-header-fixed > * { min-width: 0; }
 /* When space runs out, the user name gives way first, then the club and character names. */
 .site-header .user-name { flex: 0 4 auto; min-width: 1.75rem; display: inline-flex; align-items: center; gap: var(--wm-space-1); }
-.site-header .user-name-text { flex: 0 1 auto; min-width: 0; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+.site-header .user-name-text { display: none; flex: 0 1 auto; min-width: 0; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+@media (min-width: 1400px) { .site-header .user-name-text { display: inline; } .site-header .user-name .wm-avatar { display: none; } }
 .site-header .character-selector, .site-header .character-name { flex: 0 1 auto; min-width: 3rem; }
 .site-header .site-header-fixed > .dropdown { flex: none; }
 .site-header .character-selector select { width: auto; max-width: 12rem; min-width: 0; text-overflow: ellipsis; }
@@ -299,21 +301,24 @@ a.wm-chip:hover { color: var(--wm-accent); }
 @media (max-width: 767.98px) { .wm-shortcut-rank-5 { display: none; } }
 @media (max-width: 575.98px) { .wm-shortcut-rank-4 { display: none; } }
 @media (max-width: 479.98px) { .wm-shortcut-rank-3 { display: none; } }
-@media (max-width: 399.98px) { .wm-shortcut-rank-2 { display: none; } .site-header .user-name-text { display: none; } }
+@media (max-width: 399.98px) { .wm-shortcut-rank-2 { display: none; } }
 @media (max-width: 359.98px) { .wm-shortcut-rank-1 { display: none; } }
 @media (max-width: 575.98px) {
   .site-header > .wm-topbar { gap: var(--wm-space-1); }
-  .site-header .club-name { max-width: 7rem; line-height: calc(var(--wm-size-touch) - .5rem - 2px); }
-  .site-header .character-selector select, .site-header .character-name { max-width: 7rem; }
+  .site-header .club-switcher { display: none; }
+  .site-header .character-selector select, .site-header .character-name { max-width: 9rem; }
   .site-header .approvals-menu { font-size: 0; padding-inline: .4rem; }
   .site-header .approvals-menu .badge { font-size: .75rem; }
   .site-header .approvals-menu::after { margin-left: .15rem; }
   .site-header .wm-shortcut { padding-inline: .4rem; }
 }
 @media (max-width: 359.98px) {
-  .site-header .club-name { max-width: 4.5rem; }
   .site-header .character-selector select, .site-header .character-name { max-width: 4.5rem; }
 }
+
+/* ---- Skip link (B-115) ---- */
+.wm-skip-link:focus { position: fixed; top: var(--wm-space-2); left: var(--wm-space-2); z-index: 2000; padding: var(--wm-space-2) var(--wm-space-3); background: var(--wm-surface-raised); color: var(--wm-text); border-radius: var(--wm-radius-md, .375rem); outline: 2px solid var(--wm-accent); outline-offset: 2px; width: auto; height: auto; clip: auto; }
+main:focus { outline: none; }
 
 /* ---- Side menu (U61) ---- */
 .wm-side-menu { --bs-offcanvas-width: min(20rem, 85vw); background: var(--wm-surface-raised); }

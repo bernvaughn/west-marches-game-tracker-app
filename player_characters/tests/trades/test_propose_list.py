@@ -171,5 +171,5 @@ def test_other_club_index_404(login, player, other_club):
 
 def test_nav_links(login, player, club):
     html = login(player).get(index_url(club)).content.decode()
-    assert f'href="{index_url(club)}">Trades' in html
+    assert f'href="{index_url(club)}">My trades' in html
     assert f'href="{propose_url(club)}">Propose trade' in html
