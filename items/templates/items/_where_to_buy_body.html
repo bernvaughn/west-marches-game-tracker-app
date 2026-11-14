@@ -1,8 +1,8 @@
 {% load coins %}
 {% if offers %}
 {% if offers.shops %}
-<h3 class="h6">Shops</h3>
-<table class="table table-sm wm-data-table">
+{% if offers.stalls %}<h3 class="h6">Shops</h3>{% endif %}
+<div class="wm-table-scroll"><table class="table table-sm wm-data-table">
   <thead><tr><th>Shop</th><th class="num">Price</th><th class="num">Quantity</th></tr></thead>
   <tbody>
   {% for o in offers.shops %}
@@ -13,11 +13,11 @@
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endif %}
 {% if offers.stalls %}
-<h3 class="h6">Player stalls</h3>
-<table class="table table-sm wm-data-table">
+{% if offers.shops %}<h3 class="h6">Player stalls</h3>{% endif %}
+<div class="wm-table-scroll"><table class="table table-sm wm-data-table">
   <thead><tr><th>Stall</th><th class="num">Base value</th><th class="num">Quantity</th></tr></thead>
   <tbody>
   {% for o in offers.stalls %}
@@ -28,8 +28,8 @@
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endif %}
 {% else %}
-<p class="text-muted mb-0">Not for sale anywhere today.</p>
+{% include "components/empty_state.html" with text="Not for sale anywhere today." icon="shop" %}
 {% endif %}

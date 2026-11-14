@@ -90,3 +90,19 @@
 .wm-sell-form .btn { min-height: var(--wm-size-touch); white-space: nowrap; display: inline-flex; align-items: center; gap: var(--wm-space-1); }
 .wm-sell-form .btn .coin { color: inherit; }
 .wm-your-inventory td:last-child { text-align: right; }
+
+/* ---- Item catalogue and ledger (U84 S14) ---- */
+.wm-page-actions .wm-inline-form { margin: 0; }
+.wm-item-detail dd > p:last-child { margin-bottom: 0; }
+.wm-history-pager { margin-top: var(--wm-space-3); }
+.wm-history-pager-count { color: var(--wm-text-muted, var(--bs-secondary-color)); font-size: var(--wm-text-sm); }
+.wm-ledger-filter { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: end; }
+.wm-ledger-filter-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; }
+@media (max-width: 575.98px) {
+  .wm-ledger-filter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wm-ledger-filter-actions { grid-column: 1 / -1; }
+  .wm-items-table td { height: var(--wm-size-touch); vertical-align: middle; }
+  /* Area exception to "modal_frame is full screen below sm": this small table does not need it. */
+  #app-modal .modal-dialog:has(.wm-where-to-buy) { width: auto; height: auto; min-height: 0; margin: var(--wm-space-3); max-width: none; }
+  #app-modal .modal-dialog:has(.wm-where-to-buy) .modal-content { height: auto; border-radius: var(--wm-radius-md); }
+}

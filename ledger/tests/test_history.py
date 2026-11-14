@@ -40,7 +40,7 @@ def test_row_content_and_gm_name(login, player, game_master, club, character, it
     )
     html = login(player).get(hist(club, character)).content.decode()
     html = re.sub(r"<[^>]+>", "", html)
-    for s in ("2025-01-02", "Award", "Dragon hoard", "+3 Rope", "+12 gp 5 sp", "GM"):
+    for s in ("2 Jan 2025", "Award", "Dragon hoard", "+3 Rope", "+12 gp 5 sp", "GM"):
         assert s in html
 
 
