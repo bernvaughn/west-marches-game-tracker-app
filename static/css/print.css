@@ -30,3 +30,11 @@
 
 .wm-print-btn { display: inline-flex; align-items: center; gap: var(--wm-space-1); }
 .wm-print-hint { font-size: var(--wm-text-sm); }
+
+/* U87: nothing interactive prints, on any printed page. Plain links still print as text. */
+@media print {
+  .tooltip, [role="tooltip"], .popover, button, .btn, input, select, textarea,
+  .form-check, .form-switch, .dropdown-menu, .dropdown-toggle, .modal, .modal-backdrop,
+  .offcanvas, .offcanvas-backdrop, .toast, .wm-toolbar, .wm-row-actions, .wm-skip-link,
+  [data-bs-toggle], [role="toolbar"], [role="switch"] { display: none !important; }
+}
