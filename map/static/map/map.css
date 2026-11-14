@@ -10,7 +10,7 @@
 /* 10px = COORD_FONT in map/hexgrid.py; min scale 0.8 keeps it at 8px or more. */
 .hex-coord { font-size: 10px; fill: var(--wm-text-muted); pointer-events: none; }
 .hexmap--fit { overflow: auto; }
-.hexmap--fit svg { width: 100%; height: calc(100vh - var(--hexmap-offset, 15rem)); height: calc(100dvh - var(--hexmap-offset, 15rem)); }
+.hexmap--fit svg { width: 100%; height: calc(100vh - var(--hexmap-offset, 30rem)); height: calc(100dvh - var(--hexmap-offset, 30rem)); }
 .hex-badge { fill: var(--wm-text); }
 .hex-badge-text { fill: var(--wm-surface); font-size: var(--wm-text-xs); pointer-events: none; }
 .hex-unexplored, .legend-unexplored { fill: var(--wm-danger); font-weight: bold; font-size: var(--wm-text-md); pointer-events: none; }
@@ -38,6 +38,16 @@
 .map-key { break-inside: avoid; background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); padding: var(--wm-space-3); }
 .map-key h3 { font-size: var(--wm-text-md); margin: 0 0 var(--wm-space-2); }
 .map-key p { margin-bottom: var(--wm-space-1); }
+/* M19: on wide screens the controls and legend sit beside the map, so the map gets the height. */
+.map-layout { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "controls" "map" "legend"; gap: var(--wm-space-3); }
+.map-layout > .map-controls { grid-area: controls; margin-bottom: 0; }
+.map-layout > .hexmap { grid-area: map; }
+.map-layout > .map-legend-box { grid-area: legend; }
+@media (min-width: 992px) {
+  .map-layout { grid-template-columns: minmax(0, 1fr) 15rem; grid-template-rows: auto 1fr; grid-template-areas: "map controls" "map legend"; }
+  .map-layout > .map-controls { flex-direction: column; justify-content: flex-start; }
+  .map-layout .map-legend { flex-direction: column; }
+}
 @media (max-width: 575.98px) {
   .pan-links .btn { min-height: var(--wm-size-touch); }
   .pan-links { grid-template-columns: repeat(6, auto); }
@@ -50,5 +60,6 @@
   .hexmap--fit svg { height: auto; min-width: 0 !important; min-height: 0 !important; }
   .map-frame { border: 0; box-shadow: none; }
   .map-keys { display: block; }
+  .map-layout { display: block; }
   .map-key { border: 0; padding: 0 0 var(--wm-space-2); }
 }
