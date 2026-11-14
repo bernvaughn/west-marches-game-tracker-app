@@ -117,7 +117,7 @@ def test_deleted_location_only_decline(
     gm = login(game_master)
     page = gm.get(_url("requests", club))
     assert "Location deleted" in page.content.decode()
-    assert "Approve</button>" not in page.content.decode()
+    assert _url("request_approve", club, req.pk) not in page.content.decode()
     gm.post(_url("request_approve", club, req.pk))
     req.refresh_from_db()
     assert req.status == "requested"

@@ -40,6 +40,8 @@
 .map-key p { margin-bottom: var(--wm-space-1); }
 @media (max-width: 575.98px) {
   .pan-links .btn { min-height: var(--wm-size-touch); }
+  .pan-links { grid-template-columns: repeat(6, auto); }
+  .map-frame .wm-card-body { padding: var(--wm-space-2); }
 }
 @media print {
   .site-header, .wm-toolbar, .map-controls, .map-picker, .pan-links, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }

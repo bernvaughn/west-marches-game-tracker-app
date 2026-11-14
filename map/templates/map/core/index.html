@@ -4,12 +4,11 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% if is_editor %}{% url 'map:map_create' club.slug as new_url %}{% include "components/page_header.html" with title="Maps" action_url=new_url action_label="New map" action_icon="plus-lg" %}
-{% else %}{% include "components/page_header.html" with title="Maps" %}{% endif %}
-<div class="wm-toolbar">
+{% include "components/page_header_open.html" with title="Maps" %}
 {% include "map/xp/_index_actions.html" %}
 {% include "map/requests/_index_actions.html" %}
-</div>
+{% if is_editor %}<a class="btn btn-primary" href="{% url 'map:map_create' club.slug %}">{% include "components/icon.html" with name="plus-lg" %} New map</a>{% endif %}
+{% include "components/page_header_close.html" %}
 {% if maps %}
 <ul class="wm-card-grid map-grid">
 {% for m in maps %}<li><a href="{% url 'map:detail' club.slug m.pk %}">{% include "components/icon.html" with name="map" %} {{ m.name }}</a></li>{% endfor %}
