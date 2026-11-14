@@ -4,21 +4,19 @@
 {% block content %}
 {% include "components/page_header.html" with title="Whitelist" subtitle="Emails that may sign in to this club." %}
 {% if temp_password %}{% include "accounts/_temp_password.html" %}{% endif %}
+<div class="wm-narrow-block">
 {% include "components/card_open.html" with title="Add an email" %}
-<form method="post" class="wm-form">
-  {% csrf_token %}
-  {{ form }}
-  <div class="wm-form-actions"><button type="submit" class="btn btn-primary">Add</button></div>
-</form>
+<div class="wm-whitelist-form">{% include "components/form_layout.html" with form=form submit_label="Add" %}</div>
 {% include "components/card_close.html" %}
 {% include "components/section_open.html" with title="Whitelisted emails" %}
 {% if entries %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
   <thead><tr><th>Email</th></tr></thead>
-  <tbody>{% for e in entries %}<tr><td>{{ e.email }}</td></tr>{% endfor %}</tbody>
+  <tbody>{% for e in entries %}<tr><td class="wm-email-cell">{{ e.email }}</td></tr>{% endfor %}</tbody>
 </table></div>
 {% else %}
 {% include "components/empty_state.html" with text="None yet." icon="envelope" %}
 {% endif %}
 {% include "components/section_close.html" %}
+</div>
 {% endblock %}
