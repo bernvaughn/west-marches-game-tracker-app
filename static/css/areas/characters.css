@@ -89,16 +89,25 @@
   body { background: white; color: black; font-size: 10pt; }
   .wm-sheet { max-width: none; }
   .wm-sheet-header, .wm-sheet-box, .wm-item-card { background: white; border-color: black; box-shadow: none; break-inside: avoid; }
-  .wm-sheet-header h1 { font-size: 24pt; }
-  .wm-sheet-header p, .wm-sheet-box-title, .wm-sheet-note, .wm-sheet-date { color: black; }
-  .wm-sheet-box-title { border-bottom-color: black; }
-  .wm-sheet-grid { display: block; column-count: 2; column-gap: var(--wm-space-3); }
-  .wm-sheet-box { margin-bottom: var(--wm-space-2); }
-  .wm-sheet-full { column-span: all; }
+  .wm-sheet-header { padding: 4pt 8pt; margin-bottom: 6pt; }
+  .wm-sheet-header h1 { font-size: 20pt; margin: 0; }
+  .wm-sheet-header p, .wm-sheet-box-title, .wm-sheet-note, .wm-sheet-date { color: black; font-size: 10pt; }
+  .wm-sheet-box-title { border-bottom-color: black; margin: 0 0 3pt; }
+  /* U87: same two-column box grid as the screen */
+  .wm-sheet-grid, .wm-sheet-layout { display: grid; grid-template-columns: 1fr 1fr; column-count: auto; gap: 6pt; align-items: stretch; }
+  .wm-sheet-layout > .wm-sheet-full, .wm-sheet-grid > .wm-sheet-full { grid-column: 1 / -1; column-span: none; }
+  .wm-sheet-box { margin: 0; padding: 4pt 6pt; }
+  .wm-sheet-inventory, .wm-table-scroll { overflow: visible; background: none; }
+  .wm-sheet-table { width: 100%; font-size: 10pt; }
+  .wm-sheet-table th, .wm-sheet-table td { padding: 1pt 4pt; font-size: 10pt; }
+  .wm-sheet-table td.num, .wm-sheet-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .wm-sheet-stats { font-size: 10pt; gap: 2pt 8pt; }
+  .wm-sheet-ability-abbr, .wm-sheet-ability-mod, .wm-sheet-ledger { font-size: 10pt; }
+  .wm-sheet-ability-score { font-size: 14pt; }
   .wm-sheet-coins-total { font-size: 14pt; }
   .wm-sheet-table th { background: white; color: black; }
   .wm-sheet-table tr { background: white; }
-  .wm-badge { border: 1px solid black; background: white; color: black; }
+  .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
 }
 
 /* U59: inventory row actions stay on one line */

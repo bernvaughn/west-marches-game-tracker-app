@@ -47,6 +47,7 @@
       <h2 class="wm-sheet-box-title" id="sheet-combat">Combat</h2>
       <dl class="wm-sheet-stats">
         <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Max HP</dt><dd>{% if character.max_hp is not None %}{{ character.max_hp }}{% else %}&mdash;{% endif %}</dd>
         <dt>Passive Perception</dt><dd>{{ passive_perception }}</dd>
         <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
         {% if can_view %}{% downtime_balance character as dt_points %}{% downtime_play_url club as dt_play_url %}
