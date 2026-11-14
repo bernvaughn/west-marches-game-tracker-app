@@ -2,17 +2,18 @@
 {% load accounts_tags %}
 {% block title %}People{% endblock %}
 {% block content %}
-{% include "components/page_header.html" with title="People" subtitle="Members of this club." %}
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th>Roles</th><th>Characters</th>{% if show_email %}<th>Email</th><th><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
+{% if show_email %}{% url 'accounts:whitelist' club.slug as whitelist_url %}{% endif %}
+{% include "components/page_header.html" with title="People" subtitle="Members of this club." action_url=whitelist_url action_label="Whitelist" action_icon="person-plus" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-people-table">
+  <thead><tr><th>Name</th><th>Roles</th><th>Characters</th>{% if show_email %}<th>Email</th><th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
   <tbody>
   {% for m in members %}
     <tr>
       <td>{% firstof m.user.display_name m.user %}</td>
       <td><span class="wm-badge-row">{% if m.is_club_admin %}{% include "components/badge.html" with status="danger" text="Club admin" %}{% endif %}{% if m.is_game_master %}{% include "components/badge.html" with status="warning" text="Game master" %}{% endif %}{% if not m.is_club_admin and not m.is_game_master %}{% include "components/badge.html" with status="success" text="Player" %}{% endif %}</span></td>
       <td><span class="wm-badge-row">{% for c in m.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</span></td>
-      {% if show_email %}<td>{% member_email m.user %}</td>
-      <td class="actions">{% if m.user|can_reset:request.user %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:reset_password' club.slug m.id %}">Reset password</a>{% endif %}</td>{% endif %}
+      {% if show_email %}<td class="wm-email-cell">{% member_email m.user %}</td>
+      <td class="actions">{% if m.user|can_reset:request.user %}{% firstof m.user.display_name m.user as who %}<div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ who }}"><a class="btn btn-sm btn-outline-secondary" href="{% url 'accounts:reset_password' club.slug m.id %}" data-wm-tooltip title="Reset password" aria-label="Reset password for {{ who }}">{% include "components/icon.html" with name="key" %}</a></div>{% endif %}</td>{% endif %}
     </tr>
   {% empty %}
     {% include "components/data_table_empty.html" with cols=table_cols text="No members yet." %}

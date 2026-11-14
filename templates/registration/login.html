@@ -5,8 +5,7 @@
 <div class="wm-auth-card">
   <p class="wm-auth-brand wm-wordmark">{{ APP_NAME }}</p>
   <p class="wm-auth-tagline">{{ APP_TAGLINE }}</p>
-  <h1>Log in</h1>
-  <p class="wm-page-subtitle">Sign in to see your clubs and characters.</p>
+  {% include "components/page_header.html" with title="Log in" subtitle="Sign in to see your clubs and characters." %}
   <form method="post" class="wm-form">
     {% csrf_token %}
     {{ form }}

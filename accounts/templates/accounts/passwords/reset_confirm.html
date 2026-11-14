@@ -3,7 +3,7 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% url 'accounts:index' club.slug as people_url %}
-{% include "components/page_header.html" with title="Reset password" subtitle="Confirm the reset." %}
+{% include "components/page_header.html" with title="Reset password" subtitle="Confirm the reset." back_url=people_url back_label="Back to people" %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   <div class="wm-alert-wrap">{% include "components/alert.html" with level="warning" text="They are signed out and must choose a new password." title=target.display_name|default:"this member" %}</div>

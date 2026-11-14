@@ -11,8 +11,9 @@
 .wm-auth-card { max-width: var(--wm-size-narrow); margin: var(--wm-space-6) auto; padding: var(--wm-space-5); background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-lg); box-shadow: var(--wm-shadow-1); }
 .wm-auth-brand { margin: 0 0 var(--wm-space-2); font-size: var(--wm-text-lg); color: var(--wm-accent); }
 .wm-auth-tagline { margin: 0 0 var(--wm-space-3); font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
-.wm-auth-card h1 { margin-bottom: var(--wm-space-2); }
-.wm-auth-card .wm-page-subtitle { margin-bottom: var(--wm-space-4); }
+.wm-auth-card .wm-page-header { margin-bottom: var(--wm-space-4); }
+.wm-auth-card .form-text ul { margin: var(--wm-space-1) 0 0; padding-left: var(--wm-space-4); color: var(--wm-text-muted); }
+.wm-auth-card .form-text li + li { margin-top: var(--wm-space-1); }
 .wm-auth-card .wm-form-actions .btn { flex: 1 1 100%; }
 
 /* Tables */
@@ -39,3 +40,9 @@
   .wm-data-table:has(.wm-row-link) td { vertical-align: middle; }
   .wm-data-table td a.wm-row-link { display: flex; align-items: center; min-height: var(--wm-size-touch); }
 }
+
+/* People and whitelist */
+.wm-people-table td { vertical-align: middle; }
+.wm-email-cell { overflow-wrap: anywhere; min-width: 10rem; }
+.wm-whitelist-form .form-check { padding-left: 0; display: flex; align-items: center; gap: var(--wm-space-2); }
+.wm-whitelist-form .form-check-input { float: none; margin: 0; flex: none; }
