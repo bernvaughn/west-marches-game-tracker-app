@@ -256,6 +256,8 @@ def _build_pages() -> list[Page]:
     P = Page
     pages = [
         P("login", "anon", lambda d: reverse("login")),
+        P("about", "anon", lambda d: reverse("about")),
+        P("plans", "anon", lambda d: reverse("plans")),
         P("home-alice", "alice", lambda d: reverse("home")),
         P("home-site-admin", "site_admin", lambda d: reverse("home")),
         P("password-change", "alice", lambda d: reverse("password_change")),
@@ -440,6 +442,19 @@ def _build_pages() -> list[Page]:
             lambda d: (
                 reverse("characters:print_item", args=[d.slug, d.aria.pk, d.owned_item.pk])
                 + "?layout=grid"
+            ),
+        ),
+        P(
+            "characters-print-items-per-item",
+            "alice",
+            lambda d: reverse("characters:print_items", args=[d.slug, d.aria.pk]) + "?copies=item",
+        ),
+        P(
+            "characters-print-item-grid-per-item",
+            "alice",
+            lambda d: (
+                reverse("characters:print_item", args=[d.slug, d.aria.pk, d.owned_item.pk])
+                + "?layout=grid&copies=item"
             ),
         ),
         P("characters-junk", "alice", _c("characters:junk", "aria.pk", "torch.pk")),

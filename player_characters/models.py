@@ -54,6 +54,13 @@ class Character(models.Model):
         validators=[MaxValueValidator(40)],
         help_text="Optional. Whole number from 0 to 40.",
     )
+    max_hp = models.PositiveIntegerField(
+        "Max HP",
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(1)],
+        help_text="Optional. Whole number from 1.",
+    )
     perception_bonus = models.SmallIntegerField(
         null=True,
         blank=True,

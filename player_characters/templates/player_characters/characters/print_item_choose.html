@@ -2,8 +2,17 @@
 {% block title %}Print card: {{ row.item.name }}{% endblock %}
 {% block content %}
 {% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% include "components/page_header.html" with title="Print card: "|add:row.item.name subtitle="Choose a layout." back_url=sheet_url back_label="Back to sheet" %}</div>
+<h2 class="h5">One card per item type</h2>
 <p>
-  <a class="btn btn-primary" href="?layout=full">Full page</a>
-  <a class="btn btn-outline-primary" href="?layout=grid">Grid spot</a>
+  <a class="btn btn-primary" href="?layout=full&amp;copies=type">Full page</a>
+  <a class="btn btn-outline-primary" href="?layout=grid&amp;copies=type">Grid spot</a>
 </p>
+{% if row.owned > 1 %}
+<h2 class="h5">One card per item</h2>
+<p class="text-muted">{{ row.owned }} cards, each with Qty 1 and one Used circle.</p>
+<p>
+  <a class="btn btn-primary" href="?layout=full&amp;copies=item">Full page</a>
+  <a class="btn btn-outline-primary" href="?layout=grid&amp;copies=item">Grid spot</a>
+</p>
+{% endif %}
 {% endblock %}

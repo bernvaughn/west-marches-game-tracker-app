@@ -3,7 +3,7 @@
 {% block title %}{{ hex_map.name }} ({{ q }}, {{ r }}){% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% with qs=q|stringformat:"s" rs=r|stringformat:"s" %}{% include "components/page_header.html" with title=hex_map.name|add:": ("|add:qs|add:", "|add:rs|add:")" %}{% endwith %}
+{% with qs=q|stringformat:"s" rs=r|stringformat:"s" %}{% include "components/page_header.html" with title=hex_map.name|add:": ("|add:qs|add:", "|add:rs|add:")" back_url=back_url back_label="Back to the map" %}{% endwith %}
 {% include "map/core/_picker.html" %}
-{% include "map/core/_tile_body.html" with show_back=True %}
+{% include "map/core/_tile_body.html" %}
 {% endblock %}

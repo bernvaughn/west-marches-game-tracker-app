@@ -9,12 +9,16 @@
   <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
 <p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
-{% if layout == "full" %}
-<div class="wm-card-page">{% include "player_characters/characters/_item_card.html" with full=True %}</div>
+{% include "player_characters/characters/_copies_switch.html" %}
+{% if too_many %}{% include "player_characters/characters/_too_many.html" %}
+{% elif layout == "full" %}
+{% for card in cards %}<div class="wm-card-page">{% include "player_characters/characters/_item_card.html" with full=True %}</div>{% endfor %}
 {% else %}
+{% for sheet in sheets %}
 <section class="wm-card-sheet">
-{% include "player_characters/characters/_item_card.html" %}
-{% for _ in empty_cells %}<div class="wm-card-cell" aria-hidden="true"></div>{% endfor %}
+{% for card in sheet %}{% include "player_characters/characters/_item_card.html" %}{% endfor %}
+{% if forloop.last %}{% for _ in empty_cells %}<div class="wm-card-cell" aria-hidden="true"></div>{% endfor %}{% endif %}
 </section>
+{% endfor %}
 {% endif %}
 {% endblock %}

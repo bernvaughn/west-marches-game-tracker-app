@@ -6,24 +6,26 @@
 {% include "components/page_header.html" with title="Manage quests" action_url=create_url action_label="New quest" action_icon="plus-lg" %}
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th>Start</th><th>End</th><th class="num">Max total</th><th class="num">Max per character</th><th>Status</th><th class="num">Completions</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+  <thead><tr><th>Name</th><th class="wm-date">Start</th><th class="wm-date">End</th><th class="num wm-col-optional">Max total</th><th class="num wm-col-optional">Max per character</th><th>Status</th><th class="num wm-col-optional">Completions</th><th class="actions"><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for row in rows %}
     <tr>
       <td>{{ row.quest.name }}</td>
-      <td>{{ row.quest.start_date|default:"-" }}</td>
-      <td>{{ row.quest.end_date|default:"-" }}</td>
-      <td class="num">{{ row.quest.max_completions|default:"No limit" }}</td>
-      <td class="num">{{ row.quest.max_per_character|default:"No limit" }}</td>
+      <td class="wm-date">{{ row.quest.start_date|default:"-" }}</td>
+      <td class="wm-date">{{ row.quest.end_date|default:"-" }}</td>
+      <td class="num wm-col-optional">{{ row.quest.max_completions|default:"No limit" }}</td>
+      <td class="num wm-col-optional">{{ row.quest.max_per_character|default:"No limit" }}</td>
       <td>{{ row.status }}</td>
-      <td class="num">{{ row.count }}</td>
+      <td class="num wm-col-optional">{{ row.count }}</td>
       <td class="actions">
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'quests:edit' club.slug row.quest.pk %}">Edit</a>
-        {% if not row.count %}
-        <form method="post" action="{% url 'quests:delete' club.slug row.quest.pk %}" class="wm-inline-form">{% csrf_token %}
-          <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
-        </form>
-        {% endif %}
+        <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ row.quest.name }}">
+          <a class="btn btn-sm btn-outline-secondary" href="{% url 'quests:edit' club.slug row.quest.pk %}" aria-label="Edit quest" title="Edit quest" data-wm-tooltip>{% include "components/icon.html" with name="pencil" %}</a>
+          {% if not row.count %}
+          <form method="post" action="{% url 'quests:delete' club.slug row.quest.pk %}" class="wm-inline-form">{% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Delete quest" title="Delete quest" data-wm-tooltip>{% include "components/icon.html" with name="trash" %}</button>
+          </form>
+          {% endif %}
+        </div>
       </td>
     </tr>
   {% endfor %}

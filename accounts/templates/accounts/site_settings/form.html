@@ -3,6 +3,7 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Site settings" %}
+<div class="wm-narrow-block">
 {% include "components/card_open.html" %}
 <form method="post" class="wm-form">
   {% csrf_token %}
@@ -11,4 +12,5 @@
   <div class="wm-form-actions"><button type="submit" class="btn btn-primary">Save</button></div>
 </form>
 {% include "components/card_close.html" %}
+</div>
 {% endblock %}

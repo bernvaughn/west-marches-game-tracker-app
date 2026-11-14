@@ -49,7 +49,7 @@ def test_privileged_see_all_newest_first(request, login, club, character, other_
     t = text(r)
     assert t.index("newest") < t.index("older")
     for needle in (
-        "2025-01-09",
+        "9 Jan 2025",
         "Aria",
         "Borin",
         "Player",

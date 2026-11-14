@@ -48,6 +48,10 @@
 </nav>
 {% if user.is_authenticated %}{% include "partials/side_menu.html" %}{% endif %}
 <main id="main" tabindex="-1" class="wm-main {% block main_class %}{% endblock %}">{% flash_slot %}{% block content %}{% endblock %}{% endflash_slot %}</main>
+{% block site_footer %}{% if not club %}<footer class="wm-site-footer no-print">
+  <p class="wm-site-footer-links"><a href="{% url 'about' %}">About</a> · <a href="{% url 'plans' %}">Plans</a></p>
+  {# U95: delete this line to remove the note #}<p class="wm-built-with">Built with CodeHerder</p>
+</footer>{% endif %}{% endblock %}
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>
 </html>

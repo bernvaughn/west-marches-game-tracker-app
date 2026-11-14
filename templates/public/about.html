@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="About" subtitle=APP_TAGLINE %}
+<p>{{ APP_NAME }} is a tracker for open-table club play. A club runs its games in one place.</p>
+<p>Players keep their characters, with sheets and inventories. Shops sell items, and a ledger records every coin.</p>
+<p>Game masters post quests and run downtime. The club map shows where the party has been.</p>
+<p><a href="{% url 'plans' %}">See the plans</a> · <a href="{% url 'login' %}">Log in</a></p>
+{% endblock %}

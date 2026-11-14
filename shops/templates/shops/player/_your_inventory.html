@@ -8,10 +8,10 @@
   {% if inventory_rows %}
   <div class="wm-table-scroll">
     <table class="table table-sm wm-data-table">
-      <thead><tr><th scope="col">Item</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}</tr></thead>
+      <thead><tr><th scope="col">Item</th><th scope="col" class="num">Base value</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}</tr></thead>
       <tbody>
       {% for row in inventory_rows %}
-        <tr><td>{{ row.item.name }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}</tr>
+        <tr><td>{{ row.item.name }}</td><td class="num">{{ row.item.value_cp|coins }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}</tr>
       {% endfor %}
       </tbody>
     </table>

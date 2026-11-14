@@ -1,8 +1,10 @@
 from django.urls import path
 
-from .views import clubs, design, passwords, site_settings
+from .views import clubs, design, passwords, public, site_settings
 
 urlpatterns = [
+    path("about/", public.about, name="about"),
+    path("plans/", public.plans, name="plans"),
     path("accounts/password_change/", passwords.password_change, name="password_change"),
     path("site/clubs/", clubs.club_list, name="site_clubs"),
     path("site/clubs/new/", clubs.club_new, name="site_club_new"),

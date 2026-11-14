@@ -22,7 +22,7 @@ def test_owner_sees_item_fields(login, club, player, funded, item):
     r = login(player).get(url(club, funded))
     assert r.status_code == 200
     body = r.content.decode()
-    for text in (item.name, "Quantity: 5", "A sturdy rope", "Flammable", "Fifty feet long"):
+    for text in (item.name, "Qty", "A sturdy rope", "Flammable", "Fifty feet long"):
         assert text in body
     assert "Coins:" in body
 
@@ -58,7 +58,7 @@ def test_held_items_still_shown(login, club, player, funded, item, make_open_tra
     make_open_trade(items={item: 2})
     body = login(player).get(url(club, funded)).content.decode()
     assert item.name in body
-    assert "Quantity: 5" in body
+    assert "Qty" in body
 
 
 @pytest.mark.story("U6")
@@ -86,10 +86,10 @@ def test_print_all_nine_per_sheet(login, club, player, funded):
     many_items(club, funded, 9)  # 10 items with the fixture item
     r = login(player).get(url(club, funded))
     body = r.content.decode()
-    assert body.count('class="wm-item-card"') == 10
+    assert body.count('<article class="wm-item-card wm-pass"') == 10
     assert body.count('<section class="wm-card-sheet">') == 2
     first = body.split('<section class="wm-card-sheet">')[1]
-    assert first.count('class="wm-item-card"') == 9
+    assert first.count('<article class="wm-item-card wm-pass"') == 9
     assert "player_characters/characters/_item_card.html" in [t.name for t in r.templates]
 
 
@@ -110,7 +110,7 @@ def test_print_item_layouts(login, club, player, funded, item):
     assert "wm-item-card--full" in full.content.decode()
     assert "player_characters/characters/_item_card.html" in [t.name for t in full.templates]
     grid = c.get(item_url(club, funded, item), {"layout": "grid"}).content.decode()
-    assert grid.count('class="wm-item-card"') == 1
+    assert grid.count('<article class="wm-item-card wm-pass"') == 1
     assert grid.count("wm-card-cell") == 8
     assert c.get(item_url(club, funded, item), {"layout": "bogus"}).status_code == 400
     choose = c.get(item_url(club, funded, item)).content.decode()
