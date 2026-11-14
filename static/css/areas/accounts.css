@@ -46,3 +46,9 @@
 .wm-email-cell { overflow-wrap: anywhere; min-width: 10rem; }
 .wm-whitelist-form .form-check { padding-left: 0; display: flex; align-items: center; gap: var(--wm-space-2); }
 .wm-whitelist-form .form-check-input { float: none; margin: 0; flex: none; }
+
+/* U95: public footer */
+.wm-site-footer { text-align: center; margin-top: var(--wm-space-5, 2rem); padding-bottom: 1.5rem; }
+.wm-site-footer p { margin: 0 0 .25rem; }
+.wm-built-with, .wm-site-footer-links, .wm-auth-links { font-size: var(--wm-text-sm); color: var(--wm-text-muted, #6c757d); }
+.wm-auth-links { text-align: center; margin-top: 1rem; }

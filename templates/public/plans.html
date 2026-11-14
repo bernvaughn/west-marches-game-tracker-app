@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Plans{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Plans" subtitle="Free use and a paid subscription." %}
+<div class="row row-cols-1 row-cols-md-2 g-3 mb-3">
+  {% for plan in plans %}
+  <div class="col"><section class="wm-card h-100 p-3" aria-labelledby="plan-{{ plan.key }}">
+    <h2 class="h4" id="plan-{{ plan.key }}">{{ plan.name }}</h2>
+    <p class="fw-bold">{{ plan.price }}</p>
+    <p>{{ plan.summary }}</p>
+    <dl class="mb-0">
+      {% for label, value in plan.limits %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}
+    </dl>
+  </section></div>
+  {% endfor %}
+</div>
+<p>Limits and prices are still to be decided. There is no payment yet.</p>
+<p><a href="{% url 'about' %}">About</a> · <a href="{% url 'login' %}">Log in</a></p>
+{% endblock %}
