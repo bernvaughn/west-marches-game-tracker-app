@@ -1,10 +1,10 @@
 <div class="wm-field">
   <div class="form-label mb-1" id="map-kind-label">{{ form.map_kind.label }}<span class="wm-required" aria-hidden="true">*</span></div>
-  <div class="btn-group" role="group" aria-labelledby="map-kind-label">
+  <div class="wm-map-kind"><div class="btn-group" role="group" aria-labelledby="map-kind-label">
     {% for radio in form.map_kind %}
     <input type="radio" class="btn-check" name="{{ radio.data.name }}" id="{{ radio.id_for_label }}" value="{{ radio.data.value }}"{% if radio.data.selected %} checked{% endif %} required>
     <label class="btn btn-outline-primary" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
     {% endfor %}
-  </div>
+  </div></div>
   {{ form.map_kind.errors }}
 </div>
