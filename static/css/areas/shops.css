@@ -53,3 +53,36 @@
   .wm-street-link { padding: 0; }
   .wm-street-sign { position: static; display: inline; border: 0; background: none; }
 }
+
+/* U84 S4: shop customer pages */
+.wm-shop-closed { text-align: left; margin: 0 0 var(--wm-space-3); }
+.wm-sell-form { justify-content: flex-end; }
+.wm-your-inventory td:last-child { text-align: inherit; }
+.wm-your-inventory-junk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wm-space-2) var(--wm-space-3); margin-bottom: var(--wm-space-3); }
+.wm-your-inventory-junk .wm-sheet-note { margin: 0; }
+.wm-your-inventory-name, .wm-your-inventory-coins { margin: 0 0 var(--wm-space-2); }
+@media (max-width: 575.98px) {
+  .wm-sell-form input[type="number"] { width: 3.5rem; }
+  .wm-dl.wm-shop-sums { grid-template-columns: minmax(7rem, max-content) 1fr; gap: var(--wm-space-2) var(--wm-space-4); }
+  .wm-dl.wm-shop-sums dd { margin-bottom: 0; }
+}
+
+/* ---- Shop management (U84 S5) ---- */
+.wm-street-settings-form .form-control.is-invalid { --bs-form-invalid-border-color: var(--wm-danger); background-image: none; padding-right: .75rem; }
+.wm-street-settings-form .wm-field-error { display: flex !important; }
+@media (min-width: 768px) {
+  .wm-street-settings-form { max-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--wm-space-4); }
+  /* Subgrid rows (label, input, help, error) keep the three inputs on one line, with or without an error. */
+  .wm-street-settings-form > .wm-field { display: grid; grid-row: span 4; grid-template-rows: subgrid; align-content: start; row-gap: 0; }
+  .wm-street-settings-form > .wm-field > label { align-self: end; }
+  .wm-street-settings-form > .wm-field input[type=number] { max-width: none; width: 100%; }
+  .wm-street-settings-form > :not(.wm-field) { grid-column: 1 / -1; }
+  .wm-street-settings-form > .wm-form-actions { margin-top: 0; }
+}
+@media (max-width: 575.98px) {
+  .wm-shop-picker { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--wm-space-1); }
+  .wm-shop-picker .wm-silhouette-option { padding: var(--wm-space-1); min-height: 44px; }
+  .wm-shop-picker .wm-silhouette-swatch img { height: 40px; }
+  .wm-shop-picker .wm-building { width: 40px; height: 40px; }
+  .wm-shop-picker .wm-silhouette-label { font-size: var(--wm-text-xs); overflow-wrap: break-word; }
+}

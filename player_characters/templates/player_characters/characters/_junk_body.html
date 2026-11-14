@@ -2,7 +2,7 @@
 {% if form.non_field_errors %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert"><div>{{ form.non_field_errors|join:" " }}</div></div>{% endif %}
 <p>
   <label class="form-label" for="{{ form.quantity.id_for_label }}">How many are junk?</label>
-  {{ form.quantity }}
+  <span class="wm-short-field d-block">{{ form.quantity }}</span>
   <span class="form-text">{{ form.quantity.help_text }}</span>
   {% if form.quantity.errors %}<span class="error text-danger d-block" role="alert">{{ form.quantity.errors|join:" " }}</span>{% endif %}
 </p>

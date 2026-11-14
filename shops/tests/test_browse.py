@@ -98,7 +98,7 @@ def test_look(login, player, club, shop, always_open):
     c = login(player)
     body = c.get(url("detail", club, shop.id)).content.decode()
     assert "wm-shop-banner--ember" in body
-    assert "🔥" in body
+    assert "🔥" not in body  # B-16: no stray symbol beside the heading
     assert "Marta" in body
     assert "Gruff but fair." in body
     index = c.get(url("index", club)).content.decode()

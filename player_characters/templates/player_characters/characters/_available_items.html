@@ -1,0 +1,11 @@
+{# Items the character can use. Context: available (list of item, qty), empty_text. #}
+<div class="wm-table-scroll mb-3"><table class="table table-sm wm-data-table wm-available-items">
+  <thead><tr><th scope="col">Item</th><th scope="col" class="num">Available</th></tr></thead>
+  <tbody>
+  {% for item, qty in available %}
+  <tr><td>{% include "items/_item_name.html" with item=item %}</td><td class="num">{{ qty }}</td></tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=2 text=empty_text %}
+  {% endfor %}
+  </tbody>
+</table></div>

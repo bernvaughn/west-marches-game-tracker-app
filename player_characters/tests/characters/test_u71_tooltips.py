@@ -11,7 +11,7 @@ EXPECTED = {
     "Edit": EDIT,
     "Adjust": "Add or remove coins and items, for example loot from a session or a correction.",
     "Consume": "Mark items as lost or used up, based on what happened during the session.",
-    "Transfer": "Move items or coins from this character to another of your characters.",
+    "Move items": "Move items or coins from this character to another of your characters.",
     "Hand over": "Give this character to another player.",
     "History": HISTORY,
     "Print item cards": "Print cards for all items, nine to a page, to bring to the table.",

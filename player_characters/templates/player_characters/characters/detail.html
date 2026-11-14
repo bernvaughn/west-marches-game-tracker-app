@@ -1,11 +1,9 @@
 {% extends "base.html" %}
-{% load coins downtime_points %}
+{% load coins downtime_points accounts_tags %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
-<nav class="wm-breadcrumbs no-print" aria-label="Breadcrumb"><ol>
-  <li><a href="{{ characters_url }}">Characters</a></li>
-  <li><span aria-current="page">{{ character.name }}</span></li>
-</ol></nav>
+{% url 'characters:index' club.slug as index_url %}
+{% if characters_url == index_url %}{% include "components/back_link.html" with url=characters_url label="Back to characters" %}{% else %}{% include "components/back_link.html" with url=characters_url label="Back to character directory" %}{% endif %}
 {% if can_view %}
 <div class="wm-toolbar no-print" role="toolbar" aria-label="Sheet actions">
   {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}
@@ -13,7 +11,7 @@
     <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:adjust' club.slug character.pk %}" data-wm-tooltip title="Add or remove coins and items, for example loot from a session or a correction.">Adjust</a>
     <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:consume' club.slug character.pk %}" data-wm-tooltip title="Mark items as lost or used up, based on what happened during the session.">Consume</a>
   {% endif %}
-  {% if can_transfer %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:transfer' club.slug character.pk %}" data-wm-tooltip title="Move items or coins from this character to another of your characters.">Transfer</a>{% endif %}
+  {% if can_transfer %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:transfer' club.slug character.pk %}" data-wm-tooltip title="Move items or coins from this character to another of your characters.">Move items</a>{% endif %}
   {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}" data-wm-tooltip title="Give this character to another player.">Hand over</a>{% endif %}
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">History</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
@@ -27,6 +25,7 @@
     <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %}{% if character.char_class %} &middot; {{ character.char_class }}{% endif %}{% if character.species %} &middot; {{ character.species }}{% endif %}{% if character.pronouns %} &middot; {{ character.pronouns }}{% endif %}{% if character.alignment %} &middot; {{ character.alignment }}{% endif %}</p>
     <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
   </header>
+  {% flash_messages %}
   {% if can_view %}
   <div class="wm-sheet-grid wm-sheet-layout">
     <section class="wm-sheet-box wm-sheet-full wm-sheet-coins" aria-labelledby="sheet-coins">
@@ -52,10 +51,12 @@
         <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
         {% if can_view %}{% downtime_balance character as dt_points %}{% downtime_play_url club as dt_play_url %}
         <dt>Downtime points</dt><dd>{{ dt_points }}
-          {% if dt_play_url %}<a class="no-print small" href="{{ dt_play_url }}" data-wm-tooltip title="Spend downtime points on a downtime action.">Spend</a>{% endif %}
-          {% if can_adjust %}<a class="no-print small" href="{% url 'downtime:points_award' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Give or take downtime points for this character.">Award points</a>{% endif %}
-          {% if can_request_points %}<a class="no-print small" href="{% url 'downtime:request_new' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Ask your game master for downtime points.">Request points</a>
-          <span class="no-print small text-muted d-block">Earned downtime during a session? Ask your game master for the points.</span>{% endif %}</dd>
+          <div class="wm-sheet-point-actions">
+          {% if dt_play_url %}<a class="btn btn-sm btn-outline-secondary no-print" href="{{ dt_play_url }}" data-wm-tooltip title="Spend downtime points on a downtime action.">Spend</a>{% endif %}
+          {% if can_adjust %}<a class="btn btn-sm btn-outline-secondary no-print" href="{% url 'downtime:points_award' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Give or take downtime points for this character.">Award points</a>{% endif %}
+          {% if can_request_points %}<a class="btn btn-sm btn-outline-secondary no-print" href="{% url 'downtime:request_new' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Ask your game master for downtime points.">Request points</a>{% endif %}
+          </div>
+          {% if can_request_points %}<span class="wm-sheet-help no-print small text-muted d-block">Earned downtime during a session? Ask your game master for the points.</span>{% endif %}</dd>
         {% endif %}
       </dl>
     </section>
@@ -82,7 +83,7 @@
       {% endif %}
       {% if rows %}
       <div class="wm-table-scroll wm-sheet-inventory"><table class="table table-sm wm-data-table wm-sheet-table">
-        <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num">In open trades</th>{% endif %}<th class="num">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <thead><tr><th>Item</th><th class="num">Owned</th>{% if show_held %}<th class="num wm-col-optional">In open trades</th>{% endif %}<th class="num">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         {% for r in rows %}
         <tr>
@@ -90,7 +91,7 @@
             {% for pk, qty in junk.items %}{% if pk == r.item.pk %} {% include "components/badge.html" with text="Junk" %} &times;{{ qty }}{% endif %}{% endfor %}
             {% for pk, quests in quest_needs.items %}{% if pk == r.item.pk %}<div class="wm-sheet-note">Needed for quest: {% for q in quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}{% endfor %}</td>
           <td class="num">{{ r.owned }}</td>
-          {% if show_held %}<td class="num">{{ r.held }}</td>{% endif %}
+          {% if show_held %}<td class="num wm-col-optional">{{ r.held }}</td>{% endif %}
           <td class="num">{{ r.available }}</td>
           <td class="no-print wm-row-actions-cell">
             {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
@@ -125,7 +126,7 @@
       <h2 class="wm-sheet-box-title" id="sheet-ledger">Recent ledger entries</h2>
       <ul class="wm-sheet-ledger">
       {% for e in recent_entries %}
-        <li><span class="wm-sheet-date">{{ e.date|date:"Y-m-d" }}</span> {{ e.get_kind_display }}:
+        <li><span class="wm-sheet-date">{{ e.date|date }}</span> {{ e.get_kind_display }}:
           {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
         </li>
       {% empty %}
