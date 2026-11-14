@@ -2,6 +2,7 @@ from django.db import models
 
 from accounts.scoping import ClubScopedManager
 
+from .magic_types import MagicType
 from .rarity import GROUPS
 
 
@@ -15,6 +16,7 @@ class Item(models.Model):
     traits = models.TextField(blank=True)
     details = models.TextField(blank=True)
     rarity = models.CharField(max_length=16, choices=GROUPS, blank=True)
+    magic_type = models.CharField(max_length=16, choices=MagicType.choices, blank=True)
     value_cp = models.PositiveIntegerField(default=0)
     retired = models.BooleanField(default=False)
 

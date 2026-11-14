@@ -4,6 +4,7 @@ from django.utils.html import format_html, format_html_join
 from ledger.coins import CoinsField
 
 from . import rarity
+from .magic_types import NONE_LABEL, MagicType
 from .models import Item
 
 
@@ -12,14 +13,25 @@ class ItemForm(forms.ModelForm):
 
     class Meta:
         model = Item
-        fields = ["name", "symbol", "description", "traits", "details", "rarity"]
-        field_order = ["name", "symbol", "description", "traits", "details", "rarity", "value"]
+        fields = ["name", "symbol", "description", "traits", "details", "rarity", "magic_type"]
+        field_order = [
+            "name",
+            "symbol",
+            "description",
+            "traits",
+            "details",
+            "rarity",
+            "magic_type",
+            "value",
+        ]
         widgets = {"rarity": forms.Select(attrs={"data-rarity-select": ""})}
 
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
         self.club = club
         self.fields["rarity"].choices = [("", "—"), *rarity.GROUPS]
+        self.fields["magic_type"].choices = [("", NONE_LABEL), *MagicType.choices]
+        self.fields["magic_type"].label = "Magic item type"
         self.fields["value"].help_text = format_html(
             '<span class="wm-rarity-hint" data-rarity-hint>Suggested value:{}'
             '<span data-rarity-item="special" style="display:block">'
