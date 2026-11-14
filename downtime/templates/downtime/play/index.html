@@ -22,14 +22,21 @@
       {% if card.action.description %}<p>{{ card.action.description|linebreaksbr }}</p>{% endif %}
       <p>Cost: <strong>{{ card.action.cost }}</strong> point{{ card.action.cost|pluralize }}</p>
       <h4>Possible rewards</h4>
-      <ul class="wm-downtime-rewards">
+      <div class="table-responsive">
+      <table class="wm-chalk-table wm-downtime-rewards">
+        <caption class="visually-hidden">Possible rewards for {{ card.action.name }}</caption>
+        <thead><tr><th scope="col">Outcome</th><th scope="col">Reward</th><th scope="col">Chance</th></tr></thead>
+        <tbody>
         {% for r in card.rewards %}
-        <li>{{ r.entry.label }} <span class="text-muted">({{ r.percent|floatformat:1 }}%)</span>
-          {% if r.entry.coins %}{{ r.entry.coins|coins }}{% endif %}
-          {% for ei in r.items %}{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}{% if not forloop.last %}, {% endif %}{% endfor %}
-        </li>
+        <tr>
+          <td>{{ r.entry.label }}</td>
+          <td>{% if r.entry.coins %}{{ r.entry.coins|coins }}{% endif %}{% for ei in r.items %}{% if r.entry.coins or not forloop.first %}, {% endif %}{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}{% endfor %}{% if not r.entry.coins and not r.items %}<span class="text-muted">Nothing</span>{% endif %}</td>
+          <td>{{ r.percent|floatformat:1 }}%</td>
+        </tr>
         {% endfor %}
-      </ul>
+        </tbody>
+      </table>
+      </div>
       <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
         <button class="btn wm-chalk-button" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Take the job</button>
         {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}

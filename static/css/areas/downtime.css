@@ -36,7 +36,6 @@
 .wm-chalkboard a { color: var(--wm-chalk-accent); }
 /* Coin text in chalk; the coloured dot keeps the metal cue. .coin-pp keeps its own pill. */
 .wm-chalkboard .coin-cp, .wm-chalkboard .coin-sp, .wm-chalkboard .coin-gp { color: var(--wm-chalk); }
-.wm-chalkboard .wm-downtime-rewards { padding-left: 1.1rem; }
 .wm-chalk-button { background: transparent; color: var(--wm-chalk); border: 2px solid var(--wm-chalk); font-weight: 600; }
 .wm-chalk-button:hover, .wm-chalk-button:focus-visible { background: var(--wm-chalk); color: var(--wm-slate); border-color: var(--wm-chalk); }
 .wm-chalk-button:focus-visible { outline: 3px solid var(--wm-chalk-accent); outline-offset: 2px; }
@@ -54,4 +53,21 @@
   .wm-chalk-job { border: 1px solid #000; break-inside: avoid; }
   .wm-chalk-list { grid-template-columns: 1fr; }
   .wm-chalk-button, .wm-chalk-hourglass { display: none; }
+}
+
+/* Reward entries (D8) */
+.wm-reward-entry { border: 1px solid var(--wm-border, #ccc); border-radius: var(--wm-radius-md, 6px); padding: var(--wm-space-3, 1rem); margin-bottom: var(--wm-space-3, 1rem); }
+.wm-reward-entry-head { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: flex-end; }
+.wm-reward-entry-head .wm-reward-label { flex: 1 1 14rem; }
+.wm-reward-entry-body { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--wm-border, #ccc); }
+.wm-reward-field label { display: block; font-size: .85rem; }
+.wm-reward-item { margin-bottom: .5rem; }
+
+/* Reward table on the chalkboard (D10) */
+.wm-chalk-table { width: 100%; border-collapse: collapse; color: var(--wm-chalk); background: transparent; margin-bottom: .6rem; }
+.wm-chalk-table th, .wm-chalk-table td { padding: .3rem .5rem; text-align: left; background: transparent; color: var(--wm-chalk); border-bottom: 1px dashed var(--wm-chalk-muted); vertical-align: top; }
+.wm-chalk-table th { color: var(--wm-chalk-accent); font-weight: 600; }
+@media print {
+  .wm-chalk-table th, .wm-chalk-table td { border: 1px solid #000; }
+  .wm-chalk-table tr { break-inside: avoid; }
 }

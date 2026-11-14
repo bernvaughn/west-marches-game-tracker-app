@@ -28,14 +28,15 @@ def test_empty_result_has_no_entry(club, character, action):
     assert services.spend(character, action, None).ledger_entry is None
 
 
-def test_history_and_club_ledger_label_and_link(login, club, game_master, character, spent):
+def test_history_and_club_ledger_label_no_link(login, club, game_master, character, spent):
     link = reverse("downtime:result", args=[club.slug, spent.pk])
     for url in (
         reverse("ledger:character_history", args=[club.slug, character.pk]),
         reverse("ledger:index", args=[club.slug]),
     ):
         body = login(game_master).get(url).content.decode()
-        assert f'<a href="{link}">Downtime: {spent.action.name}</a>' in body
+        assert f"Downtime: {spent.action.name}: {spent.entry.label} (" in body
+        assert link not in body
 
 
 def test_plain_award_has_no_link(login, club, game_master, character):

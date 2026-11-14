@@ -4,10 +4,8 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
 {% include "components/page_header.html" with title=result.action.name subtitle="Downtime result" %}
-{% if wheel %}{% include "downtime/play/_wheel.html" with json_id="downtime-wheel-data" %}{% endif %}
 <section class="card mb-3" id="downtime-result">
   <div class="card-body">{% include "downtime/play/_result_body.html" %}</div>
 </section>
 <a class="btn btn-outline-secondary" href="{% url 'downtime:play' club.slug %}">Back to Downtime</a>
-<script src="{% static 'js/downtime_wheel.js' %}" defer></script>
 {% endblock %}

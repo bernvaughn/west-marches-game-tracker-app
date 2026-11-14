@@ -1,1 +1,1 @@
-{% if e.downtime_result %}<a href="{% url 'downtime:result' club.slug e.downtime_result.pk %}">Downtime: {{ e.downtime_result.action.name }}</a>{% else %}{{ e.note }}{% endif %}
+{% load coins %}{% if e.downtime_result %}Downtime: {{ e.downtime_result.action.name }}{% if e.downtime_result.entry %}: {{ e.downtime_result.entry.label }}{% endif %} ({{ e|downtime_reward_text|default:"no reward" }}){% else %}{{ e.note }}{% endif %}

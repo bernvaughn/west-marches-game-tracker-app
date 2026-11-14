@@ -48,25 +48,25 @@ def play(request, club_slug):
     )
 
 
-def _result_context(res):
+def _result_context(res, spin=False):
     entry = res.entry
     items = list(entry.items.select_related("item")) if entry else []
     return {
         "result": res,
         "entry": entry,
         "items": items,
-        "wheel": wheel_payload(res),
+        "wheel": wheel_payload(res) if spin else None,
         "balance": services.balance(res.character),
         "coin_balance": ledger_services.coin_balance(res.character),
     }
 
 
-def _result_response(request, res):
+def _result_response(request, res, spin=False):
     return render_modal_or_page(
         request,
         "downtime/play/_result_modal.html",
         "downtime/play/result.html",
-        _result_context(res),
+        _result_context(res, spin),
     )
 
 
@@ -93,7 +93,7 @@ def spend(request, club_slug, pk):
         messages.error(request, str(exc))
         return _back_to_play(request)
     if is_htmx(request):
-        return _result_response(request, result)
+        return _result_response(request, result, spin=True)
     return redirect("downtime:result", club_slug=request.club.slug, pk=result.pk)
 
 
