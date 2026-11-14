@@ -1,1 +1,1 @@
-<div class="wm-silhouette-grid"{% if widget.attrs.id %} id="{{ widget.attrs.id }}"{% endif %}>{% for group, options, index in widget.optgroups %}{% for option in options %}{% include option.template_name with widget=option %}{% endfor %}{% endfor %}</div>
+<div class="wm-silhouette-grid wm-shop-picker"{% if widget.attrs.id %} id="{{ widget.attrs.id }}"{% endif %}>{% for group, options, index in widget.optgroups %}{% for option in options %}{% include option.template_name with widget=option %}{% endfor %}{% endfor %}</div>
