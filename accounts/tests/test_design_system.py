@@ -160,3 +160,4 @@ def test_no_batch_sample_or_screenshots_committed():
         if ".venv" not in p.parts and "node_modules" not in p.parts
     ]
     assert names == []
+# CI retry trigger
