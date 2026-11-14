@@ -163,7 +163,7 @@ def test_inbox_lists_granted(club, club_admin, character, msg, location, login):
         reverse("accounts:message_inbox", args=[club.slug]) + "?status=all"
     ).content.decode()
     assert "Granted" in page and "Found: Old Keep" in page and "gp" in page
-    assert "Give coins</a>" in page
+    assert 'aria-label="Give coins"' in page
 
 
 def test_permissions(club, club_admin, game_master, player, other_club, club_b_admin, msg, login):
