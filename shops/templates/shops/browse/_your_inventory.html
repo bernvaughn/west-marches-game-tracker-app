@@ -12,10 +12,10 @@
   {% if inventory_rows %}
   <div class="wm-table-scroll">
     <table class="table table-sm wm-data-table">
-      <thead><tr><th scope="col">Item</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}{% if is_open %}<th scope="col"><span class="visually-hidden">Sell</span></th>{% endif %}</tr></thead>
+      <thead><tr><th scope="col">Item</th><th scope="col" class="num">Base value</th><th scope="col">Qty</th>{% if inventory_has_holds %}<th scope="col">Available</th>{% endif %}{% if is_open %}<th scope="col"><span class="visually-hidden">Sell</span></th>{% endif %}</tr></thead>
       <tbody>
       {% for row in inventory_rows %}
-        <tr><td>{% include "items/_item_name.html" with item=row.item %}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}{% if is_open %}<td>{% if row.available %}{% url 'shops:sell_item' club.slug shop.id row.item.pk as sell_url %}<form method="post" action="{{ sell_url }}" hx-post="{{ sell_url }}" hx-target="#app-modal .modal-content" hx-select="unset" hx-swap="innerHTML" class="wm-inline-form wm-sell-form">{% csrf_token %}<input type="number" name="quantity" value="1" min="1" max="{{ row.available }}" class="form-control form-control-sm" aria-label="Quantity of {{ row.item.name }}"><button type="submit" class="btn btn-sm btn-outline-secondary">Sell for {{ row.price|coins }}</button></form>{% endif %}</td>{% endif %}</tr>
+        <tr><td>{% include "items/_item_name.html" with item=row.item %}</td><td class="num">{{ row.item.value_cp|coins }}</td><td>{{ row.owned }}</td>{% if inventory_has_holds %}<td>{{ row.available }}</td>{% endif %}{% if is_open %}<td>{% if row.available %}{% url 'shops:sell_item' club.slug shop.id row.item.pk as sell_url %}<form method="post" action="{{ sell_url }}" hx-post="{{ sell_url }}" hx-target="#app-modal .modal-content" hx-select="unset" hx-swap="innerHTML" class="wm-inline-form wm-sell-form">{% csrf_token %}<input type="number" name="quantity" value="1" min="1" max="{{ row.available }}" class="form-control form-control-sm" aria-label="Quantity of {{ row.item.name }}"><button type="submit" class="btn btn-sm btn-outline-secondary">Sell for {{ row.price|coins }}</button></form>{% endif %}</td>{% endif %}</tr>
       {% endfor %}
       </tbody>
     </table>
