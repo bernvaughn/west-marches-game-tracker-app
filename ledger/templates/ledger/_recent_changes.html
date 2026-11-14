@@ -3,7 +3,7 @@
   {% if recent %}
   <ul class="wm-compact-list">
     {% for e in recent %}
-    <li><span class="wm-sheet-date">{{ e.date|date:"Y-m-d" }}</span>
+    <li><span class="wm-sheet-date wm-date">{{ e.date|date }}</span>
       {% if e.created_by %}{{ e.created_by.display_name|default:e.created_by.email }}{% else %}System{% endif %}:
       {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
       {% if e.note %}&mdash; {{ e.note }}{% endif %}

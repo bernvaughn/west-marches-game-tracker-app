@@ -8,20 +8,19 @@
 <p>{% if show_retired %}<a href="{% url 'items:index' club.slug %}">Hide retired</a>
   {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}</p>
 {% endif %}
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th class="num">Value</th><th>Rarity</th><th>Traits</th>{% if show_counts %}<th class="num">Characters</th><th class="num">Held</th>{% endif %}<th class="actions"><span class="visually-hidden">Where to buy</span></th></tr></thead>
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-items-table">
+  <thead><tr><th>Name</th><th class="wm-col-optional">Rarity</th><th class="num">Value</th>{% if show_counts %}<th class="num wm-col-optional">Characters</th><th class="num wm-col-optional">Held</th>{% endif %}<th class="actions"><span class="visually-hidden">Where to buy</span></th></tr></thead>
   <tbody>
   {% for i in items %}
     <tr>
-      <td><a href="{% url 'items:detail' club.slug i.pk %}">{% include "items/_item_name.html" with item=i %}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}</td>
+      <td><a href="{% url 'items:detail' club.slug i.pk %}">{% include "items/_item_name.html" with item=i %}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}{% if i.traits %}<div class="small text-muted">{{ i.traits|truncatewords:12 }}</div>{% endif %}</td>
+      <td class="wm-col-optional">{{ i.get_rarity_display|default:"—" }}</td>
       <td class="num">{{ i.value_cp|coins }}</td>
-      <td>{{ i.get_rarity_display|default:"—" }}</td>
-      <td>{{ i.traits }}</td>
-      {% if show_counts %}<td class="num">{{ i.owner_count }}</td><td class="num">{{ i.held_total }}</td>{% endif %}
+      {% if show_counts %}<td class="num wm-col-optional">{{ i.owner_count }}</td><td class="num wm-col-optional">{{ i.held_total }}</td>{% endif %}
       <td class="actions">{% if i.for_sale and not i.retired %}{% url 'items:where_to_buy' club.slug i.pk as wtb_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ wtb_url }}" hx-get="{{ wtb_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Where to buy" aria-label="Where to buy {{ i.name }}">{% include "components/icon.html" with name="shop" %}</a>{% endif %}</td>
     </tr>
   {% empty %}
-    {% include "components/data_table_empty.html" with cols=5 text="No items." %}
+    {% include "components/data_table_empty.html" with cols=show_counts|yesno:"6,4" text="No items." %}
   {% endfor %}
   </tbody>
 </table></div>

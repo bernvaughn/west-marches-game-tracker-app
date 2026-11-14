@@ -7,24 +7,23 @@
 {% include "components/empty_state.html" with text="You have no character in this club." %}
 {% else %}
 {% include "components/page_header.html" with title="Club ledger" %}
-<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3 no-print">
-  {% for field in form %}
-  {% if field.field.widget.input_type == "checkbox" %}
-  <div class="form-check mb-2">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
-  {% else %}
+<form method="get" class="wm-ledger-filter mb-3 no-print">
+  {% for field in form %}{% if field.field.widget.input_type != "checkbox" %}
   <div><label class="form-label small mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
   {{ field }}</div>
-  {% endif %}
-  {% endfor %}
-  <button class="btn btn-primary" type="submit">Filter</button>
-  <a class="btn btn-outline-secondary" href="{% url 'ledger:index' club.slug %}">Clear</a>
+  {% endif %}{% endfor %}
+  <div class="wm-ledger-filter-actions">
+    {% for field in form %}{% if field.field.widget.input_type == "checkbox" %}<div class="form-check mb-0">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>{% endif %}{% endfor %}
+    <button class="btn btn-primary" type="submit">Filter</button>
+    <a class="btn btn-outline-secondary" href="{% url 'ledger:index' club.slug %}">Clear</a>
+  </div>
 </form>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
   <thead><tr><th>Date</th><th>Character</th><th>Player</th><th>Changes</th><th>Kind</th><th>Note</th><th>Recorded by</th><th>Source</th></tr></thead>
   <tbody>
   {% for e in entries %}
   <tr>
-    <td>{{ e.date|date:"Y-m-d" }}</td>
+    <td class="wm-date">{{ e.date|date }}</td>
     <td>{% url 'characters:detail' club.slug e.character_id as sheet_url %}{% include "components/character_chip.html" with name=e.character.name url=sheet_url %}
       <a class="small" href="{% url 'ledger:character_history' club.slug e.character_id %}?from=ledger{% if filter_qs %}&amp;{{ filter_qs }}{% endif %}{% if page_obj.number > 1 %}&amp;ledger_page={{ page_obj.number }}{% endif %}">History</a></td>
     <td>{{ e.character.owner.user.display_name }}</td>
@@ -56,7 +55,7 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <nav class="wm-history-pager" aria-label="Pages">
   {% if page_obj.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring page=page_obj.previous_page_number %}">Previous</a>{% endif %}
-  <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  <span class="wm-history-pager-count">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
   {% if page_obj.has_next %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}
 </nav>
 {% endif %}
