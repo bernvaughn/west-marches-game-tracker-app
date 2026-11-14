@@ -21,6 +21,10 @@
       <h3>{{ card.action.name }}</h3>
       {% if card.action.description %}<p>{{ card.action.description|linebreaksbr }}</p>{% endif %}
       <p>Cost: <strong>{{ card.action.cost }}</strong> point{{ card.action.cost|pluralize }}</p>
+      <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
+        <button class="btn wm-chalk-button" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Take the job</button>
+        {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
+      </form>
       <h4>Possible rewards</h4>
       <div class="table-responsive">
       <table class="wm-chalk-table wm-downtime-rewards">
@@ -37,10 +41,6 @@
         </tbody>
       </table>
       </div>
-      <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
-        <button class="btn wm-chalk-button" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Take the job</button>
-        {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
-      </form>
     </li>
     {% endfor %}
   </ul>

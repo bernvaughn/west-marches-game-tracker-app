@@ -3,7 +3,7 @@
     <g class="wm-wheel-disc" style="transform: rotate({{ wheel.final_rotation }}deg)">
       {% for s in wheel.slices %}
       <path d="{{ s.path }}" fill="{{ s.colour }}" stroke="#fff" stroke-width="1"{% if forloop.counter0 == wheel.chosen %} data-chosen-slice{% endif %}/>
-      <text x="{{ s.label_x }}" y="{{ s.label_y }}" transform="rotate({{ s.label_rotate }} {{ s.label_x }} {{ s.label_y }})" class="wm-wheel-label" text-anchor="middle" dominant-baseline="middle">{{ s.short }}</text>
+      <text x="{{ s.label_x }}" y="{{ s.label_y }}" transform="rotate({{ s.label_rotate }} {{ s.label_x }} {{ s.label_y }})" class="wm-wheel-label" text-anchor="middle" dominant-baseline="middle">{{ s.label|truncatechars:18 }}</text>
       {% endfor %}
     </g>
     <polygon class="wm-wheel-pointer" points="-8,-110 8,-110 0,-92"/>
