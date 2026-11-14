@@ -169,7 +169,7 @@ def test_plain_buy_page_and_modal(login, club, seller, buyer, item):
     c = login(buyer.owner.user)
     page = c.get(buy_url(club, seller, item)).content.decode()
     assert "<html" in page and "Buying as <strong>Borin" in page
-    assert "Remaining: 3 listed" in page
+    assert "<dt>Remaining</dt><dd>3 listed</dd>" in page
     frag = c.get(buy_url(club, seller, item), **HX).content.decode()
     assert "<html" not in frag and "modal-header" in frag
 
@@ -337,3 +337,11 @@ def test_toggle_cross_club(login, club, other_club, character):
     Membership.objects.create(user=user, club=other_club)
     url = reverse("characters:shop_toggle", args=[other_club.slug, character.pk])
     assert login(user).post(url, {"shop_open": "on"}).status_code == 404
+
+
+def test_stall_heading_above_banner_and_own_alert_before_banner(login, club, seller):
+    page = login(seller.owner.user).get(stall(club, seller)).content.decode()
+    banner = page.index("wm-player-shop-banner")
+    assert page.index("wm-page-header") < page.index("<h1") < banner
+    assert page.count("<h1") == 1
+    assert page.index("This is your shop.") < banner

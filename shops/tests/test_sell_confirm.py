@@ -31,7 +31,7 @@ def sales():
 def test_non_junk_asks_to_confirm(club, player, login, character, shop, always_open, loot):
     r = post(login(player), club, shop, character, loot, 1)
     assert r.status_code == 200
-    assert "This item isn't marked as junk." in r.content.decode()
+    assert "is not marked as junk. If you sell it, the shop still pays" in r.content.decode()
     assert sales() == 0
 
 
@@ -91,7 +91,7 @@ def test_over_junk_quantity_confirms(club, player, login, character, shop, alway
     set_junk(character, loot, 2, player)
     r = post(login(player), club, shop, character, loot, 3)
     assert r.status_code == 200
-    assert b"Only 2 of this item are marked as junk." in r.content
+    assert b"Only 2 of these are marked as junk. All 3 sell at" in r.content
     assert sales() == 0
 
 

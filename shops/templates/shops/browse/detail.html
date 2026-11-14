@@ -2,11 +2,7 @@
 {% load static %}
 {% block title %}{{ shop.name }}{% endblock %}
 {% block content %}
-<div class="wm-shop-title-row">
-  <span class="wm-shop-title-side" aria-hidden="true">{% if shop.symbol %}<span class="wm-shop-symbol">{{ shop.symbol }}</span>{% endif %}</span>
-  <h1 class="wm-shop-title">{{ shop.name }}</h1>
-  <span class="wm-shop-title-side" aria-hidden="true"></span>
-</div>
+{% include "components/page_header.html" with title=shop.name %}
 {% if not is_open %}<p class="wm-shop-closed">{% include "components/badge.html" with status="warning" text="Closed" %}</p>{% endif %}
 <div class="wm-shop-banner wm-shop-banner--{{ shop.color }}">
   <figure class="wm-shop-keeper-figure">
