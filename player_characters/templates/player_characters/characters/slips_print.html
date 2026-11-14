@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Character slips{% endblock %}
 {% block main_class %}wm-slip-print{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+<div class="no-print">{% include "components/back_link.html" with url=back_url label=back_label %}</div>
 <div class="wm-toolbar no-print" role="toolbar" aria-label="Slip actions">
-  {% include "components/back_link.html" with url=back_url label=back_label %}
-  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+  <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
 <p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
 {% for sheet in sheets %}

@@ -1,17 +1,14 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins static %}
 {% block title %}Items of {{ character.name }}{% endblock %}
 {% block main_class %}wm-card-print{% endblock %}
 {% block content %}
-{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
-  {% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
-  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% with c=coins.owned|coins_text %}{% with coins_sub="Coins: "|add:c %}{% include "components/page_header.html" with title=character.name subtitle=coins_sub back_url=sheet_url back_label="Back to sheet" %}{% endwith %}{% endwith %}</div>
+<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
+  <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
 <p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
-<header class="wm-sheet-header no-print">
-  <h1>{{ character.name }}</h1>
-  <p>Coins: {{ coins.owned|coins }}</p>
-</header>
 {% for sheet in sheets %}
 <section class="wm-card-sheet">
 {% for row in sheet %}{% include "player_characters/characters/_item_card.html" %}{% endfor %}

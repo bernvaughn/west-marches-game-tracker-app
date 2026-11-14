@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Card: {{ row.item.name }}{% endblock %}
 {% block main_class %}wm-card-print{% endblock %}
 {% block content %}
-{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
-  {% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
-  <button class="btn btn-sm btn-primary" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}</div>
+<div class="wm-toolbar no-print" role="toolbar" aria-label="Item card actions">
+  <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
 <p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
 {% if layout == "full" %}
