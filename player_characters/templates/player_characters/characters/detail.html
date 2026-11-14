@@ -101,8 +101,14 @@
               <div class="btn-group btn-group-sm" role="group">
                 <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print this one item's card, as a full page or in one spot of a card sheet." aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full">Full page</a></li>
-                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid">Grid spot</a></li>
+                  <li><h6 class="dropdown-header">One card per item type</h6></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full&amp;copies=type">Full page</a></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&amp;copies=type">Grid spot</a></li>
+                  {% if r.owned > 1 %}
+                  <li><h6 class="dropdown-header">One card per item</h6></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full&amp;copies=item">Full page</a></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&amp;copies=item">Grid spot</a></li>
+                  {% endif %}
                 </ul>
               </div>
             </div>
