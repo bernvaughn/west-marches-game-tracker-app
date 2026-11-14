@@ -26,12 +26,13 @@ def test_reward_entries_render_in_blocks(login, club, club_admin, action, entrie
 def test_note_plain_text_and_result_page_no_draw(
     login, club, game_master, character, action, entries
 ):
+    entries[1].delete()  # Drop "Nothing" so the draw always gives a reward.
     services.award(character, 1)
     res = services.spend(character, action, None)
     c = login(game_master)
     n = (DowntimeResult.objects.count(), LedgerEntry.objects.count())
     body = c.get(reverse("ledger:index", args=[club.slug])).content.decode()
-    assert f"Downtime: {action.name}: {res.entry.label} (" in body
+    assert f"Downtime: {action.name}: {res.entry.label} (+1 sp)" in body
     assert reverse("downtime:result", args=[club.slug, res.pk]) not in body
     page = c.get(reverse("downtime:result", args=[club.slug, res.pk])).content.decode()
     assert res.entry.label in page and "data-downtime-wheel" not in page
