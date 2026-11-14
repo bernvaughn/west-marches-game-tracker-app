@@ -61,20 +61,13 @@ def test_slip_fields(login, club, player, character):
     character.save()
     body = login(player).get(printurl(club, character)).content.decode()
     assert player.display_name in body
-    for t in (
-        character.name,
-        "Pronouns: she/her",
-        "Passive Perception: 13",
-        "Level: 4",
-        "Class: Rogue",
-        "Species: Elf",
-    ):
+    for t in (character.name, "she/her", "Passive Perc.", "13", "Rogue", "Elf", "Level"):
         assert t in body
 
 
-def test_blank_shows_dash(login, club, player, character):
+def test_blank_pill_left_out(login, club, player, character):
     body = login(player).get(printurl(club, character)).content.decode()
-    assert "Passive Perception: —" in body
+    assert "Passive Perc." not in body
 
 
 def test_thirteen_make_two_sheets(login, club, game_master, character):
@@ -84,15 +77,15 @@ def test_thirteen_make_two_sheets(login, club, game_master, character):
     body = login(game_master).get(printurl(club, *chars)).content.decode()
     assert body.count('<section class="wm-slip-sheet">') == 2
     sheets = body.split('<section class="wm-slip-sheet">')[1:]
-    assert [s.count('<article class="wm-slip">') for s in sheets] == [12, 1]
+    assert [s.count('<article class="wm-slip wm-pass">') for s in sheets] == [12, 1]
 
 
 def test_css():
     p = (Path(settings.BASE_DIR) / "static" / "css" / "print.css").read_text()
     assert re.search(r"@page slips\s*{[^}]*margin:\s*0", p)
     assert re.search(r"\.wm-slip-sheet[^}]*page:\s*slips", p)
-    c = (Path(settings.BASE_DIR) / "static" / "css" / "areas" / "characters.css").read_text()
-    assert re.search(r"\.wm-slip\s*{[^}]*dashed", c)
+    c = (Path(settings.BASE_DIR) / "static" / "css" / "components.css").read_text()
+    assert re.search(r"\.wm-pass-divider\s*{[^}]*dashed", c)
 
 
 def test_sheet_link(login, club, player, character):

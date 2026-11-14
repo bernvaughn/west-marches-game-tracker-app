@@ -17,7 +17,7 @@
   {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}" data-wm-tooltip title="Give this character to another player.">Hand over</a>{% endif %}
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">History</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print a slip for drawing tables: name, pronouns, passive Perception, level, class and species.">Print slip</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print an adventurer's pass: name, pronouns, player, species, class, level, AC, passive Perception, Max HP and ability scores.">Print slip</a>
   <button class="btn btn-sm btn-primary" type="button" data-wm-tooltip title="Print this character sheet in black and white." onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
 </div>
 {% endif %}

@@ -332,3 +332,32 @@ main:focus { outline: none; }
 .wm-side-menu .offcanvas-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .wm-side-menu-footer { flex: 0 0 auto; padding: var(--wm-space-3); border-top: 1px solid var(--wm-border); background: var(--wm-surface-raised); }
 .wm-menu-logout { margin: 0; }
+
+/* ---- Pass frame (.wm-pass), U89; reused by item cards (U90) ---- */
+.wm-pass {
+  --wm-pass-notch: 0.14in;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid currentColor;
+  background: white;
+  color: black;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  -webkit-mask: radial-gradient(circle var(--wm-pass-notch) at 0 0, transparent 97%, black) top left / 51% 51% no-repeat,
+    radial-gradient(circle var(--wm-pass-notch) at 100% 0, transparent 97%, black) top right / 51% 51% no-repeat,
+    radial-gradient(circle var(--wm-pass-notch) at 0 100%, transparent 97%, black) bottom left / 51% 51% no-repeat,
+    radial-gradient(circle var(--wm-pass-notch) at 100% 100%, transparent 97%, black) bottom right / 51% 51% no-repeat;
+  mask: radial-gradient(circle var(--wm-pass-notch) at 0 0, transparent 97%, black) top left / 51% 51% no-repeat,
+    radial-gradient(circle var(--wm-pass-notch) at 100% 0, transparent 97%, black) top right / 51% 51% no-repeat,
+    radial-gradient(circle var(--wm-pass-notch) at 0 100%, transparent 97%, black) bottom left / 51% 51% no-repeat,
+    radial-gradient(circle var(--wm-pass-notch) at 100% 100%, transparent 97%, black) bottom right / 51% 51% no-repeat;
+}
+.wm-pass::before { content: ""; position: absolute; inset: 0.05in; border: 1px solid currentColor; pointer-events: none; }
+.wm-pass-divider { position: relative; align-self: stretch; width: 0; border-left: 1px dashed currentColor; }
+.wm-pass-divider::before, .wm-pass-divider::after {
+  content: ""; position: absolute; left: -0.06in; width: 0.12in; height: 0.06in; background: white;
+  border: 1px solid currentColor; box-sizing: border-box;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.wm-pass-divider::before { top: -1px; border-top: 0; border-radius: 0 0 0.06in 0.06in; }
+.wm-pass-divider::after { bottom: -1px; border-bottom: 0; border-radius: 0.06in 0.06in 0 0; }

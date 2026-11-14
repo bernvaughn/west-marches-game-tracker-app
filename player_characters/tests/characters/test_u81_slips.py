@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 import pytest
@@ -30,14 +29,13 @@ def test_twelve_per_page(login, club, game_master, character):
     ]
     body = login(game_master).get(printurl(club, chars[:12])).content.decode()
     assert body.count('<section class="wm-slip-sheet">') == 1
-    assert body.count('<article class="wm-slip">') == 12
-    assert body.count("wm-slip-mark") == 12
+    assert body.count('<article class="wm-slip wm-pass">') == 12
+    assert body.count("wm-slip-mark") == 0
     body = login(game_master).get(printurl(club, chars)).content.decode()
     sheets = body.split('<section class="wm-slip-sheet">')[1:]
-    assert [s.count('<article class="wm-slip">') for s in sheets] == [12, 1]
+    assert [s.count('<article class="wm-slip wm-pass">') for s in sheets] == [12, 1]
     css = (Path(settings.BASE_DIR) / "static/css/areas/characters.css").read_text()
-    assert "repeat(2, 3.9in)" in css and "grid-auto-rows: 1.7in" in css
-    assert re.search(r"\.wm-slip::before\s*{[^}]*double", css)
+    assert "repeat(2, 4in)" in css and "grid-auto-rows: 1.75in" in css
 
 
 def test_sheet_link_passes_origin(login, club, player, character):
