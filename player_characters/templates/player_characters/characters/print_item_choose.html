@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Print card: {{ row.item.name }}{% endblock %}
 {% block content %}
-{% url "characters:detail" club.slug character.pk as sheet_url %}{% include "components/back_link.html" with url=sheet_url label="Back to sheet" %}
-<h1>Print card: {{ row.item.name }}</h1>
-<p>Choose a layout.</p>
+{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% include "components/page_header.html" with title="Print card: "|add:row.item.name subtitle="Choose a layout." back_url=sheet_url back_label="Back to sheet" %}</div>
 <p>
   <a class="btn btn-primary" href="?layout=full">Full page</a>
   <a class="btn btn-outline-primary" href="?layout=grid">Grid spot</a>
