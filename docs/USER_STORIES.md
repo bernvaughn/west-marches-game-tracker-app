@@ -611,6 +611,75 @@ From using the build after round 8 (U69–U79, D1–D4). Kept as built: the spin
 - It fixes them in small pieces, each with before and after screenshots, and keeps the console-error sweep clean.
 - It doesn't add features or change how things work, only how they look and read.
 
+## Round 10: stories from the ninth look and new features (2026-11-13)
+
+From using the build after round 9, plus new print designs and public pages. Story numbers continue from U85, D7 and M18. The UI consistency pass (U84) audit did not cover the modal scrolling or the reward table, so U86 and D8 stand.
+
+### Fixes
+
+**U86 Tall modals scroll.** As anyone, I want a modal taller than my window to scroll, so I can reach every field and the Save button. *(site-wide)*
+- The shared modal scrolls its body when the content is taller than the window, with the header and footer staying visible (for example Bootstrap's `modal-dialog-scrollable`).
+- Checked on every modal that can get tall: agenda event edits (for example the quest "Pelts for the Tanner"), quest and rotation forms, downtime action tables, gives, and sell junk, at desktop and phone widths.
+
+**D8 A clearer reward table when editing downtime actions.** As a club admin, I want each entry in a downtime action's reward table to stand apart, so I can pick out one entry from the next. *(downtime)*
+- Each entry is its own bordered block, with its label, weight and chance, and its rewards (coins and items) grouped inside it.
+
+**D9 Downtime ledger entries have no link.** As anyone reading a ledger, I want a downtime entry to just name the action and the result, because the result page spins the wheel again. *(downtime, ledger)*
+- This replaces the link in D7. The entry reads, for example, "Downtime: Work at a bakery: Baker's thanks (+5 gp)", with no link. The club ledger filter for downtime entries stays.
+- If a result page is still needed anywhere, it shows the stored result without spinning.
+
+**D10 Tabular reward lists on the Downtime page.** As a player, I want each action's possible rewards on the Downtime page (D6) as a small table, so they are easy to read through. *(downtime)*
+- Columns: outcome text, reward, and chance. This also shortens the long lists noted in the audit.
+
+### Map
+
+**M19 The map fits on one screen, with coordinates on tiles.** As anyone looking at a map, I want to see the whole map at once and read tile positions at a glance. *(map)*
+- At its default zoom, the whole map fits in the window without scrolling, at desktop and phone widths, scaling tiles down as needed.
+- Each tile shows its coordinates (column, row) in small text.
+
+### Characters
+
+**U87 A tidy printed character sheet.** As a player, I want the printed sheet to be as tidy as the screen, so it is usable at the table. *(player_characters)*
+- The print layout keeps the same box grid, aligned columns and readable text sizes, on one page where possible.
+- Tooltips, such as "Print this character sheet in black and white.", and anything else interactive never print. This applies to every printed page.
+
+**U88 Max HP.** As a player, game master or club admin, I want to record a character's maximum hit points, so the sheet holds it with AC. *(player_characters)*
+- An optional whole number from 1 up, editable on the sheet-style edit page (U69) by the owner, game masters and club admins.
+- Shown in the sheet's Combat box with AC, passive Perception and XP. Current HP is not tracked.
+
+**U89 Character slips as fantasy tickets.** As a game master, I want the slips (U70, U81) redesigned as adventurer's passes, still 12 per page (2 × 6, about 4.25 × 1.8 in each). *(player_characters)*
+- Double border and notched corners, with no tear-off stub. A dashed, notched divider splits the slip.
+- Main part: "✦ adventurer's pass ✦" across the top; the character's name large in the wordmark font (U85); pronouns; "played by <player>" with the player's name in bold; two centred rows of labelled pills, row 1 Species, Class, Level and row 2 AC, Passive Perc., Max HP (U88); a blank field's pill is left out; "Downtime Market" small at the bottom.
+- Right-hand panel: the six ability scores as blocks in a 2 × 3 grid (label, score, modifier).
+- Prints in black and white with readable text sizes at 12 to a page.
+
+**U90 Item cards in the slips' style, with separate copies.** As a player, I want printed item cards (U44, U82, U85) to match the slips, and to print one card per item when I want to hand them out. *(player_characters, items)*
+- Same size, 2.5 × 3.5 in, and 3 × 3 sheet as today. Double border and notched corners; "✦ downtime market ✦" across the top in the wordmark font; the item's icon, then its name large in the wordmark font; labelled pills for Rarity, Value and Qty (a blank pill is left out); a dashed line, then the description, traits and details; a dashed line, then the "Used" circles (U82, one per item when the quantity is above one); a footer with the owner and print date.
+- Players choose "One card per item type" (one card with the full quantity and that many Used circles) or "One card per item" (one card per item owned, each with Qty 1 and a single Used circle). The choice is offered for Print item cards (all) and for a single item's Print card, beside the Full page and Grid spot layouts. Cards fill 3 × 3 sheets, continuing onto more pages.
+
+**U91 Base value in Your inventory.** As a player, I want the "Your inventory" card on a shop page (U46, U63) to show base value, so I can compare it with the price this shop pays. *(shops, items)*
+- A "Base value" column (U8, U32) after the item name and before the quantity.
+
+### Items
+
+**U92 Print loot cards.** As a game master or club admin, I want to print a batch of item cards from the catalogue to hand out as loot. *(items)*
+- A "Print loot cards" action on the catalogue opens a picker listing catalogue items, each with a quantity box (0 by default) and a search filter.
+- The same "One card per item type" or "One card per item" choice as U90, with the U90 card design. The footer says "Loot" and the print date, not an owner.
+- Nothing changes in anyone's inventory; the loot is recorded later as usual (awards, gives or agent batches). 3 × 3 per page, continuing onto more pages. Game masters and club admins only.
+
+**U93 Magic item type.** As a club admin or game master, I want each catalogue item to have a magic item type, so wondrous items and the other kinds can be told apart. *(items)*
+- An optional field: Armor, Potion, Ring, Rod, Scroll, Staff, Wand, Weapon, Wondrous item, or none for non-magical items. Treasure themes from the 2024 rules are left for later.
+- Shown on the item page and the item card (U90) as a pill, and filterable on the catalogue.
+
+### Public pages
+
+**U94 About and Plans pages.** As a visitor, I want pages that explain what Downtime Market is and what it costs, so I can decide whether to use it. *(site-wide)*
+- Public pages, outside any club: "About" says what the app is; "Plans" describes a free plan for limited use and a paid subscription for heavier use, to pay for servers and compensate the owner.
+- The limits and prices are still to be decided, so they live in one place that is easy to change. No payment processing yet.
+
+**U95 "Built with CodeHerder" footer.** As the owner, I want a small "Built with CodeHerder" note in the footer of the public pages, not club pages. *(site-wide)*
+- Easy to remove if the CodeHerder team would rather not be advertised this way.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -795,6 +864,8 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Modals.** Buying (U33), map tiles (M17), and inbox grants (U30) open in modals. Each still has a plain page that works without JavaScript.
 - **Inbox grants.** Club admins can grant coins, items, and map credit from a message, through the same rules and ledger as manual adjustments and map credit, and mark the message handled in the same step (U30).
 - **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each location has one credited discovery group (the first) and one credited explored group (which may differ). Game masters and club admins can correct them, and everyone who sees the location sees the credited characters (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants, with no automatic declines (M12). A party is only a list of characters picked at the time, not a stored record.
+- **Magic item type.** Catalogue items carry an optional magic item type (Armor, Potion, Ring, Rod, Scroll, Staff, Wand, Weapon, Wondrous item) instead of a yes/no wondrous tag; treasure themes come later (U93).
+- **Slips and cards.** Slips and item cards share the adventurer's-pass look: double border, notched corners, wordmark font. Players can print one card per item type or one per item (U89, U90, U92).
 - **Left for later.** Lore and the donate service.
 
 ## Still open
