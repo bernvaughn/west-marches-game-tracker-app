@@ -52,3 +52,22 @@ def test_css_rules():
     assert ".hexmap--fit svg { height: auto; min-width: 0 !important" in css
     size = re.search(r"\.hex-coord \{ font-size: (\d+)px", css).group(1)
     assert int(size) == COORD_FONT
+
+
+def test_detail_has_side_layout_and_fit_script(club, login, game_master, hex_map):
+    url = reverse("map:detail", args=[club.slug, hex_map.pk])
+    html = login(game_master).get(url).content.decode()
+    assert 'class="wm-card-body map-layout"' in html
+    assert "map/hexmap_fit.js" in html
+    assert html.index('class="map-controls"') < html.index("hexmap--fit")
+
+
+def test_print_has_no_fit_script(club, login, game_master, hex_map):
+    url = reverse("map:print", args=[club.slug, hex_map.pk])
+    html = login(game_master).get(url).content.decode()
+    assert "hexmap_fit.js" not in html and "hexmap--fit" not in html
+
+
+def test_fit_script_sets_offset():
+    js = Path("map/static/map/hexmap_fit.js").read_text()
+    assert "--hexmap-offset" in js and "resize" in js
