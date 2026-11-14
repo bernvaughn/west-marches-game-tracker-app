@@ -41,12 +41,12 @@ def test_inventory_row_sells_through_sell_item(login, player, club, open_shop, l
     html = page(login, player, club, open_shop)
     url = reverse("shops:sell_item", args=[club.slug, open_shop.id, loot.id])
     assert f'hx-post="{url}"' in html
-    assert 'name="quantity"' in html and "Sell for" in html
+    assert 'name="quantity"' in html and "wm-sell-form" in html and 'aria-label="Sell ' in html
 
 
 def test_no_sell_forms_when_closed(login, player, club, shop, loot, character, closed_shop):
     html = page(login, player, club, shop)
-    assert "Sell for" not in html
+    assert "wm-sell-form" not in html
 
 
 def test_sell_junk_still_renders(login, player, club, open_shop, loot, character):
@@ -56,9 +56,9 @@ def test_sell_junk_still_renders(login, player, club, open_shop, loot, character
 
 def test_title_row(login, player, club, open_shop):
     html = page(login, player, club, open_shop)
-    row = html[html.index("wm-shop-title-row") : html.index("wm-shop-banner ")]
-    assert row.count("wm-shop-title-side") == 2
-    assert row.index("⚒") < row.index("<h1") < row.index(open_shop.name)
+    assert "wm-shop-title-row" not in html
+    assert html.index("wm-page-header") < html.index("<h1") < html.index("wm-shop-banner ")
+    assert html.count("<h1") == 1
 
 
 def test_icon_buttons(login, player, club, open_shop):
@@ -87,6 +87,6 @@ def test_js_toggles_one_box_at_a_time():
 
 def test_sell_form_does_not_inherit_inventory_swap(login, player, club, open_shop, loot, character):
     html = page(login, player, club, open_shop)
-    start = html.index('class="wm-inline-form wm-sell-form"')
+    start = html.index('class="wm-inline-form wm-sell-form wm-row-actions"')
     form = html[html.rindex("<form", 0, start) : start]
     assert 'hx-select="unset"' in form and 'hx-swap="innerHTML"' in form

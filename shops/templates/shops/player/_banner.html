@@ -1,6 +1,5 @@
 <div class="wm-shop-banner wm-shop-banner--stall wm-player-shop-banner">
   <figure class="wm-shop-keeper-figure wm-player-shop-figure">{% include "shops/_building.html" with key="player_stall" %}</figure>
-  <h1 class="wm-shop-title">{{ seller.name }}'s stall</h1>
   <div class="wm-shop-actions">
     <div class="wm-shop-iconbar d-flex gap-2 justify-content-end">
       <a class="btn btn-outline-secondary" href="{% url 'shops:index' club.slug %}" aria-label="Leave the shop" title="Leave the shop" data-wm-tooltip>{% include "components/icon.html" with name="box-arrow-left" %}</a>

@@ -2,13 +2,14 @@
 {% load coins %}
 {% block title %}{{ seller.name }}'s stall{% endblock %}
 {% block content %}
-{% block banner %}{% include "shops/player/_banner.html" %}{% endblock %}
+{% include "components/page_header.html" with title=seller.name|add:"'s stall" %}
 {% if is_own %}
 <div class="alert alert-info wm-alert wm-alert--info" role="status">
   <div><strong>This is your shop.</strong>{% if not seller.shop_open %} It is closed.{% endif %}
   <a href="{% url 'characters:detail' club.slug seller.pk %}">Change what is listed on the character sheet</a>.</div>
 </div>
 {% endif %}
+{% block banner %}{% include "shops/player/_banner.html" %}{% endblock %}
 <div class="wm-shop-counter">
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
