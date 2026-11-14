@@ -24,12 +24,13 @@
   <script src="{% static 'js/tooltips.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+<a class="visually-hidden-focusable wm-skip-link no-print" href="#main">Skip to main content</a>
 <nav class="site-header navbar py-1" aria-label="Top bar">
   <div class="container-fluid wm-topbar">
-    {% if user.is_authenticated %}<a class="navbar-toggler wm-hamburger no-print" href="{% if club %}{% url 'club_home' club.slug %}{% else %}{% url 'home' %}{% endif %}" role="button" data-bs-toggle="offcanvas" data-bs-target="#site-menu" aria-controls="site-menu" aria-label="Open menu">{% include "components/icon.html" with name="list" %}</a>{% endif %}
+    {% if user.is_authenticated %}<a class="navbar-toggler wm-hamburger no-print" href="{% if club %}{% url 'club_home' club.slug %}{% else %}{% url 'home' %}{% endif %}" role="button" data-bs-toggle="offcanvas" data-bs-target="#site-menu" aria-controls="site-menu" aria-label="Open menu" title="Open menu" data-wm-tooltip>{% include "components/icon.html" with name="list" %}</a>{% endif %}
     {% if user.is_authenticated and club %}
     <div class="dropdown club-switcher no-print">
-      <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}">{{ club.name }}</a>
+      <a class="btn btn-sm btn-outline-secondary dropdown-toggle club-name" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Club: {{ club.name }}" title="{{ club.name }}">{{ club.name }}</a>
       <ul class="dropdown-menu">
         {% for c in user_clubs %}<li><a class="dropdown-item{% if c == club %} active{% endif %}" href="{% url 'club_home' c.slug %}"{% if c == club %} aria-current="page"{% endif %}>{{ c.name }}</a></li>{% endfor %}
       </ul>
@@ -40,13 +41,13 @@
     </ul>{% endif %}
     <div class="site-header-fixed d-flex align-items-center gap-2 ms-auto">
       {% if not user.is_authenticated %}{% include "accounts/_donate.html" %}{% endif %}
-      {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}"><span class="wm-avatar wm-avatar-sm" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden">{{ who }}</span><span class="user-name-text" aria-hidden="true">{{ who }}</span></span>{% endwith %}{% endif %}
+      {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}" data-wm-tooltip><span class="wm-avatar wm-avatar-sm" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden">{{ who }}</span><span class="user-name-text" aria-hidden="true">{{ who }}</span></span>{% endwith %}{% endif %}
       {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
     </div>
   </div>
 </nav>
 {% if user.is_authenticated %}{% include "partials/side_menu.html" %}{% endif %}
-<main class="wm-main {% block main_class %}{% endblock %}">{% flash_slot %}{% block content %}{% endblock %}{% endflash_slot %}</main>
+<main id="main" tabindex="-1" class="wm-main {% block main_class %}{% endblock %}">{% flash_slot %}{% block content %}{% endblock %}{% endflash_slot %}</main>
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>
 </html>

@@ -45,7 +45,7 @@ def test_shortcut_ranks_in_order(login, club, player):
     b = bar(home(login, player, club))
     pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 7)]
     assert pos == sorted(pos)
-    assert b.count("data-wm-tooltip") == 6 and b.count("wm-shortcut-label") == 6
+    assert b.count("data-wm-tooltip") >= 8 and b.count("wm-shortcut-label") == 6
 
 
 def test_groups_per_role(login, club, player, game_master, club_admin):
