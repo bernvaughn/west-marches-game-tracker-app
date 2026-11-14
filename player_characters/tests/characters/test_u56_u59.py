@@ -26,7 +26,7 @@ def test_coin_hold_links_to_trades(club, login, player, sheet, make_open_trade):
 def test_item_hold_shows_column(club, login, player, sheet, item, make_open_trade):
     make_open_trade(items={item: 1})
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert '<th class="num">In open trades</th>' in html
+    assert '<th class="num wm-col-optional">In open trades</th>' in html
 
 
 @pytest.mark.story("U59")

@@ -63,7 +63,7 @@ def test_get_with_one_character(login, player, club, character):
 def test_get_lists_form(login, player, club, funded, second_character):
     r = login(player).get(url(club, funded))
     assert r.status_code == 200
-    assert "Move loot" in r.content.decode()
+    assert "Move items" in r.content.decode()
 
 
 @pytest.mark.parametrize("who", ["game_master", "club_admin", "site_admin", "other_player"])

@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% load coins %}
-{% block title %}Move loot: {{ character.name }}{% endblock %}
+{% block title %}Move items: {{ character.name }}{% endblock %}
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% if no_character %}
 {% include "components/page_header.html" with title="Move items" %}
 {% include "components/empty_state.html" with text="You have no character in this club." %}
 {% else %}
-{% url "characters:detail" club_slug=request.club.slug pk=character.pk as sheet_url %}{% include "components/page_header.html" with title="Move loot from "|add:character.name back_url=sheet_url back_label="Back to sheet" %}
+{% url "characters:detail" club_slug=request.club.slug pk=character.pk as sheet_url %}{% include "components/page_header.html" with title="Move items from "|add:character.name back_url=sheet_url back_label="Back to sheet" %}
 <form method="get" action="{% url 'characters:transfer_start' request.club.slug %}" class="d-flex flex-wrap gap-2 align-items-end mb-3">
   <div>
     <label class="form-label" for="transfer-from">Move from</label>
@@ -21,16 +21,14 @@
 {% include "components/empty_state.html" with text="You have no other character in this club." %}
 {% else %}
 <p>Available coins: {{ coins_available|coins }}</p>
-<ul class="wm-compact-list">
-  {% for item, qty in available %}<li>{% include "items/_item_name.html" with item=item %}: {{ qty }}</li>{% empty %}<li>No items available to move.</li>{% endfor %}
-</ul>
+{% include "player_characters/characters/_available_items.html" with empty_text="No items available to move." %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   {{ form }}
   <h2 class="h5">Items</h2>
   {% include "player_characters/characters/_item_rows.html" %}
   <div class="wm-form-actions">
-    <button class="btn btn-primary" type="submit">Move loot</button>
+    <button class="btn btn-primary" type="submit">Move items</button>
     <a class="btn btn-outline-secondary" href="{% url 'characters:detail' club_slug=request.club.slug pk=character.pk %}">Cancel</a>
   </div>
 </form>

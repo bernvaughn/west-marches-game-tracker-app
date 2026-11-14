@@ -1,0 +1,1 @@
+../../../.ch-session/workflows/auto.js
