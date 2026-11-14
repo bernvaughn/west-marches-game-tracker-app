@@ -1,0 +1,9 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="#" onsubmit="return false">
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Tall form{% endblock %}
+{% block body %}{% for n in "123456789" %}<div class="mb-3"><label class="form-label" for="tall-{{ n }}">Field {{ n }}</label><input class="form-control" id="tall-{{ n }}"></div>{% endfor %}{% endblock %}
+{% block footer %}<button type="button" class="btn btn-outline-secondary">Cancel</button><button type="submit" class="btn btn-primary">Save</button>{% endblock %}
