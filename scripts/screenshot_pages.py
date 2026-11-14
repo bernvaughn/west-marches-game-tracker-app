@@ -327,7 +327,12 @@ def _build_pages() -> list[Page]:
         P("items-where-to-buy", "alice", _c("items:where_to_buy", "item.pk")),
         P("items-edit", "gm", _c("items:edit", "item.pk")),
         P("items-loot-cards-picker", "gm", _c("items:loot_cards_picker")),
-        P("items-loot-cards-print", "gm", lambda d: reverse("items:loot_cards_print", args=[d.slug]) + f"?qty_{d.item.pk}=1"),
+        P(
+            "items-loot-cards-print",
+            "gm",
+            lambda d: reverse("items:loot_cards_print", args=[d.slug])
+            + f"?qty_{d.item.pk}=1",
+        ),
         # downtime agenda
         P("downtime-agenda", "gm", _c("downtime:agenda")),
         P("downtime-agenda-action-new", "gm", _c("downtime:agenda_action_create")),

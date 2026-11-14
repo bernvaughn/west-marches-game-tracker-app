@@ -18,6 +18,7 @@ from accounts.permissions import (
 )
 from accounts.scoping import club_get_object_or_404, club_queryset
 from ledger.coins import CP_PER_GP, CP_PER_PP, CP_PER_SP
+from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
@@ -28,7 +29,6 @@ from .rarity import Rarity
 from .references import reference_items
 from .services import delete_or_retire
 from .usage import ownership_counts
-from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 
 
 @club_member_required
@@ -228,7 +228,7 @@ def loot_cards_picker(request, club_slug):
             "is_admin": is_admin,
             "show_retired": show_retired,
             "search_query": q,
-            "retired_qs": f"&retired=1" if show_retired else "",
+            "retired_qs": "&retired=1" if show_retired else "",
         },
     )
 
