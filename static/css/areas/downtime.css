@@ -2,7 +2,7 @@
 .wm-wheel { max-width: 320px; margin: 0 auto 1rem; }
 .wm-wheel svg { width: 100%; height: auto; display: block; }
 .wm-wheel-disc { transform-origin: 0 0; transform-box: view-box; }
-.wm-wheel-label { fill: #fff; font-size: 7px; pointer-events: none; }
+.wm-wheel-label { fill: #fff; font-size: 6px; pointer-events: none; }
 .wm-wheel-pointer { fill: var(--wm-text, #222); stroke: #fff; stroke-width: 1; }
 .wm-wheel-legend li { display: flex; gap: .4rem; align-items: center; }
 .wm-wheel-swatch { width: .9rem; height: .9rem; border-radius: 2px; flex: none; }
@@ -60,7 +60,10 @@
 .wm-reward-entry-head { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: flex-end; }
 .wm-reward-entry-head .wm-reward-label { flex: 1 1 14rem; }
 .wm-reward-entry-body { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--wm-border, #ccc); }
+.wm-reward-field { min-width: 0; }
 .wm-reward-field label { display: block; font-size: .85rem; }
+.wm-reward-field :is(.form-control, .form-select) { max-width: 100%; }
+@media (max-width: 575.98px) { .wm-reward-entry-head .wm-reward-label { flex: 1 1 100%; } }
 .wm-reward-item { margin-bottom: .5rem; }
 
 /* Reward table on the chalkboard (D10) */
@@ -71,3 +74,21 @@
   .wm-chalk-table th, .wm-chalk-table td { border: 1px solid #000; }
   .wm-chalk-table tr { break-inside: avoid; }
 }
+
+.wm-chalk-job:only-child { grid-column: 1 / -1; }
+.wm-chalk-job form { margin: 0 0 .5rem; }
+
+/* Spend result modal on the chalkboard (B-47). The body marker re-themes the open modal; other modals stay white. */
+#app-modal .modal-content:has(.wm-chalk-modal), #app-modal .modal-content:has(.wm-chalk-modal) > form {
+  background: var(--wm-slate); color: var(--wm-chalk); font-family: var(--wm-font-heading);
+}
+#app-modal .modal-content:has(.wm-chalk-modal) { border: 8px solid var(--wm-board-wood); box-shadow: inset 0 0 40px var(--wm-slate-edge); }
+#app-modal .modal-content:has(.wm-chalk-modal) .modal-header { border-bottom: 2px dashed var(--wm-chalk-muted); }
+#app-modal .modal-content:has(.wm-chalk-modal) .modal-footer { border-top: 2px dashed var(--wm-chalk-muted); background: transparent; }
+#app-modal .modal-content:has(.wm-chalk-modal) .modal-title { color: var(--wm-chalk-accent); }
+#app-modal .modal-content:has(.wm-chalk-modal) .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+#app-modal .modal-content:has(.wm-chalk-modal) .text-muted { color: var(--wm-chalk-muted) !important; }
+#app-modal .modal-content:has(.wm-chalk-modal) a:not(.btn) { color: var(--wm-chalk-accent); }
+#app-modal .modal-content:has(.wm-chalk-modal) :is(.coin-cp, .coin-sp, .coin-gp) { color: var(--wm-chalk); }
+.wm-chalk-modal .wm-wheel-pointer { fill: var(--wm-chalk); stroke: var(--wm-slate); }
+.wm-chalk-modal :is(h2, h3, h4) { color: var(--wm-chalk); }

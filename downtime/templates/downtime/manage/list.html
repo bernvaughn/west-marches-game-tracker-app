@@ -5,17 +5,17 @@
 {% include "components/page_header.html" with title="Downtime actions" action_url=new_url action_label="New action" action_icon="plus-lg" %}
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Name</th><th class="num">Cost</th><th>Start</th><th>End</th><th>Status</th><th class="num">Entries</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+  <thead><tr><th>Name</th><th class="num">Cost</th><th class="wm-date">Start</th><th class="wm-date">End</th><th>Status</th><th class="num">Entries</th><th class="actions"><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for row in rows %}
     <tr>
       <td>{{ row.action.name }}</td>
       <td class="num">{{ row.action.cost }}</td>
-      <td>{{ row.action.start_date|default:"-" }}</td>
-      <td>{{ row.action.end_date|default:"-" }}</td>
+      <td class="wm-date">{{ row.action.start_date|date|default:"-" }}</td>
+      <td class="wm-date">{{ row.action.end_date|date|default:"-" }}</td>
       <td>{{ row.status }}</td>
       <td class="num">{{ row.count }}</td>
-      <td class="actions"><a class="btn btn-sm btn-outline-secondary" href="{% url 'downtime:action_edit' club.slug row.action.pk %}">Edit</a></td>
+      <td class="actions wm-row-actions-cell"><div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ row.action.name }}"><a class="btn btn-sm btn-outline-secondary" href="{% url 'downtime:action_edit' club.slug row.action.pk %}" data-wm-tooltip title="Edit {{ row.action.name }}" aria-label="Edit {{ row.action.name }}">{% include "components/icon.html" with name="pencil" %}</a></div></td>
     </tr>
   {% endfor %}
   </tbody>
