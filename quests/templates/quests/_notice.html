@@ -1,12 +1,12 @@
 {% load coins %}{% comment %}
   Quest notice. Context: quest, character (optional), stamp ("ready"/"done"/None), heading ("h1" or "h2"),
-  large (bool), faded (bool), link_url (optional), label (optional faded badge text).
+  large (bool), hide_title (bool: the page header shows the name), faded (bool), link_url (optional), label (optional faded badge text).
 {% endcomment %}
 <article class="wm-notice wm-notice--tilt-{{ quest.tilt|add:2 }}{% if large %} wm-notice--large{% endif %}{% if faded %} wm-notice--faded{% endif %}">
   <span class="wm-notice-pin" aria-hidden="true"></span>
   {% if stamp %}<span class="wm-stamp wm-stamp--{{ stamp }}"><span class="visually-hidden">Status for {{ character.name }}: </span>{% if stamp == "done" %}Done{% else %}Ready to turn in{% endif %}</span>{% endif %}
   {% if label %}<p class="wm-notice-label">{% include "components/badge.html" with status="neutral" text=label %}</p>{% endif %}
-  <{{ heading|default:"h2" }} class="wm-notice-title">{% if link_url %}<a href="{{ link_url }}">{{ quest.name }}</a>{% else %}{{ quest.name }}{% endif %}</{{ heading|default:"h2" }}>
+  {% if not hide_title %}<{{ heading|default:"h2" }} class="wm-notice-title">{% if link_url %}<a href="{{ link_url }}">{{ quest.name }}</a>{% else %}{{ quest.name }}{% endif %}</{{ heading|default:"h2" }}>{% endif %}
   {% if quest.description %}<p class="wm-notice-desc">{% if large %}{{ quest.description|linebreaksbr }}{% else %}{{ quest.description|truncatechars:140 }}{% endif %}</p>{% endif %}
   <dl class="wm-notice-info">
     <dt>Reward</dt>
