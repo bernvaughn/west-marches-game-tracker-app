@@ -99,8 +99,12 @@
 .wm-ledger-filter { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: end; }
 .wm-ledger-filter-actions { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); align-items: center; }
 @media (max-width: 575.98px) {
-  .wm-ledger-filter { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .wm-ledger-filter-actions { grid-column: 1 / -1; }
+  /* Six tracks: three selects per row, then two wider fields per row. */
+  .wm-ledger-filter { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); column-gap: var(--wm-space-2); row-gap: var(--wm-space-1); }
+  .wm-ledger-filter > div { grid-column: span 3; min-width: 0; }
+  .wm-ledger-filter > .wm-ledger-filter-character, .wm-ledger-filter > .wm-ledger-filter-player, .wm-ledger-filter > .wm-ledger-filter-kind { grid-column: span 2; }
+  .wm-ledger-filter .form-select, .wm-ledger-filter .form-control { width: 100%; }
+  .wm-ledger-filter > .wm-ledger-filter-actions { grid-column: 1 / -1; }
   .wm-items-table td { height: var(--wm-size-touch); vertical-align: middle; }
   /* Area exception to "modal_frame is full screen below sm": this small table does not need it. */
   #app-modal .modal-dialog:has(.wm-where-to-buy) { width: auto; height: auto; min-height: 0; margin: var(--wm-space-3); max-width: none; }

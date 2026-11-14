@@ -9,7 +9,7 @@
 {% include "components/page_header.html" with title="Club ledger" %}
 <form method="get" class="wm-ledger-filter mb-3 no-print">
   {% for field in form %}{% if field.field.widget.input_type != "checkbox" %}
-  <div><label class="form-label small mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
+  <div class="wm-ledger-filter-{{ field.name }}"><label class="form-label small mb-0" for="{{ field.id_for_label }}">{{ field.label }}</label>
   {{ field }}</div>
   {% endif %}{% endfor %}
   <div class="wm-ledger-filter-actions">
