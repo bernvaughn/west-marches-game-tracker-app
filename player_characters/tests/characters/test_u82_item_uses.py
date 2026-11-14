@@ -103,9 +103,9 @@ def test_modal_and_plain_page(club, login, player, owned, item):
     c = login(player)
     modal = c.get(consume_url(club, owned, item), HTTP_HX_REQUEST="true").content.decode()
     page = c.get(consume_url(club, owned, item)).content.decode()
-    assert "Are you sure you want to consume" in modal and "<html" not in modal
+    assert "You have" in modal and "<html" not in modal
     assert "Recent changes" in modal
-    assert "<html" in page and "Are you sure you want to consume" in page
+    assert "<html" in page and "You have" in page
 
 
 # ledger

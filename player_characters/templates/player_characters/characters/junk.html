@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Mark junk{% endblock %}
+{% block title %}Mark as junk{% endblock %}
 {% block content %}
-{% url "characters:detail" request.club.slug character.pk as back_url %}{% include "components/page_header.html" with title="Mark junk" back_url=back_url back_label="Back to "|add:character.name %}
+{% url "characters:detail" request.club.slug character.pk as back_url %}{% include "components/page_header.html" with title="Mark as junk" back_url=back_url back_label="Back to "|add:character.name %}
 {% include "components/card_open.html" %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   {% include "player_characters/characters/_junk_body.html" %}
-  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Save</button></div>
+  <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a></div>
 </form>
 {% include "components/card_close.html" %}
 {% endblock %}

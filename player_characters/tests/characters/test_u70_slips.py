@@ -111,4 +111,12 @@ def test_menu_entry(login, club, player, game_master, character):
 
 def test_no_selection(login, club, player, character):
     url = reverse("characters:slips_print", args=[club.slug])
-    assert "Tick at least one character." in login(player).get(url).content.decode()
+    body = login(player).get(url, {"print": "1"}).content.decode()
+    assert "Tick at least one character." in body
+
+
+def test_no_error_before_submit(login, club, player, character):
+    url = reverse("characters:slips_print", args=[club.slug])
+    body = login(player).get(url).content.decode()
+    assert "Tick at least one character." not in body
+    assert 'role="alert"' not in body

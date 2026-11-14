@@ -13,12 +13,16 @@ class _DateNoteMixin(forms.Form):
 class AdjustForm(_DateNoteMixin):
     DIRECTIONS = [("give", "Give"), ("take", "Take")]
     KINDS = [
-        ("", "Default (award for give, adjustment for take)"),
+        ("", "Default"),
         ("award", "Award"),
         ("adjustment", "Adjustment"),
     ]
     direction = forms.ChoiceField(choices=DIRECTIONS, widget=forms.RadioSelect, initial="give")
-    kind = forms.ChoiceField(choices=KINDS, required=False)
+    kind = forms.ChoiceField(
+        choices=KINDS,
+        required=False,
+        help_text="Default: award when giving, adjustment when taking.",
+    )
     coins = CoinsField(required=False)
     note = forms.CharField(max_length=500)
 

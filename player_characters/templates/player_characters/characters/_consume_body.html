@@ -1,10 +1,8 @@
 {% if form.non_field_errors %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert"><div>{{ form.non_field_errors|join:" " }}</div></div>{% endif %}
+<p>Consume {% include "items/_item_name.html" with item=item %}. You have {{ available }} available.</p>
 <p>
-  Are you sure you want to consume
-  <label class="visually-hidden" for="{{ form.quantity.id_for_label }}">Quantity to consume</label>
-  {{ form.quantity }}
-  {% include "items/_item_name.html" with item=item %}?
-  <span class="form-text d-block">You have {{ available }} available.</span>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <span class="wm-short-field d-block">{{ form.quantity }}</span>
   {% if form.quantity.errors %}<span class="error text-danger d-block" role="alert">{{ form.quantity.errors|join:" " }}</span>{% endif %}
 </p>
 <p>

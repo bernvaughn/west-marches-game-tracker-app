@@ -2,16 +2,13 @@
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 {% if character %}{% url 'characters:detail' club.slug character.pk as back %}{% else %}{% url 'characters:mine' club.slug as back %}{% endif %}
-<nav class="wm-breadcrumbs" aria-label="Breadcrumb"><ol>
-  <li><a href="{{ back }}">{% if character %}{{ character.name }}{% else %}Characters{% endif %}</a></li>
-  <li><span aria-current="page">{{ title }}</span></li>
-</ol></nav>
+{% if character %}{% include "components/page_header.html" with title=title back_url=back back_label="Back to sheet" %}{% else %}{% include "components/page_header.html" with title=title back_url=back back_label="Back to my characters" %}{% endif %}
 <form method="post" class="wm-form wm-character-form">
   {% csrf_token %}
   <article class="wm-sheet">
-    <header class="wm-sheet-header">
-      <h1>{{ title }}</h1>
-      {{ form.non_field_errors }}
+    {{ form.non_field_errors }}
+    <section class="wm-sheet-box wm-sheet-details" aria-labelledby="form-details">
+      <h2 class="wm-sheet-box-title" id="form-details">Details</h2>
       <div class="wm-sheet-header-fields">
         {% if form.owner %}{{ form.owner.as_field_group }}{% endif %}
         {{ form.name.as_field_group }}
@@ -21,8 +18,8 @@
         {{ form.pronouns.as_field_group }}
         {{ form.alignment.as_field_group }}
       </div>
-    </header>
-    <div class="wm-sheet-grid">
+    </section>
+    <div class="wm-sheet-grid mt-3">
       <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-abilities">
         <h2 class="wm-sheet-box-title" id="form-abilities">Abilities</h2>
         <div class="wm-sheet-abilities-form">
