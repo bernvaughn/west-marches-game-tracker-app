@@ -59,8 +59,9 @@
 .wm-street-settings-form .wm-field-error { display: flex !important; }
 @media (min-width: 768px) {
   .wm-street-settings-form { max-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--wm-space-4); }
-  .wm-street-settings-form > .wm-field { display: flex; flex-direction: column; }
-  .wm-street-settings-form > .wm-field > label { flex: 1; }
+  /* Subgrid rows (label, input, help, error) keep the three inputs on one line, with or without an error. */
+  .wm-street-settings-form > .wm-field { display: grid; grid-row: span 4; grid-template-rows: subgrid; align-content: start; row-gap: 0; }
+  .wm-street-settings-form > .wm-field > label { align-self: end; }
   .wm-street-settings-form > .wm-field input[type=number] { max-width: none; width: 100%; }
   .wm-street-settings-form > :not(.wm-field) { grid-column: 1 / -1; }
   .wm-street-settings-form > .wm-form-actions { margin-top: 0; }
