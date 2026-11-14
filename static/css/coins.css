@@ -18,3 +18,12 @@
   .coin { color: #000 !important; background: none !important; padding: 0; }
   .coin::before { display: none; }
 }
+
+/* Coin input widget (U84 S1): four cells, one row on wide screens, a 2 x 2 grid below 576 px.
+   All four labels are plain text with a dot; platinum has no dark pill here (the display pill is unchanged). */
+.wm-coin-input { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; max-width: 28rem; }
+.wm-coin-input-cell { display: flex; align-items: center; gap: .35rem; min-width: 0; }
+.wm-coin-input-cell input { min-width: 4.5rem; flex: 1 1 auto; max-width: none; }
+.wm-coin-input .wm-coin-label { flex: none; background: none; padding: 0; }
+.wm-coin-input .coin-pp.wm-coin-label { color: var(--wm-coin-pp-text); }
+@media (max-width: 575.98px) { .wm-coin-input { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

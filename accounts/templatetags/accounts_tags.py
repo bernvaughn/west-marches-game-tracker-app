@@ -1,8 +1,46 @@
 from django import template
+from django.utils.safestring import mark_safe
 
 from ..permissions import can_reset_password, can_see_email
 
 register = template.Library()
+
+_FLASH_KEY = "wm_flash_slot"
+_FLASH_TEMPLATE = "components/messages.html"
+
+
+class FlashSlotNode(template.Node):
+    """Wraps the page content in base.html. A page header shows the flash messages below itself.
+    If none did, the messages go at the top of main."""
+
+    def __init__(self, nodelist):
+        self.nodelist = nodelist
+
+    def render(self, context):
+        slot = {"shown": False}
+        with context.push(**{_FLASH_KEY: slot}):
+            body = self.nodelist.render(context)
+            if slot["shown"] or not context.get("messages"):
+                return body
+            slot["shown"] = True
+            return context.template.engine.get_template(_FLASH_TEMPLATE).render(context) + body
+
+
+@register.tag
+def flash_slot(parser, token):
+    nodelist = parser.parse(("endflash_slot",))
+    parser.delete_first_token()
+    return FlashSlotNode(nodelist)
+
+
+@register.simple_tag(takes_context=True)
+def flash_messages(context):
+    """Render flash messages once, inside a flash_slot. Outside one, render nothing."""
+    slot = context.get(_FLASH_KEY)
+    if slot is None or slot["shown"] or not context.get("messages"):
+        return ""
+    slot["shown"] = True
+    return mark_safe(context.template.engine.get_template(_FLASH_TEMPLATE).render(context))
 
 
 @register.simple_tag(takes_context=True)

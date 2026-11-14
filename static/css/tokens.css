@@ -59,6 +59,7 @@
   --wm-coin-gp: #7a5c00;
   --wm-coin-pp: #eef4ff;
   --wm-coin-pp-bg: #3d4b5c;
+  --wm-coin-pp-text: #3d4b5c; /* plain platinum text on the coin input labels (about 9:1 on white) */
 
   /* Coin metal dots (decorative; the text label carries the meaning) */
   --wm-coin-dot-cp: #b87333;

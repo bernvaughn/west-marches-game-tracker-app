@@ -94,6 +94,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
+FORMAT_MODULE_PATH = ["config.formats"]  # the one date format (config/formats/en/formats.py)
 TIME_ZONE = os.environ.get("TIME_ZONE", "UTC")
 USE_I18N = True
 USE_TZ = True

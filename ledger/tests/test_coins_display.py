@@ -76,7 +76,7 @@ def test_widget_labels():
 
     html = str(F()["price"])
     for i, u in enumerate(("pp", "gp", "sp", "cp")):
-        assert f'<label class="coin coin-{u}" for="id_price_{i}">{u}</label>' in html
+        assert f'<label class="coin coin-{u} wm-coin-label" for="id_price_{i}">{u}</label>' in html
         assert f'id="id_price_{i}"' in html
         assert "form-control-sm" in html
 

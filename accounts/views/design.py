@@ -1,5 +1,9 @@
+import datetime
+
 from django import forms
 from django.shortcuts import render
+
+from ledger.coins import CoinsField
 
 from ..design_tokens import token_groups
 from ..permissions import site_admin_required
@@ -18,6 +22,10 @@ class DemoForm(forms.Form):
     agree = forms.BooleanField(label="I have read the house rules")
 
 
+class CoinDemoForm(forms.Form):
+    price = CoinsField(required=False, initial=5025)
+
+
 @site_admin_required
 def design_reference(request):
     form = DemoForm(
@@ -25,6 +33,8 @@ def design_reference(request):
     )  # bound with an empty required name: shows an error
     context = {
         "groups": token_groups(),
+        "coin_form": CoinDemoForm(),
+        "sample_date": datetime.date(2026, 11, 13),
         "form": form,
         "characters": ["Alice the Bold", "Bram Stonefoot", "Cinder"],
         "coin_values": [5, 120, 1250, 25000],

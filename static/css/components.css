@@ -91,6 +91,16 @@ fieldset.wm-field > legend { float: none; width: auto; padding: 0; font-size: va
     linear-gradient(to left, var(--wm-surface) 30%, transparent) right center / 24px 100% no-repeat local,
     linear-gradient(to right, rgba(43,38,34,.18), transparent) left center / 10px 100% no-repeat scroll,
     linear-gradient(to left, rgba(43,38,34,.18), transparent) right center / 10px 100% no-repeat scroll; }
+/* Row actions (U84 S1): the actions cell sticks to the right edge of .wm-table-scroll, so a row's button stays
+   visible at 390 px with no sideways scroll. Use icon buttons in .wm-row-actions. Set background-color only:
+   a box-shadow here would hide Bootstrap's stripe. Themed tables override --wm-table-sticky-bg. */
+.wm-table-scroll :is(th, td).actions, .wm-table-scroll :is(th, td).wm-row-actions-cell {
+  position: sticky; right: 0; z-index: 1; background-color: var(--wm-table-sticky-bg, var(--wm-surface)); border-left: 1px solid var(--wm-border); }
+.wm-table-scroll th.actions, .wm-table-scroll th.wm-row-actions-cell { background-color: var(--wm-surface-sunken); z-index: 2; }
+.wm-row-actions-cell { white-space: nowrap; width: 1%; }
+.wm-row-actions { flex-wrap: nowrap; white-space: nowrap; }
+.wm-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 575.98px) { th.wm-col-optional, td.wm-col-optional { display: none; } }
 .wm-scroll-hint { display: none; font-size: var(--wm-text-xs); color: var(--wm-text-muted); margin: 0 0 var(--wm-space-1); }
 @media (max-width: 575.98px) { .wm-scroll-hint { display: block; } }
 
@@ -109,6 +119,7 @@ fieldset.wm-field > legend { float: none; width: auto; padding: 0; font-size: va
 .wm-alert-title { font-weight: 700; display: block; }
 .wm-messages { list-style: none; padding: 0; margin: 0 0 var(--wm-space-4); }
 .wm-messages li { margin-bottom: var(--wm-space-2); }
+main > .wm-messages:first-child, .wm-page-header + .wm-messages { margin-top: var(--wm-space-3); }
 
 /* ---- Page layout ---- */
 .wm-main { padding: var(--wm-space-4); max-width: 72rem; margin-inline: auto; }
