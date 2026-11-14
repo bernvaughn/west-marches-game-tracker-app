@@ -45,7 +45,7 @@ def check(c, gem, rope):
         row = next(r for r in rows if item.name in r)
         value = f'<td class="num">{coins(item.value_cp)}</td>'
         assert value in row
-        assert row.index(item.name) < row.index(value) < row.index(f"<td>{qty}</td>")
+        assert row.index(item.name) < row.index(value) < row.index(f'<td class="num">{qty}</td>')
 
 
 def test_browse_column_order_value_and_scroll(login, player, club, shop, character):
