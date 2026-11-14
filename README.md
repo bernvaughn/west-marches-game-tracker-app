@@ -31,7 +31,7 @@ Run the checks with `uv run pytest` and `uv run ruff check`.
 The browser console guard is slow and needs Chromium, so `uv run pytest` skips it.
 Run it with `uv run playwright install chromium` once, then `uv run pytest -m browser`.
 For a list of problems per page, run `uv run python scripts/console_sweep.py`.
-For the UI audit, `uv run python scripts/screenshots.py --audit --out <dir>` captures every page at 1920, 1280, 768 and 390 px (see `docs/design/audit-2/README.md`).
+For the UI audit, `uv run python scripts/screenshots.py --audit --out <dir>` captures every page at 1920, 1280, 768 and 390 px (see the Method section of `docs/design/AUDIT-2.md`).
 
 ### Agent access
 
