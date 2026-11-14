@@ -17,7 +17,9 @@
   {% include "player_characters/trades/_lines.html" with lines=receiver_lines %}
   {% include "components/card_close.html" %}
 </div>
-{% include "player_characters/trades/_status_actions.html" %}
+<div class="wm-toolbar">
 {% include "player_characters/trades/_side_actions.html" %}
+{% include "player_characters/trades/_status_actions.html" %}
+</div>
 </div>
 {% endblock %}

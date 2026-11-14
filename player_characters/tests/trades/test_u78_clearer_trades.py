@@ -45,7 +45,7 @@ def test_requested_buttons(login, club, requested, player, other_player):
     mine = html(login, player, club, requested)
     assert "Cancel this trade" in mine and "Accept trade request" not in mine
     theirs = html(login, other_player, club, requested)
-    assert "Accept trade request and propose items" in theirs
+    assert "Accept and choose items" in theirs
     assert "Decline this trade request" in theirs
     for old in ("Accept as", "Decline as", "Cancel trade as"):
         assert old not in mine + theirs
@@ -153,7 +153,7 @@ def test_unchanged_lines_leave_marker(accepted, item, player):
 
 def test_edit_side_sheet_look(login, club, accepted, player, item):
     page = html(login, player, club, accepted, "edit_side")
-    for marker in ("wm-sheet-header", "wm-sheet-coins", "wm-sheet-table", "Give"):
+    for marker in ("wm-page-header", "wm-sheet-coins", "wm-sheet-table", "Give"):
         assert marker in page
     assert "Saving a change clears both approvals." in page
     assert 'name="coins_gp"' in page or "coins" in page

@@ -1,11 +1,9 @@
 {% if side and trade.status == "accepted" %}
   {% if side == "sender" and not trade.sender_approved or side == "receiver" and not trade.receiver_approved %}
-  <div class="wm-toolbar">
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'trades:edit_side' club.slug trade.pk %}">Change what you give</a>
   <form method="post" action="{% url 'trades:approve' club.slug trade.pk %}">
     {% csrf_token %}
     <button class="btn btn-sm btn-primary" type="submit">Approve the trade as shown above</button>
   </form>
-  </div>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'trades:edit_side' club.slug trade.pk %}">Change what you give</a>
   {% endif %}
 {% endif %}

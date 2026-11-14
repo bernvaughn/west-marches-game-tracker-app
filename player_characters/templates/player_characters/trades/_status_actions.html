@@ -1,12 +1,10 @@
 {% if can_act %}
-<div class="wm-toolbar">
 {% if side == "receiver" %}
 {% if trade.status == "requested" %}
-<form method="post" action="{% url 'trades:accept' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Accept trade request and propose items</button></form>
+<form method="post" action="{% url 'trades:accept' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Accept and choose items</button></form>
 {% endif %}
 <form method="post" action="{% url 'trades:decline' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Decline this trade request</button></form>
 {% elif side == "sender" %}
 <form method="post" action="{% url 'trades:cancel' club.slug trade.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Cancel this trade</button></form>
 {% endif %}
-</div>
 {% endif %}
