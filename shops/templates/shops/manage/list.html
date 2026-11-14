@@ -5,24 +5,29 @@
 {% include "components/page_header.html" with title="Manage shops" action_url=create_url action_label="New shop" action_icon="plus-lg" %}
 {% url 'shops:street_settings' club.slug as street_url %}
 {% include "components/card_open.html" with title="Street settings" subtitle="How many empty buildings sit between shops, and before player stalls." %}
-{% include "components/form_layout.html" with form=street_form action=street_url %}
+<form method="post" action="{{ street_url }}" class="wm-form wm-street-settings-form">
+  {% csrf_token %}
+  {{ street_form }}
+  <div class="wm-form-actions"><button type="submit" class="btn btn-outline-secondary">Save</button></div>
+</form>
 {% include "components/card_close.html" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-<thead><tr><th>Name</th><th class="num">Street position</th><th>Shopkeeper</th><th class="num">Sell %</th><th class="num">Buy %</th><th>Symbol</th><th>Status</th><th class="num">Stock</th></tr></thead>
+<thead><tr><th>Name</th><th class="num">Street position</th><th class="wm-col-optional">Shopkeeper</th><th class="num">Sell %</th><th class="num">Buy %</th><th class="wm-col-optional">Symbol</th><th>Status</th><th class="num">Stock</th><th class="actions"><span class="visually-hidden">Actions</span></th></tr></thead>
 <tbody>
 {% for shop, is_open in rows %}
 <tr>
 <td><a href="{% url 'shops:manage_edit' club.slug shop.pk %}">{{ shop.name }}</a></td>
 <td class="num">{{ shop.street_position }}</td>
-<td>{{ shop.keeper_name|default:"—" }}</td>
+<td class="wm-col-optional">{{ shop.keeper_name|default:"—" }}</td>
 <td class="num">{{ shop.sell_percent }}%</td>
 <td class="num">{{ shop.buy_percent }}%</td>
-<td>{{ shop.symbol }}</td>
+<td class="wm-col-optional">{{ shop.symbol }}</td>
 <td>{% if is_open %}{% include "components/badge.html" with status="success" text="Open" %}{% else %}{% include "components/badge.html" with status="neutral" text="Closed" %}{% endif %}</td>
 <td class="num">{{ shop.stock_count }}</td>
+<td class="actions wm-row-actions-cell"><div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ shop.name }}"><a class="btn btn-sm btn-outline-secondary" href="{% url 'shops:manage_edit' club.slug shop.pk %}" title="Edit" aria-label="Edit {{ shop.name }}" data-wm-tooltip>{% include "components/icon.html" with name="pencil" %}</a></div></td>
 </tr>
 {% empty %}
-{% include "components/data_table_empty.html" with cols=8 text="No shops yet." %}
+{% include "components/data_table_empty.html" with cols=9 text="No shops yet." %}
 {% endfor %}
 </tbody>
 </table></div>
