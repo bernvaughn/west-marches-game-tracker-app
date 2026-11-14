@@ -58,11 +58,12 @@
 .wm-street-settings-form .form-control.is-invalid { --bs-form-invalid-border-color: var(--wm-danger); background-image: none; padding-right: .75rem; }
 .wm-street-settings-form .wm-field-error { display: flex !important; }
 @media (min-width: 768px) {
-  .wm-street-settings-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--wm-space-4); }
+  .wm-street-settings-form { max-width: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: var(--wm-space-4); }
   .wm-street-settings-form > .wm-field { display: flex; flex-direction: column; }
   .wm-street-settings-form > .wm-field > label { flex: 1; }
   .wm-street-settings-form > .wm-field input[type=number] { max-width: none; width: 100%; }
   .wm-street-settings-form > :not(.wm-field) { grid-column: 1 / -1; }
+  .wm-street-settings-form > .wm-form-actions { margin-top: 0; }
 }
 @media (max-width: 575.98px) {
   .wm-shop-picker { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--wm-space-1); }
