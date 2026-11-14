@@ -62,7 +62,7 @@
   <pre>&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="wm-date"&gt; ... &lt;td class="actions"&gt;&lt;div class="wm-row-actions btn-group btn-group-sm"&gt;icon buttons&lt;/div&gt;
 Low-value column: class="wm-col-optional" on the th and the td (hidden below 576 px).
 {% verbatim %}{% empty %}{% include "components/data_table_empty.html" with cols=3 text="No lines." %}{% endverbatim %}</pre>
-  <p>The <code>td.actions</code> cell sticks to the right edge, so the row's buttons stay visible at 390 px. Use icon buttons with a label and tooltip. Override <code>--wm-table-sticky-bg</code> on a themed table.</p>
+  <p>An actions cell with a <code>.wm-row-actions</code> icon group sticks to the right edge, so the row's buttons stay visible at 390 px. Use icon buttons with a label and tooltip; a cell of text buttons does not stick, so it never covers the row. Override <code>--wm-table-sticky-bg</code> on a themed table.</p>
   <p class="wm-scroll-hint">Scroll for more &rarr;</p>
   <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
     <thead><tr><th>Character</th><th class="num">Qty</th><th class="num">Price</th><th class="wm-col-optional">Notes</th><th>Updated</th><th>Region</th><th class="actions">Actions</th></tr></thead>

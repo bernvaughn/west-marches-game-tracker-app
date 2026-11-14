@@ -91,12 +91,15 @@ fieldset.wm-field > legend { float: none; width: auto; padding: 0; font-size: va
     linear-gradient(to left, var(--wm-surface) 30%, transparent) right center / 24px 100% no-repeat local,
     linear-gradient(to right, rgba(43,38,34,.18), transparent) left center / 10px 100% no-repeat scroll,
     linear-gradient(to left, rgba(43,38,34,.18), transparent) right center / 10px 100% no-repeat scroll; }
-/* Row actions (U84 S1): the actions cell sticks to the right edge of .wm-table-scroll, so a row's button stays
-   visible at 390 px with no sideways scroll. Use icon buttons in .wm-row-actions. Set background-color only:
-   a box-shadow here would hide Bootstrap's stripe. Themed tables override --wm-table-sticky-bg. */
-.wm-table-scroll :is(th, td).actions, .wm-table-scroll :is(th, td).wm-row-actions-cell {
+/* Row actions (U84 S1): an icon-button actions cell sticks to the right edge of .wm-table-scroll, so a row's
+   buttons stay visible at 390 px with no sideways scroll. Sticky is opt-in: td.wm-row-actions-cell, or a
+   td.actions that holds a .wm-row-actions group. A cell of wide text buttons would cover the row, so it
+   scrolls as before. Set background-color only: a box-shadow would hide Bootstrap's stripe.
+   Themed tables override --wm-table-sticky-bg. */
+.wm-table-scroll :is(th, td).wm-row-actions-cell, .wm-table-scroll td.actions:has(> .wm-row-actions),
+.wm-table-scroll table:has(td.actions > .wm-row-actions) th.actions {
   position: sticky; right: 0; z-index: 1; background-color: var(--wm-table-sticky-bg, var(--wm-surface)); border-left: 1px solid var(--wm-border); }
-.wm-table-scroll th.actions, .wm-table-scroll th.wm-row-actions-cell { background-color: var(--wm-surface-sunken); z-index: 2; }
+.wm-table-scroll th.wm-row-actions-cell, .wm-table-scroll table:has(td.actions > .wm-row-actions) th.actions { background-color: var(--wm-surface-sunken); z-index: 2; }
 .wm-row-actions-cell { white-space: nowrap; width: 1%; }
 .wm-row-actions { flex-wrap: nowrap; white-space: nowrap; }
 .wm-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
