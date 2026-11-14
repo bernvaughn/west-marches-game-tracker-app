@@ -359,5 +359,13 @@ main:focus { outline: none; }
   border: 1px solid currentColor; box-sizing: border-box;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
+.wm-pass-rule { position: relative; height: 0; background: none; border: 0; border-top: 1px dashed currentColor; opacity: 1; margin: 0.4em -0.14in; }
+.wm-pass-rule::before, .wm-pass-rule::after {
+  content: ""; position: absolute; top: -0.06in; width: 0.06in; height: 0.12in; background: white;
+  border: 1px solid currentColor; box-sizing: border-box;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.wm-pass-rule::before { left: 0.05in; border-left: 0; border-radius: 0 0.06in 0.06in 0; }
+.wm-pass-rule::after { right: 0.05in; border-right: 0; border-radius: 0.06in 0 0 0.06in; }
 .wm-pass-divider::before { top: -1px; border-top: 0; border-radius: 0 0 0.06in 0.06in; }
 .wm-pass-divider::after { bottom: -1px; border-bottom: 0; border-radius: 0.06in 0.06in 0 0; }

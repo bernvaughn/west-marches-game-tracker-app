@@ -75,10 +75,12 @@
 .wm-history-pager { display: flex; gap: var(--wm-space-2); align-items: center; }
 
 /* Item cards: trading-card size (2.5 x 3.5 in). Inch sizes are physical paper sizes, not tokens. */
-.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; border: 1px solid var(--wm-text); background: var(--wm-surface-raised); padding: 0.1in 0.12in; display: flex; flex-direction: column; }
+.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; line-height: 1.2; padding: 0.12in 0.14in; display: flex; flex-direction: column; }
 .wm-item-card-body { flex: 1; overflow: hidden; min-height: 0; }
-.wm-item-card-footer { margin-top: auto; border-top: 1px solid; font-size: 0.85em; padding-top: 0.05in; }
-.wm-item-card h2 { font-family: var(--wm-font-heading); font-size: 1.3em; margin: 0 0 0.25em; }
+.wm-item-card-footer { margin-top: auto; text-align: center; font-size: 0.85em; padding-top: 0.05in; }
+.wm-item-card h2 { font-size: 1.7em; margin: 0 0 0.2em; text-align: center; line-height: 1.05; overflow-wrap: anywhere; }
+.wm-item-card h2.wm-item-card-name--long { font-size: 1.3em; }
+.wm-item-card h2.wm-item-card-name--xlong { font-size: 1.05em; }
 .wm-item-card p { margin: 0 0 0.4em; }
 .wm-item-card--full { width: 7.5in; height: 10.5in; font-size: 2.1rem; padding: 0.3in 0.36in; }
 .wm-card-sheet { display: grid; grid-template-columns: repeat(3, 2.5in); grid-auto-rows: 3.5in; width: 7.5in; margin-bottom: var(--wm-space-4); }
@@ -152,7 +154,12 @@
 .wm-slip-ability-score { font-size: 11pt; line-height: 1; }
 .wm-slip-ability-mod { font-size: 8pt; }
 
-.wm-item-card-brand { text-align: center; font-size: 0.9em; margin: 0 0 0.3em; padding-bottom: 0.15em; border-bottom: 1px solid currentColor; }
+.wm-item-card-brand { text-align: center; font-size: 0.85em; font-variant: small-caps; letter-spacing: 0.06em; margin: 0 0 0.2em; }
+.wm-item-card-icon { text-align: center; font-size: 2em; line-height: 1; margin: 0 0 0.1em; }
+.wm-item-card-pills { list-style: none; margin: 0 0 0.3em; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25em; }
+.wm-item-card-pills .wm-pill { display: inline-flex; gap: 0.3em; border: 1px solid currentColor; border-radius: 1em; padding: 0 0.5em; white-space: nowrap; background: none; }
+.wm-item-card .wm-pill-label { font-size: 0.8em; }
+.wm-item-card .wm-pill-value { font-size: 0.95em; font-weight: 700; }
 .wm-item-card-uses { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25em; margin: 0 0 0.4em; }
 .wm-use-circle { display: inline-block; width: 0.9em; height: 0.9em; border: 1px solid currentColor; border-radius: 50%; background: transparent; }
 .wm-inline-number { display: inline-block; width: 5em !important; vertical-align: baseline; }

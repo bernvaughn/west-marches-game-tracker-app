@@ -35,15 +35,15 @@ def test_cards_show_symbol_value_footer(login, club, player, funded, item):
         c.get(one_url(club, funded, item, "full")),
     ):
         body = r.content.decode()
-        assert 'wm-item-symbol" aria-hidden="true">🪢' in body
-        assert "Value: 15 gp" in body
+        assert 'wm-item-card-icon" aria-hidden="true">🪢' in body
+        assert 'wm-pill-value">15 gp<' in body
         assert f"{funded.name} · printed {today}" in body
 
 
 def test_zero_value_shown(login, club, player, funded, item):
     item.value_cp = 0
     item.save()
-    assert "Value: 0 cp" in login(player).get(all_url(club, funded)).content.decode()
+    assert 'wm-pill-value">0 cp<' in login(player).get(all_url(club, funded)).content.decode()
 
 
 def test_print_css_margin_and_fit():
@@ -62,7 +62,7 @@ def test_grid_still_3x3():
 
 def test_grid_page_cells(login, club, player, funded, item):
     body = login(player).get(one_url(club, funded, item, "grid")).content.decode()
-    assert body.count('class="wm-item-card"') == 1
+    assert body.count('<article class="wm-item-card wm-pass"') == 1
     assert body.count("wm-card-cell") == 8
 
 

@@ -444,6 +444,19 @@ def _build_pages() -> list[Page]:
                 + "?layout=grid"
             ),
         ),
+        P(
+            "characters-print-items-per-item",
+            "alice",
+            lambda d: reverse("characters:print_items", args=[d.slug, d.aria.pk]) + "?copies=item",
+        ),
+        P(
+            "characters-print-item-grid-per-item",
+            "alice",
+            lambda d: (
+                reverse("characters:print_item", args=[d.slug, d.aria.pk, d.owned_item.pk])
+                + "?layout=grid&copies=item"
+            ),
+        ),
         P("characters-junk", "alice", _c("characters:junk", "aria.pk", "torch.pk")),
         P(
             "characters-junk-modal",
