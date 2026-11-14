@@ -46,8 +46,7 @@
   </div>
 </nav>
 {% if user.is_authenticated %}{% include "partials/side_menu.html" %}{% endif %}
-{% if messages %}<ul class="messages wm-messages wm-main pb-0">{% for m in messages %}<li class="alert alert-{% if m.level_tag == 'error' %}danger{% else %}{{ m.level_tag|default:'info' }}{% endif %} wm-alert {{ m.tags }}" role="{% if m.level_tag == 'error' or m.level_tag == 'warning' %}alert{% else %}status{% endif %}">{% if m.level_tag == 'error' %}{% include "components/icon.html" with name="x-octagon-fill" %}{% elif m.level_tag == 'warning' %}{% include "components/icon.html" with name="exclamation-triangle-fill" %}{% elif m.level_tag == 'success' %}{% include "components/icon.html" with name="check-circle-fill" %}{% else %}{% include "components/icon.html" with name="info-circle-fill" %}{% endif %}<div>{{ m }}</div></li>{% endfor %}</ul>{% endif %}
-<main class="wm-main {% block main_class %}{% endblock %}">{% block content %}{% endblock %}</main>
+<main class="wm-main {% block main_class %}{% endblock %}">{% flash_slot %}{% block content %}{% endblock %}{% endflash_slot %}</main>
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>
 </html>

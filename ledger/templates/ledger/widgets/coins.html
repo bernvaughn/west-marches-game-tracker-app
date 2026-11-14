@@ -1,1 +1,1 @@
-<div class="d-flex gap-1 align-items-center">{% for widget in widget.subwidgets %}{% include widget.template_name %}<label class="coin coin-{{ widget.name|slice:'-2:' }}" for="{{ widget.attrs.id }}">{{ widget.name|slice:'-2:' }}</label>{% endfor %}</div>
+<div class="wm-coin-input">{% for widget in widget.subwidgets %}<div class="wm-coin-input-cell">{% include widget.template_name %}<label class="coin coin-{{ widget.name|slice:'-2:' }} wm-coin-label" for="{{ widget.attrs.id }}">{{ widget.name|slice:'-2:' }}</label></div>{% endfor %}</div>

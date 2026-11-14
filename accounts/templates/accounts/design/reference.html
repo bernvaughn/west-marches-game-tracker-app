@@ -59,13 +59,15 @@
 
 <section id="component-data-table" class="wm-section">
   <h3>data_table (CSS classes, plus data_table_empty)</h3>
-  <pre>&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="actions"&gt;
+  <pre>&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="wm-date"&gt; ... &lt;td class="actions"&gt;&lt;div class="wm-row-actions btn-group btn-group-sm"&gt;icon buttons&lt;/div&gt;
+Low-value column: class="wm-col-optional" on the th and the td (hidden below 576 px).
 {% verbatim %}{% empty %}{% include "components/data_table_empty.html" with cols=3 text="No lines." %}{% endverbatim %}</pre>
+  <p>An actions cell with a <code>.wm-row-actions</code> icon group sticks to the right edge, so the row's buttons stay visible at 390 px. Use icon buttons with a label and tooltip; a cell of text buttons does not stick, so it never covers the row. Override <code>--wm-table-sticky-bg</code> on a themed table.</p>
   <p class="wm-scroll-hint">Scroll for more &rarr;</p>
   <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-    <thead><tr><th>Character</th><th class="num">Qty</th><th class="num">Price</th><th class="actions">Actions</th></tr></thead>
+    <thead><tr><th>Character</th><th class="num">Qty</th><th class="num">Price</th><th class="wm-col-optional">Notes</th><th>Updated</th><th>Region</th><th class="actions">Actions</th></tr></thead>
     <tbody>
-    {% for c in characters %}<tr><td>{{ c }}</td><td class="num">{{ forloop.counter }}</td><td class="num">{% include "components/coins.html" with value=1250 %}</td><td class="actions"><a href="#">Edit</a></td></tr>{% endfor %}
+    {% for c in characters %}<tr><td>{{ c }}</td><td class="num">{{ forloop.counter }}</td><td class="num">{% include "components/coins.html" with value=1250 %}</td><td class="wm-col-optional">Low-value detail</td><td class="wm-date">13 Nov 2026</td><td>Rivermouth lowlands</td><td class="actions wm-row-actions-cell"><div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ c }}"><a class="btn btn-sm btn-outline-secondary" href="#" title="Edit" aria-label="Edit" data-wm-tooltip>{% include "components/icon.html" with name="pencil" %}</a><a class="btn btn-sm btn-outline-secondary" href="#" title="Print" aria-label="Print" data-wm-tooltip>{% include "components/icon.html" with name="printer" %}</a></div></td></tr>{% endfor %}
     </tbody>
   </table></div>
   <div class="wm-table-scroll"><table class="table table-sm wm-data-table"><tbody>{% include "components/data_table_empty.html" with cols=4 text="No lines yet." action_url="#" action_label="Add one" %}</tbody></table></div>
@@ -140,6 +142,8 @@
 
 <section id="component-coins" class="wm-section">
   <h3>coins</h3>
+  <p>Coin input (the <code>CoinsField</code> widget): four cells in a row, a 2 x 2 grid below 576 px, and four plain labels (no dark platinum pill).</p>
+  <div class="wm-field mb-3"><span class="form-label">Coin input</span>{{ coin_form.price }}</div>
   <pre>{% verbatim %}{% include "components/coins.html" with value=1250 %}{% endverbatim %}</pre>
   <div class="d-flex flex-wrap gap-3">{% for v in coin_values %}{% include "components/coins.html" with value=v %}{% endfor %}</div>
 </section>
@@ -163,6 +167,12 @@
   {% include "components/alert.html" with level="info" title="Heads up" text="Prices change on market day." %}
   {% include "components/alert.html" with level="warning" text="Two items are out of stock." %}
   {% include "components/alert.html" with level="danger" text="Could not save." %}
+</section>
+<section id="component-messages" class="wm-section">
+  <h3>messages (flash)</h3>
+  <p>Flash messages (Django <code>messages</code>) show below the page header, or at the top of <code>main</code> on a page with no header. They show once.</p>
+  <h3>Dates</h3>
+  <p>One format everywhere: <strong>{{ sample_date|date }}</strong> (<code>j M Y</code>). Use <code>{% verbatim %}{{ d|date }}{% endverbatim %}</code>, or <code>{% verbatim %}{{ dt|date:"DATETIME_FORMAT" }}{% endverbatim %}</code> for a date and time. Do not write inline formats. Put <code>.wm-date</code> on a table cell to stop it wrapping.</p>
 </section>
 
 <section id="component-icon" class="wm-section">
