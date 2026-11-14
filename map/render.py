@@ -1,7 +1,9 @@
+import math
+
 from django.db.models import Exists, OuterRef, Prefetch
 from django.urls import reverse
 
-from .hexgrid import hex_points, to_pixel, window_bounds, window_positions
+from .hexgrid import fit_svg, hex_points, to_pixel, window_bounds, window_positions
 from .models import Location, LocationCredit, Tile
 
 
@@ -73,5 +75,14 @@ def build_cells(
     xs = [c["x"] for c in cells]
     ys = [c["y"] for c in cells]
     minx, miny = min(xs) - pad, min(ys) - pad
-    viewbox = f"{minx:.2f} {miny:.2f} {max(xs) + pad - minx:.2f} {max(ys) + pad - miny:.2f}"
-    return {"cells": cells, "viewbox": viewbox}
+    vb_w, vb_h = max(xs) + pad - minx, max(ys) + pad - miny
+    viewbox = f"{minx:.2f} {miny:.2f} {vb_w:.2f} {vb_h:.2f}"
+    min_w, min_h, _ = fit_svg(vb_w, vb_h, 0, 0)
+    return {
+        "cells": cells,
+        "viewbox": viewbox,
+        "vb_w": round(vb_w, 2),
+        "vb_h": round(vb_h, 2),
+        "min_w": math.ceil(min_w),
+        "min_h": math.ceil(min_h),
+    }

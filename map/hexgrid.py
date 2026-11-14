@@ -55,3 +55,21 @@ def parse_window(params):
     r = _int(params.get("r"), 0)
     radius = _int(params.get("radius"), DEFAULT_RADIUS)
     return q, r, max(1, min(MAX_RADIUS, radius))
+
+
+# Coordinate text is COORD_FONT user units (see .hex-coord in map.css).
+COORD_FONT = 10
+MIN_TEXT_PX = 8
+MIN_SCALE = MIN_TEXT_PX / COORD_FONT
+
+
+def fit_svg(vb_w, vb_h, avail_w, avail_h, min_scale=MIN_SCALE):
+    """Size in px that fits a viewBox into the space; never below min_scale.
+
+    Returns (width, height, scrolls). scrolls is True when the minimum applies.
+    """
+    scale = min(avail_w / vb_w, avail_h / vb_h)
+    scrolls = scale < min_scale
+    if scrolls:
+        scale = min_scale
+    return vb_w * scale, vb_h * scale, scrolls
