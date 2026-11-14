@@ -69,16 +69,17 @@ def nothing_written():
 def test_buttons_apply_per_status(club, club_admin, msg, login):
     c = login(club_admin)
     page = c.get(inbox(club)).content.decode()
-    assert "Mark handled</a>" in page and "Close</a>" in page and "Reopen</a>" not in page
+    assert 'aria-label="Mark handled"' in page and 'aria-label="Close"' in page
+    assert 'aria-label="Reopen"' not in page
     assert 'name="status"' not in page and "<select" not in page
     for status in ("handled", "closed"):
         msg.status = status
         msg.save()
         page = c.get(inbox(club)).content.decode()
-        assert "Reopen</a>" in page
-        assert "Mark handled</a>" not in page and "Close</a>" not in page
+        assert 'aria-label="Reopen"' in page
+        assert 'aria-label="Mark handled"' not in page and 'aria-label="Close"' not in page
     for label in ("Give coins", "Give items", "Give map credit"):
-        assert f"{label}</a>" in page
+        assert f'aria-label="{label}"' in page
 
 
 def test_status_confirm_writes_nothing(club, club_admin, msg, login):

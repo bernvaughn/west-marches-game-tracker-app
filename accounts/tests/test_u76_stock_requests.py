@@ -82,7 +82,7 @@ def test_no_give_for_stock_requests(club, club_admin, player, character, login):
     sr, m = _both(club, player, character)
     c = login(club_admin)
     html = c.get(_inbox(club)).content.decode()
-    assert html.count("Give coins") == 1
+    assert html.count('aria-label="Give coins"') == 1
     for kind in ("coins", "items", "map"):
         url = reverse(f"accounts:message_give_{kind}", args=[club.slug, sr.pk])
         assert c.get(url).status_code == 404
