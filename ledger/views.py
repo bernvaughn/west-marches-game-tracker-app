@@ -38,6 +38,7 @@ def index(request, club_slug):
             "source_message",
             "reverses",
             "downtime_result__action",
+            "downtime_result__entry",
         )
         .prefetch_related(
             Prefetch("lines", queryset=LedgerLine.objects.select_related("item").order_by("id"))
@@ -66,7 +67,9 @@ def character_history(request, club_slug, pk):
     require_inventory_access(request.user, character)
     entries = (
         LedgerEntry.objects.filter(character=character)
-        .select_related("created_by", "reverses", "downtime_result__action")
+        .select_related(
+            "created_by", "reverses", "downtime_result__action", "downtime_result__entry"
+        )
         .prefetch_related(
             Prefetch("lines", queryset=LedgerLine.objects.select_related("item").order_by("id"))
         )

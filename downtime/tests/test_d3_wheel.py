@@ -54,8 +54,7 @@ def test_deleted_entry_gives_none_and_page_renders(login, club, player, result):
 def test_result_page_works_without_js(login, club, player, result):
     body = login(player).get(url("result", club, result.pk)).content.decode()
     assert result.entry.label in body
-    assert "data-downtime-wheel" in body and "<svg" in body
-    assert 'id="downtime-wheel-data"' in body
+    assert "data-downtime-wheel" not in body and "downtime_wheel.js" not in body
     assert "hidden" not in body.split("data-wheel-result")[1].split(">")[0]
 
 

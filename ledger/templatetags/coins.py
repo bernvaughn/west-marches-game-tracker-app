@@ -21,3 +21,16 @@ def coins(value):
 @register.filter(name="coins_text")
 def coins_text(value):
     return format_coins(value)
+
+
+@register.filter(name="downtime_reward_text")
+def downtime_reward_text(entry):
+    """Plain text of what a ledger entry granted, read from its stored lines."""
+    parts = []
+    for line in entry.lines.all():
+        if line.coins:
+            parts.append(f"{'+' if line.coins > 0 else ''}{format_coins(line.coins)}")
+        if line.item_id and line.quantity:
+            sign = "+" if line.quantity > 0 else ""
+            parts.append(f"{sign}{line.quantity} {line.item.name}")
+    return ", ".join(parts)
