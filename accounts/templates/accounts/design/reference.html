@@ -191,6 +191,8 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   <h3>modal_frame</h3>
   <pre>{% verbatim %}{% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% endverbatim %}</pre>
   <div class="modal-content" style="max-width:32rem">{% include "accounts/design/_modal_sample.html" %}</div>
+  <p>Tall modals scroll the body; the header and footer stay visible.</p>
+  <div class="modal-dialog modal-dialog-scrollable" style="height:18rem;margin:0;max-width:32rem" data-testid="modal-tall-sample"><div class="modal-content">{% include "accounts/design/_modal_tall_sample.html" %}</div></div>
 </section>
 <section id="quest-board" class="wm-section">
   <h3>Quest board</h3>

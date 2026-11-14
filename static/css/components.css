@@ -214,6 +214,8 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .modal-body { padding: var(--wm-space-4); }
 .modal-footer { border-top: 1px solid var(--wm-border); background: var(--wm-surface-sunken); padding: var(--wm-space-3) var(--wm-space-4); gap: var(--wm-space-2); }
 .modal-backdrop { --bs-backdrop-bg: var(--wm-text); }
+.modal-content > form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; max-height: 100%; overflow: hidden; }
+.modal-content > form > .modal-body { overflow-y: auto; }
 .wm-modal-subtitle { color: var(--wm-text-muted); font-size: var(--wm-text-sm); margin: 0; }
 
 /* ---- Touch targets (phones) ---- */

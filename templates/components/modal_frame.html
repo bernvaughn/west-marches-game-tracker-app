@@ -1,7 +1,7 @@
 {% comment %}modal_frame: the layout of a shared-modal response. A partial EXTENDS this file and fills blocks.
    Blocks: title (required), subtitle, body, footer; "content" wraps all of them (a form partial wraps {{ block.super }} in <form>).
    Example: {% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% block footer %}<button class="btn btn-primary">Buy</button>{% endblock %}
-   The reference page renders this through accounts/design/_modal_sample.html. modal.js targets .modal-content, so these are its children.
+   The reference page renders this through accounts/design/_modal_sample.html. A form wrapper is a direct child of .modal-content; components.css makes it a flex column so the body scrolls and the footer stays visible. modal.js targets .modal-content, so these are its children.
 {% endcomment %}
 {% block content %}
 <div class="modal-header">
