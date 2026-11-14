@@ -1,0 +1,4 @@
+<nav class="no-print wm-copies-switch" aria-label="Cards to print">
+  <a class="btn btn-sm {% if copies == 'type' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?{% if layout %}layout={{ layout }}&amp;{% endif %}copies=type"{% if copies == 'type' %} aria-current="true"{% endif %}>One card per item type</a>
+  <a class="btn btn-sm {% if copies == 'item' %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?{% if layout %}layout={{ layout }}&amp;{% endif %}copies=item"{% if copies == 'item' %} aria-current="true"{% endif %}>One card per item</a>
+</nav>

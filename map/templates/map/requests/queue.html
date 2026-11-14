@@ -6,7 +6,7 @@
 {% url 'map:index' club.slug as back_url %}
 {% include "components/page_header.html" with title="Map requests" back_url=back_url back_label="Back to maps" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle">
-<thead><tr><th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th>Requested by</th><th>Status</th><th>Decided</th>{% if is_editor %}<th></th>{% endif %}</tr></thead>
+<thead><tr><th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th class="wm-col-optional">Requested by</th><th>Status</th><th class="wm-col-optional">Decided</th>{% if is_editor %}<th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
 <tbody>
 {% for req in requests %}
 <tr>
@@ -14,14 +14,16 @@
 <td>{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.tile_q is not None %} ({{ req.tile_q }}, {{ req.tile_r }}){% endif %}</td>
 <td>{% if req.kind == "visit" %}-{% else %}{{ req.location_label }}{% endif %}</td>
 <td>{% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</td>
-<td>{{ req.date|default:"" }}</td>
+<td class="wm-date">{{ req.date|default:"" }}</td>
 <td>{{ req.note|linebreaksbr }}</td>
-<td>{{ req.requested_by.user.display_name }}</td>
+<td class="wm-col-optional">{{ req.requested_by.user.display_name }}</td>
 <td>{% include "components/status_badge.html" with value=req.status text=req.get_status_display %}</td>
-<td>{% if req.decided_at %}{{ req.decided_by.user.display_name|default:"" }} {{ req.decided_at|date:"Y-m-d H:i" }}{% endif %}</td>
+<td class="wm-col-optional wm-date">{% if req.decided_at %}{{ req.decided_by.user.display_name|default:"" }} {{ req.decided_at|date:"DATETIME_FORMAT" }}{% endif %}</td>
 {% if is_editor %}<td class="actions">{% if req.status == "requested" %}
-{% if req.can_approve %}<form method="post" class="d-inline" action="{% url 'map:request_approve' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit">Approve</button></form>{% endif %}
-<form method="post" class="d-inline" action="{% url 'map:request_decline' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Decline</button></form>
+<div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for this request">
+{% if req.can_approve %}<form method="post" class="d-inline" action="{% url 'map:request_approve' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-primary" type="submit" aria-label="Approve" title="Approve this request" data-wm-tooltip>{% include "components/icon.html" with name="check-lg" %}</button></form>{% endif %}
+<form method="post" class="d-inline" action="{% url 'map:request_decline' club.slug req.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit" aria-label="Decline" title="Decline this request" data-wm-tooltip>{% include "components/icon.html" with name="x-lg" %}</button></form>
+</div>
 {% endif %}</td>{% endif %}
 </tr>
 {% empty %}{% if is_editor %}{% include "components/data_table_empty.html" with cols=10 text="No requests." %}{% else %}{% include "components/data_table_empty.html" with cols=9 text="No requests." %}{% endif %}{% endfor %}

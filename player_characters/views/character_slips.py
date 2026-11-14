@@ -7,7 +7,7 @@ from accounts.scoping import club_queryset
 
 from ..forms_slips import SlipsForm
 from ..models import Character
-from ..sheet import DASH, passive_perception
+from ..sheet import ability_rows, passive_perception
 
 SLIPS_PER_SHEET = 12
 T = "player_characters/characters/"
@@ -24,16 +24,25 @@ def slip_queryset(request):
     return qs.filter(owner=membership)
 
 
+def _pills(pairs):
+    """Label/value pills, with blank values left out."""
+    return [{"label": k, "value": v} for k, v in pairs if v is not None and v != ""]
+
+
 def _slip(c):
-    passive = passive_perception(c.perception_bonus)
     return {
         "player": c.owner.user.display_name or c.owner.user.email,
         "name": c.name,
-        "pronouns": c.pronouns or DASH,
-        "passive": DASH if passive is None else passive,
-        "level": c.level if c.level is not None else DASH,
-        "char_class": c.char_class or DASH,
-        "species": c.species or DASH,
+        "pronouns": c.pronouns or "",
+        "pills_top": _pills([("Species", c.species), ("Class", c.char_class), ("Level", c.level)]),
+        "pills_bottom": _pills(
+            [
+                ("AC", c.armor_class),
+                ("Passive Perc.", passive_perception(c.perception_bonus)),
+                ("Max HP", c.max_hp),
+            ]
+        ),
+        "abilities": ability_rows(c),
     }
 
 

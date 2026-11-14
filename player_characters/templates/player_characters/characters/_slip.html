@@ -1,12 +1,15 @@
-<article class="wm-slip">
-  <span class="wm-slip-mark" aria-hidden="true">{% include "components/icon.html" with name="hourglass-split" %}</span>
-  <h2{% if slip.name|length > 20 %} class="wm-slip-name--long wm-slip-name--xlong"{% elif slip.name|length > 13 %} class="wm-slip-name--long"{% endif %}>{{ slip.name }}</h2>
-  <p class="wm-slip-player">{{ slip.player }}</p>
-  <ul>
-    <li>Pronouns: {{ slip.pronouns }}</li>
-    <li>Passive Perception: {{ slip.passive }}</li>
-    <li>Level: {{ slip.level }}</li>
-    <li>Class: {{ slip.char_class }}</li>
-    <li>Species: {{ slip.species }}</li>
-  </ul>
+<article class="wm-slip wm-pass">
+  <div class="wm-slip-main">
+    <p class="wm-slip-kicker">✦ adventurer's pass ✦</p>
+    <h2 class="wm-wordmark{% if slip.name|length > 20 %} wm-slip-name--long wm-slip-name--xlong{% elif slip.name|length > 13 %} wm-slip-name--long{% endif %}">{{ slip.name }}</h2>
+    {% if slip.pronouns %}<p class="wm-slip-pronouns">{{ slip.pronouns }}</p>{% endif %}
+    <p class="wm-slip-player">played by <b>{{ slip.player }}</b></p>
+    {% if slip.pills_top %}<ul class="wm-slip-pills">{% for p in slip.pills_top %}<li class="wm-pill"><span class="wm-pill-label">{{ p.label }}</span> <span class="wm-pill-value">{{ p.value }}</span></li>{% endfor %}</ul>{% endif %}
+    {% if slip.pills_bottom %}<ul class="wm-slip-pills">{% for p in slip.pills_bottom %}<li class="wm-pill"><span class="wm-pill-label">{{ p.label }}</span> <span class="wm-pill-value">{{ p.value }}</span></li>{% endfor %}</ul>{% endif %}
+    <p class="wm-slip-foot">Downtime Market</p>
+  </div>
+  <div class="wm-pass-divider" aria-hidden="true"></div>
+  <div class="wm-slip-abilities">
+    {% for a in slip.abilities %}<div class="wm-slip-ability"><span class="wm-slip-ability-label">{{ a.abbr }}</span><span class="wm-slip-ability-score">{{ a.score }}</span><span class="wm-slip-ability-mod">{{ a.modifier }}</span></div>{% endfor %}
+  </div>
 </article>

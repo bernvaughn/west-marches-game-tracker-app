@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ quest.name }}{% endblock %}
 {% block content %}
-<p><a href="{% url 'quests:index' club.slug %}">All quests</a>{% if is_admin %} · <a href="{% url 'quests:edit' club.slug quest.pk %}">Edit quest</a>{% endif %}</p>
-{% include "quests/_notice.html" with large=True heading="h1" %}
+{% url 'quests:index' club.slug as index_url %}
+{% if is_admin %}{% url 'quests:edit' club.slug quest.pk as edit_url %}{% include "components/page_header.html" with title=quest.name back_url=index_url back_label="Back to quests" action_url=edit_url action_label="Edit quest" action_icon="pencil" %}{% else %}{% include "components/page_header.html" with title=quest.name back_url=index_url back_label="Back to quests" %}{% endif %}
+{% include "quests/_notice.html" with large=True hide_title=True %}
 {% include "quests/play/_turn_in_card.html" %}
 {% endblock %}

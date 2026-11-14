@@ -100,6 +100,7 @@
   /* Bootstrap bridge */
   --bs-body-bg: var(--wm-surface);
   --bs-body-color: var(--wm-text);
+  --bs-code-color: var(--wm-text);
   --bs-body-color-rgb: 43, 38, 34;
   --bs-body-font-family: var(--wm-font-body);
   --bs-heading-color: var(--wm-text);
@@ -123,6 +124,8 @@
   --bs-danger-text-emphasis: var(--wm-danger);
   --bs-danger-bg-subtle: var(--wm-danger-bg);
   --bs-danger-border-subtle: #eab9b5;
+  --bs-form-invalid-color: var(--wm-danger);
+  --bs-form-invalid-border-color: var(--wm-danger);
   --bs-warning: var(--wm-warning);
   --bs-warning-rgb: 138, 90, 0;
   --bs-warning-text-emphasis: var(--wm-warning);

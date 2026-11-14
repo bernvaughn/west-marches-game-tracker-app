@@ -4,6 +4,7 @@
 {% block main_class %}wm-main--full{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
+<script src="{% static 'map/hexmap_fit.js' %}" defer></script>
 {% url 'map:index' club.slug as back_url %}
 {% if not is_editor %}{% include "components/page_header.html" with title=hex_map.name back_url=back_url back_label="Back to maps" %}
 {% elif view_param == "mine" %}{% include "components/page_header.html" with title=hex_map.name subtitle="My characters" back_url=back_url back_label="Back to maps" %}
@@ -16,7 +17,7 @@
 </div>
 {% if not is_editor and not has_characters %}{% include "components/alert.html" with level="info" text="You have no characters yet, so only the safe town is shown." %}{% endif %}
 <div class="wm-card map-frame">
-<div class="wm-card-body">
+<div class="wm-card-body map-layout">
 <div class="map-controls">
 {% include "map/core/_picker.html" %}
 <nav class="pan-links" aria-label="Pan">
@@ -24,7 +25,7 @@
 </nav>
 </div>
 {% include "map/_hexmap.html" %}
+<div class="map-legend-box">{% include "map/_legend.html" %}</div>
 </div>
-<div class="wm-card-body">{% include "map/_legend.html" %}</div>
 </div>
 {% endblock %}

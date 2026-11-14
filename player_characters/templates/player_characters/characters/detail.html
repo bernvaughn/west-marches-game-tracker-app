@@ -17,7 +17,7 @@
   {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}" data-wm-tooltip title="Give this character to another player.">Hand over</a>{% endif %}
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">History</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
-  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print a slip for drawing tables: name, pronouns, passive Perception, level, class and species.">Print slip</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print an adventurer's pass: name, pronouns, player, species, class, level, AC, passive Perception, Max HP and ability scores.">Print slip</a>
   <button class="btn btn-sm btn-primary" type="button" data-wm-tooltip title="Print this character sheet in black and white." onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print sheet</button>
 </div>
 {% endif %}
@@ -47,6 +47,7 @@
       <h2 class="wm-sheet-box-title" id="sheet-combat">Combat</h2>
       <dl class="wm-sheet-stats">
         <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Max HP</dt><dd>{% if character.max_hp is not None %}{{ character.max_hp }}{% else %}&mdash;{% endif %}</dd>
         <dt>Passive Perception</dt><dd>{{ passive_perception }}</dd>
         <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
         {% if can_view %}{% downtime_balance character as dt_points %}{% downtime_play_url club as dt_play_url %}
@@ -100,8 +101,14 @@
               <div class="btn-group btn-group-sm" role="group">
                 <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print this one item's card, as a full page or in one spot of a card sheet." aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
                 <ul class="dropdown-menu dropdown-menu-end">
-                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full">Full page</a></li>
-                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid">Grid spot</a></li>
+                  <li><h6 class="dropdown-header">One card per item type</h6></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full&amp;copies=type">Full page</a></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&amp;copies=type">Grid spot</a></li>
+                  {% if r.owned > 1 %}
+                  <li><h6 class="dropdown-header">One card per item</h6></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full&amp;copies=item">Full page</a></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&amp;copies=item">Grid spot</a></li>
+                  {% endif %}
                 </ul>
               </div>
             </div>

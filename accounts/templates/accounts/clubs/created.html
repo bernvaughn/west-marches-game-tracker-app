@@ -3,6 +3,7 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Club created" subtitle=club.name %}
+<div class="wm-narrow-block">
 {% include "components/card_open.html" with title="First admin" %}
 <p class="mb-2">{{ membership.user.display_name|default:membership.user.email }}</p>
 {% if temp_password %}
@@ -12,4 +13,5 @@
 {% endif %}
 {% include "components/card_close.html" %}
 <p class="wm-form-actions"><a class="btn btn-primary" href="{% url 'club_home' club.slug %}">Open club home</a> <a class="btn btn-outline-secondary" href="{% url 'site_clubs' %}">All clubs</a></p>
+</div>
 {% endblock %}

@@ -9,11 +9,13 @@
   <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
 </div>
 <p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
+{% include "player_characters/characters/_copies_switch.html" %}
+{% if too_many %}{% include "player_characters/characters/_too_many.html" %}{% endif %}
 {% for sheet in sheets %}
 <section class="wm-card-sheet">
-{% for row in sheet %}{% include "player_characters/characters/_item_card.html" %}{% endfor %}
+{% for card in sheet %}{% include "player_characters/characters/_item_card.html" %}{% endfor %}
 </section>
 {% empty %}
-{% include "components/empty_state.html" with text="No items." %}
+{% if not too_many %}{% include "components/empty_state.html" with text="No items." %}{% endif %}
 {% endfor %}
 {% endblock %}

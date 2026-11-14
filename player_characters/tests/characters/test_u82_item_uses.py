@@ -76,7 +76,7 @@ def test_wordmark_on_every_card(club, login, player, owned, item, second_item):
     _give(owned, second_item, 1)
     body = _body(club, login, player, print_all(club, owned))
     assert body.count('<article class="wm-item-card') == 2
-    assert body.count('class="wm-item-card-brand wm-wordmark">Downtime Market<') == 2
+    assert body.count('class="wm-item-card-brand wm-wordmark">✦ downtime market ✦<') == 2
     for layout in ("full", "grid"):
         assert "wm-wordmark" in _body(club, login, player, print_one(club, owned, item, layout))
 

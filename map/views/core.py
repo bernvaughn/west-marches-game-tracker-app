@@ -118,6 +118,7 @@ def detail(request, club_slug, map_id):
         mine_url=with_params(base, window, "view=mine"),
     )
     ctx["tile_modal"] = True
+    ctx["fit_screen"] = True
     return render(request, "map/core/detail.html", ctx)
 
 

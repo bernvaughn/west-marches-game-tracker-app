@@ -14,6 +14,7 @@
         <div><dt>Players</dt><dd class="wm-stat-num">{{ card.players }} player{{ card.players|pluralize }}</dd></div>
         <div><dt>My characters</dt><dd>{% if card.characters %}{{ card.characters|join:", " }}{% else %}None{% endif %}</dd></div>
       </dl>
+      <p class="wm-club-open">Open club {% include "components/icon.html" with name="arrow-right" %}</p>
     </div></div>
   </div>
   {% endfor %}

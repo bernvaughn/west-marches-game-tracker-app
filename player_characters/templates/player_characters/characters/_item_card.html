@@ -1,13 +1,19 @@
-{% load coins %}<article class="wm-item-card{% if full %} wm-item-card--full{% endif %}">
+{% load coins %}<article class="wm-item-card wm-pass{% if full %} wm-item-card--full{% endif %}">
   <div class="wm-item-card-body">
-  <p class="wm-item-card-brand wm-wordmark">Downtime Market</p>
-  <h2>{% include "items/_item_name.html" with item=row.item %}{% if row.item.retired %} (Retired){% endif %}</h2>
-  <p>Quantity: {{ row.owned }}</p>
-  {% if row.use_circles %}<div class="wm-item-card-uses"><strong>Used</strong> <span class="visually-hidden">{{ row.owned }} boxes to tick</span>{% for _ in row.use_circles %}<span class="wm-use-circle" aria-hidden="true"></span>{% endfor %}{% if row.use_overflow %} <span class="wm-use-more">+{{ row.use_overflow }}</span>{% endif %}</div>{% endif %}
-  <p>Value: {{ row.item.value_cp|coins_text }}</p>
-  {% if row.item.description %}<div><strong>Description</strong>{{ row.item.description|linebreaks }}</div>{% endif %}
-  {% if row.item.traits %}<div><strong>Traits</strong>{{ row.item.traits|linebreaks }}</div>{% endif %}
-  {% if row.item.details %}<div><strong>Details</strong>{{ row.item.details|linebreaks }}</div>{% endif %}
+  <p class="wm-item-card-brand wm-wordmark">✦ downtime market ✦</p>
+  {% if card.item.symbol %}<p class="wm-item-card-icon" aria-hidden="true">{{ card.item.symbol }}</p>{% endif %}
+  <h2 class="wm-wordmark wm-item-card-name{% if card.item.name|length > 20 %} wm-item-card-name--xlong{% elif card.item.name|length > 13 %} wm-item-card-name--long{% endif %}">{{ card.item.name }}{% if card.item.retired %} (Retired){% endif %}</h2>
+  <ul class="wm-item-card-pills">
+    {% if card.item.rarity %}<li class="wm-pill"><span class="wm-pill-label">Rarity</span> <span class="wm-pill-value">{{ card.item.get_rarity_display }}</span></li>{% endif %}
+    <li class="wm-pill"><span class="wm-pill-label">Value</span> <span class="wm-pill-value">{{ card.item.value_cp|coins_text }}</span></li>
+    <li class="wm-pill"><span class="wm-pill-label">Qty</span> <span class="wm-pill-value">{{ card.qty }}</span></li>
+    {% if card.item.magic_type %}<li class="wm-pill"><span class="wm-pill-label">Type</span> <span class="wm-pill-value">{{ card.item.get_magic_type_display }}</span></li>{% endif %}
+  </ul>
+  <hr class="wm-pass-rule">
+  {% if card.item.description %}<div><strong>Description</strong>{{ card.item.description|linebreaks }}</div>{% endif %}
+  {% if card.item.traits %}<div><strong>Traits</strong>{{ card.item.traits|linebreaks }}</div>{% endif %}
+  {% if card.item.details %}<div><strong>Details</strong>{{ card.item.details|linebreaks }}</div>{% endif %}
+  {% if card.use_circles %}{% if card.item.description or card.item.traits or card.item.details %}<hr class="wm-pass-rule">{% endif %}<div class="wm-item-card-uses"><strong>Used</strong> <span class="visually-hidden">{{ card.qty }} boxes to tick</span>{% for _ in card.use_circles %}<span class="wm-use-circle" aria-hidden="true"></span>{% endfor %}{% if card.use_overflow %} <span class="wm-use-more">+{{ card.use_overflow }}</span>{% endif %}</div>{% endif %}
   </div>
-  <footer class="wm-item-card-footer">{{ character.name }} · printed {{ printed_on|date:"Y-m-d" }}</footer>
+  <footer class="wm-item-card-footer">{% if owner %}{{ owner }}{% else %}Loot{% endif %} · printed {{ printed_on|date:"Y-m-d" }}</footer>
 </article>

@@ -82,10 +82,10 @@ def test_detail_shows_rarity_only_when_set(login, player, club, item):
 def test_catalogue_column(login, player, club, item):
     c = login(player)
     body = c.get(url("index", club)).content.decode()
-    assert "<th>Rarity</th>" in body and "<td>—</td>" in body
+    assert "Rarity</th>" in body and "—</td>" in body
     item.rarity = "uncommon"
     item.save()
-    assert "<td>Uncommon</td>" in c.get(url("index", club)).content.decode()
+    assert "Uncommon</td>" in c.get(url("index", club)).content.decode()
 
 
 def test_cross_club_rarity_not_shown(login, player, club, other_club):

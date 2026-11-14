@@ -39,13 +39,13 @@
 
 <section id="component-page-header" class="wm-section">
   <h3>page_header</h3>
-  <pre>{% verbatim %}{% include "components/page_header.html" with title="Shops" subtitle="..." action_url=u action_label="New shop" action_icon="plus-lg" %}{% endverbatim %}</pre>
-  <div class="wm-card"><div class="wm-card-body">{% include "components/page_header.html" with title="Shops" subtitle="Where to spend coin" action_url="#" action_label="New shop" action_icon="plus-lg" secondary=secondary %}</div></div>
+  <pre tabindex="0">{% verbatim %}{% include "components/page_header.html" with title="Shops" subtitle="..." action_url=u action_label="New shop" action_icon="plus-lg" %}{% endverbatim %}</pre>
+  <div class="wm-card"><div class="wm-card-body">{{ page_header_sample }}</div></div>
 </section>
 
 <section id="component-card" class="wm-section">
   <h3>card (card_open, card_footer, card_close)</h3>
-  <pre>{% verbatim %}{% include "components/card_open.html" with title="Inventory" %} ... {% include "components/card_footer.html" %} ... {% include "components/card_footer_close.html" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/card_open.html" with title="Inventory" %} ... {% include "components/card_footer.html" %} ... {% include "components/card_footer_close.html" %}{% endverbatim %}</pre>
   {% include "components/card_open.html" with title="Inventory" subtitle="What Alice carries" %}
   <p class="mb-0">Card body text.</p>
   {% include "components/card_footer.html" %}<button class="btn btn-primary btn-sm">Save</button><button class="btn btn-outline-secondary btn-sm">Cancel</button>{% include "components/card_footer_close.html" %}
@@ -53,13 +53,13 @@
 
 <section id="component-section" class="wm-section">
   <h3>section (section_open, section_close)</h3>
-  <pre>{% verbatim %}{% include "components/section_open.html" with title="Quests" lead="Open work" %} ... {% include "components/section_close.html" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/section_open.html" with title="Quests" lead="Open work" %} ... {% include "components/section_close.html" %}{% endverbatim %}</pre>
   {% include "components/section_open.html" with title="Quests" lead="Open work for the party." %}<p>Section content.</p>{% include "components/section_close.html" %}
 </section>
 
 <section id="component-data-table" class="wm-section">
   <h3>data_table (CSS classes, plus data_table_empty)</h3>
-  <pre>&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="wm-date"&gt; ... &lt;td class="actions"&gt;&lt;div class="wm-row-actions btn-group btn-group-sm"&gt;icon buttons&lt;/div&gt;
+  <pre tabindex="0">&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="wm-date"&gt; ... &lt;td class="actions"&gt;&lt;div class="wm-row-actions btn-group btn-group-sm"&gt;icon buttons&lt;/div&gt;
 Low-value column: class="wm-col-optional" on the th and the td (hidden below 576 px).
 {% verbatim %}{% empty %}{% include "components/data_table_empty.html" with cols=3 text="No lines." %}{% endverbatim %}</pre>
   <p>An actions cell with a <code>.wm-row-actions</code> icon group sticks to the right edge, so the row's buttons stay visible at 390 px. Use icon buttons with a label and tooltip; a cell of text buttons does not stick, so it never covers the row. Override <code>--wm-table-sticky-bg</code> on a themed table.</p>
@@ -75,47 +75,47 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
 
 <section id="component-banner" class="wm-section">
   <h3>banner (banner_open, banner_close)</h3>
-  <pre>{% verbatim %}{% include "components/banner_open.html" with color="forest" title=shop.name subtitle="Keeper: Mira" %}{% include "components/banner_close.html" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/banner_open.html" with color="forest" title=shop.name subtitle="Keeper: Mira" %}{% include "components/banner_close.html" %}{% endverbatim %}</pre>
   <p class="text-muted">The band sits outside the card and bleeds to the page edges. Deep colour with light text, or <code>soft=1</code> for a light tint with dark text.</p>
   <div class="row g-2">{% for c in banner_colors %}<div class="col-6 col-md-4"><div class="wm-banner wm-banner--{{ c }}" style="margin:0"><h4 class="mb-0 text-reset">{{ c|capfirst }}</h4></div><div class="wm-banner wm-banner--soft wm-banner--{{ c }}" style="margin:0"><h4 class="mb-0 text-reset">{{ c|capfirst }} soft</h4></div></div>{% endfor %}</div>
 </section>
 
 <section id="component-stat" class="wm-section">
   <h3>stat</h3>
-  <pre>{% verbatim %}{% include "components/stat.html" with label="Level" value=5 %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/stat.html" with label="Level" value=5 %}{% endverbatim %}</pre>
   <div class="d-flex flex-wrap gap-3">{% include "components/stat.html" with label="Level" value=5 %}{% include "components/stat.html" with label="Quests" value=12 %}</div>
 </section>
 
 <section id="component-definition-list" class="wm-section">
   <h3>definition_list</h3>
-  <pre>{% verbatim %}{% include "components/definition_list.html" with items=pairs %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/definition_list.html" with items=pairs %}{% endverbatim %}</pre>
   {% include "components/definition_list.html" with items=dl_items %}
 </section>
 
 <section id="component-badge" class="wm-section">
   <h3>badge</h3>
-  <pre>{% verbatim %}{% include "components/badge.html" with status="warning" text="Pending" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/badge.html" with status="warning" text="Pending" %}{% endverbatim %}</pre>
   <div class="d-flex flex-wrap gap-2">{% for s in badge_statuses %}{% include "components/badge.html" with status=s text=s|capfirst %}{% endfor %}</div>
 </section>
 
 <section id="component-back-link" class="wm-section">
   <h3>back_link</h3>
-  <pre>{% verbatim %}{% include "components/back_link.html" with url=list_url label="Back to batches" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/back_link.html" with url=list_url label="Back to batches" %}{% endverbatim %}</pre>
   {% include "components/back_link.html" with url="#" label="Back to batches" %}
   <p class="wm-muted-line">page_header takes <code>back_url</code> and <code>back_label</code> and renders this above the title.</p>
 </section>
 
 <section id="component-status-badge" class="wm-section">
   <h3>status_badge</h3>
-  <pre>{% verbatim %}{% include "components/status_badge.html" with value=obj.status text=obj.get_status_display %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/status_badge.html" with value=obj.status text=obj.get_status_display %}{% endverbatim %}</pre>
   <div class="wm-toolbar">{% for s in status_values %}{% include "components/status_badge.html" with value=s text=s|capfirst %}{% endfor %}</div>
   <p class="wm-muted-line">One status-to-tone map: warning (pending, open, requested, accepted), success (approved, confirmed, completed, handled), danger (declined), info (reversed), neutral (the rest).</p>
 </section>
 
 <section id="component-page-header-pair" class="wm-section">
   <h3>page_header_open and page_header_close</h3>
-  <pre>{% verbatim %}{% include "components/page_header_open.html" with title="History" back_url=u back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a>{% include "components/page_header_close.html" %}{% endverbatim %}</pre>
-  <div class="wm-card"><div class="wm-card-body">{% include "components/page_header_open.html" with title="History" back_url="#" back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a><button class="btn btn-outline-secondary" type="button">Export</button>{% include "components/page_header_close.html" %}</div></div>
+  <pre tabindex="0">{% verbatim %}{% include "components/page_header_open.html" with title="History" back_url=u back_label="Back to sheet" %}<a class="btn btn-outline-secondary" href="#">Print</a>{% include "components/page_header_close.html" %}{% endverbatim %}</pre>
+  <div class="wm-card"><div class="wm-card-body">{{ page_header_pair_sample }}</div></div>
 </section>
 
 <section id="component-layout-classes" class="wm-section">
@@ -135,7 +135,7 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   <div class="wm-toolbar"><button class="btn btn-primary" type="button">Save</button><button class="btn btn-outline-secondary" type="button">Cancel</button></div>
   <ul class="wm-card-grid"><li class="wm-card wm-card-body">One</li><li class="wm-card wm-card-body">Two</li><li class="wm-card wm-card-body">Three</li></ul>
   <fieldset class="wm-fieldset"><legend>Fieldset</legend>
-    <div class="wm-form-row"><div><label>First</label><input class="form-control"></div><div><label>Second</label><input class="form-control"></div></div>
+    <div class="wm-form-row"><div><label for="sample-first">First</label><input class="form-control" id="sample-first"></div><div><label for="sample-second">Second</label><input class="form-control" id="sample-second"></div></div>
   </fieldset>
   <div class="wm-section-bar"><h2>Section bar</h2><a class="btn btn-sm btn-outline-secondary" href="#">Action</a></div>
 </section>
@@ -144,25 +144,25 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   <h3>coins</h3>
   <p>Coin input (the <code>CoinsField</code> widget): four cells in a row, a 2 x 2 grid below 576 px, and four plain labels (no dark platinum pill).</p>
   <div class="wm-field mb-3"><span class="form-label">Coin input</span>{{ coin_form.price }}</div>
-  <pre>{% verbatim %}{% include "components/coins.html" with value=1250 %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/coins.html" with value=1250 %}{% endverbatim %}</pre>
   <div class="d-flex flex-wrap gap-3">{% for v in coin_values %}{% include "components/coins.html" with value=v %}{% endfor %}</div>
 </section>
 
 <section id="component-character-chip" class="wm-section">
   <h3>character_chip</h3>
-  <pre>{% verbatim %}{% include "components/character_chip.html" with name=c.name url=c.get_absolute_url %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/character_chip.html" with name=c.name url=c.get_absolute_url %}{% endverbatim %}</pre>
   <div class="d-flex flex-wrap gap-3">{% for c in characters %}{% include "components/character_chip.html" with name=c url="#" %}{% endfor %}</div>
 </section>
 
 <section id="component-empty-state" class="wm-section">
   <h3>empty_state</h3>
-  <pre>{% verbatim %}{% include "components/empty_state.html" with text="No quests yet." action_url=u action_label="Add a quest" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/empty_state.html" with text="No quests yet." action_url=u action_label="Add a quest" %}{% endverbatim %}</pre>
   {% include "components/empty_state.html" with text="No quests yet." action_url="#" action_label="Add a quest" %}
 </section>
 
 <section id="component-alert" class="wm-section">
   <h3>alert</h3>
-  <pre>{% verbatim %}{% include "components/alert.html" with level="danger" text="Could not save." %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/alert.html" with level="danger" text="Could not save." %}{% endverbatim %}</pre>
   {% include "components/alert.html" with level="success" text="Saved." %}
   {% include "components/alert.html" with level="info" title="Heads up" text="Prices change on market day." %}
   {% include "components/alert.html" with level="warning" text="Two items are out of stock." %}
@@ -177,19 +177,19 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
 
 <section id="component-icon" class="wm-section">
   <h3>icon</h3>
-  <pre>{% verbatim %}{% include "components/icon.html" with name="plus-lg" label="Add" %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/icon.html" with name="plus-lg" label="Add" %}{% endverbatim %}</pre>
   <div class="d-flex flex-wrap gap-3 fs-4">{% for n in sprite_icons %}<span title="{{ n }}">{% include "components/icon.html" with name=n %}</span>{% endfor %}</div>
 </section>
 
 <section id="component-form-layout" class="wm-section">
   <h3>form_layout</h3>
-  <pre>{% verbatim %}{% include "components/form_layout.html" with form=form submit_label="Create" cancel_url=back %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% include "components/form_layout.html" with form=form submit_label="Create" cancel_url=back %}{% endverbatim %}</pre>
   {% include "components/form_layout.html" with form=form submit_label="Create" cancel_url="#" %}
 </section>
 
 <section id="component-modal-frame" class="wm-section">
   <h3>modal_frame</h3>
-  <pre>{% verbatim %}{% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% endverbatim %}</pre>
+  <pre tabindex="0">{% verbatim %}{% extends "components/modal_frame.html" %}{% block title %}Buy{% endblock %}{% block body %}...{% endblock %}{% endverbatim %}</pre>
   <div class="modal-content" style="max-width:32rem">{% include "accounts/design/_modal_sample.html" %}</div>
   <p>Tall modals scroll the body; the header and footer stay visible.</p>
   <div class="modal-dialog modal-dialog-scrollable" style="height:18rem;margin:0;max-width:32rem" data-testid="modal-tall-sample"><div class="modal-content">{% include "accounts/design/_modal_tall_sample.html" %}</div></div>

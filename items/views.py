@@ -21,6 +21,7 @@ from ledger.coins import CP_PER_GP, CP_PER_PP, CP_PER_SP
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
 from .forms import ItemForm
+from .magic_types import NONE_LABEL, MagicType
 from .models import Item
 from .rarity import Rarity
 from .references import reference_items
@@ -35,6 +36,13 @@ def index(request, club_slug):
     items = club_queryset(request, Item)
     if not show_retired:
         items = items.filter(retired=False)
+    magic_type = request.GET.get("magic_type", "")
+    if magic_type == "none":
+        items = items.filter(magic_type="")
+    elif magic_type in MagicType.values:
+        items = items.filter(magic_type=magic_type)
+    else:
+        magic_type = ""
     items = list(items)
     for_sale = available_item_ids(request.club, timezone.localdate())
     show_counts = is_admin or is_game_master(request.user, request.club)
@@ -52,6 +60,9 @@ def index(request, club_slug):
             "is_admin": is_admin,
             "show_retired": show_retired,
             "show_counts": show_counts,
+            "magic_type": magic_type,
+            "magic_types": [("none", NONE_LABEL), *MagicType.choices],
+            "retired_qs": f"&magic_type={magic_type}" if magic_type else "",
         },
     )
 

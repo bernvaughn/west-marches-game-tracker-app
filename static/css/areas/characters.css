@@ -75,10 +75,12 @@
 .wm-history-pager { display: flex; gap: var(--wm-space-2); align-items: center; }
 
 /* Item cards: trading-card size (2.5 x 3.5 in). Inch sizes are physical paper sizes, not tokens. */
-.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; border: 1px solid var(--wm-text); background: var(--wm-surface-raised); padding: 0.1in 0.12in; display: flex; flex-direction: column; }
+.wm-item-card { width: 2.5in; height: 3.5in; box-sizing: border-box; overflow: hidden; font-size: 0.7rem; line-height: 1.2; padding: 0.12in 0.14in; display: flex; flex-direction: column; }
 .wm-item-card-body { flex: 1; overflow: hidden; min-height: 0; }
-.wm-item-card-footer { margin-top: auto; border-top: 1px solid; font-size: 0.85em; padding-top: 0.05in; }
-.wm-item-card h2 { font-family: var(--wm-font-heading); font-size: 1.3em; margin: 0 0 0.25em; }
+.wm-item-card-footer { margin-top: auto; text-align: center; font-size: 0.85em; padding-top: 0.05in; }
+.wm-item-card h2 { font-size: 1.7em; margin: 0 0 0.2em; text-align: center; line-height: 1.05; overflow-wrap: anywhere; }
+.wm-item-card h2.wm-item-card-name--long { font-size: 1.3em; }
+.wm-item-card h2.wm-item-card-name--xlong { font-size: 1.05em; }
 .wm-item-card p { margin: 0 0 0.4em; }
 .wm-item-card--full { width: 7.5in; height: 10.5in; font-size: 2.1rem; padding: 0.3in 0.36in; }
 .wm-card-sheet { display: grid; grid-template-columns: repeat(3, 2.5in); grid-auto-rows: 3.5in; width: 7.5in; margin-bottom: var(--wm-space-4); }
@@ -89,16 +91,26 @@
   body { background: white; color: black; font-size: 10pt; }
   .wm-sheet { max-width: none; }
   .wm-sheet-header, .wm-sheet-box, .wm-item-card { background: white; border-color: black; box-shadow: none; break-inside: avoid; }
-  .wm-sheet-header h1 { font-size: 24pt; }
-  .wm-sheet-header p, .wm-sheet-box-title, .wm-sheet-note, .wm-sheet-date { color: black; }
-  .wm-sheet-box-title { border-bottom-color: black; }
-  .wm-sheet-grid { display: block; column-count: 2; column-gap: var(--wm-space-3); }
-  .wm-sheet-box { margin-bottom: var(--wm-space-2); }
-  .wm-sheet-full { column-span: all; }
+  .wm-sheet-header { padding: 4pt 8pt; margin-bottom: 6pt; }
+  .wm-sheet-header h1 { font-size: 20pt; margin: 0; }
+  .wm-sheet-header p, .wm-sheet-box-title, .wm-sheet-note, .wm-sheet-date { color: black; font-size: 10pt; }
+  .wm-sheet-box-title { border-bottom-color: black; margin: 0 0 3pt; }
+  /* U87: same two-column box grid as the screen */
+  .wm-sheet-grid, .wm-sheet-layout { display: grid; grid-template-columns: 1fr 1fr; column-count: auto; gap: 6pt; align-items: stretch; }
+  .wm-sheet-layout > .wm-sheet-full, .wm-sheet-grid > .wm-sheet-full { grid-column: 1 / -1; column-span: none; }
+  .wm-sheet-box { margin: 0; padding: 4pt 6pt; }
+  .wm-sheet-inventory, .wm-table-scroll { overflow: visible; background: none; }
+  .wm-sheet-table { width: 100%; font-size: 10pt; }
+  .wm-sheet-table th, .wm-sheet-table td { padding: 1pt 4pt; font-size: 10pt; }
+  .wm-sheet-table td.num, .wm-sheet-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .wm-sheet-stats { font-size: 10pt; gap: 2pt 8pt; }
+  .wm-sheet-ability-abbr, .wm-sheet-ability-mod, .wm-sheet-ledger { font-size: 10pt; }
+  .wm-sheet-ability-score { font-size: 14pt; }
   .wm-sheet-coins-total { font-size: 14pt; }
-  .wm-sheet-table th { background: white; color: black; }
+  /* Beat the components.css `.table > thead > tr > th` 9pt (text-xs) rule. */
+  .wm-sheet .wm-sheet-table.table > thead > tr > th { background: white; color: black; font-size: 10pt; }
   .wm-sheet-table tr { background: white; }
-  .wm-badge { border: 1px solid black; background: white; color: black; }
+  .wm-sheet .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
 }
 
 /* U59: inventory row actions stay on one line */
@@ -122,19 +134,32 @@
 .wm-character-form textarea { width: 100%; }
 @media print { .wm-sheet-ledger-box { display: none; } .wm-sheet-abilities { grid-template-columns: repeat(6, 1fr); } }
 
-/* Character slips: 2 x 6 per portrait page. Inch sizes are physical paper sizes. */
-.wm-slip-sheet { display: grid; grid-template-columns: repeat(2, 3.9in); grid-auto-rows: 1.7in; width: 7.8in; margin-bottom: var(--wm-space-4); }
-.wm-slip { position: relative; border: 1px dashed var(--wm-text); box-sizing: border-box; overflow: hidden; padding: 0.12in 0.16in; font-size: 0.85rem; line-height: 1.2; }
-.wm-slip::before { content: ""; position: absolute; inset: 0.05in; border: 3px double currentColor; pointer-events: none; }
-.wm-slip h2 { font-family: var(--wm-font-heading); font-size: 2.3rem; margin: 0; padding-right: 1.2em; line-height: 1.05; }
-.wm-slip h2.wm-slip-name--long { font-size: 1.7rem; overflow-wrap: anywhere; }
-.wm-slip h2.wm-slip-name--xlong { font-size: 1.25rem; }
-.wm-slip-mark { position: absolute; top: 0.12in; right: 0.16in; font-size: 1.1rem; }
-.wm-slip-player { margin: 0 0 0.05in; }
-.wm-slip li { white-space: nowrap; }
-.wm-slip ul { list-style: none; margin: 0; padding: 0; columns: 2; }
+/* Character slips: 2 x 6 per portrait page. Inch sizes are physical paper sizes. Frame is .wm-pass in components.css. */
+.wm-slip-sheet { display: grid; grid-template-columns: repeat(2, 4in); grid-auto-rows: 1.75in; width: 8in; margin-bottom: var(--wm-space-4); }
+.wm-slip { display: grid; grid-template-columns: 1fr auto auto; overflow: hidden; padding: 0.1in 0.12in; font-size: 8pt; line-height: 1.2; }
+.wm-slip-main { display: flex; flex-direction: column; min-width: 0; padding-right: 0.1in; }
+.wm-slip-kicker { margin: 0; font-size: 7pt; font-variant: small-caps; letter-spacing: 0.08em; text-align: center; }
+.wm-slip h2 { font-size: 18pt; margin: 0.02in 0 0; line-height: 1.05; }
+.wm-slip h2.wm-slip-name--long { font-size: 14pt; overflow-wrap: anywhere; }
+.wm-slip h2.wm-slip-name--xlong { font-size: 11pt; }
+.wm-slip-pronouns, .wm-slip-player { margin: 0; font-size: 8pt; }
+.wm-slip-pills { list-style: none; margin: 0.04in 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.04in; }
+.wm-slip-pills .wm-pill { display: inline-flex; gap: 0.04in; border: 1px solid currentColor; border-radius: 0.1in; padding: 0 0.07in; white-space: nowrap; background: none; }
+.wm-pill-label { font-size: 7pt; }
+.wm-pill-value { font-size: 8.5pt; font-weight: 700; }
+.wm-slip-foot { margin: auto 0 0; font-size: 7pt; font-variant: small-caps; letter-spacing: 0.08em; }
+.wm-slip-abilities { display: grid; grid-template-columns: repeat(2, 0.55in); grid-template-rows: repeat(3, 1fr); gap: 0.05in; padding-left: 0.1in; align-content: center; }
+.wm-slip-ability { display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid currentColor; border-radius: 0.05in; }
+.wm-slip-ability-label { font-size: 7pt; font-weight: 700; }
+.wm-slip-ability-score { font-size: 11pt; line-height: 1; }
+.wm-slip-ability-mod { font-size: 8pt; }
 
-.wm-item-card-brand { text-align: center; font-size: 0.9em; margin: 0 0 0.3em; padding-bottom: 0.15em; border-bottom: 1px solid currentColor; }
+.wm-item-card-brand { text-align: center; font-size: 0.85em; font-variant: small-caps; letter-spacing: 0.06em; margin: 0 0 0.2em; }
+.wm-item-card-icon { text-align: center; font-size: 2em; line-height: 1; margin: 0 0 0.1em; }
+.wm-item-card-pills { list-style: none; margin: 0 0 0.3em; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.25em; }
+.wm-item-card-pills .wm-pill { display: inline-flex; gap: 0.3em; border: 1px solid currentColor; border-radius: 1em; padding: 0 0.5em; white-space: nowrap; background: none; }
+.wm-item-card .wm-pill-label { font-size: 0.8em; }
+.wm-item-card .wm-pill-value { font-size: 0.95em; font-weight: 700; }
 .wm-item-card-uses { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25em; margin: 0 0 0.4em; }
 .wm-use-circle { display: inline-block; width: 0.9em; height: 0.9em; border: 1px solid currentColor; border-radius: 50%; background: transparent; }
 .wm-inline-number { display: inline-block; width: 5em !important; vertical-align: baseline; }

@@ -46,6 +46,7 @@ CLIPPED_JS = """() => {
   const out = [];
   for (const el of document.querySelectorAll('body *')) {
     if (el.closest('svg') || el.closest('.navbar')) continue;
+    if (el.classList.contains('wm-skip-link')) continue;
     const st = getComputedStyle(el);
     if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0 &&
         /(auto|scroll|hidden|clip)/.test(st.overflowX)) {

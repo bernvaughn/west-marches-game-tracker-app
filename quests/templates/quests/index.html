@@ -2,7 +2,7 @@
 {% block title %}Quests{% endblock %}
 {% block content %}
 {% url 'quests:manage' club.slug as manage_url %}
-{% if is_admin %}{% include "components/page_header.html" with title="Quests" action_url=manage_url action_label="Manage quests" %}{% else %}{% include "components/page_header.html" with title="Quests" %}{% endif %}
+{% if is_admin %}{% include "components/page_header.html" with title="Quests" subtitle="Bring the items on a notice to claim its reward." action_url=manage_url action_label="Manage quests" %}{% else %}{% include "components/page_header.html" with title="Quests" subtitle="Bring the items on a notice to claim its reward." %}{% endif %}
 <div class="wm-board">
   {% if board %}
   <ul class="wm-board-grid">
