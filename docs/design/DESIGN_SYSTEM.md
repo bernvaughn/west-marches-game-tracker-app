@@ -71,7 +71,7 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **modal_frame**: header, body, footer for `#app-modal`. Below `sm` the modal is full screen.
 
 ### Rules
-- Top bar: one row on desktop for every role, the full user name at 1400 px and wider, an initials chip below that (tooltip and screen-reader name carry the full name). The character dropdown submits on change (a `<noscript>` Switch button is the fallback). On a phone the club name hides and the menu has a link to Your clubs.
+- Top bar: one row on desktop for every role, the full user name at 1400 px and wider, an initials chip below that (tooltip and screen-reader name carry the full name). The character dropdown submits on change (a `<noscript>` Switch button is the fallback). Every page starts with a skip link to `main#main`. Icon-only buttons (menu, close) carry a tooltip. On a phone the club name hides and the menu has a link to Your clubs.
 - Touch targets: below 576 px every `.btn`, input, select, `.nav-link` and `.dropdown-item` is at least 44 px high. Desktop stays compact.
 - Page width: `{% block main_class %}wm-main--narrow{% endblock %}` caps a page at 72 rem. The default is full width with token gutters.
 - The top bar must fit at 390 px with no horizontal overflow. Check it with `scripts/screenshots.py`.
