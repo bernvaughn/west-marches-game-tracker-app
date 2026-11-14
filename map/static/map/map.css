@@ -7,6 +7,10 @@
 .hex-visited { fill: var(--wm-success-bg); }
 .hex-safe { stroke: var(--wm-text); stroke-width: 2.5; }
 .hex-symbol { font-size: var(--wm-text-lg); pointer-events: none; }
+/* 10px = COORD_FONT in map/hexgrid.py; min scale 0.8 keeps it at 8px or more. */
+.hex-coord { font-size: 10px; fill: var(--wm-text-muted); pointer-events: none; }
+.hexmap--fit { overflow: auto; }
+.hexmap--fit svg { width: 100%; height: calc(100vh - var(--hexmap-offset, 15rem)); height: calc(100dvh - var(--hexmap-offset, 15rem)); }
 .hex-badge { fill: var(--wm-text); }
 .hex-badge-text { fill: var(--wm-surface); font-size: var(--wm-text-xs); pointer-events: none; }
 .hex-unexplored, .legend-unexplored { fill: var(--wm-danger); font-weight: bold; font-size: var(--wm-text-md); pointer-events: none; }
@@ -40,6 +44,8 @@
 @media print {
   .site-header, .wm-toolbar, .map-controls, .map-picker, .pan-links, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }
   .hexmap svg { width: 100%; max-width: none; }
+  .hexmap--fit { overflow: visible; }
+  .hexmap--fit svg { height: auto; min-width: 0 !important; min-height: 0 !important; }
   .map-frame { border: 0; box-shadow: none; }
   .map-keys { display: block; }
   .map-key { border: 0; padding: 0 0 var(--wm-space-2); }
