@@ -63,10 +63,11 @@
 .wm-trade-status-line { margin: 0 0 var(--wm-space-3); padding: var(--wm-space-2) var(--wm-space-3); border-left: 4px solid var(--wm-primary, currentColor); background: var(--wm-surface-subtle, transparent); font-weight: 600; }
 .wm-trade-row-unavailable td { color: var(--wm-text-muted); }
 .wm-trade-table { table-layout: fixed; }
-.wm-trade-col-from, .wm-trade-col-to { width: 30%; }
-.wm-trade-col-status, .wm-trade-col-date { width: 20%; }
-.wm-trade-table td, .wm-trade-table th { overflow-wrap: anywhere; }
-.wm-trade-table td.wm-date, .wm-trade-table th.wm-date { overflow-wrap: normal; }
+/* Status and date keep one line. From and To share the rest; a long name wraps (hyphenated where the browser can). */
+.wm-trade-col-status { width: 6.25rem; }
+.wm-trade-col-date { width: 6.25rem; }
+.wm-trade-table td:nth-child(-n+2) { overflow-wrap: break-word; hyphens: auto; }
+.wm-trade-table .badge { white-space: nowrap; }
 
 /* Ledger history: signed amounts. The sign text carries the meaning; colour is an extra cue. */
 .wm-credit { color: var(--wm-success); }
