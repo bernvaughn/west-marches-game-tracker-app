@@ -109,3 +109,13 @@ def test_sheet_and_print_view_render(club, login, player, funded):
     c = login(player)
     assert c.get(u("characters:detail", club, funded.pk)).status_code == 200
     assert c.get(u("characters:print_items", club, funded.pk)).status_code == 200
+
+
+@pytest.mark.story("U87")
+def test_sheet_print_header_beats_components_rule():
+    css = (CSS / "areas" / "characters.css").read_text()
+    start = css.index("@media print {\n  @page { margin: 12mm; }")
+    block = css[start : css.index("/* U59", start)]
+    rule = re.search(r"\.wm-sheet \.wm-sheet-table\.table > thead > tr > th \{([^}]*)\}", block)
+    assert rule and "font-size: 10pt" in rule.group(1)
+    assert re.search(r"\.wm-sheet \.wm-badge \{[^}]*font-size: 10pt", block)

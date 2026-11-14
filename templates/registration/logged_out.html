@@ -6,5 +6,6 @@
   <p class="wm-auth-brand wm-wordmark">{{ APP_NAME }}</p>
   {% include "components/page_header.html" with title="You are logged out" subtitle="See you at the next session." %}
   <a class="btn btn-primary w-100" href="{% url 'login' %}">Log in again</a>
+  <p class="wm-auth-links"><a href="{% url 'about' %}">About</a> · <a href="{% url 'plans' %}">Plans</a></p>
 </div>
 {% endblock %}

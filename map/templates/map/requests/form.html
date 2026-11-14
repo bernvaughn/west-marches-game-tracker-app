@@ -4,15 +4,14 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
-{% include "components/page_header.html" with title=title subtitle=subtitle %}
+{% url 'map:detail' club.slug hex_map.pk as back_url %}{% include "components/page_header.html" with title=title subtitle=subtitle back_url=back_url back_label="Back to the map" %}
 {% if not has_characters %}{% include "components/alert.html" with level="info" text="You have no characters in this club, so you cannot make a request." %}{% endif %}
-{% include "components/card_open.html" only %}
 <form method="post" class="wm-form">{% csrf_token %}
-{{ form }}
+{{ form.non_field_errors }}
+{% for field in form %}{% if field.is_hidden %}{{ field }}{% elif field.name == "q" or field.name == "r" %}<div class="wm-field"><label class="form-label mb-1" for="{{ field.id_for_label }}">{% if field.name == "q" %}Column{% else %}Row{% endif %}{% if field.field.required %}<span class="wm-required" aria-hidden="true">*</span>{% endif %}</label>{{ field }}{% if field.help_text %}<div class="form-text"{% if field.auto_id %} id="{{ field.auto_id }}_helptext"{% endif %}>{{ field.help_text|safe }}</div>{% endif %}{{ field.errors }}</div>{% else %}{% include "forms/field.html" %}{% endif %}{% endfor %}
 <div class="wm-form-actions">
 <button class="btn btn-primary" type="submit">Send request</button>
 <a class="btn btn-outline-secondary" href="{% url 'map:requests' club.slug %}">Map requests</a>
 </div>
 </form>
-{% include "components/card_close.html" %}
 {% endblock %}

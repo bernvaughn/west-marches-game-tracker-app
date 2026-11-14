@@ -12,7 +12,7 @@
 {% include "components/page_header_close.html" %}{% else %}{% include "components/page_header.html" with title=item.name back_url=list_url back_label="Back to items" %}{% endif %}
 {% if item.retired %}<p>{% include "components/badge.html" with status="neutral" text="Retired" %}</p>{% endif %}
 {% include "components/card_open.html" %}
-<dl class="wm-dl wm-item-detail">{% if item.symbol %}<dt>Symbol</dt><dd>{{ item.symbol }}</dd>{% endif %}{% if item.rarity %}<dt>Rarity</dt><dd>{{ item.get_rarity_display }}</dd>{% endif %}<dt>Value</dt><dd>{{ item.value_cp|coins }}</dd>
+<dl class="wm-dl wm-item-detail">{% if item.symbol %}<dt>Symbol</dt><dd>{{ item.symbol }}</dd>{% endif %}{% if item.rarity %}<dt>Rarity</dt><dd>{{ item.get_rarity_display }}</dd>{% endif %}{% if item.magic_type %}<dt>Magic item type</dt><dd>{% include "components/badge.html" with status="neutral" text=item.get_magic_type_display %}</dd>{% endif %}<dt>Value</dt><dd>{{ item.value_cp|coins }}</dd>
 {% if item.description %}<dt>Description</dt><dd>{{ item.description|linebreaks }}</dd>{% endif %}
 {% if item.traits %}<dt>Traits</dt><dd>{{ item.traits|linebreaks }}</dd>{% endif %}
 {% if item.details %}<dt>Details</dt><dd>{{ item.details|linebreaks }}</dd>{% endif %}</dl>

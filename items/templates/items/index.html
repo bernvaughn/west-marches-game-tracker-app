@@ -5,22 +5,33 @@
 {% url 'items:create' club.slug as create_url %}
 {% if is_admin %}{% include "components/page_header.html" with title="Items" action_url=create_url action_label="New item" action_icon="plus-lg" %}{% else %}{% include "components/page_header.html" with title="Items" %}{% endif %}
 {% if is_admin %}
-<p>{% if show_retired %}<a href="{% url 'items:index' club.slug %}">Hide retired</a>
-  {% else %}<a href="{% url 'items:index' club.slug %}?retired=1">Show retired</a>{% endif %}</p>
+<p>{% if show_retired %}<a href="{% url 'items:index' club.slug %}{% if magic_type %}?magic_type={{ magic_type }}{% endif %}">Hide retired</a>
+  {% else %}<a href="{% url 'items:index' club.slug %}?retired=1{{ retired_qs }}">Show retired</a>{% endif %}</p>
 {% endif %}
+<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3 no-print">
+  {% if show_retired %}<input type="hidden" name="retired" value="1">{% endif %}
+  <div><label for="id_magic_type" class="form-label">Magic item type</label>
+  <select name="magic_type" id="id_magic_type" class="form-select">
+    <option value="">All items</option>
+    {% for value, label in magic_types %}<option value="{{ value }}"{% if value == magic_type %} selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select></div>
+  <button class="btn btn-outline-secondary" type="submit">Filter</button>
+  <a class="btn btn-outline-secondary" href="{% url 'items:index' club.slug %}{% if show_retired %}?retired=1{% endif %}">Clear</a>
+</form>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-items-table">
-  <thead><tr><th>Name</th><th class="wm-col-optional">Rarity</th><th class="num">Value</th>{% if show_counts %}<th class="num wm-col-optional">Characters</th><th class="num wm-col-optional">Held</th>{% endif %}<th class="actions"><span class="visually-hidden">Where to buy</span></th></tr></thead>
+  <thead><tr><th>Name</th><th class="wm-col-optional">Rarity</th><th class="wm-col-optional">Magic type</th><th class="num">Value</th>{% if show_counts %}<th class="num wm-col-optional">Characters</th><th class="num wm-col-optional">Held</th>{% endif %}<th class="actions"><span class="visually-hidden">Where to buy</span></th></tr></thead>
   <tbody>
   {% for i in items %}
     <tr>
       <td><a href="{% url 'items:detail' club.slug i.pk %}">{% include "items/_item_name.html" with item=i %}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}{% if i.traits %}<div class="small text-muted">{{ i.traits|truncatewords:12 }}</div>{% endif %}</td>
       <td class="wm-col-optional">{{ i.get_rarity_display|default:"—" }}</td>
+      <td class="wm-col-optional">{{ i.get_magic_type_display|default:"—" }}</td>
       <td class="num">{{ i.value_cp|coins }}</td>
       {% if show_counts %}<td class="num wm-col-optional">{{ i.owner_count }}</td><td class="num wm-col-optional">{{ i.held_total }}</td>{% endif %}
       <td class="actions">{% if i.for_sale and not i.retired %}{% url 'items:where_to_buy' club.slug i.pk as wtb_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ wtb_url }}" hx-get="{{ wtb_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Where to buy" aria-label="Where to buy {{ i.name }}">{% include "components/icon.html" with name="shop" %}</a>{% endif %}</td>
     </tr>
   {% empty %}
-    {% include "components/data_table_empty.html" with cols=show_counts|yesno:"6,4" text="No items." %}
+    {% include "components/data_table_empty.html" with cols=show_counts|yesno:"7,5" text="No items." %}
   {% endfor %}
   </tbody>
 </table></div>

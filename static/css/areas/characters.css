@@ -105,9 +105,10 @@
   .wm-sheet-ability-abbr, .wm-sheet-ability-mod, .wm-sheet-ledger { font-size: 10pt; }
   .wm-sheet-ability-score { font-size: 14pt; }
   .wm-sheet-coins-total { font-size: 14pt; }
-  .wm-sheet-table th { background: white; color: black; }
+  /* Beat the components.css `.table > thead > tr > th` 9pt (text-xs) rule. */
+  .wm-sheet .wm-sheet-table.table > thead > tr > th { background: white; color: black; font-size: 10pt; }
   .wm-sheet-table tr { background: white; }
-  .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
+  .wm-sheet .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
 }
 
 /* U59: inventory row actions stay on one line */

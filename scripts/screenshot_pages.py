@@ -256,6 +256,8 @@ def _build_pages() -> list[Page]:
     P = Page
     pages = [
         P("login", "anon", lambda d: reverse("login")),
+        P("about", "anon", lambda d: reverse("about")),
+        P("plans", "anon", lambda d: reverse("plans")),
         P("home-alice", "alice", lambda d: reverse("home")),
         P("home-site-admin", "site_admin", lambda d: reverse("home")),
         P("password-change", "alice", lambda d: reverse("password_change")),
