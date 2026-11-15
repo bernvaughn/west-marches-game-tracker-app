@@ -680,6 +680,31 @@ From using the build after round 9, plus new print designs and public pages. Sto
 **U95 "Built with CodeHerder" footer.** As the owner, I want a small "Built with CodeHerder" note in the footer of the public pages, not club pages. *(site-wide)*
 - Easy to remove if the CodeHerder team would rather not be advertised this way.
 
+## Round 11: stories from the tenth look (2026-11-15)
+
+Story numbers continue from U95. U96 replaces the public-only note in U95.
+
+### Site-wide
+
+**U96 A small footer on every page.** As the owner, I want a small footer on every page with copyright and credits, so the app carries its attribution everywhere. *(site-wide)*
+- Every page, including club pages, has a small footer: "© 2026 Vaughn Bernard" and "Designed by Vaughn Bernard, built by CodeHerder". On desktop the copyright sits on the left and the credit on the right; on a phone they stack and centre. It stays small (about 12 px, muted text, a hairline rule above).
+- "CodeHerder" links to https://codeherder.com/, with a self-hosted copy of the CodeHerder favicon as a small icon beside it (no request to a third-party site). The link text carries the name; the icon is decorative.
+- The footer never prints: hidden on printed sheets, slips, item cards, loot cards and the map print.
+- The copyright, credit, link and icon live in one footer partial, so they are easy to change or remove. Before release, the owner confirms the CodeHerder team is okay with the credit, link and favicon.
+- This replaces the "Built with CodeHerder" note on public pages (U95).
+
+### Items
+
+**U97 Item details in a modal.** As anyone, I want to open an item's details from a small "i" icon beside its name, wherever the name appears, so I can check what an item does without leaving the page. *(items, site-wide)*
+- The icon sits beside the item name in the shared item-name partial, so it appears in shops and stock, Your inventory, the character sheet, trades, quests, downtime rewards, the ledger, consume, junk and sell confirms, the catalogue and the print pickers. The name itself is not a link.
+- The modal shows the item's icon, name, rarity, magic item type (U93), value, description, traits and details, and for game masters and club admins the GM-only details (U98). It opens in the shared modal, and the item page is its plain fallback without JavaScript.
+- The icon has a label such as "Details for Healing potion", is reachable by keyboard, and opening it does not trigger the row's other actions (for example selecting or buying).
+
+**U98 GM-only item details.** As a game master or club admin, I want a private section on an item for secrets, such as a curse, so players only see what their characters know. *(items, agent_access)*
+- An optional "GM-only details" text field on each catalogue item, edited on the item form.
+- Only game masters and club admins see it: on the item page, in the item modal (U97), the edit form and the catalogue. Players never see it anywhere, including the modal, printed item cards and loot cards, shop and inventory pages, trades and responses to players.
+- A game master's agent can read and propose the field like other item fields (A5). Everything else about an item is visible to players.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -866,6 +891,7 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each location has one credited discovery group (the first) and one credited explored group (which may differ). Game masters and club admins can correct them, and everyone who sees the location sees the credited characters (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants, with no automatic declines (M12). A party is only a list of characters picked at the time, not a stored record.
 - **Magic item type.** Catalogue items carry an optional magic item type (Armor, Potion, Ring, Rod, Scroll, Staff, Wand, Weapon, Wondrous item) instead of a yes/no wondrous tag; treasure themes come later (U93).
 - **Slips and cards.** Slips and item cards share the adventurer's-pass look: double border, notched corners, wordmark font. Players can print one card per item type or one per item (U89, U90, U92).
+- **Footer and item details.** Every page has a small footer with copyright and credits, never printed (U96). Item details open from an "i" icon beside the name; items have a GM-only details field that players never see (U97, U98).
 - **Left for later.** Lore and the donate service.
 
 ## Still open
