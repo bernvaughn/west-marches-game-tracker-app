@@ -1,11 +1,30 @@
-{% if own_characters|length > 1 %}
+{% load accounts_tags character_tags %}
+{% all_selector_context as chars_ctx %}
+{% if chars_ctx|length > 1 %}
 <form method="post" action="{% url 'characters:select' club.slug %}" class="character-selector d-flex align-items-center gap-1 no-print">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
   <select name="character" class="form-select form-select-sm" aria-label="Acting as" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
-    {% for c in own_characters %}<option value="{{ c.pk }}"{% if c == selected_character %} selected{% endif %}>{{ c.name }}</option>{% endfor %}
+    {% for c, ctx in chars_ctx %}
+    <option value="{{ c.pk }}"{% if c == selected_character %} selected{% endif %}>
+      {{ c.name }}
+      {% if ctx.coins %} · {{ ctx.coins }}{% endif %}
+      {% if ctx.junk_qty > 0 %} · Junk: {{ ctx.junk_qty }}{% endif %}
+      {% if ctx.open_trades > 0 %} · Trades: {{ ctx.open_trades }}{% endif %}
+      {% if ctx.downtime > 0 %} · DT: {{ ctx.downtime }}{% endif %}
+    </option>
+    {% endfor %}
   </select>
   <noscript><button type="submit" class="btn btn-sm btn-outline-primary">Switch</button></noscript>
 </form>
-{% elif selected_character %}<span class="navbar-text character-name">Acting as {{ selected_character.name }}</span>
+{% elif selected_character %}
+{% with ctx=selected_character|selector_context %}
+<span class="navbar-text character-name">
+  Acting as {{ selected_character.name }}
+  {% if ctx.coins %} · {{ ctx.coins }}{% endif %}
+  {% if ctx.junk_qty > 0 %} · <span class="wm-badge wm-badge--warning">Junk {{ ctx.junk_qty }}</span>{% endif %}
+  {% if ctx.open_trades > 0 %} · <span class="wm-badge wm-badge--info">Trades {{ ctx.open_trades }}</span>{% endif %}
+  {% if ctx.downtime > 0 %} · <span class="wm-badge wm-badge--success">DT {{ ctx.downtime }}</span>{% endif %}
+</span>
+{% endwith %}
 {% else %}<span class="navbar-text character-name">No character</span>{% endif %}

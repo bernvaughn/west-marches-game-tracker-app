@@ -3,6 +3,10 @@
 {% block content %}
 {% url 'trades:propose' club.slug as propose_url %}
 {% include "components/page_header.html" with title="Trades" action_url=propose_url action_label="Propose trade" action_icon="plus-lg" %}
+
+{# Trade poll fragment for navbar indicator updates #}
+<div id="trade-poll" hx-get="{% url 'trades:poll' club.slug %}" hx-trigger="every 5s" hx-swap="none" class="no-print" aria-hidden="true"></div>
+
 {% include "components/section_open.html" with title="Open trades" %}
 {% include "player_characters/trades/_trade_table.html" with trades=open_trades empty_text="No open trades." %}
 {% include "components/section_close.html" %}

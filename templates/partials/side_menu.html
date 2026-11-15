@@ -40,4 +40,5 @@
   <div class="wm-side-menu-footer">
       <form method="post" action="{% url 'logout' %}" class="logout wm-menu-logout">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary w-100">Log out</button></form>
   </div>
+  {% if club %}{% include "partials/trade_poll.html" %}{% endif %}
 </div>

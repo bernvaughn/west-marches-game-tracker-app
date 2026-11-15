@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import trade_detail, trade_sides, trade_status, trades
+from .views import trade_detail, trade_sides, trade_status, trades, trade_poll
 
 app_name = "trades"
 urlpatterns = [
@@ -12,4 +12,5 @@ urlpatterns = [
     path("<int:pk>/cancel/", trade_status.cancel, name="cancel"),
     path("<int:pk>/side/", trade_sides.edit_side, name="edit_side"),
     path("<int:pk>/approve/", trade_sides.approve, name="approve"),
+    path("poll/", trade_poll.trade_poll, name="poll"),
 ]
