@@ -35,6 +35,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
 
+    # The authentication form field is named "username" (Django's AuthenticationForm default),
+    # but because USERNAME_FIELD = "email", that field expects an EMAIL ADDRESS.
+    # This is a Django convention: the form field name stays "username" but the value
+    # is matched against the USERNAME_FIELD (email). No custom form or backend needed.
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
     objects = UserManager()

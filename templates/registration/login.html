@@ -8,6 +8,9 @@
   {% include "components/page_header.html" with title="Log in" subtitle="Sign in to see your clubs and characters." %}
   <form method="post" class="wm-form">
     {% csrf_token %}
+    <!-- NOTE: The form field rendered by {{ form }} uses name="username" (Django default).
+         Because User.USERNAME_FIELD = "email", this field expects an EMAIL ADDRESS.
+         Do not change the field name; Django handles the mapping automatically. -->
     {{ form }}
     <input type="hidden" name="next" value="{{ next }}">
     <div class="wm-form-actions"><button type="submit" class="btn btn-primary w-100">Log in</button></div>
