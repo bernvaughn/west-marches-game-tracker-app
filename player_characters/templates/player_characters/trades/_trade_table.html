@@ -7,7 +7,10 @@
   <tr>
     <td><a href="{% url 'trades:detail' club.slug t.pk %}">{{ t.sender.name }}</a><span class="d-block small text-body-secondary">{{ t.sender.owner.user.display_name }}</span></td>
     <td>{{ t.receiver.name }}<span class="d-block small text-body-secondary">{{ t.receiver.owner.user.display_name }}</span></td>
-    <td>{% include "player_characters/trades/_status_badge.html" %}</td>
+    <td>
+      <span class="wm-trade-status-line" role="status">{{ t.status_line }}</span>
+      {% include "components/status_badge.html" with value=t.status text=t.get_status_display %}
+    </td>
     <td class="wm-date">{{ t.created|date }}</td>
   </tr>
   {% empty %}

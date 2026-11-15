@@ -20,6 +20,18 @@ def mk(club, user, name):
     )
 
 
+def main_content(html: str) -> str:
+    """Extract only the content inside the <main> element."""
+    start = html.find("<main")
+    if start == -1:
+        return ""
+    start = html.find(">", start) + 1
+    end = html.find("</main>", start)
+    if end == -1:
+        return html[start:]
+    return html[start:end]
+
+
 @pytest.fixture
 def two(club, player):
     return mk(club, player, "Aria"), mk(club, player, "Wren")
@@ -47,7 +59,8 @@ def test_mine_empty_state(login, club, player):
 def test_directory_name_and_player_only(login, club, player, other_player, two):
     mk(club, other_player, "Bram")
     html = login(player).get(u("characters:directory", club)).content.decode()
-    assert "Aria" in html and "Bram" in html and "@" not in html.split("<main")[-1]
+    content = main_content(html)
+    assert "Aria" in content and "Bram" in content and "@" not in content
     assert u("characters:detail", club, two[0].pk) in html
     bram = Character.objects.get(name="Bram")
     assert u("characters:detail", club, bram.pk) not in html

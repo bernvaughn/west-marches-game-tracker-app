@@ -8,7 +8,7 @@
 <nav class="mb-4" aria-label="On this page"><ul class="list-inline">
   {% for gid, title, rows in groups %}<li class="list-inline-item"><a href="#token-{{ gid }}">{{ title }}</a></li>{% endfor %}
   <li class="list-inline-item"><a href="#component-page-header">Components</a></li>
-  <li class="list-inline-item"><a href="#component-toast-container">Toast</a></li>
+  <li class="list-inline-item"><a href="#component-toast-container">Toast container</a></li>
   <li class="list-inline-item"><a href="#component-command-palette">Command Palette</a></li>
 </ul></nav>
 
@@ -61,7 +61,7 @@
 
 <section id="component-data-table" class="wm-section">
   <h3>data_table (CSS classes, plus data_table_empty)</h3>
-  <pre tabindex="0">&lt;div class="wm-table-scroll"&gt;&lt;table class="table table-sm table-striped wm-data-table"&gt; ... &lt;td class="num"&gt; ... &lt;td class="wm-date"&gt; ... &lt;td class="actions"&gt;&lt;div class="wm-row-actions btn-group btn-group-sm"&gt;icon buttons&lt;/div&gt;
+  <pre tabindex="0"><div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table"> ... <td class="num"> ... <td class="wm-date"> ... <td class="actions"><div class="wm-row-actions btn-group btn-group-sm">icon buttons</div>
 Low-value column: class="wm-col-optional" on the th and the td (hidden below 576 px).
 {% verbatim %}{% empty %}{% include "components/data_table_empty.html" with cols=3 text="No lines." %}{% endverbatim %}</pre>
   <p>An actions cell with a <code>.wm-row-actions</code> icon group sticks to the right edge, so the row's buttons stay visible at 390 px. Use icon buttons with a label and tooltip; a cell of text buttons does not stick, so it never covers the row. Override <code>--wm-table-sticky-bg</code> on a themed table.</p>
@@ -177,15 +177,29 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   <p>One format everywhere: <strong>{{ sample_date|date }}</strong> (<code>j M Y</code>). Use <code>{% verbatim %}{{ d|date }}{% endverbatim %}</code>, or <code>{% verbatim %}{{ dt|date:"DATETIME_FORMAT" }}{% endverbatim %}</code> for a date and time. Do not write inline formats. Put <code>.wm-date</code> on a table cell to stop it wrapping.</p>
 </section>
 
-<section id="component-icon" class="wm-section">
-  <h3>icon</h3>
-</section>
-
 <section id="component-toast-container" class="wm-section">
-  <h3>toast (toast_container)</h3>
-  <p>Toast notifications appear in the bottom-right corner (bottom-center on mobile). They are triggered by the server via <code>HX-Trigger: {"toast": {"message": "...", "type": "success|warning|danger|info"}}</code>.</p>
+  <h3>toast_container</h3>
   <pre tabindex="0">{% verbatim %}{% include "components/toast_container.html" %}{% endverbatim %}</pre>
-  <p class="text-muted">Include <code>components/toast_container.html</code> once in <code>base.html</code> (outside <code>main</code>). Requires Alpine.js and <code>static/js/toast.js</code>.</p>
+  <p>Toast notifications appear bottom-right (bottom-center on mobile). Trigger via <code>HX-Trigger</code> header or Django messages with <code>toast-*</code> tag.</p>
+  <div class="wm-toolbar">
+    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast()">Show success toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast('warning')">Show warning toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast('danger')">Show danger toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast('info')">Show info toast</button>
+  </div>
+  <script>
+    window.showTestToast = function(type) {
+      if (!window.wmShowToast) return;
+      const messages = {
+        success: 'Trade completed successfully.',
+        warning: 'Trade declined.',
+        danger: 'Trade cancelled.',
+        info: 'Trade accepted. Choose what you give.'
+      };
+      window.wmShowToast(messages[type] || messages.success, type);
+    };
+  </script>
+  {% include "components/toast_container.html" %}
 </section>
 
 <section id="component-command-palette" class="wm-section">
