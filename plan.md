@@ -1,89 +1,64 @@
-# Implementation Plan: Print Loot Cards (U92)
+# Implementation Plan: Double-check Player Dashboard with Contextual Quick Actions
 
-## Overview
-Add a new feature for game masters and club admins to print loot cards from the catalogue. Reuses the item card design from U90 and magic item type from U93.
+## Task Summary
+Review PR #211 (Player Dashboard with Contextual Quick Actions) for correctness, side effects, and adherence to acceptance criteria.
 
-## Files to Create
+## Acceptance Criteria Analysis
 
-### 1. `items/views.py` - Add two new views
-- **`loot_cards_picker(request, club_slug)`** - GET only
-  - Decorator: `@admin_or_gm_required`
-  - Lists club's catalogue items (non-retired) with:
-    - Quantity input (number, min=0, default=0) per item
-    - Search filter (plain GET, filters by name)
-    - Copies choice radio: "One card per item type" / "One card per item"
-  - Submits to `loot_cards_print` via GET with query params
-  - Template: `items/loot_cards_picker.html`
+| # | Criterion | Status | Notes |
+|---|-----------|--------|-------|
+| 1 | Dashboard shows right quick actions for player with character, sensible state for player without one | ✅ PASS | Two templates: `dashboard.html` (with character) and `dashboard_no_character.html` (without) |
+| 2 | Each quick action goes to right page/does right thing | ✅ PASS | All 6 sections link to correct URLs (shops, quests, trades, downtime, map, messages) |
+| 3 | Dashboard works at 390px, 768px, 1280px with no sideways scroll | ✅ PASS | CSS grid with `minmax(280px, 1fr)`; single column ≤575px; screenshot tests at 390px & 1280px |
+| 4 | Test suite and CI pass on main | ✅ PASS | 1942 tests pass, 2 skipped |
+| 5 | No page outside dashboard changed behavior by accident | ⚠️ NEEDS VERIFICATION | 29 files changed across 7 dirs; many test files updated to follow redirects (expected) |
+| 6 | Anything wrong fixed in this story, or filed as own bug | ⚠️ NEEDS FIX | Linting issues in new `dashboard.py`: unused imports, unused variable, import sorting |
 
-- **`loot_cards_print(request, club_slug)`** - GET only
-  - Decorator: `@admin_or_gm_required`
-  - Reads quantities from GET params (e.g., `qty_<pk>=N`)
-  - Skips items with quantity 0
-  - Validates copies mode (`type` or `item`)
-  - Uses `player_characters.item_cards.build_cards`, `chunk`, `too_many`
-  - Caps at 90 cards (`CARD_CAP`), shows message if exceeded
-  - Renders `items/loot_cards_print.html` with:
-    - `sheets` (list of lists of `ItemCard`)
-    - `copies` mode
-    - `too_many` flag
-    - `printed_on` = `timezone.localdate()`
-    - `owner=None` (so footer shows "Loot")
+## Issues Found
 
-### 2. `items/urls.py` - Add two URL patterns
-```python
-path("loot-cards/", views.loot_cards_picker, name="loot_cards_picker"),
-path("loot-cards/print/", views.loot_cards_print, name="loot_cards_print"),
-```
+### 1. Linting Issues in New Code (Must Fix)
+File: `accounts/views/dashboard.py`
+- Unused imports: `ledger.services.coin_balance`, `player_characters.inventory.inventory_rows`, `player_characters.models.Character`
+- Unused variable: `junk_val_formatted` (line 111)
+- Import block un-sorted/un-formatted
 
-### 3. `items/templates/items/loot_cards_picker.html` - New template
-- Extends `base.html`
-- Page header: title "Print loot cards", back to catalogue
-- Search form (GET, `q` param)
-- Copies choice: two radio buttons (`copies=type` / `copies=item`)
-- Table of catalogue items:
-  - Columns: Name, Rarity, Magic Type, Value, Quantity (number input `qty_<pk>`)
-  - Pre-filled with search results
-- Submit button → `loot_cards_print` with all params
-- No-print toolbar with back link
+### 2. Potential hx-swap Issue (Investigate)
+File: `templates/accounts/_dashboard_header.html`
+- Character switch button uses `hx-post` + `hx-target="body"` + `hx-swap="outerHTML"`
+- Per workspace knowledge: hx-swap on container can break modal triggers inside it
+- **Mitigation**: Button is not a container; no modal triggers inside dashboard header. Likely safe.
 
-### 4. `items/templates/items/loot_cards_print.html` - New template
-- Extends `base.html`
-- `main_class = "wm-card-print"`
-- Loads `css/print.css`
-- No-print: back link to picker, print button, hint
-- If `too_many`: include `_too_many.html` (adapted for loot)
-- If `layout=full` (default for loot): each card in `.wm-card-page` with `full=True`
-- Else (grid): 3×3 sheets using `_item_card.html`, pad with empty cells
-- Pass `owner=None` to `_item_card.html` → footer shows "Loot · printed YYYY-MM-DD"
+### 3. Test Coverage Gap
+- No dedicated unit tests for dashboard view logic
+- Screenshot tests cover rendering at 390px/1280px for alice/bob roles
+- Consider adding unit tests for context building logic
 
-### 5. `items/templates/items/index.html` - Modify
-- Add "Print loot cards" action to page header (only for `is_admin` or `is_game_master`)
-- Action URL: `items:loot_cards_picker`
-- Icon: `printer` (or `box-seam`)
+## Plan
 
-### 6. `items/tests/test_u92_loot_cards.py` - New test file
-Tests tagged `@pytest.mark.story("U92")`:
-- **Permissions**: player gets 403; GM and club admin get 200
-- **Picker**: lists club items with qty=0 default; search filters; copies choice present
-- **Print**: qty=0 items skipped; both copies modes; 90-card cap message; footer "Loot · date"
-- **No side effects**: no LedgerEntry/LedgerLine created; no inventory changes
-- **Cross-club isolation**: another club's items never appear in picker or print
+### Phase 1: Fix Linting Issues (Required)
+1. Fix imports in `accounts/views/dashboard.py`:
+   - Remove unused imports
+   - Remove unused variable `junk_val_formatted`
+   - Sort imports properly
+2. Run ruff to verify fixes
 
-## Reused Components
-- `player_characters.item_cards`: `build_cards`, `chunk`, `too_many`, `CARD_CAP`, `CARDS_PER_SHEET`
-- `player_characters/templates/player_characters/characters/_item_card.html` (supports `owner=None`)
-- `player_characters/templates/player_characters/characters/_too_many.html` (adapt for loot)
-- `accounts.permissions.admin_or_gm_required`
-- `accounts.scoping.club_queryset`, `club_get_object_or_404`
+### Phase 2: Verify No Accidental Behavior Changes
+1. Review all 29 changed files from PR #211
+2. Confirm test file changes are only redirect-following updates
+3. Verify no functional changes to non-dashboard pages
 
-## Acceptance Criteria Mapping
-| Criterion | Stage |
-|-----------|-------|
-| Catalogue has "Print loot cards" for GM/admin; player 403 | verify |
-| Picker: club items, qty box (0), search, copies choice | verify |
-| Print page: U90 card design, 3×3, "Loot" + date footer, qty 0 skipped | verify |
-| No inventory/ledger changes; cross-club isolation | verify |
-| Tests tagged U92 pass; pytest + ruff pass | verify |
+### Phase 3: Verify Responsive Design
+1. Confirm CSS grid behavior at 390px, 768px, 1280px
+2. Run screenshot tests to verify rendering
 
-## Decisions Made Without Owner
-None — all design decisions inherited from epic spec and U90/U93 implementations.
+### Phase 4: Final Verification
+1. Run full test suite
+2. Confirm all acceptance criteria met
+3. Document any remaining issues as follow-up bugs if needed
+
+## Files to Modify
+- `accounts/views/dashboard.py` - Fix linting issues
+
+## Proof Stages
+- **review**: All acceptance criteria verified
+- **verify**: Linting clean, tests pass, no regressions
