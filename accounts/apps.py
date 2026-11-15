@@ -33,9 +33,10 @@ class AccountsConfig(AppConfig):
 
     def ready(self):
         from . import approvals, navigation
-        from .approval_providers import open_messages
+        from .approval_providers import open_messages, pending_trades
 
         approvals.register(open_messages)
+        approvals.register(pending_trades)
         reg = navigation.register
         reg("club", "People", "accounts:index", not_admin, 100)
         reg("club", "Message the admins", "accounts:message_new", is_member, 60)

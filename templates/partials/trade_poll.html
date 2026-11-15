@@ -1,0 +1,4 @@
+{% comment %}trade_poll: HTMX fragment that polls for open trades and updates navbar badge.
+   Include on any club page where you want live trade count updates.
+{% endcomment %}
+<div id="trade-poll" hx-get="{% url 'trades:poll' club.slug %}" hx-trigger="every 5s" hx-swap="none" class="no-print" aria-hidden="true"></div>

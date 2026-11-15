@@ -8,6 +8,8 @@
 <nav class="mb-4" aria-label="On this page"><ul class="list-inline">
   {% for gid, title, rows in groups %}<li class="list-inline-item"><a href="#token-{{ gid }}">{{ title }}</a></li>{% endfor %}
   <li class="list-inline-item"><a href="#component-page-header">Components</a></li>
+  <li class="list-inline-item"><a href="#component-toast-container">Toast</a></li>
+  <li class="list-inline-item"><a href="#component-command-palette">Command Palette</a></li>
 </ul></nav>
 
 <h2 class="h2">Tokens</h2>
@@ -173,6 +175,24 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   <p>Flash messages (Django <code>messages</code>) show below the page header, or at the top of <code>main</code> on a page with no header. They show once.</p>
   <h3>Dates</h3>
   <p>One format everywhere: <strong>{{ sample_date|date }}</strong> (<code>j M Y</code>). Use <code>{% verbatim %}{{ d|date }}{% endverbatim %}</code>, or <code>{% verbatim %}{{ dt|date:"DATETIME_FORMAT" }}{% endverbatim %}</code> for a date and time. Do not write inline formats. Put <code>.wm-date</code> on a table cell to stop it wrapping.</p>
+</section>
+
+<section id="component-icon" class="wm-section">
+  <h3>icon</h3>
+</section>
+
+<section id="component-toast-container" class="wm-section">
+  <h3>toast (toast_container)</h3>
+  <p>Toast notifications appear in the bottom-right corner (bottom-center on mobile). They are triggered by the server via <code>HX-Trigger: {"toast": {"message": "...", "type": "success|warning|danger|info"}}</code>.</p>
+  <pre tabindex="0">{% verbatim %}{% include "components/toast_container.html" %}{% endverbatim %}</pre>
+  <p class="text-muted">Include <code>components/toast_container.html</code> once in <code>base.html</code> (outside <code>main</code>). Requires Alpine.js and <code>static/js/toast.js</code>.</p>
+</section>
+
+<section id="component-command-palette" class="wm-section">
+  <h3>command_palette</h3>
+  <p>Press <kbd>⌘K</kbd> (or <kbd>Ctrl+K</kbd>) to open the command palette. It searches all navigation entries from the side menu.</p>
+  <pre tabindex="0">{% verbatim %}{% include "components/command_palette.html" %}{% endverbatim %}</pre>
+  <p class="text-muted">The palette is always present in the DOM but hidden with <code>x-show</code>. It indexes <code>.wm-menu-link</code> elements from the side menu.</p>
 </section>
 
 <section id="component-icon" class="wm-section">
