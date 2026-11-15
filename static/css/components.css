@@ -385,3 +385,35 @@ main:focus { outline: none; }
 .wm-toast-message { flex: 1 1 auto; font-size: var(--wm-text-sm); }
 .wm-toast-close { background: none; border: 0; color: var(--wm-text-muted); font-size: 1.25rem; line-height: 1; padding: 0; cursor: pointer; flex: none; }
 .wm-toast-close:hover { color: var(--wm-text); }
+
+/* ---- Command palette (Contract) ----
+*/
+.wm-command-palette { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+.wm-command-backdrop { position: absolute; inset: 0; background: var(--wm-text); opacity: .35; }
+.wm-command-window { position: absolute; top: 15vh; left: 50%; transform: translateX(-50%); width: min(60rem, 90vw); background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-lg); box-shadow: var(--wm-shadow-3); pointer-events: auto; }
+.wm-command-header { padding: var(--wm-space-3) var(--wm-space-4); border-bottom: 1px solid var(--wm-border); }
+.wm-command-input-wrapper { position: relative; display: flex; align-items: center; gap: var(--wm-space-2); }
+.wm-command-input-wrapper .wm-icon { width: 1.125rem; height: 1.125rem; color: var(--wm-text-muted); flex: none; }
+.wm-command-input { flex: 1 1 auto; background: var(--wm-surface); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); padding: var(--wm-space-2) var(--wm-space-3) var(--wm-space-2) var(--wm-space-10); font-size: var(--wm-text-md); color: var(--wm-text); }
+.wm-command-input:focus { outline: none; border-color: var(--wm-accent); box-shadow: var(--wm-focus-ring); }
+.wm-command-input::placeholder { color: var(--wm-text-muted); }
+.wm-command-shortcut { color: var(--wm-text-muted); font-size: var(--wm-text-xs); font-family: var(--wm-font-mono, monospace); padding: 0 var(--wm-space-2); flex: none; }
+.wm-command-list { max-height: 50vh; overflow-y: auto; padding: var(--wm-space-2); }
+.wm-command-item { display: flex; align-items: center; justify-content: space-between; gap: var(--wm-space-3); padding: var(--wm-space-2) var(--wm-space-3); border-radius: var(--wm-radius-md); cursor: pointer; }
+.wm-command-item:hover, .wm-command-item-selected { background: var(--wm-surface-sunken); }
+.wm-command-item-selected { font-weight: 600; }
+.wm-command-item-label { flex: 1 1 auto; font-size: var(--wm-text-md); color: var(--wm-text); }
+.wm-command-item-group { color: var(--wm-text-muted); font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; flex: none; }
+.wm-command-empty { display: flex; align-items: center; justify-content: center; padding: var(--wm-space-5); color: var(--wm-text-muted); font-size: var(--wm-text-sm); }
+.wm-command-footer { display: flex; align-items: center; justify-content: flex-end; gap: var(--wm-space-3); padding: var(--wm-space-3) var(--wm-space-4); border-top: 1px solid var(--wm-border); background: var(--wm-surface-sunken); border-radius: 0 0 var(--wm-radius-lg) var(--wm-radius-lg); }
+.wm-command-footer kbd { font-family: var(--wm-font-mono, monospace); font-size: var(--wm-text-xs); color: var(--wm-text-muted); background: var(--wm-surface); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); padding: .125rem .375rem; }
+
+@media (max-width: 575.98px) {
+  .wm-command-window { top: 0; border-radius: 0; height: 100vh; max-height: 100vh; }
+  .wm-command-footer { border-radius: 0; }
+  .wm-command-list { max-height: calc(100vh - 12rem); }
+}
+
+@media (min-width: 1280px) {
+  .wm-command-window { top: 10vh; width: 48rem; }
+}
