@@ -69,6 +69,8 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **icon**: `{% include "components/icon.html" with name="plus-lg" label="Add" %}`. Icons support labels, never replace them (use a label only for icon-only buttons, via visually-hidden text).
 - **form_layout**: the whole form with a primary Save and a secondary Cancel. Fields render through `templates/forms/` (required mark, help, errors with an icon, no stray colon in labels). Short inputs (number, date) stop at 12 rem; forms stop at 40 rem.
 - **modal_frame**: header, body, footer for `#app-modal`. Below `sm` the modal is full screen.
+- **toast_container**: toast notifications. Include once in `base.html` (outside `main`). Triggered by server via `HX-Trigger: {"toast": {"message": "...", "type": "success|warning|danger|info"}}`. Requires Alpine.js and `static/js/toast.js`. Types: success, warning, danger, info. Appear bottom-right (bottom-center on mobile).
+- **command_palette**: press <kbd>⌘K</kbd> (or <kbd>Ctrl+K</kbd>) to open. Searches all navigation entries from the side menu (indexes `.wm-menu-link`). Requires Alpine.js and `static/js/command_palette.js`.
 
 ### Rules
 - Top bar: one row on desktop for every role, the full user name at 1400 px and wider, an initials chip below that (tooltip and screen-reader name carry the full name). The character dropdown submits on change (a `<noscript>` Switch button is the fallback). Every page starts with a skip link to `main#main`. Icon-only buttons (menu, close) carry a tooltip. On a phone the club name hides and the menu has a link to Your clubs.
