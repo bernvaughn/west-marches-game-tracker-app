@@ -24,6 +24,7 @@
     <dt>Description</dt><dd>{{ p.description|default:"—" }}</dd>
     <dt>Traits</dt><dd>{{ p.traits|default:"—" }}</dd>
     <dt>Details</dt><dd>{{ p.details|default:"—" }}</dd>
+    {% if p.gm_details %}<dt>GM-only details</dt><dd>{{ p.gm_details|default:"—" }}</dd>{% endif %}
     <dt>Value</dt><dd>{% if p.value_cp %}{{ p.value_cp|coins }}{% else %}—{% endif %}</dd>
     {% if p.approved_item %}<dt>Catalogue item</dt><dd>{{ p.approved_item.name }}</dd>{% endif %}
   </dl>

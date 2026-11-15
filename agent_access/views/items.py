@@ -19,10 +19,11 @@ class ProposedItemForm(forms.ModelForm):
     description = forms.CharField(required=False, max_length=5000, widget=forms.Textarea)
     traits = forms.CharField(required=False, max_length=5000, widget=forms.Textarea)
     details = forms.CharField(required=False, max_length=5000, widget=forms.Textarea)
+    gm_details = forms.CharField(required=False, max_length=5000, widget=forms.Textarea, label="GM-only details")
 
     class Meta:
         model = ProposedItem
-        fields = ["name", "description", "traits", "details"]
+        fields = ["name", "description", "traits", "details", "gm_details"]
 
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
@@ -109,6 +110,7 @@ def proposed_item_approve(request, club_slug, pk):
             description=locked.description,
             traits=locked.traits,
             details=locked.details,
+            gm_details=locked.gm_details,
             value_cp=locked.value_cp,
         )
         locked.status = ProposedItem.Status.APPROVED

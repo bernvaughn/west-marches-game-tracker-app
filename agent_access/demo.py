@@ -42,5 +42,6 @@ def seed(club):
             "connection": connection,
             "value_cp": 3000,
             "description": "A pale dagger, cold to the touch.",
+            "gm_details": "Secret: the dagger's frost spreads to the wielder's heart over time.",
         },
     )

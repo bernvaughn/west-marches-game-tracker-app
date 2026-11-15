@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins accounts_tags %}
 {% block title %}{{ item.name }}{% endblock %}
 {% block content %}
 {% url 'items:edit' club.slug item.pk as edit_url %}
@@ -17,4 +17,9 @@
 {% if item.traits %}<dt>Traits</dt><dd>{{ item.traits|linebreaks }}</dd>{% endif %}
 {% if item.details %}<dt>Details</dt><dd>{{ item.details|linebreaks }}</dd>{% endif %}</dl>
 {% include "components/card_close.html" %}
+{% if item.gm_details %}{% can_see_gm_details_tag as can_see_gm %}{% if can_see_gm %}
+{% include "components/card_open.html" with title="GM-only" %}
+<dl class="wm-dl wm-item-detail"><dt>GM-only details</dt><dd>{{ item.gm_details|linebreaks }}</dd></dl>
+{% include "components/card_close.html" %}
+{% endif %}{% endif %}
 {% endblock %}

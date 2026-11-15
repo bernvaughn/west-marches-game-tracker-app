@@ -1,17 +1,24 @@
 from .models import Item
 
 ITEMS = [
-    ("Rope", 100, "🪢", "standard", ""),
-    ("Healing potion", 5000, "🧪", "common", "potion"),
-    ("Torch", 1, "🔥", "trivial", ""),
-    ("Longsword", 1500, "🗡\ufe0f", "fine", ""),
-    ("Wolf pelt", 200, "🐺", "standard", ""),
-    ("Moonstone amulet", 25000, "🌙", "uncommon", "wondrous"),
+    ("Rope", 100, "🪢", "standard", "", ""),
+    ("Healing potion", 5000, "🧪", "common", "potion", ""),
+    ("Torch", 1, "🔥", "trivial", "", ""),
+    ("Longsword", 1500, "🗡️", "fine", "", ""),
+    ("Wolf pelt", 200, "🐺", "standard", "", ""),
+    (
+        "Moonstone amulet",
+        25000,
+        "🌙",
+        "uncommon",
+        "wondrous",
+        "Cursed: whispers at night, bearer has disadvantage on Wisdom saves.",
+    ),
 ]
 
 
 def seed(club):
-    for name, value, symbol, rarity, magic_type in ITEMS:
+    for name, value, symbol, rarity, magic_type, gm_details in ITEMS:
         item, _ = Item.objects.get_or_create(
             club=club,
             name=name,
@@ -20,6 +27,7 @@ def seed(club):
                 "symbol": symbol,
                 "rarity": rarity,
                 "magic_type": magic_type,
+                "gm_details": gm_details,
             },
         )
         if not item.symbol:
@@ -31,3 +39,6 @@ def seed(club):
         if magic_type and not item.magic_type:
             item.magic_type = magic_type
             item.save(update_fields=["magic_type"])
+        if gm_details and not item.gm_details:
+            item.gm_details = gm_details
+            item.save(update_fields=["gm_details"])

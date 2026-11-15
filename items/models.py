@@ -15,6 +15,14 @@ class Item(models.Model):
     description = models.TextField(blank=True)
     traits = models.TextField(blank=True)
     details = models.TextField(blank=True)
+    gm_details = models.TextField(
+        blank=True,
+        verbose_name="GM-only details",
+        help_text=(
+            "Only game masters and club admins see this. "
+            "Use it for secrets, such as a curse."
+        ),
+    )
     rarity = models.CharField(max_length=16, choices=GROUPS, blank=True)
     magic_type = models.CharField(max_length=16, choices=MagicType.choices, blank=True)
     value_cp = models.PositiveIntegerField(default=0)

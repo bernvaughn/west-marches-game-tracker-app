@@ -38,6 +38,7 @@ def _serialize(p, mcp_ctx):
         "description": p.description,
         "traits": p.traits,
         "details": p.details,
+        "gm_details": p.gm_details,
         "value_cp": p.value_cp,
         "value": format_coins(p.value_cp) if p.value_cp else "",
         "status": p.status,
@@ -54,6 +55,7 @@ def propose_item(
     description: str = "",
     traits: str = "",
     details: str = "",
+    gm_details: str = "",
     value_cp: int = 0,
 ) -> dict[str, Any]:
     """Propose a new catalogue item. It is not usable until a game master approves it.
@@ -66,7 +68,12 @@ def propose_item(
         raise ToolError("name is required.")
     if len(name) > MAX_NAME:
         raise ToolError(f"name must be at most {MAX_NAME} characters.")
-    for label, text in (("description", description), ("traits", traits), ("details", details)):
+    for label, text in (
+        ("description", description),
+        ("traits", traits),
+        ("details", details),
+        ("gm_details", gm_details),
+    ):
         if len(text or "") > MAX_TEXT:
             raise ToolError(f"{label} must be at most {MAX_TEXT} characters.")
     if isinstance(value_cp, bool) or not isinstance(value_cp, int) or value_cp < 0:
@@ -94,6 +101,7 @@ def propose_item(
             description=description or "",
             traits=traits or "",
             details=details or "",
+            gm_details=gm_details or "",
             value_cp=value_cp,
         )
     return _serialize(proposal, mcp_ctx) | {"created": True}

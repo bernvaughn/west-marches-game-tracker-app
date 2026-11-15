@@ -13,13 +13,23 @@ class ItemForm(forms.ModelForm):
 
     class Meta:
         model = Item
-        fields = ["name", "symbol", "description", "traits", "details", "rarity", "magic_type"]
+        fields = [
+            "name",
+            "symbol",
+            "description",
+            "traits",
+            "details",
+            "gm_details",
+            "rarity",
+            "magic_type",
+        ]
         field_order = [
             "name",
             "symbol",
             "description",
             "traits",
             "details",
+            "gm_details",
             "rarity",
             "magic_type",
             "value",
