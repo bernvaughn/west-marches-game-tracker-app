@@ -32,3 +32,27 @@ def detail(request, club_slug, pk):
             "receiver_lines": side_lines(trade, "receiver"),
         },
     )
+
+
+@club_member_required
+def status_fragment(request, club_slug, pk):
+    """Return just the status section for HTMX polling."""
+    trade = get_object_or_404(
+        club_queryset(request, Trade).select_related(
+            "sender__owner__user", "receiver__owner__user"
+        ),
+        pk=pk,
+    )
+    if not can_view_trade(request.user, trade):
+        raise Http404
+    side = side_of(trade, request.user)
+    return render(
+        request,
+        "player_characters/trades/_status_fragment.html",
+        {
+            "trade": trade,
+            "side": side,
+            "status_line": trade_status_line(trade, side),
+            "can_act": side is not None and trade.status in OPEN,
+        },
+    )

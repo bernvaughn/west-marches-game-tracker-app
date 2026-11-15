@@ -350,7 +350,7 @@ main:focus { outline: none; }
   mask: radial-gradient(circle var(--wm-pass-notch) at 0 0, transparent 97%, black) top left / 51% 51% no-repeat,
     radial-gradient(circle var(--wm-pass-notch) at 100% 0, transparent 97%, black) top right / 51% 51% no-repeat,
     radial-gradient(circle var(--wm-pass-notch) at 0 100%, transparent 97%, black) bottom left / 51% 51% no-repeat,
-    radial-gradient(circle var(--wm-pass-notch) at 100% 100%, transparent 97%, black) bottom right / 51% 51% no-repeat;
+    radial-gradient(circle var(--wm-pass-notch) at 100% 100%, transparent 97%, black) bottom right / 51% 51% no-repeat.
 }
 .wm-pass::before { content: ""; position: absolute; inset: 0.05in; border: 1px solid currentColor; pointer-events: none; }
 .wm-pass-divider { position: relative; align-self: stretch; width: 0; border-left: 1px dashed currentColor; }
@@ -363,80 +363,25 @@ main:focus { outline: none; }
 .wm-pass-rule::before, .wm-pass-rule::after {
   content: ""; position: absolute; top: -0.06in; width: 0.06in; height: 0.12in; background: white;
   border: 1px solid currentColor; box-sizing: border-box;
-  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact.
 }
 .wm-pass-rule::before { left: 0.05in; border-left: 0; border-radius: 0 0.06in 0.06in 0; }
 .wm-pass-rule::after { right: 0.05in; border-right: 0; border-radius: 0.06in 0 0 0.06in; }
 .wm-pass-divider::before { top: -1px; border-top: 0; border-radius: 0 0 0.06in 0.06in; }
 .wm-pass-divider::after { bottom: -1px; border-bottom: 0; border-radius: 0.06in 0.06in 0 0; }
 
-/* ---- Toast (Contract) ----
-.wm-toast-container {
-  position: fixed;
-  bottom: var(--wm-space-4);
-  right: var(--wm-space-4);
-  z-index: 1050;
-  display: flex;
-  flex-direction: column;
-  gap: var(--wm-space-2);
-  max-width: 22rem;
-  pointer-events: none;
-}
-@media (max-width: 575.98px) {
-  .wm-toast-container {
-    left: var(--wm-space-3);
-    right: var(--wm-space-3);
-    bottom: var(--wm-space-3);
-    max-width: none;
-  }
-}
-.wm-toast {
-  pointer-events: auto;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wm-space-2);
-  padding: var(--wm-space-3) var(--wm-space-3);
-  background: var(--wm-surface-raised);
-  border: 1px solid var(--wm-border);
-  border-radius: var(--wm-radius-lg);
-  box-shadow: var(--wm-shadow-2);
-  animation: wm-toast-in 0.3s ease-out;
-}
-@keyframes wm-toast-in {
-  from { opacity: 0; transform: translateY(0.5rem); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.wm-toast-icon {
-  flex: 0 0 auto;
-  width: 1.25rem;
-  height: 1.25rem;
-  margin-top: 0.125rem;
-}
-.wm-toast-message {
-  flex: 1 1 auto;
-  font-size: var(--wm-text-sm);
-  line-height: var(--wm-leading-normal);
-}
-.wm-toast-close {
-  flex: 0 0 auto;
-  padding: 0;
-  background: none;
-  border: 0;
-  color: var(--wm-text-muted);
-  cursor: pointer;
-  min-width: var(--wm-size-touch);
-  min-height: var(--wm-size-touch);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.wm-toast-close:hover { color: var(--wm-text); }
-.wm-toast-close .wm-icon { width: 1rem; height: 1rem; }
-.wm-toast-success { border-left-color: var(--wm-success); }
-.wm-toast-warning { border-left-color: var(--wm-warning); }
-.wm-toast-danger { border-left-color: var(--wm-danger); }
-.wm-toast-info { border-left-color: var(--wm-info); }
+/* ---- Toast notifications ---- */
+.wm-toast-container { position: fixed; bottom: var(--wm-space-4); right: var(--wm-space-4); z-index: 1100; display: flex; flex-direction: column; gap: var(--wm-space-2); pointer-events: none; }
+@media (max-width: 575.98px) { .wm-toast-container { left: var(--wm-space-3); right: var(--wm-space-3); bottom: var(--wm-space-3); align-items: stretch; } }
+.wm-toast { display: flex; align-items: center; gap: var(--wm-space-2); padding: var(--wm-space-2) var(--wm-space-3); background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); box-shadow: var(--wm-shadow-2); min-width: 14rem; max-width: 28rem; pointer-events: auto; animation: wm-toast-in .2s ease-out; }
+@keyframes wm-toast-in { from { opacity: 0; transform: translateY(1rem); } to { opacity: 1; transform: none; } }
+.wm-toast-hide { animation: wm-toast-out .2s ease-in forwards; }
+@keyframes wm-toast-out { to { opacity: 0; transform: translateY(1rem); } }
+.wm-toast-icon { width: 1.25rem; height: 1.25rem; flex: none; }
 .wm-toast-success .wm-toast-icon { color: var(--wm-success); }
 .wm-toast-warning .wm-toast-icon { color: var(--wm-warning); }
 .wm-toast-danger .wm-toast-icon { color: var(--wm-danger); }
 .wm-toast-info .wm-toast-icon { color: var(--wm-info); }
+.wm-toast-message { flex: 1 1 auto; font-size: var(--wm-text-sm); }
+.wm-toast-close { background: none; border: 0; color: var(--wm-text-muted); font-size: 1.25rem; line-height: 1; padding: 0; cursor: pointer; flex: none; }
+.wm-toast-close:hover { color: var(--wm-text); }

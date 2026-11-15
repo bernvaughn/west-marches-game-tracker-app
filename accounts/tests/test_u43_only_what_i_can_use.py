@@ -14,21 +14,24 @@ def tile_hrefs(body):
     return re.findall(r'wm-area-card"><a[^>]*href="([^"]+)"', body)
 
 
+def main_content(html: str) -> str:
+    """Extract only the content inside the <main> element."""
+    start = html.find("<main")
+    if start == -1:
+        return ""
+    start = html.find(">", start) + 1
+    end = html.find("</main>", start)
+    if end == -1:
+        return html[start:]
+    return html[start:end]
+
+
 @pytest.mark.parametrize("who", ["player", "game_master", "club_admin"])
 def test_every_tile_opens_without_lock(who, request, login, club, character):
     user = request.getfixturevalue(who)
     c = login(user)
-    if who == "player":
-        # Players are redirected to dashboard
-        response = c.get(reverse("club_home", args=[club.slug]), follow=True)
-        body = response.content.decode()
-        # Dashboard has different structure - check for section links
-        links = re.findall(r'href="([^"]+)"', body)
-        # Filter to club URLs
-        links = [l for l in links if f"/c/{club.slug}/" in l]
-    else:
-        body = c.get(reverse("club_home", args=[club.slug])).content.decode()
-        links = tile_hrefs(body)
+    body = c.get(reverse("club_home", args=[club.slug])).content.decode()
+    links = tile_hrefs(body)
     assert links
     agent = reverse("agent_access:index", args=[club.slug])
     assert (agent in links) == (who != "player")
@@ -66,8 +69,8 @@ def test_xp_table_read_only(who, request, login, club):
     url = reverse("map:xp", args=[club.slug])
     r = c.get(url)
     assert r.status_code == 200
-    main_content = r.content.decode().split("<main", 1)[1].split("</main>")[0]
-    assert "<input" not in main_content.replace('type="hidden"', "")
+    content = main_content(r.content.decode()).replace('type="hidden"', "")
+    assert "<input" not in content
     assert c.post(url, {"discover_1": 9, "explore_1": 9}).status_code == 403
     assert XPLevel.objects.get(club=club, band=1).discover_xp == 1
 

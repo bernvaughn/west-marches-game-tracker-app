@@ -69,7 +69,7 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **icon**: `{% include "components/icon.html" with name="plus-lg" label="Add" %}`. Icons support labels, never replace them (use a label only for icon-only buttons, via visually-hidden text).
 - **form_layout**: the whole form with a primary Save and a secondary Cancel. Fields render through `templates/forms/` (required mark, help, errors with an icon, no stray colon in labels). Short inputs (number, date) stop at 12 rem; forms stop at 40 rem.
 - **modal_frame**: header, body, footer for `#app-modal`. Below `sm` the modal is full screen.
-- **toast_container**: toast notifications. Include once in `base.html` (outside `main`). Triggered by server via `HX-Trigger: {"toast": {"message": "...", "type": "success|warning|danger|info"}}`. Requires Alpine.js and `static/js/toast.js`. Types: success, warning, danger, info. Appear bottom-right (bottom-center on mobile).
+- **toast_container**: bottom-right toast notifications (bottom-center on mobile). Trigger via `HX-Trigger: {"toast": {"message": "...", "type": "success|warning|danger|info"}}` or Django messages with `toast-*` tag. Auto-dismisses after 5s, manual close button. Uses Alpine.js for no-CDN dependency.
 - **command_palette**: press <kbd>⌘K</kbd> (or <kbd>Ctrl+K</kbd>) to open. Searches all navigation entries from the side menu (indexes `.wm-menu-link`). Requires Alpine.js and `static/js/command_palette.js`.
 
 ### Rules
