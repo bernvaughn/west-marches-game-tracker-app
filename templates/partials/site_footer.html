@@ -1,0 +1,21 @@
+{% load static %}
+<footer class="wm-site-footer no-print" aria-labelledby="site-footer-label">
+  <span id="site-footer-label" class="visually-hidden">Site footer</span>
+  <div class="wm-site-footer-inner">
+    <p class="wm-site-footer-copyright">© {{ SITE_COPYRIGHT_YEAR }} Vaughn Bernard</p>
+    {# CodeHerder credit: delete this block to remove #}
+    <p class="wm-site-footer-credit">
+      Designed by Vaughn Bernard, built by
+      <a href="https://codeherder.com/" target="_blank" rel="noopener noreferrer" class="wm-codeherder-link">
+        <img src="{% static 'img/codeherder-favicon.svg' %}" alt="" aria-hidden="true" width="14" height="14" class="wm-codeherder-favicon">
+        CodeHerder
+      </a>
+    </p>
+    {# end CodeHerder credit block #}
+    {% if not club %}
+    <p class="wm-site-footer-links">
+      <a href="{% url 'about' %}">About</a> · <a href="{% url 'plans' %}">Plans</a>
+    </p>
+    {% endif %}
+  </div>
+</footer>

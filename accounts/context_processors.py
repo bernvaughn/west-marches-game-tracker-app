@@ -19,4 +19,8 @@ def clubs(request):
 
 
 def app_name(request):
-    return {"APP_NAME": settings.APP_NAME, "APP_TAGLINE": settings.APP_TAGLINE}
+    return {
+        "APP_NAME": settings.APP_NAME,
+        "APP_TAGLINE": settings.APP_TAGLINE,
+        "SITE_COPYRIGHT_YEAR": settings.SITE_COPYRIGHT_YEAR,
+    }

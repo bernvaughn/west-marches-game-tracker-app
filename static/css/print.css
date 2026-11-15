@@ -2,7 +2,7 @@
   .site-header, .messages, button { display: none !important; }
 
   /* Characters: print view */
-  .no-print { display: none !important; }
+  .no-print, .wm-site-footer { display: none !important; }
   .wm-item-card { break-inside: avoid; page-break-inside: avoid; box-shadow: none; }
   @page cards { size: portrait; margin: 0; }
   .wm-card-print { padding: 0 !important; max-width: none; }
