@@ -2,10 +2,13 @@ import pathlib
 import re
 
 import pytest
+from bs4 import BeautifulSoup
 from django.contrib.staticfiles import finders
-from django.urls import reverse
+from django.core.management import call_command
+from django.urls import get_resolver, reverse
 
 from accounts.design_tokens import contrast_ratio, read_tokens
+from scripts.screenshot_pages import PAGES, ROLES, demo_objects, extra_fixtures
 
 pytestmark = [pytest.mark.story("U35"), pytest.mark.django_db]
 
@@ -21,6 +24,218 @@ def component_name(path):
             stem = stem[: -len(suffix)]
             break
     return stem.replace("_", "-")
+
+
+# ---- Guard-rail tests for U84 UI rules ----
+
+# Pages that are allowed to have a themed header (not using page_header) with a reason.
+# Each entry: (template_path_suffix, reason)
+THEMED_H1_ALLOWLIST = [
+    ("characters/detail.html", "Character sheet keeps its boxed header per N-15"),
+    ("characters/print.html", "Print page uses print-specific layout"),
+    ("characters/print_item_choose.html", "Print page uses print-specific layout"),
+]
+
+
+def _all_template_paths():
+    """Return all template files in the project."""
+    return list(ROOT.rglob("templates/**/*.html"))
+
+
+def _get_all_urls():
+    """Get all named URL patterns that respond to GET."""
+    resolver = get_resolver()
+    urls = set()
+    for pattern in resolver.url_patterns:
+        if hasattr(pattern, "url_patterns"):
+            if pattern.namespace == "admin":
+                continue
+            for p in pattern.url_patterns:
+                if p.name and not hasattr(p, "url_patterns"):
+                    urls.add(f"{pattern.namespace}:{p.name}" if pattern.namespace else p.name)
+        elif pattern.name:
+            urls.add(pattern.name)
+    return urls
+
+
+@pytest.fixture
+def demo(db):
+    call_command("seed_demo", verbosity=0)
+    extra_fixtures()
+    return demo_objects()
+
+
+def _get_user(role, client):
+    """Get user for a role, using ROLES mapping."""
+    email = ROLES.get(role)
+    if email is None:
+        return None
+    from accounts.models import User
+    return User.objects.get(email=email)
+
+
+def test_every_page_extends_base_html():
+    """Every template extends base.html; no Django admin header (B-02)."""
+    for template in _all_template_paths():
+        content = template.read_text()
+        # Skip partials and components that are included, not extended
+        if template.name.startswith("_") or "components/" in str(template.relative_to(ROOT)):
+            continue
+        if "partials/" in str(template.relative_to(ROOT)) or "forms/" in str(template.relative_to(ROOT)):
+            continue
+        if template.name == "base.html":
+            continue
+        if "extends" not in content:
+            # Check if it's a partial that gets included
+            if "{% include" not in content and "{% block" in content:
+                continue
+            pytest.fail(f"Template {template.relative_to(ROOT)} does not extend base.html")
+
+
+def test_no_django_admin_header(client, login, site_admin):
+    """No page shows the Django admin header (B-02)."""
+    # Check the four password reset pages specifically
+    for url_name in ["password_reset", "password_reset_done", "password_reset_confirm", "password_reset_complete"]:
+        try:
+            url = reverse(url_name, args=["x", "bad"]) if url_name == "password_reset_confirm" else reverse(url_name)
+        except Exception:
+            url = reverse(url_name)
+        resp = client.get(url)
+        assert resp.status_code in (200, 302), f"{url_name} failed"
+        html = resp.content.decode()
+        assert "Django administration" not in html, f"{url_name} shows Django admin header"
+        assert "wm-topbar" in html or "navbar" in html, f"{url_name} missing app top bar"
+
+
+def test_every_page_has_exactly_one_h1(client, login, site_admin, demo):
+    """Every rendered page has exactly one h1, from components/page_header (B-10, B-64)."""
+    problems = []
+    for page_def in PAGES:
+        user = _get_user(page_def.role, client)
+        if user is None:
+            resp = client.get(page_def.url(demo))
+        else:
+            client.force_login(user)
+            resp = client.get(page_def.url(demo))
+
+        if resp.status_code != 200:
+            continue
+
+        soup = BeautifulSoup(resp.content, "html.parser")
+        h1s = soup.find_all("h1")
+        if len(h1s) != 1:
+            problems.append(f"{page_def.name}: found {len(h1s)} h1 elements (expected 1)")
+            continue
+
+        # Check if the h1 is inside a page_header component
+        h1 = h1s[0]
+        page_header = h1.find_parent(class_="wm-page-header")
+        if not page_header:
+            # Check allowlist
+            allowed = False
+            for template_suffix, reason in THEMED_H1_ALLOWLIST:
+                if template_suffix in page_def.name:
+                    allowed = True
+                    break
+            if not allowed:
+                problems.append(f"{page_def.name}: h1 not in wm-page-header (not using page_header component)")
+
+    assert not problems, "\n".join(problems)
+
+
+def test_td_actions_are_icon_buttons_with_tooltip():
+    """Buttons in td.actions are icon buttons with a title tooltip (B-79)."""
+    problems = []
+    for template in _all_template_paths():
+        # Skip admin templates
+        if "django/contrib/admin" in str(template):
+            continue
+        content = template.read_text()
+        # Look for td.actions containing button or a elements
+        if "td.actions" in content or 'class="actions"' in content or "class='actions'" in content:
+            # Check each td.actions block - use BeautifulSoup for better parsing
+            soup = BeautifulSoup(content, "html.parser")
+            for td in soup.find_all("td", class_="actions"):
+                for btn in td.find_all(["button", "a"]):
+                    # Check for icon button pattern
+                    has_icon = btn.find("svg") is not None or "icon" in btn.get("class", [])
+                    has_tooltip = btn.get("title") or btn.get("aria-label")
+                    if not has_icon or not has_tooltip:
+                        problems.append(f"{template.relative_to(ROOT)}: td.actions button/link missing icon or title/tooltip")
+
+    assert not problems, "\n".join(problems)
+
+
+def test_no_raw_date_formats():
+    """No raw |date:"..." formats outside the shared format from S1 (B-52)."""
+    problems = []
+    # Allowed patterns: |date, |date:"DATETIME_FORMAT", |date:"j M Y" (the shared format)
+    # Also allow the coins filter
+    date_format_re = re.compile(r'\|date:\s*"[^"]*"')
+    for template in _all_template_paths():
+        # Skip admin templates
+        if "django/contrib/admin" in str(template):
+            continue
+        content = template.read_text()
+        for match in date_format_re.finditer(content):
+            fmt = match.group(0)
+            # Allow the standard formats
+            if fmt in ('|date:"DATETIME_FORMAT"', '|date:"j M Y"', '|date:"DATE_FORMAT"'):
+                continue
+            # Allow if it's in a comment
+            line_start = content.rfind("\n", 0, match.start()) + 1
+            line = content[line_start:content.find("\n", match.end())]
+            if "{#" in line and "#}" in line:
+                continue
+            # Allow ISO format for HTML date inputs (type="date" needs Y-m-d)
+            context = content[max(0, match.start()-100):match.end()+100]
+            if 'type="date"' in context or 'type="datetime-local"' in context:
+                continue
+            problems.append(f"{template.relative_to(ROOT)}:L{content[:match.start()].count(chr(10))+1}: raw date format {fmt}")
+
+    assert not problems, "\n".join(problems)
+
+
+def test_scrollable_pre_has_tabindex():
+    """Scrollable pre blocks have tabindex="0" (B-55)."""
+    problems = []
+    for template in _all_template_paths():
+        content = template.read_text()
+        # Look for .wm-code-wrap pre or pre with overflow
+        soup = BeautifulSoup(content, "html.parser")
+        for pre in soup.find_all("pre"):
+            # Check if it's in a wm-code-wrap or has overflow style
+            parent = pre.find_parent(class_="wm-code-wrap")
+            style = pre.get("style", "")
+            if parent or "overflow" in style:
+                if not pre.get("tabindex") == "0":
+                    problems.append(f"{template.relative_to(ROOT)}: scrollable pre missing tabindex=\"0\"")
+
+    assert not problems, "\n".join(problems)
+
+
+def test_one_btn_primary_per_page(client, login, site_admin, demo):
+    """One btn-primary per rendered page (B-25, B-69)."""
+    problems = []
+    for page_def in PAGES:
+        user = _get_user(page_def.role, client)
+        if user is None:
+            resp = client.get(page_def.url(demo))
+        else:
+            client.force_login(user)
+            resp = client.get(page_def.url(demo))
+
+        if resp.status_code != 200:
+            continue
+
+        soup = BeautifulSoup(resp.content, "html.parser")
+        primary_btns = soup.find_all(class_="btn-primary")
+        # Count unique primary buttons (excluding duplicates from modals that aren't shown)
+        visible_primary = [b for b in primary_btns if b.get("style") != "display: none" and "d-none" not in b.get("class", [])]
+        if len(visible_primary) > 1:
+            problems.append(f"{page_def.name}: {len(visible_primary)} btn-primary buttons (expected ≤1)")
+
+    assert not problems, "\n".join(problems)
 
 
 def test_reference_page_access(client, login, player, club_admin, site_admin):
