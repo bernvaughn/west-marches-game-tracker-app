@@ -44,6 +44,14 @@ def can_see_email(user, club):
     return is_club_admin(user, club)
 
 
+def can_see_gm_details(user, club):
+    """Game masters, club admins, and site admins see GM-only details."""
+    if user.is_superuser:
+        return True
+    m = _membership(user, club)
+    return bool(m and (m.is_game_master or m.is_club_admin))
+
+
 def can_reset_password(actor, target):
     """Site admin always; a club admin only if they administer every club the target is in."""
     if not actor.is_authenticated:

@@ -1,7 +1,7 @@
 from django import template
 from django.utils.safestring import mark_safe
 
-from ..permissions import can_reset_password, can_see_email
+from ..permissions import can_reset_password, can_see_email, can_see_gm_details
 
 register = template.Library()
 
@@ -49,6 +49,12 @@ def member_email(context, user_obj):
     if can_see_email(request.user, getattr(request, "club", None)):
         return user_obj.email
     return ""
+
+
+@register.simple_tag(takes_context=True)
+def can_see_gm_details_tag(context):
+    request = context["request"]
+    return can_see_gm_details(request.user, getattr(request, "club", None))
 
 
 @register.filter

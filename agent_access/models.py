@@ -98,6 +98,14 @@ class ProposedItem(models.Model):
     description = models.TextField(blank=True)
     traits = models.TextField(blank=True)
     details = models.TextField(blank=True)
+    gm_details = models.TextField(
+        blank=True,
+        verbose_name="GM-only details",
+        help_text=(
+            "Only game masters and club admins see this. "
+            "Use it for secrets, such as a curse."
+        ),
+    )
     value_cp = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=10, choices=Status, default=Status.PENDING)
     approved_item = models.ForeignKey(

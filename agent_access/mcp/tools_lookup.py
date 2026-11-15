@@ -62,6 +62,7 @@ def search_items(ctx, query: str = "", limit: int = 25) -> dict[str, Any]:
                 "name": i.name,
                 "description": i.description,
                 "traits": i.traits,
+                "gm_details": i.gm_details,
                 "value_cp": i.value_cp,
                 "value": format_coins(i.value_cp),
             }
