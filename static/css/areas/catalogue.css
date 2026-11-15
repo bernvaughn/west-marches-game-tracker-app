@@ -1,5 +1,46 @@
 /* Area styles: owned by the catalogue sweep story (U35, U36). Tokens only. */
 
+/* ---- Item info icon (U97) ----
+   Small icon button next to item names to open the details modal.
+   The icon itself is an <svg> from the shared sprite via components/icon.html.
+   It must not trigger parent row click handlers (onclick stops propagation).
+   no-print hides it from printed output.
+*/
+.wm-item-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wm-size-touch);
+  height: var(--wm-size-touch);
+  padding: 0;
+  margin-left: var(--wm-space-1);
+  color: var(--wm-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--wm-radius-sm);
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+.wm-item-info:hover,
+.wm-item-info:focus {
+  color: var(--wm-accent);
+  background: var(--wm-surface-raised);
+  text-decoration: none;
+  outline: none;
+}
+
+.wm-item-info:focus-visible {
+  outline: var(--wm-focus-outline);
+  outline-offset: 2px;
+}
+
+.wm-item-info .wm-icon {
+  width: 1em;
+  height: 1em;
+}
+
+
 /* ---- Shop colour presets: --wm-shop-tint (soft) and --wm-shop-edge (deep) ---- */
 .wm-shop-banner--parchment, .wm-shop-card--parchment { --wm-shop-tint: var(--wm-shop-parchment-soft); --wm-shop-edge: var(--wm-shop-parchment-deep); }
 .wm-shop-banner--forest, .wm-shop-card--forest { --wm-shop-tint: var(--wm-shop-forest-soft); --wm-shop-edge: var(--wm-shop-forest-deep); }

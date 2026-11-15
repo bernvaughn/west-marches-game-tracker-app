@@ -1,0 +1,13 @@
+{% load coins accounts_tags %}
+{% if item.retired %}<p>{% include "components/badge.html" with status="neutral" text="Retired" %}</p>{% endif %}
+{% include "components/card_open.html" %}
+<dl class="wm-dl wm-item-detail">{% if item.symbol %}<dt>Symbol</dt><dd>{{ item.symbol }}</dd>{% endif %}{% if item.rarity %}<dt>Rarity</dt><dd>{{ item.get_rarity_display }}</dd>{% endif %}{% if item.magic_type %}<dt>Magic item type</dt><dd>{% include "components/badge.html" with status="neutral" text=item.get_magic_type_display %}</dd>{% endif %}<dt>Value</dt><dd>{{ item.value_cp|coins }}</dd>
+{% if item.description %}<dt>Description</dt><dd>{{ item.description|linebreaks }}</dd>{% endif %}
+{% if item.traits %}<dt>Traits</dt><dd>{{ item.traits|linebreaks }}</dd>{% endif %}
+{% if item.details %}<dt>Details</dt><dd>{{ item.details|linebreaks }}</dd>{% endif %}</dl>
+{% include "components/card_close.html" %}
+{% if item.gm_details %}{% can_see_gm_details_tag as can_see_gm %}{% if can_see_gm %}
+{% include "components/card_open.html" with title="GM-only" %}
+<dl class="wm-dl wm-item-detail"><dt>GM-only details</dt><dd>{{ item.gm_details|linebreaks }}</dd></dl>
+{% include "components/card_close.html" %}
+{% endif %}{% endif %}

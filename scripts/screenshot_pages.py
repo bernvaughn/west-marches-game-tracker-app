@@ -35,6 +35,7 @@ MODAL_SELECTORS = {
     "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
     "status_modal": 'a[data-app-modal][href*="/status/"]',
     "where_to_buy_modal": 'a[data-app-modal][href*="/where-to-buy/"]',
+    "details_modal": 'a[data-app-modal][href*="/details-modal/"]',
     "agenda_add_modal": "a.agenda-plus[data-app-modal]",
 }
 # `sell_modal` submits a form (the confirm modal comes from a POST), so it has no link selector.
@@ -510,6 +511,13 @@ def _build_pages() -> list[Page]:
             _c("items:index"),
             action="where_to_buy_modal",
             modal_url=_c("items:where_to_buy", "item.pk"),
+        ),
+        P(
+            "items-details-modal",
+            "alice",
+            _c("items:index"),
+            action="details_modal",
+            modal_url=_c("items:details_modal", "item.pk"),
         ),
         # downtime
         P("downtime-requests-alice", "alice", _c("downtime:requests")),
