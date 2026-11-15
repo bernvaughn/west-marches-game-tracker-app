@@ -1,7 +1,5 @@
 """""Player dashboard view: contextual quick actions for between-session tasks."""
 
-from ledger.coins import format_coins
-
 from django.db.models import Count, Q
 from django.shortcuts import render
 from django.utils import timezone
@@ -10,11 +8,11 @@ from accounts.permissions import club_member_required, is_club_admin, is_game_ma
 from accounts.scoping import club_queryset
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
-from ledger.services import coin_balance, available_items
+from ledger.services import available_items
 from map.models import HexMap
-from player_characters.inventory import coin_summary, inventory_rows
+from player_characters.inventory import coin_summary
 from player_characters.junk import junk_rows, junk_value
-from player_characters.models import Character, Trade
+from player_characters.models import Trade
 from player_characters.selection import selected_character
 from player_characters.trade_services import OPEN
 from quests.models import Quest, QuestCompletion
@@ -107,8 +105,6 @@ def _get_dashboard_context(request, club, character, membership):
 
     # Build action items for each section
     from django.urls import reverse
-
-    junk_val_formatted = format_coins(junk_val)
 
     town_items = [
         {
