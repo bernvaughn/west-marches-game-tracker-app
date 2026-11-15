@@ -3,7 +3,19 @@
 {% block title %}Items{% endblock %}
 {% block content %}
 {% url 'items:create' club.slug as create_url %}
-{% if is_admin %}{% include "components/page_header.html" with title="Items" action_url=create_url action_label="New item" action_icon="plus-lg" %}{% else %}{% include "components/page_header.html" with title="Items" %}{% endif %}
+{% url 'items:loot_cards_picker' club.slug as loot_url %}
+{% if is_admin %}
+  {% include "components/page_header_open.html" with title="Items" %}
+  <a class="btn btn-primary" href="{{ create_url }}">{% include "components/icon.html" with name="plus-lg" %} New item</a>
+  <a class="btn btn-outline-secondary" href="{{ loot_url }}">Print loot cards</a>
+  {% include "components/page_header_close.html" %}
+{% elif is_game_master %}
+  {% include "components/page_header_open.html" with title="Items" %}
+  <a class="btn btn-outline-secondary" href="{{ loot_url }}">Print loot cards</a>
+  {% include "components/page_header_close.html" %}
+{% else %}
+  {% include "components/page_header.html" with title="Items" %}
+{% endif %}
 {% if is_admin %}
 <p>{% if show_retired %}<a href="{% url 'items:index' club.slug %}{% if magic_type %}?magic_type={{ magic_type }}{% endif %}">Hide retired</a>
   {% else %}<a href="{% url 'items:index' club.slug %}?retired=1{{ retired_qs }}">Show retired</a>{% endif %}</p>
