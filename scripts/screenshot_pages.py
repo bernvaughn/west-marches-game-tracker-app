@@ -205,6 +205,8 @@ EXCLUDED = {
     "trades:decline": "POST only.",
     "trades:cancel": "POST only.",
     "trades:approve": "POST only.",
+    "trades:poll": "HTMX partial (JSON), not a page.",
+    "trades:status_fragment": "HTMX partial, not a page.",
     "items:retire": "POST only.",
     "items:restore": "POST only.",
     "items:delete": "POST only.",
