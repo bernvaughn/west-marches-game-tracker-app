@@ -22,6 +22,8 @@
   <script src="{% static 'vendor/bootstrap-5.3.3/js/bootstrap.bundle.min.js' %}" defer></script>
   <script src="{% static 'js/modal.js' %}" defer></script>
   <script src="{% static 'js/tooltips.js' %}" defer></script>
+  <script src="{% static 'js/toast.js' %}" defer></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <a class="visually-hidden-focusable wm-skip-link no-print" href="#main">Skip to main content</a>
@@ -52,6 +54,7 @@
   <p class="wm-site-footer-links"><a href="{% url 'about' %}">About</a> · <a href="{% url 'plans' %}">Plans</a></p>
   {# U95: delete this line to remove the note #}<p class="wm-built-with">Built with CodeHerder</p>
 </footer>{% endif %}{% endblock %}
+{% include "components/toast_container.html" %}
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>
 </html>

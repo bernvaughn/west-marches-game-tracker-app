@@ -1,0 +1,49 @@
+{% comment %}command_palette: Client-side command palette (Contract).
+   Activated with Cmd/Ctrl+K. Requires Alpine.js and static/js/command_palette.js.
+   Place once in base.html, outside main.
+{% endcomment %}
+<div x-data="wmCommandPalette" x-init="init()" class="wm-command-palette no-print" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;">
+  <div class="wm-command-backdrop" @click="closePalette()" aria-hidden="true"></div>
+  <div class="wm-command-window" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="wm-command-header">
+      <div class="wm-command-input-wrapper">
+        {% include "components/icon.html" with name="search" %}
+        <input
+          type="text"
+          x-ref="input"
+          x-model="query"
+          @input="filterEntries()"
+          placeholder="Type a command or search..."
+          class="wm-command-input"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search commands"
+        >
+        <kbd class="wm-command-shortcut">⌘K</kbd>
+      </div>
+    </div>
+    <div class="wm-command-list" role="listbox">
+      <template x-for="(entry, index) in filtered" :key="entry.url + index">
+        <div
+          class="wm-command-item"
+          :class="{ 'wm-command-item-selected': index === selectedIndex }"
+          role="option"
+          :aria-selected="index === selectedIndex"
+          @click="goTo(entry)"
+          @mouseenter="selectedIndex = index"
+        >
+          <span class="wm-command-item-label" x-text="entry.label"></span>
+          <span class="wm-command-item-group" x-text="entry.group" x-show="entry.group"></span>
+        </div>
+      </template>
+      <div class="wm-command-empty" x-show="filtered.length === 0 && query">
+        <span x-text="'No results for ' + query"></span>
+      </div>
+    </div>
+    <div class="wm-command-footer">
+      <kbd>↑↓</kbd> navigate · <kbd>⏎</kbd> select · <kbd>Esc</kbd> close
+    </div>
+  </div>
+</div>
+
+<script src="{% static 'js/command_palette.js' %}" defer></script>
