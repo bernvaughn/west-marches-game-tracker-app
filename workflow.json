@@ -1,0 +1,16 @@
+{
+  "instances": [
+    {"name": "plan", "stage": "plan", "class": "doing"},
+    {"name": "prod_settings", "stage": "code", "class": "doing"},
+    {"name": "cors_restriction", "stage": "code", "class": "doing"},
+    {"name": "oauth_compliance", "stage": "code", "class": "doing"},
+    {"name": "rate_limiting", "stage": "code", "class": "doing"},
+    {"name": "csp_headers", "stage": "code", "class": "doing"},
+    {"name": "security_logging", "stage": "code", "class": "doing"},
+    {"name": "secure_defaults", "stage": "code", "class": "doing"},
+    {"name": "review", "stage": "review", "class": "doing"},
+    {"name": "verify", "stage": "verify", "class": "doing"},
+    {"name": "done", "stage": "done", "class": "done"}
+  ],
+  "reason": "Security enhancements require multiple focused code stages: production settings, CORS, OAuth compliance, rate limiting, CSP, logging, and secure defaults. Each area is distinct and can be implemented independently."
+}
