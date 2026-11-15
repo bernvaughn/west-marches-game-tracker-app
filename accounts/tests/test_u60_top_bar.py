@@ -19,7 +19,8 @@ SHORTCUTS = {
 
 
 def home(login, user, club):
-    return login(user).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    return login(user).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
 
 
 def header(body):
@@ -123,8 +124,9 @@ def test_logout_last_in_panel_by_post(login, club, player):
     assert client.get(reverse("club_home", args=[club.slug])).status_code == 302
 
 
-def test_club_home_follows_menu_groups(login, club, player):
-    body = home(login, player, club)
+def test_club_home_follows_menu_groups(login, club, game_master):
+    # Only GMs/admins see the menu groups on club_home
+    body = home(login, game_master, club)
     main = body[body.index("<main") :]
     for _, heading in navigation.MENU_GROUPS:
         if heading != "Account":

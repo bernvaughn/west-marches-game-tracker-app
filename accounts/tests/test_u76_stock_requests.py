@@ -57,7 +57,8 @@ def test_non_member_lock_and_post_403(club, site_admin, other_club, club_b_membe
 
 
 def test_nav_entry(club, player, login):
-    html = login(player).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    html = login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     assert "Request stock" in html
 
 

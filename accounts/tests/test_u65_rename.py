@@ -16,7 +16,8 @@ TAGLINE = "Spend your loot between sessions."
 
 
 def test_club_home_title_and_menu(login, club, player):
-    body = login(player).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    body = login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     assert NAME in body[: body.index("</title>")]
     assert f'id="site-menu-title">{NAME}<' in body
     assert OLD not in body

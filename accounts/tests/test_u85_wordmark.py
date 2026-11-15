@@ -41,7 +41,8 @@ def test_older_rules_do_not_override_wordmark_font():
 
 
 def test_side_menu_header_uses_wordmark(login, club, player):
-    body = login(player).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    body = login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     assert re.search(r'class="offcanvas-title wm-wordmark" id="site-menu-title"', body)
 
 

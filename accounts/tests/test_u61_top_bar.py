@@ -7,7 +7,8 @@ pytestmark = [pytest.mark.django_db, pytest.mark.story("U61")]
 
 
 def home(login, user, club):
-    return login(user).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    return login(user).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
 
 
 def bar(body):

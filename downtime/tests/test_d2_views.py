@@ -204,7 +204,8 @@ def test_admin_nav_entry_only_for_admins(login, club, player, club_admin):
 
 
 def test_shortcut_before_trades(login, club, player):
-    body = login(player).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    body = login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     bar = body[body.index('<nav class="site-header') :]
     bar = bar[: bar.index("</nav>")]
     assert bar.index('aria-label="Downtime"') < bar.index('aria-label="Trades"')

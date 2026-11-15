@@ -1,0 +1,61 @@
+{% load coins humanize %}
+{% comment %}Dashboard header: character summary with key stats{% endcomment %}
+<div class="wm-dashboard-header card wm-card-raised mb-4 no-print">
+  <div class="card-body">
+    <div class="row align-items-center g-3">
+      <div class="col-auto">
+        <div class="wm-avatar wm-avatar-lg" aria-hidden="true">
+          {{ character.name|slice:":1"|upper }}
+        </div>
+      </div>
+      <div class="col">
+        <h2 class="h4 mb-1 wm-wordmark">{{ character.name }}</h2>
+        <div class="text-muted small">
+          {% if character.level %}Level {{ character.level }}{% endif %}
+          {% if character.char_class %}{% if character.level %} · {% endif %}{{ character.char_class }}{% endif %}
+          {% if character.species %}{% if character.level or character.char_class %} · {% endif %}{{ character.species }}{% endif %}
+        </div>
+      </div>
+      <div class="col-auto">
+        {% if membership.characters.count > 1 %}
+        <form action="{% url 'characters:select' club.slug %}" method="post" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="character" value="{{ character.pk }}">
+          <button type="submit" class="btn btn-sm btn-outline-secondary"
+                  hx-post="{% url 'characters:select' club.slug %}"
+                  hx-target="body"
+                  hx-swap="outerHTML"
+                  hx-include="[name='character']">
+            {% include "components/icon.html" with name="user" %} Switch
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    <hr class="my-3">
+    <div class="row g-3 text-center">
+      <div class="col-6 col-md-3">
+        <div class="wm-stat-value text-success">{{ coin_summary.available|coins }}</div>
+        <div class="wm-stat-label text-muted small">Coins (available)</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="wm-stat-value text-primary">{{ downtime_balance }}</div>
+        <div class="wm-stat-label text-muted small">Downtime Points</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="wm-stat-value text-warning">{{ junk_count }}</div>
+        <div class="wm-stat-label text-muted small">Junk Items</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="wm-stat-value text-info">{{ junk_value|coins }}</div>
+        <div class="wm-stat-label text-muted small">Junk Value</div>
+      </div>
+      {% if character.xp %}
+      <div class="col-6 col-md-3">
+        <div class="wm-stat-value">{{ character.xp|intcomma }}</div>
+        <div class="wm-stat-label text-muted small">XP</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>

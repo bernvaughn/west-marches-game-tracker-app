@@ -83,8 +83,9 @@ def test_footer_on_public_pages(name, player, login):
 @pytest.mark.story("U95")
 def test_footer_absent_on_club_pages(club, player, login):
     c = login(player)
+    # Follow redirect for club_home (players go to dashboard)
     for url in (reverse("club_home", args=[club.slug]), reverse("items:index", args=[club.slug])):
-        r = c.get(url)
+        r = c.get(url, follow=True)
         assert r.status_code == 200
         assert NOTE not in r.content.decode()
 

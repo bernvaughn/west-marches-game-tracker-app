@@ -592,6 +592,11 @@ def _build_pages() -> list[Page]:
             P(f"map-detail-{suffix}", role, _c("map:detail", "map.pk")),
             P(f"ledger-index-{suffix}", role, _c("ledger:index")),
         ]
+    # Player dashboard (only for players, not GMs/admins)
+    for role in ("alice", "bob"):
+        pages += [
+            P(f"dashboard-{role}", role, lambda d: reverse("accounts:player_dashboard", args=[d.slug])),
+        ]
     pages += [
         P("characters-index-gm-only", "gm_only", _c("characters:index")),
         P("characters-detail-gm-only", "gm_only", _c("characters:detail", "aria.pk")),
