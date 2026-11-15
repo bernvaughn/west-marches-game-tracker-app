@@ -43,6 +43,7 @@ THEMED_H1_ALLOWLIST = [
 # Page names that are modal/partial and don't have h1
 MODAL_PAGE_NAMES = {
     "items-references",
+    "trades-poll",  # JSON API endpoint, no HTML
 }
 
 # Templates that are widgets/partials and don't extend base.html
