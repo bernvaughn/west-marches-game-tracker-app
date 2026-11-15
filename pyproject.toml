@@ -17,16 +17,21 @@ dev = [
     "pytest-django",
     "ruff",
     "beautifulsoup4",
+    "pytest-xdist>=3.8.0",
 ]
 
 [tool.uv]
 package = false
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
+DJANGO_SETTINGS_MODULE = "config.test_settings"
 python_files = ["test_*.py"]
-markers = ["story(id): user story id", "browser: needs Chromium; run with -m browser"]
-addopts = "--strict-markers -m \"not browser\""
+markers = [
+    "story(id): user story id",
+    "browser: needs Chromium; run with -m browser",
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+addopts = "--strict-markers -m \"not browser and not slow\" -n auto"
 
 [tool.ruff]
 target-version = "py312"

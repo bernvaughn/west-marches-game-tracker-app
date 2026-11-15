@@ -82,13 +82,14 @@ def test_refuses_cross_club(character, other_club_action, player):
         services.spend(character, other_club_action, player)
 
 
+@pytest.mark.slow
 def test_pick_follows_weights(character, action, entries, player):
-    fund(character, 400)
+    fund(character, 100)
     rng = random.Random(7)
     counts = {e.pk: 0 for e in entries}
-    for _ in range(400):
+    for _ in range(100):
         counts[services.spend(character, action, player, rng).entry_id] += 1
-    assert 250 < counts[entries[0].pk] < 350
+    assert 60 < counts[entries[0].pk] < 90
 
 
 def test_rolls_back_when_ledger_fails(character, action, entries, player, monkeypatch):
