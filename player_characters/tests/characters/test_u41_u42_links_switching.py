@@ -47,7 +47,8 @@ def test_mine_empty_state(login, club, player):
 def test_directory_name_and_player_only(login, club, player, other_player, two):
     mk(club, other_player, "Bram")
     html = login(player).get(u("characters:directory", club)).content.decode()
-    assert "Aria" in html and "Bram" in html and "@" not in html.split("<main")[-1]
+    main_content = html.split("<main", 1)[1].split("</main>")[0]
+    assert "Aria" in main_content and "Bram" in main_content and "@" not in main_content
     assert u("characters:detail", club, two[0].pk) in html
     bram = Character.objects.get(name="Bram")
     assert u("characters:detail", club, bram.pk) not in html

@@ -66,7 +66,8 @@ def test_xp_table_read_only(who, request, login, club):
     url = reverse("map:xp", args=[club.slug])
     r = c.get(url)
     assert r.status_code == 200
-    assert "<input" not in r.content.decode().split("<main")[-1].replace('type="hidden"', "")
+    main_content = r.content.decode().split("<main", 1)[1].split("</main>")[0]
+    assert "<input" not in main_content.replace('type="hidden"', "")
     assert c.post(url, {"discover_1": 9, "explore_1": 9}).status_code == 403
     assert XPLevel.objects.get(club=club, band=1).discover_xp == 1
 
