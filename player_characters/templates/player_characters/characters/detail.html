@@ -87,7 +87,7 @@
         <tbody>
         {% for r in rows %}
         <tr>
-          <td>{% include "items/_item_name.html" with item=r.item %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}
+          <td>{% include "items/_item_name.html" with item=r.item info=True %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}
             {% for pk, qty in junk.items %}{% if pk == r.item.pk %} {% include "components/badge.html" with text="Junk" %} &times;{{ qty }}{% endif %}{% endfor %}
             {% for pk, quests in quest_needs.items %}{% if pk == r.item.pk %}<div class="wm-sheet-note">Needed for quest: {% for q in quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}{% endfor %}</td>
           <td class="num">{{ r.owned }}</td>

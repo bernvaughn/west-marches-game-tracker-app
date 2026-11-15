@@ -4,7 +4,7 @@
   <tbody>
   {% for r, field in rows %}
   <tr{% if not field %} class="wm-trade-row-unavailable"{% endif %}>
-    <td>{% include "items/_item_name.html" with item=r.item %}</td>
+    <td>{% include "items/_item_name.html" with item=r.item info=True %}</td>
     <td class="num">{{ r.owned }}</td>
     <td class="num">{{ r.available }}</td>
     <td class="num">
