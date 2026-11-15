@@ -42,4 +42,4 @@ def poll(request, club_slug):
             }
         )
 
-    return JsonResponse({"trades": result})
+    return JsonResponse({"count": len(result), "trades": result})
