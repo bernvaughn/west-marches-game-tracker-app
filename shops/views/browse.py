@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import render
 from django.utils import timezone
 
+from accounts.htmx import is_htmx
 from accounts.permissions import club_member_required, is_club_admin
 from accounts.scoping import club_get_object_or_404
 from items.magic_types import MagicType
@@ -158,15 +159,26 @@ def _compute_best_buy_prices(club, character, open_shops_list):
     if not junk:
         return {}
     
-    junk_item_ids = [j.item_id for j in junk]
-    best_prices = {}
+    junk_item_ids = [j.item.pk for j in junk]
+    shop_ids = [s.id for s in open_shops_list]
     
-    for shop in open_shops_list:
-        for item_id in junk_item_ids:
-            price = buy_price(shop, item_id)
-            if price > 0:
-                if item_id not in best_prices or price > best_prices[item_id][0]:
-                    best_prices[item_id] = (price, shop)
+    # Get all shop stocks for these items in these shops in one query
+    stocks = ShopStock.objects.filter(
+        shop_id__in=shop_ids,
+        item_id__in=junk_item_ids,
+    ).select_related('item', 'shop')
+    
+    # Build a lookup of shop buy_percents
+    shop_buy_percents = {s.id: s.buy_percent for s in open_shops_list}
+    
+    best_prices = {}
+    for stock in stocks:
+        buy_percent = stock.buy_percent if stock.buy_percent is not None else shop_buy_percents.get(stock.shop_id, 0)
+        price = percent_price(stock.item.value_cp, buy_percent)
+        if price > 0:
+            item_id = stock.item_id
+            if item_id not in best_prices or price > best_prices[item_id][0]:
+                best_prices[item_id] = (price, stock.shop)
     
     return best_prices
 
@@ -250,7 +262,7 @@ def index(request, club_slug):
     }
     
     # Check if this is an HTMX request for the street fragment
-    if request.htmx:
+    if is_htmx(request):
         return render(request, "shops/browse/_street_fragment.html", context)
     
     return render(request, "shops/browse/index.html", context)

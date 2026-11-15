@@ -70,6 +70,7 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - **form_layout**: the whole form with a primary Save and a secondary Cancel. Fields render through `templates/forms/` (required mark, help, errors with an icon, no stray colon in labels). Short inputs (number, date) stop at 12 rem; forms stop at 40 rem.
 - **modal_frame**: header, body, footer for `#app-modal`. Below `sm` the modal is full screen.
 - **toast_container**: bottom-right toast notifications (bottom-center on mobile). Trigger via `HX-Trigger: {"toast": {"message": "...", "type": "success|warning|danger|info"}}` or Django messages with `toast-*` tag. Auto-dismisses after 5s, manual close button. Uses Alpine.js for no-CDN dependency.
+- **spinner**: HTMX loading indicator. Context: `size` ("sm" or empty). Example: `{% include "components/spinner.html" with size="sm" %}`.
 - **command_palette**: press <kbd>⌘K</kbd> (or <kbd>Ctrl+K</kbd>) to open. Searches all navigation entries from the side menu (indexes `.wm-menu-link`). Requires Alpine.js and `static/js/command_palette.js`.
 
 ### Rules

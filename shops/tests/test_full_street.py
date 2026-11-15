@@ -57,14 +57,21 @@ def test_empty_street():
     assert street_lots([]) == []
 
 
+def _street(body):
+    # Find the street ul inside the street-lots div
+    start = body.index('<div id="street-lots">')
+    start = body.index('<ul class="wm-street"', start)
+    end = body.index('</ul>', start)
+    return body[start:end]
+
+
 def test_filler_hidden_and_links(login, player, club, other_club):
     open_shop(club, "One", street_position=2)
     open_shop(club, "Two", street_position=5)
     Shop.objects.create(club=club, name="Shut")
     open_shop(other_club, "Elsewhere")
     body = page(login, player, club)
-    ul = body[body.index('<ul class="wm-street"') :]
-    ul = ul[: ul.index("</ul>")]
+    ul = _street(body)
     items = re.findall(r"<li.*?</li>", ul, re.S)
     assert len(items) == 8
     filler = [i for i in items if "wm-street-lot--filler" in i]
@@ -79,13 +86,9 @@ def test_deterministic(login, player, club):
     for i in range(9):
         open_shop(club, f"S{i}")
 
-    def street(body):
-        body = body[body.index('<ul class="wm-street"') :]
-        return body[: body.index("</ul>")]
-
-    first = street(page(login, player, club))
+    first = _street(page(login, player, club))
     assert first.count("<li") == 16
-    assert street(page(login, player, club)) == first
+    assert _street(page(login, player, club)) == first
 
 
 def test_css_columns():

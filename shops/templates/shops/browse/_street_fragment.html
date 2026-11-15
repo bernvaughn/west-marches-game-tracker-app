@@ -1,4 +1,4 @@
-<ul id="street-lots" class="wm-street" aria-label="Shops">
+<ul class="wm-street" aria-label="Shops">
 {% for lot in lots %}{% if lot.shop %}{% with shop=lot.shop %}
   <li class="wm-street-lot wm-shop-card--{{ shop.color }}" data-shop-id="{{ shop.id }}">
     <a class="wm-street-link" href="{% url 'shops:detail' club.slug shop.id %}">

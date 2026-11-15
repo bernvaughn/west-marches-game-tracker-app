@@ -8,6 +8,53 @@
   column-gap: 0; row-gap: var(--wm-space-4);
 }
 
+.wm-street-lot--filler .wm-street-link { color: var(--wm-shop-slate-deep); }
+.wm-street-lot--stall .wm-street-link { color: var(--wm-stall-deep); }
+.wm-player-shop-figure .wm-building { width: 88px; height: 88px; color: var(--wm-stall-deep); }
+@media (min-width: 576px) { .wm-player-shop-figure .wm-building { width: 160px; height: 160px; } }
+.wm-street-lot--filler .wm-street-link:hover { transform: none; }
+@media (min-width: 768px) { .wm-street { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+.wm-street-lot { position: relative; margin: 0; padding: 0; min-width: 0; }
+/* Each lot paints its own road segment; with no column gap they join into one band per row. */
+.wm-street-lot::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--wm-street-road-height);
+  background: var(--wm-street-road); border-top: 2px solid var(--wm-street-road-edge); z-index: 0;
+}
+.wm-street-link {
+  position: relative; z-index: 1; display: block; text-decoration: none; color: var(--wm-shop-edge);
+  padding: 0 var(--wm-space-2) var(--wm-street-road-height); transition: transform .15s ease;
+}
+.wm-street-link:hover { transform: translateY(-3px); }
+.wm-street-link:focus-visible { outline: var(--wm-focus-outline); outline-offset: 2px; }
+.wm-building {
+  display: block; width: 100%; aspect-ratio: 1; background-color: currentColor;
+  -webkit-mask: var(--wm-building-src) center bottom / contain no-repeat;
+  mask: var(--wm-building-src) center bottom / contain no-repeat;
+}
+/* Signs sit below the building at every width (U77; replaces U54's wide-screen layout). */
+.wm-street-sign {
+  position: static; margin: var(--wm-space-1) 0; padding: .125rem 1px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0; overflow: visible;
+  background: var(--wm-shop-tint); color: var(--wm-text); border: 2px solid var(--wm-shop-edge);
+  border-radius: var(--wm-radius-sm); font-size: var(--wm-text-sm); line-height: 1.1; text-align: center;
+}
+.wm-street-name { overflow-wrap: break-word; hyphens: auto; min-width: 0; max-width: 100%; }
+.wm-building-swatch .wm-building { width: 64px; height: 64px; color: var(--wm-shop-parchment-deep); }
+@media (prefers-reduced-motion: reduce) { .wm-street-link { transition: none; } .wm-street-link:hover { transform: none; } }
+@media (max-width: 1199px) {
+  .wm-street-link { padding-left: var(--wm-space-1); padding-right: var(--wm-space-1); }
+  .wm-street-sign { font-size: .6875rem; }
+}
+/* The narrowest lots: 8 per row at 768-991 px, and 4 per row below 360 px. */
+@media (max-width: 359px), (min-width: 768px) and (max-width: 991px) { .wm-street-sign { font-size: .625rem; } }
+@media print {
+  .wm-street-lot--filler { display: none; }
+  .wm-street { display: block; }
+  .wm-street-lot::after, .wm-building { display: none; }
+  .wm-street-link { padding: 0; }
+  .wm-street-sign { position: static; display: inline; border: 0; background: none; }
+}
+
 /* Filter bar */
 .wm-street-filter-bar {
   margin-bottom: var(--wm-space-4);

@@ -29,7 +29,11 @@ def open_shop(club, name, **kw):
 
 
 def street(body):
-    return body[body.index('<ul class="wm-street"') :]
+    # Find the street ul inside the street-lots div
+    start = body.index('<div id="street-lots">')
+    start = body.index('<ul class="wm-street"', start)
+    end = body.index('</ul>', start)
+    return body[start:end]
 
 
 def test_order_by_position_name_id(login, player, club):
