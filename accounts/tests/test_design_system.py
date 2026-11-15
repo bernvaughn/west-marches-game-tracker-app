@@ -10,7 +10,7 @@ from django.urls import reverse
 from accounts.design_tokens import contrast_ratio, read_tokens
 from scripts.screenshot_pages import PAGES, ROLES, demo_objects, extra_fixtures
 
-pytestmark = [pytest.mark.story("U35"), pytest.mark.django_db]
+pytestmark = [pytest.mark.story("U35"), pytest.mark.django_db, pytest.mark.slow]
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 COMPONENTS = sorted((ROOT / "templates" / "components").glob("*.html"))

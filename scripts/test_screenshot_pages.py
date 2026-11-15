@@ -116,6 +116,7 @@ def test_extra_fixtures_idempotent(db):
 
 
 @pytest.mark.parametrize("page", PAGES, ids=lambda p: p.name)
+@pytest.mark.slow
 def test_page_returns_200(client, demo, page):
     email = ROLES[page.role]
     if email:
