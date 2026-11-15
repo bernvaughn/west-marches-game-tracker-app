@@ -60,7 +60,9 @@ def test_change_clears_flag_and_unlocks(club, player, login):
     assert r.status_code == 302
     player.refresh_from_db()
     assert player.must_change_password is False
-    assert client.get(reverse("club_home", args=[club.slug])).status_code == 200
+    # Follow redirect to dashboard
+    response = client.get(reverse("club_home", args=[club.slug]), follow=True)
+    assert response.status_code == 200
 
 
 @pytest.mark.story("U22")

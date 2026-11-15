@@ -11,7 +11,15 @@ from ..inventory import coin_summary, inventory_rows
 from ..models import Trade
 from ..selection import selected_character
 from ..trade_forms import ProposeTradeForm, TradeSideForm
-from ..trade_services import OPEN, TradeError, propose_trade
+from ..trade_services import OPEN, TradeError, propose_trade, side_of
+from ..trade_status_line import trade_status_line
+
+
+def _trade_with_status(trade, user):
+    """Add status_line to trade for template."""
+    viewer_side = side_of(trade, user)
+    trade.status_line = trade_status_line(trade, viewer_side)
+    return trade
 
 
 @club_member_required
@@ -25,14 +33,19 @@ def index(request, club_slug):
     show_all = is_game_master(request.user, request.club) or is_club_admin(
         request.user, request.club
     )
+
+    open_trades = [_trade_with_status(t, request.user) for t in mine.filter(status__in=OPEN)]
+    closed_trades = [_trade_with_status(t, request.user) for t in mine.exclude(status__in=OPEN)]
+    all_trades = [_trade_with_status(t, request.user) for t in trades] if show_all else []
+
     return render(
         request,
         "player_characters/trades/index.html",
         {
-            "open_trades": mine.filter(status__in=OPEN),
-            "closed_trades": mine.exclude(status__in=OPEN),
+            "open_trades": open_trades,
+            "closed_trades": closed_trades,
             "show_all": show_all,
-            "all_trades": trades if show_all else [],
+            "all_trades": all_trades,
         },
     )
 

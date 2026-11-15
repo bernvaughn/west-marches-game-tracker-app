@@ -1,12 +1,12 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 
 from player_characters.models import Character
 
 from ..context_processors import clubs as clubs_context
 from ..models import Membership
-from ..permissions import club_member_required
+from ..permissions import club_member_required, is_club_admin, is_game_master
 
 
 @login_required
@@ -64,4 +64,8 @@ def home(request):
 
 @club_member_required
 def club_home(request, club_slug):
+    club = request.club
+    # Players go to dashboard, GMs/admins see navigation cards
+    if not is_game_master(request.user, club) and not is_club_admin(request.user, club):
+        return redirect("accounts:player_dashboard", club_slug=club.slug)
     return render(request, "club_home.html")

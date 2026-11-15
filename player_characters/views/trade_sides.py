@@ -1,8 +1,10 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
+
+import json
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
@@ -95,6 +97,24 @@ def edit_side(request, club_slug, pk):
     )
 
 
+def _act_with_toast(request, club_slug, pk, service, done_msg, toast_type, extra_check=None):
+    """Execute a trade action and emit toast for HTMX requests."""
+    trade, side = _get_trade(request, pk)
+    try:
+        if extra_check:
+            extra_check(trade)
+        service(trade, side, request.user)
+    except TradeError as err:
+        messages.error(request, str(err))
+    else:
+        messages.success(request, done_msg)
+        if request.headers.get("HX-Request"):
+            response = redirect("trades:detail", club_slug=club_slug, pk=trade.pk)
+            response["HX-Trigger"] = json.dumps({"toast": {"message": done_msg, "type": toast_type}})
+            return response
+    return redirect("trades:detail", club_slug=club_slug, pk=trade.pk)
+
+
 @club_member_required
 @require_POST
 def approve(request, club_slug, pk):
@@ -105,7 +125,14 @@ def approve(request, club_slug, pk):
         messages.error(request, str(err))
     else:
         if trade.status == Trade.Status.COMPLETED:
-            messages.success(request, "Trade completed.")
+            msg = "Trade completed."
+            toast = "success"
         else:
-            messages.success(request, "You approved the trade.")
+            msg = "You approved the trade."
+            toast = "success"
+        messages.success(request, msg)
+        if request.headers.get("HX-Request"):
+            response = redirect("trades:detail", club_slug=club_slug, pk=trade.pk)
+            response["HX-Trigger"] = json.dumps({"toast": {"message": msg, "type": toast}})
+            return response
     return redirect("trades:detail", club_slug=club_slug, pk=trade.pk)

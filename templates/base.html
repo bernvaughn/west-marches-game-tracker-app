@@ -23,9 +23,6 @@
   <script src="{% static 'js/modal.js' %}" defer></script>
   <script src="{% static 'js/tooltips.js' %}" defer></script>
   <script src="{% static 'js/toast.js' %}" defer></script>
-  <script src="{% static 'js/command_palette.js' %}" defer></script>
-  <script src="{% static 'js/shortcuts.js' %}" defer></script>
-  <script src="{% static 'vendor/alpinejs/alpine.min.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <a class="visually-hidden-focusable wm-skip-link no-print" href="#main">Skip to main content</a>
@@ -51,9 +48,9 @@
   </div>
 </nav>
 {% if user.is_authenticated %}{% include "partials/side_menu.html" %}{% endif %}
+{% include "components/toast_container.html" %}
 <main id="main" tabindex="-1" class="wm-main {% block main_class %}{% endblock %}">{% flash_slot %}{% block content %}{% endblock %}{% endflash_slot %}</main>
 {% block site_footer %}{% include "partials/site_footer.html" %}{% endblock %}
-{% include "components/toast_container.html" %}
 {% include "components/command_palette.html" %}
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>

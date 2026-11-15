@@ -116,3 +116,35 @@
   .wm-map-kind .btn-group { display: flex; flex-wrap: wrap; gap: var(--wm-space-1, .25rem); }
   .wm-map-kind .btn-group > .btn { flex: 1 1 calc(50% - .25rem); border-radius: var(--bs-btn-border-radius) !important; margin-left: 0; }
 }
+
+/* Dashboard (Player Dashboard with Contextual Quick Actions) */
+.wm-dashboard-header .wm-avatar-lg { width: 4rem; height: 4rem; font-size: var(--wm-text-2xl); }
+.wm-dashboard-header .wm-stat-value { font-size: var(--wm-text-xl); font-weight: 600; line-height: 1.2; }
+.wm-dashboard-header .wm-stat-label { font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.wm-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--wm-space-4);
+}
+
+.wm-dashboard-section { display: flex; flex-direction: column; }
+.wm-dashboard-section .card-header { background: var(--wm-surface-sunken); border-bottom: 1px solid var(--wm-border); }
+.wm-dashboard-section .card-header h3 { display: flex; align-items: center; gap: var(--wm-space-2); }
+.wm-dashboard-section .list-group-item { border: none; border-bottom: 1px solid var(--wm-border); transition: background-color .15s; }
+.wm-dashboard-section .list-group-item:last-child { border-bottom: none; }
+.wm-dashboard-section .list-group-item:hover { background: var(--wm-surface-sunken); }
+.wm-dashboard-section .stretched-link::after { inset: 0; }
+.wm-dashboard-section .list-group-item a.text-decoration-none { display: flex; align-items: center; gap: var(--wm-space-2); width: 100%; }
+.wm-dashboard-section .list-group-item small.text-muted { font-size: var(--wm-text-sm); }
+
+@media (max-width: 575.98px) {
+  .wm-dashboard-grid { grid-template-columns: 1fr; }
+  .wm-dashboard-header .wm-avatar-lg { width: 3rem; height: 3rem; font-size: var(--wm-text-xl); }
+  .wm-dashboard-header .wm-stat-value { font-size: var(--wm-text-lg); }
+}
+
+/* No character state */
+.wm-dashboard-header .wm-avatar { background: var(--wm-surface-sunken); color: var(--wm-text-muted); display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.wm-dashboard-header .wm-avatar-sm { width: 2rem; height: 2rem; font-size: var(--wm-text-sm); }
+.wm-dashboard-header .wm-avatar-lg { width: 4rem; height: 4rem; font-size: var(--wm-text-2xl); }

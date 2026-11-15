@@ -69,7 +69,9 @@ def test_balances_and_shops():
 def test_demo_logins(client, email):
     call_command("seed_demo")
     assert client.login(username=email, password=DEMO_PASSWORD)
-    assert client.get("/c/demo/").status_code == 200
+    # Follow redirect to dashboard for players
+    response = client.get("/c/demo/", follow=True)
+    assert response.status_code == 200
 
 
 def test_demo_shop_silhouettes_idempotent():

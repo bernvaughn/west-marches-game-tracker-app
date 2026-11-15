@@ -205,6 +205,8 @@ EXCLUDED = {
     "trades:decline": "POST only.",
     "trades:cancel": "POST only.",
     "trades:approve": "POST only.",
+    "trades:poll": "HTMX partial (JSON), not a page.",
+    "trades:status_fragment": "HTMX partial, not a page.",
     "items:retire": "POST only.",
     "items:restore": "POST only.",
     "items:delete": "POST only.",
@@ -319,7 +321,6 @@ def _build_pages() -> list[Page]:
         P("trades-propose", "alice", _c("trades:propose")),
         P("trades-detail-alice", "alice", _c("trades:detail", "trade.pk")),
         P("trades-detail-bob", "bob", _c("trades:detail", "trade.pk")),
-        P("trades-poll", "alice", _c("trades:poll")),
         # items
         P("items-index", "alice", _c("items:index")),
         P("items-index-gm", "gm", _c("items:index")),
@@ -590,6 +591,11 @@ def _build_pages() -> list[Page]:
             P(f"map-index-{suffix}", role, _c("map:index")),
             P(f"map-detail-{suffix}", role, _c("map:detail", "map.pk")),
             P(f"ledger-index-{suffix}", role, _c("ledger:index")),
+        ]
+    # Player dashboard (only for players, not GMs/admins)
+    for role in ("alice", "bob"):
+        pages += [
+            P(f"dashboard-{role}", role, lambda d: reverse("accounts:player_dashboard", args=[d.slug])),
         ]
     pages += [
         P("characters-index-gm-only", "gm_only", _c("characters:index")),

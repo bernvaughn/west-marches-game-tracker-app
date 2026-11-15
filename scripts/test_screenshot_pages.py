@@ -120,7 +120,13 @@ def test_page_returns_200(client, demo, page):
     email = ROLES[page.role]
     if email:
         client.force_login(User.objects.get(email=email))
-    assert client.get(page.url(demo)).status_code == 200
+    # Follow redirect for players on club_home (they go to dashboard)
+    # Pages that use club_home for players: club-home-*, topbar-menu-open
+    follow = page.role in ("alice", "bob") and (
+        page.name.startswith("club-home-") or page.name == "topbar-menu-open"
+    )
+    resp = client.get(page.url(demo), follow=follow)
+    assert resp.status_code == 200
     if page.modal_url:
         resp = client.get(page.modal_url(demo), HTTP_HX_REQUEST="true")
         assert resp.status_code == 200

@@ -40,10 +40,14 @@ def test_render_modal_or_page(rf):
 @pytest.mark.story("U33")
 def test_base_has_modal_and_assets(login, player, club):
     client = login(player)
-    for url in (reverse("home"), reverse("club_home", args=[club.slug])):
-        html = client.get(url).content.decode()
-        assert 'id="app-modal"' in html and "modal-content" in html
-        assert "css/coins.css" in html and "js/modal.js" in html
+    # Home page (no club)
+    html = client.get(reverse("home")).content.decode()
+    assert 'id="app-modal"' in html and "modal-content" in html
+    assert "css/coins.css" in html and "js/modal.js" in html
+    # Club home - players are redirected to dashboard, follow redirect
+    html = client.get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    assert 'id="app-modal"' in html and "modal-content" in html
+    assert "css/coins.css" in html and "js/modal.js" in html
     assert finders.find("js/modal.js") and finders.find("css/coins.css")
     js = open(finders.find("js/modal.js")).read()
     for text in ("appModalClose", "htmx:afterSwap", "app-modal"):
