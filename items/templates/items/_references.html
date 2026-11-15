@@ -4,7 +4,7 @@
   <thead><tr><th>Item</th><th>Band</th><th>Price</th></tr></thead>
   <tbody>
   {% for item in items %}
-    <tr><td>{% include "items/_item_name.html" %}</td><td>{{ item.get_rarity_display|default:"—" }}</td><td>{{ item.value_cp|coins }}</td></tr>
+    <tr><td>{% include "items/_item_name.html" with item=item info=True %}</td><td>{{ item.get_rarity_display|default:"—" }}</td><td>{{ item.value_cp|coins }}</td></tr>
   {% endfor %}
   </tbody>
 </table>

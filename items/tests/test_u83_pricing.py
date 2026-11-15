@@ -27,7 +27,12 @@ def mk(club, name, cp, band=""):
 
 
 def names(resp):
-    return re.findall(r"<td>(?:<span[^>]*>[^<]*</span> )?([^<]+)</td><td>", resp.content.decode())
+    # The references table has columns: Item, Band, Price
+    # Each row: <tr><td>Item name + info icon</td><td>Band</td><td>Price</td></tr>
+    # Match only the first <td> in each <tr> to get the item name
+    html = resp.content.decode()
+    matches = re.findall(r'<tr><td>(?:<span[^>]*>[^<]*</span> )?([^<]+)', html)
+    return matches
 
 
 def test_three_groups_on_page_and_modal(login, club_admin, club):

@@ -143,11 +143,14 @@ def test_full_page_works_without_javascript(login, club, player, item):
 
 
 def test_item_name_partial_info_flag_false_by_default(login, club, player, item):
-    """With info unset, existing pages unchanged (no info icon)."""
+    """With info unset, the _item_name.html partial renders no icon.
+    But the catalogue (index) now passes info=True, so icon appears there."""
     r = login(player).get(_index(club))
     html = r.content.decode()
-    # The info icon should not appear when info flag is not passed
-    assert "info-circle" not in html
+    # The catalogue now includes the info icon (info=True passed explicitly)
+    assert "info-circle" in html
+    assert "wm-item-info" in html
+    assert "data-app-modal" in html
 
 
 def test_item_name_partial_info_flag_true_renders_icon(login, club, player, item):

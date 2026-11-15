@@ -11,7 +11,7 @@
       <thead><tr><th scope="col">Item</th><th scope="col" class="num">Base value</th><th scope="col" class="num">Qty</th>{% if inventory_has_holds %}<th scope="col" class="num">Available</th>{% endif %}</tr></thead>
       <tbody>
       {% for row in inventory_rows %}
-        <tr><td>{{ row.item.name }}</td><td class="num">{{ row.item.value_cp|coins }}</td><td class="num">{{ row.owned }}</td>{% if inventory_has_holds %}<td class="num">{{ row.available }}</td>{% endif %}</tr>
+        <tr><td>{% include "items/_item_name.html" with item=row.item info=True %}</td><td class="num">{{ row.item.value_cp|coins }}</td><td class="num">{{ row.owned }}</td>{% if inventory_has_holds %}<td class="num">{{ row.available }}</td>{% endif %}</tr>
       {% endfor %}
       </tbody>
     </table>
