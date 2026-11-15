@@ -79,8 +79,10 @@
 .wm-trade-row-unavailable td { color: var(--wm-text-muted); }
 .wm-trade-table { table-layout: fixed; }
 /* Status and date keep one line. From and To share the rest; a long name wraps (hyphenated where the browser can). */
-.wm-trade-col-status { width: 6.25rem; }
-.wm-trade-col-date { width: 6.25rem; }
+.wm-trade-col-from { width: 25%; }
+.wm-trade-col-to { width: 25%; }
+.wm-trade-col-status { width: 25%; }
+.wm-trade-col-date { width: 25%; }
 .wm-trade-table td:nth-child(-n+2) { overflow-wrap: break-word; hyphens: auto; }
 .wm-trade-table .badge { white-space: nowrap; }
 
