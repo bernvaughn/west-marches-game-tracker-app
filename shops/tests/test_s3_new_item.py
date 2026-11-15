@@ -99,5 +99,9 @@ def test_preselect_ignores_bad_ids(club, other_club, club_admin, shop, stock, lo
     other = Item.objects.create(club=other_club, name="Foreign")
     value = {"other": other.pk, "stocked": stock.item.pk, "junk": "abc"}[which]
     html = login(club_admin).get(f"{_stock_add(club, shop)}?item={value}").content.decode()
-    assert "selected" not in html.replace('value="" selected', "")
+    # Check that the specific bad item value is not in a selected option.
+    # The generic 'selected' string appears in Alpine.js templates (wm-command-item-selected),
+    # so we check for the specific pattern of the bad value being selected.
+    bad_selected = f'value="{value}" selected'
+    assert bad_selected not in html
     assert "Foreign" not in html
