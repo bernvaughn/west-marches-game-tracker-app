@@ -7,8 +7,6 @@ from django.urls import reverse
 
 from config import plans as plan_config
 
-NOTE = "Built with CodeHerder"
-
 
 @pytest.mark.story("U94")
 @pytest.mark.django_db
@@ -68,7 +66,7 @@ def test_no_payment_code():
     assert not [a for a in settings.INSTALLED_APPS if "stripe" in a or "paypal" in a]
 
 
-@pytest.mark.story("U95")
+@pytest.mark.story("U96")
 @pytest.mark.django_db
 @pytest.mark.parametrize("name", ["about", "plans", "login", "logout"])
 def test_footer_on_public_pages(name, player, login):
@@ -76,18 +74,47 @@ def test_footer_on_public_pages(name, player, login):
         body = login(player).post(reverse("logout"), follow=True).content.decode()
     else:
         body = Client().get(reverse(name)).content.decode()
-    assert NOTE in body
-    assert "<a" not in body.split(NOTE)[0].rsplit("<p", 1)[1]
+    # Copyright text
+    assert "© 2026 Vaughn Bernard" in body
+    # Credit text with link
+    assert "Designed by Vaughn Bernard, built by" in body
+    assert 'href="https://codeherder.com/"' in body
+    # About and Plans links on public pages
+    assert reverse("about") in body
+    assert reverse("plans") in body
 
 
-@pytest.mark.story("U95")
-def test_footer_absent_on_club_pages(club, player, login):
+@pytest.mark.story("U96")
+@pytest.mark.django_db
+def test_footer_on_club_pages(club, player, login):
     c = login(player)
     # Follow redirect for club_home (players go to dashboard)
     for url in (reverse("club_home", args=[club.slug]), reverse("items:index", args=[club.slug])):
         r = c.get(url, follow=True)
         assert r.status_code == 200
-        assert NOTE not in r.content.decode()
+        body = r.content.decode()
+        # Copyright text
+        assert "© 2026 Vaughn Bernard" in body
+        # Credit text with link
+        assert "Designed by Vaughn Bernard, built by" in body
+        assert 'href="https://codeherder.com/"' in body
+        # About and Plans links should NOT be on club pages
+        assert reverse("about") not in body
+        assert reverse("plans") not in body
+
+
+@pytest.mark.story("U96")
+@pytest.mark.django_db
+def test_footer_on_signin_page():
+    body = Client().get(reverse("login")).content.decode()
+    # Copyright text
+    assert "© 2026 Vaughn Bernard" in body
+    # Credit text with link
+    assert "Designed by Vaughn Bernard, built by" in body
+    assert 'href="https://codeherder.com/"' in body
+    # About and Plans links on sign-in page (public page)
+    assert reverse("about") in body
+    assert reverse("plans") in body
 
 
 @pytest.mark.story("U94")

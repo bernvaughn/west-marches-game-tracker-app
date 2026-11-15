@@ -5,6 +5,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 APP_NAME = "Downtime Market"
 APP_TAGLINE = "Spend your loot between sessions."
+SITE_COPYRIGHT_YEAR = 2026
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") not in ("0", "false", "False", "")
