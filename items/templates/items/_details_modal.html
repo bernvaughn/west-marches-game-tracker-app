@@ -1,0 +1,5 @@
+{% extends "components/modal_frame.html" %}
+{% load coins accounts_tags %}
+{% block title %}{% if item.symbol %}<span class="wm-item-symbol" aria-hidden="true">{{ item.symbol }}</span> {% endif %}{{ item.name }}{% endblock %}
+{% block body %}<div class="wm-item-detail-modal">{% include "items/_details_body.html" %}</div>{% endblock %}
+{% block footer %}<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>{% endblock %}

@@ -94,6 +94,20 @@ def detail(request, club_slug, pk):
     return render(request, "items/detail.html", {"item": item, "is_admin": is_admin})
 
 
+@club_member_required
+def details_modal(request, club_slug, pk):
+    item = club_get_object_or_404(request, Item, pk=pk)
+    is_admin = is_club_admin(request.user, request.club)
+    if item.retired and not is_admin:
+        raise Http404
+    return render_modal_or_page(
+        request,
+        "items/_details_modal.html",
+        "items/detail.html",
+        {"item": item, "is_admin": is_admin},
+    )
+
+
 def _form_view(request, instance):
     form = ItemForm(request.POST or None, instance=instance, club=request.club)
     if request.method == "POST" and form.is_valid():
