@@ -319,6 +319,7 @@ def _build_pages() -> list[Page]:
         P("trades-propose", "alice", _c("trades:propose")),
         P("trades-detail-alice", "alice", _c("trades:detail", "trade.pk")),
         P("trades-detail-bob", "bob", _c("trades:detail", "trade.pk")),
+        P("trades-poll", "alice", _c("trades:poll")),
         # items
         P("items-index", "alice", _c("items:index")),
         P("items-index-gm", "gm", _c("items:index")),
