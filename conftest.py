@@ -16,6 +16,12 @@ def _fast_password_hasher(settings):
     settings.PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 
 
+@pytest.fixture(autouse=True)
+def _debug_mode(settings):
+    """Enable DEBUG mode for tests."""
+    settings.DEBUG = True
+
+
 @pytest.fixture
 def club(db):
     return Club.objects.create(name="Club A", slug="club-a")

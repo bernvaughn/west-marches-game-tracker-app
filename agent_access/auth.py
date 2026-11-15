@@ -1,11 +1,15 @@
 """Bearer authentication for the MCP endpoint: personal tokens and OAuth access tokens."""
 
+import logging
+
 from django.utils import timezone
 
 from accounts.permissions import is_game_master
 
 from .models import AgentConnection
 from .tokens import hash_secret
+
+security_logger = logging.getLogger("security.mcp")
 
 
 def token_authenticator(raw):
@@ -39,9 +43,26 @@ def authenticate_bearer(header):
         if connection is None:
             continue
         if connection.revoked_at is not None or not connection.user.is_active:
+            security_logger.warning(
+                "MCP authentication failed: token revoked or user inactive",
+                extra={"user_id": connection.user_id if connection else None},
+            )
             return None
         if not is_game_master(connection.user, connection.club):
+            security_logger.warning(
+                "MCP authentication failed: user not game master",
+                extra={"user_id": connection.user_id, "club_id": connection.club_id},
+            )
             return None
         AgentConnection.objects.filter(pk=connection.pk).update(last_used_at=timezone.now())
+        security_logger.info(
+            "MCP authentication successful",
+            extra={
+                "user_id": connection.user_id,
+                "club_id": connection.club_id,
+                "kind": connection.kind,
+            },
+        )
         return connection
+    security_logger.warning("MCP authentication failed: invalid token")
     return None

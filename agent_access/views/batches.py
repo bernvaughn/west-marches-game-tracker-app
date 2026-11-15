@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.db.models import Count
 from django.shortcuts import redirect, render
@@ -9,6 +11,8 @@ from accounts.scoping import club_get_object_or_404
 from ..forms_batches import LineForm
 from ..models import ProposedBatch, ProposedLine
 from ..services.confirm import ConfirmError, confirm_batch
+
+batch_logger = logging.getLogger("security.batch")
 
 
 def _to_detail(club_slug, pk):
@@ -93,8 +97,26 @@ def batch_confirm(request, club_slug, pk):
     except ConfirmError as exc:
         for message in exc.messages:
             messages.error(request, message)
+        batch_logger.warning(
+            "Batch confirmation failed",
+            extra={
+                "batch_id": batch.pk,
+                "club_id": request.club.id,
+                "actor_id": request.user.id,
+                "errors": exc.messages,
+            },
+        )
     else:
         messages.success(request, f"Batch #{batch.pk} confirmed: {len(entries)} entries.")
+        batch_logger.info(
+            "Batch confirmed",
+            extra={
+                "batch_id": batch.pk,
+                "club_id": request.club.id,
+                "actor_id": request.user.id,
+                "entries_count": len(entries),
+            },
+        )
     return _to_detail(club_slug, batch.pk)
 
 
@@ -104,8 +126,25 @@ def batch_discard(request, club_slug, pk):
     batch = club_get_object_or_404(request, ProposedBatch, pk=pk)
     if batch.status != ProposedBatch.Status.PENDING:
         messages.error(request, "Only pending batches can be discarded.")
+        batch_logger.warning(
+            "Batch discard attempted on non-pending batch",
+            extra={
+                "batch_id": batch.pk,
+                "club_id": request.club.id,
+                "actor_id": request.user.id,
+                "batch_status": batch.status,
+            },
+        )
         return _to_detail(club_slug, batch.pk)
     batch.status = ProposedBatch.Status.DISCARDED
     batch.save(update_fields=["status"])
     messages.success(request, f"Batch #{batch.pk} discarded.")
+    batch_logger.info(
+        "Batch discarded",
+        extra={
+            "batch_id": batch.pk,
+            "club_id": request.club.id,
+            "actor_id": request.user.id,
+        },
+    )
     return redirect("agent_access:batches", club_slug=club_slug)

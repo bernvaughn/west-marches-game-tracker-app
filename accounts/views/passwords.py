@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import PasswordChangeView
 from django.core.exceptions import PermissionDenied
@@ -8,14 +10,20 @@ from ..passwords import set_temporary_password
 from ..permissions import can_reset_password, club_admin_required
 from ..scoping import club_get_object_or_404
 
+security_logger = logging.getLogger("security.password")
+
 
 class ClearFlagPasswordChangeView(PasswordChangeView):
     """Change the password, clear the forced-change flag, stay signed in."""
 
     def form_valid(self, form):
         form.user.must_change_password = False
-        # form.save() saves the user; the base view then refreshes the session hash.
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        security_logger.info(
+            "Password changed",
+            extra={"user_id": self.request.user.id, "email": self.request.user.email},
+        )
+        return response
 
 
 password_change = login_required(ClearFlagPasswordChangeView.as_view())
@@ -25,9 +33,25 @@ password_change = login_required(ClearFlagPasswordChangeView.as_view())
 def reset_password(request, club_slug, membership_id):
     membership = club_get_object_or_404(request, Membership, pk=membership_id)
     if not can_reset_password(request.user, membership.user):
+        security_logger.warning(
+            "Password reset attempt denied: insufficient permissions",
+            extra={
+                "requesting_user_id": request.user.id,
+                "target_user_id": membership.user_id,
+                "club_slug": club_slug,
+            },
+        )
         raise PermissionDenied
     if request.method == "POST":
         temp = set_temporary_password(membership.user)
+        security_logger.info(
+            "Password reset by admin",
+            extra={
+                "admin_user_id": request.user.id,
+                "target_user_id": membership.user_id,
+                "club_slug": club_slug,
+            },
+        )
         response = render(
             request,
             "accounts/passwords/reset_done.html",
