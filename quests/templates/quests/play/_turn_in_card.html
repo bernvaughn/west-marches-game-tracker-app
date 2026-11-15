@@ -7,7 +7,7 @@
       <thead><tr><th scope="col">Item</th><th scope="col" class="num">Needed</th><th scope="col" class="num">Has</th><th scope="col">Status</th></tr></thead>
       <tbody>
       {% for r in turnin_rows %}
-        <tr{% if r.short %} class="wm-quest-turnin-missing"{% endif %}><td>{% include "items/_item_name.html" with item=r.item %}</td><td class="num">{{ r.needed }}</td><td class="num">{{ r.has }}</td><td>{% if r.short %}{% include "components/badge.html" with status="warning" text="Missing" %} {{ r.short }}{% else %}{% include "components/badge.html" with status="success" text="OK" %}{% endif %}</td></tr>
+        <tr{% if r.short %} class="wm-quest-turnin-missing"{% endif %}><td>{% include "items/_item_name.html" with item=r.item info=True %}</td><td class="num">{{ r.needed }}</td><td class="num">{{ r.has }}</td><td>{% if r.short %}{% include "components/badge.html" with status="warning" text="Missing" %} {{ r.short }}{% else %}{% include "components/badge.html" with status="success" text="OK" %}{% endif %}</td></tr>
       {% endfor %}
       </tbody>
     </table>
