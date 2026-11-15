@@ -1,10 +1,11 @@
 from django.urls import path
 
-from .views import inbox, passwords, people
+from .views import dashboard, inbox, passwords, people
 
 app_name = "accounts"
 urlpatterns = [
     path("", people.member_list, name="index"),
+    path("dashboard/", dashboard.player_dashboard, name="player_dashboard"),
     path("whitelist/", people.whitelist, name="whitelist"),
     path(
         "members/<int:membership_id>/reset-password/",

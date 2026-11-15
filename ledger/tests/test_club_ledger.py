@@ -215,7 +215,8 @@ def test_source_links(login, game_master, club_admin, club, character, item):
 
 def test_nav(login, player, game_master, club_admin, club, character):
     def menus(user):
-        return login(user).get(reverse("club_home", args=[club.slug])).content.decode()
+        # Follow redirect for players (dashboard)
+        return login(user).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
 
     assert "Club ledger" not in menus(player) and ">Ledger<" in re.sub(
         r"\s+", "", menus(player)

@@ -8,7 +8,8 @@ URL = "https://example.com/donate"
 
 
 def body(client, path):
-    return client.get(path).content.decode()
+    # Follow redirects for club_home (players go to dashboard)
+    return client.get(path, follow=True).content.decode()
 
 
 @pytest.mark.story("U11")

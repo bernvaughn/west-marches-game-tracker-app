@@ -13,7 +13,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 def page(login, user, club):
-    return login(user).get(reverse("club_home", args=[club.slug])).content.decode()
+    return login(user).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
 
 
 def q(url):

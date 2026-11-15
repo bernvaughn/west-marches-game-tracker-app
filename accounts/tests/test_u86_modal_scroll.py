@@ -20,7 +20,8 @@ def pos(body, *needles):
 
 
 def test_dialog_is_scrollable(login, player, club):
-    body = login(player).get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect for players (dashboard)
+    body = login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     assert "modal-dialog-scrollable" in body
 
 

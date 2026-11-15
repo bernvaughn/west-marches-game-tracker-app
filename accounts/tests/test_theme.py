@@ -112,7 +112,8 @@ def test_renderer_adds_bootstrap_classes():
 @pytest.mark.django_db
 def test_club_switcher_is_isolated(club, other_club, player, login):
     client = login(player)
-    html = client.get(reverse("club_home", args=[club.slug])).content.decode()
+    # Follow redirect to dashboard for players
+    html = client.get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     assert "Club A" in html and "Club B" not in html
     assert client.get(reverse("club_home", args=[other_club.slug])).status_code in (403, 404)
 

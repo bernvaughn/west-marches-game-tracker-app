@@ -89,9 +89,14 @@ def test_non_site_admin_403(who, request, login):
 @pytest.mark.story("U12")
 def test_switcher_member_sees_only_own_club(player, login, club, other_club):
     c = login(player)
-    body = c.get(reverse("club_home", args=["club-a"])).content.decode()
+    # Players are redirected to dashboard, follow the redirect
+    response = c.get(reverse("club_home", args=["club-a"]), follow=True)
+    body = response.content.decode()
+    # Club switcher should show current club
     assert reverse("club_home", args=["club-a"]) in body
+    # Should not show other club
     assert reverse("club_home", args=["club-b"]) not in body
+    # Other club should 404
     assert c.get(reverse("club_home", args=["club-b"])).status_code == 404
 
 

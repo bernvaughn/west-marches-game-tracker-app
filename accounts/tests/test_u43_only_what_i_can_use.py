@@ -18,8 +18,17 @@ def tile_hrefs(body):
 def test_every_tile_opens_without_lock(who, request, login, club, character):
     user = request.getfixturevalue(who)
     c = login(user)
-    body = c.get(reverse("club_home", args=[club.slug])).content.decode()
-    links = tile_hrefs(body)
+    if who == "player":
+        # Players are redirected to dashboard
+        response = c.get(reverse("club_home", args=[club.slug]), follow=True)
+        body = response.content.decode()
+        # Dashboard has different structure - check for section links
+        links = re.findall(r'href="([^"]+)"', body)
+        # Filter to club URLs
+        links = [l for l in links if f"/c/{club.slug}/" in l]
+    else:
+        body = c.get(reverse("club_home", args=[club.slug])).content.decode()
+        links = tile_hrefs(body)
     assert links
     agent = reverse("agent_access:index", args=[club.slug])
     assert (agent in links) == (who != "player")
