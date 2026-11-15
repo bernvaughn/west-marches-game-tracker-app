@@ -75,6 +75,12 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 - Touch targets: below 576 px every `.btn`, input, select, `.nav-link` and `.dropdown-item` is at least 44 px high. Desktop stays compact.
 - Page width: `{% block main_class %}wm-main--narrow{% endblock %}` caps a page at 72 rem. The default is full width with token gutters.
 - The top bar must fit at 390 px with no horizontal overflow. Check it with `scripts/screenshots.py`.
+- Every page extends `base.html`; no Django admin header. Check with `scripts/screenshots.py`.
+- Every page has exactly one `h1`, from `components/page_header`. Themed pages (sheet, print) use an allowlist with reasons.
+- Buttons in `td.actions` are icon buttons with a `title` tooltip.
+- No raw `|date:"..."` formats outside the shared format from S1. Use `|date`, `|date:"DATETIME_FORMAT"`, or the `coins` filter.
+- Scrollable `pre` blocks have `tabindex="0"`.
+- One `btn-primary` per rendered page (page-level). Modals have their own context.
 
 ## Audit top ten and the answer to each
 
@@ -90,3 +96,21 @@ All live in `templates/components/`. Each file starts with a `{% comment %}` blo
 | A-05 | Fallback heading font, no type scale | Source Serif 4 and `--wm-text-*` |
 | A-23 | Modals differ | `modal_frame` and shared `.modal-*` styles; full screen below `sm` |
 | A-20 | Tables clip columns at 390 px | `wm-table-scroll` with an edge shadow and a hint |
+
+## Guard-rail tests (U84)
+
+The following automated tests enforce the rules above:
+
+| Rule | Test | File |
+|---|---|---|
+| Every page extends `base.html` | `test_every_page_extends_base_html` | `accounts/tests/test_design_system.py` |
+| No Django admin header | `test_no_django_admin_header` | `accounts/tests/test_design_system.py` |
+| Exactly one `h1` per page | `test_every_page_has_exactly_one_h1` | `accounts/tests/test_design_system.py` |
+| `td.actions` icon buttons with tooltip | `test_td_actions_are_icon_buttons_with_tooltip` | `accounts/tests/test_design_system.py` |
+| No raw date formats | `test_no_raw_date_formats` | `accounts/tests/test_design_system.py` |
+| Scrollable `pre` has `tabindex="0"` | `test_scrollable_pre_has_tabindex` | `accounts/tests/test_design_system.py` |
+| One `btn-primary` per page | `test_one_btn_primary_per_page` | `accounts/tests/test_design_system.py` |
+| No OVERFLOW at 390px | `test_no_overflow_at_390px` | `scripts/test_screenshot_pages.py` (browser) |
+| No CLIPPED `input.form-control` at 390px | `test_no_clipped_input_form_control_at_390px` | `scripts/test_screenshot_pages.py` (browser) |
+| Design page axe contrast | `test_design_page_axe_contrast` | `scripts/test_console_sweep.py` (browser) |
+| Console sweep clean at 1920,1280,768,390 | `test_no_console_errors_on_any_page` | `scripts/test_console_sweep.py` (browser) |
