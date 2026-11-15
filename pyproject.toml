@@ -16,6 +16,7 @@ dev = [
     "pytest",
     "pytest-django",
     "ruff",
+    "beautifulsoup4",
 ]
 
 [tool.uv]
