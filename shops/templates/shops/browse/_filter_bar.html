@@ -1,0 +1,30 @@
+{% load i18n %}
+<form class="wm-street-filter-bar" hx-get="{% url 'shops:index' club.slug %}" hx-target="#street-lots" hx-swap="innerHTML" hx-indicator=".wm-filter-indicator">
+  <div class="wm-filter-row row g-2 align-items-end">
+    <div class="col-12 col-md-auto">
+      <label for="filter-item-type" class="form-label visually-hidden">{% trans "Item type" %}</label>
+      <select name="item_type" id="filter-item-type" class="form-select form-select-sm" aria-label="{% trans 'Filter by item type' %}">
+        {% for value, label in item_type_choices %}
+          <option value="{{ value }}" {% if value == item_type_filter %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-auto">
+      <label for="filter-sort" class="form-label visually-hidden">{% trans "Sort" %}</label>
+      <select name="sort" id="filter-sort" class="form-select form-select-sm" aria-label="{% trans 'Sort shops' %}">
+        {% for value, label in sort_choices %}
+          <option value="{{ value }}" {% if value == sort_by %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-12 col-md-auto">
+      <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" name="buying_junk" id="filter-buying-junk" value="1" {% if show_buying_junk %}checked{% endif %} aria-label="{% trans 'Show only shops buying my junk' %}">
+        <label class="form-check-label" for="filter-buying-junk">{% trans "Buying my junk" %}</label>
+      </div>
+    </div>
+    <div class="col-12 col-md-auto">
+      <span class="wm-filter-indicator htmx-indicator" aria-hidden="true">{% include "components/spinner.html" with size="sm" %}</span>
+    </div>
+  </div>
+</form>

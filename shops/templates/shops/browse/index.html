@@ -1,11 +1,18 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Shops{% endblock %}
 {% block main_class %}wm-main--full{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Shops" %}
 {% if shops or stalls %}
-{% include "shops/browse/_street.html" %}
+{% include "shops/browse/_filter_bar.html" %}
+<div id="street-lots">
+  {% include "shops/browse/_street_fragment.html" %}
+</div>
 {% else %}
 {% include "components/empty_state.html" with text="No shops are open today." icon="shop" %}
 {% endif %}
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/shop_street.js' %}" defer></script>
 {% endblock %}
