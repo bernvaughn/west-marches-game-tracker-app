@@ -3,8 +3,11 @@
 from typing import Protocol
 
 from django.http import HttpRequest
+from django.urls import reverse
 from django.utils import timezone
 
+from downtime import services as downtime_services
+from downtime.models import DowntimeAction
 from items.magic_types import MagicType
 from player_characters.junk import junk_rows
 from shops.models import ShopStock
@@ -25,6 +28,48 @@ class DashboardProvider(Protocol):
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         """Whether to render this provider for the current user."""
         return True
+
+
+class DowntimeDashboardProvider:
+    """Provides 'Downtime' section with spend buttons for available actions."""
+
+    key = "downtime"
+    order = 4
+    template = "accounts/_dashboard_downtime.html"
+
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        today = timezone.localdate()
+        downtime_balance = downtime_services.balance(character)
+
+        live_actions = (
+            DowntimeAction.objects.for_club(club)
+            .live_on(today)
+            .filter(entries__isnull=False)
+            .distinct()
+            .prefetch_related("entries__items__item")
+        )
+
+        actions = []
+        for action in live_actions:
+            reason = ""
+            if downtime_balance < action.cost:
+                reason = "Not enough downtime points."
+            actions.append({
+                "action": action,
+                "cost": action.cost,
+                "reason": reason,
+                "affordable": not reason,
+                "spend_url": reverse("accounts:dashboard_downtime_spend", args=[club.slug, action.pk]),
+            })
+
+        return {
+            "downtime_balance": downtime_balance,
+            "actions": actions,
+        }
+
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
+        today = timezone.localdate()
+        return DowntimeAction.objects.for_club(club).live_on(today).filter(entries__isnull=False).exists()
 
 
 class QuickActionsProvider:
