@@ -43,4 +43,5 @@ urlpatterns = [
         name="print_session_pack",
     ),
     path("<int:pk>/preview/", selection.character_preview, name="preview"),
+    path("bulk-award/", character_adjust.bulk_award, name="bulk_award"),
 ]
