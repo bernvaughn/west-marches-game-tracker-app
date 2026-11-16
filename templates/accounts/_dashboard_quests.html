@@ -11,6 +11,32 @@
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">
+      {% for quest in provider_context.ready_quests %}
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="check-circle" class="text-success" %}
+          <a href="{% url 'quests:detail' club.slug quest.pk %}" class="text-decoration-none stretched-link">
+            <span>{{ quest.name }}</span>
+          </a>
+          <small class="text-muted ms-2">Ready to turn in</small>
+        </div>
+        <div class="d-flex gap-2 ms-3">
+          <a href="{% url 'quests:detail' club.slug quest.pk %}"
+             class="btn btn-sm btn-outline-primary"
+             title="View quest details">
+            {% include "components/icon.html" with name="eye" %} Details
+          </a>
+          <button type="button"
+                  class="btn btn-sm btn-success"
+                  hx-get="{% url 'accounts:dashboard_quest_turnin' club.slug quest.pk %}"
+                  hx-target="#app-modal .modal-content"
+                  data-app-modal
+                  title="Turn in this quest">
+            {% include "components/icon.html" with name="check-circle" %} Turn in
+          </button>
+        </div>
+      </li>
+      {% empty %}
       {% for item in provider_context.quest_items %}
       <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
         <a href="{{ item.url }}" class="text-decoration-none stretched-link d-flex align-items-center gap-2 flex-grow-1">
@@ -24,6 +50,7 @@
       <li class="list-group-item text-center py-4 text-muted small">
         {{ empty_message|default:"No quests." }}
       </li>
+      {% endfor %}
       {% endfor %}
     </ul>
   </div>

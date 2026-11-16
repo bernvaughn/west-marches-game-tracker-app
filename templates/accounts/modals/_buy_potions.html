@@ -1,0 +1,85 @@
+{% extends "components/modal_frame.html" %}
+{% load coins %}
+{% block content %}
+<form
+  method="post"
+  action="{% url 'accounts:quick_action_buy_potions' request.club.slug %}"
+  hx-post="{% url 'accounts:quick_action_buy_potions' request.club.slug %}"
+  hx-target="#app-modal .modal-content"
+  hx-include="closest form"
+>
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Buy Potions{% endblock %}
+{% block body %}
+{% if not character %}
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
+{% elif not stock_data %}
+{% include "components/empty_state.html" with text="No healing potions available from open shops." icon="droplet" %}
+{% else %}
+<p>Buying as <strong>{{ character.name }}</strong></p>
+{% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
+
+<div class="mb-3">
+  <label class="form-label">Select Potion</label>
+  <div class="list-group">
+    {% for sd in stock_data %}
+    <label class="list-group-item list-group-item-action d-flex align-items-center gap-2 {% if sd.selected %}active{% endif %}">
+      <input type="radio"
+             class="form-check-input mt-0"
+             name="stock_id"
+             value="{{ sd.stock.pk }}"
+             {% if sd.selected %}checked{% endif %}
+             hx-get="{% url 'accounts:quick_action_buy_potions' request.club.slug %}?stock_id={{ sd.stock.pk }}"
+             hx-target="#app-modal .modal-content"
+             hx-include="closest form"
+             aria-label="Select {{ sd.stock.item.name }} from {{ sd.stock.shop.name }}">
+      <div class="flex-grow-1">
+        <div class="fw-medium">{% include "items/_item_name.html" with item=sd.stock.item %}</div>
+        <div class="text-muted small">{{ sd.stock.shop.name }} · {% if sd.available >= 999 %}Unlimited{% else %}{{ sd.available }} in stock{% endif %}</div>
+      </div>
+      <span class="badge text-bg-primary">{{ sd.price|coins }} each</span>
+    </label>
+    {% endfor %}
+  </div>
+</div>
+
+{% if selected_stock %}
+<hr>
+<dl class="wm-dl wm-shop-sums">
+  <dt>Price each</dt><dd>{{ price|coins }}</dd>
+  <dt>Available</dt><dd>{% if selected_stock.quantity is None %}Unlimited{% else %}{{ selected_stock.quantity }}{% endif %}</dd>
+</dl>
+{% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
+<p>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <input type="number"
+         name="quantity"
+         id="{{ form.quantity.id_for_label }}"
+         min="1"
+         {% if selected_stock.quantity is not None %}max="{{ selected_stock.quantity }}"{% endif %}
+         value="{{ quantity }}"
+         class="form-control w-auto"
+         hx-get="{% url 'accounts:quick_action_buy_potions' request.club.slug %}?stock_id={{ selected_stock.pk }}"
+         hx-trigger="input changed delay:300ms"
+         hx-target="#buy-summary"
+         hx-select="#buy-summary"
+         hx-swap="outerHTML"
+         hx-include="closest form">
+</p>
+<div id="buy-summary">
+  <dl class="wm-dl wm-shop-sums">
+    <dt>Total</dt><dd>{{ total|coins }}</dd>
+    <dt>Coins before</dt><dd>{{ before|coins }}</dd>
+    <dt>Coins after</dt><dd>{% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</dd>
+  </dl>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+{% if character and selected_stock and not short %}<button class="btn btn-success" type="submit">Buy as {{ character.name }}</button>{% endif %}
+{% endblock %}

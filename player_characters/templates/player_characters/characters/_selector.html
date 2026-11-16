@@ -4,17 +4,32 @@
 <form method="post" action="{% url 'characters:select' club.slug %}" class="character-selector d-flex align-items-center gap-1 no-print">
   {% csrf_token %}
   <input type="hidden" name="next" value="{{ request.get_full_path }}">
-  <select name="character" class="form-select form-select-sm" aria-label="Acting as" onchange="this.form.requestSubmit ? this.form.requestSubmit() : this.form.submit()">
-    {% for c, ctx in chars_ctx %}
-    <option value="{{ c.pk }}"{% if c == selected_character %} selected{% endif %}>
-      {{ c.name }}
-      {% if ctx.coins %} · {{ ctx.coins }}{% endif %}
-      {% if ctx.junk_qty > 0 %} · Junk: {{ ctx.junk_qty }}{% endif %}
-      {% if ctx.open_trades > 0 %} · Trades: {{ ctx.open_trades }}{% endif %}
-      {% if ctx.downtime > 0 %} · DT: {{ ctx.downtime }}{% endif %}
-    </option>
-    {% endfor %}
-  </select>
+  <input type="hidden" name="character" id="id_character_selector" value="{{ selected_character.pk }}">
+  <div class="dropdown">
+    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Acting as {{ selected_character.name }}">
+      <span class="wm-avatar wm-avatar-sm me-1" aria-hidden="true">{{ selected_character.name|first|upper }}</span>
+      <span class="character-name-text">{{ selected_character.name }}</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end wm-character-dropdown" role="menu">
+      {% for c, ctx in chars_ctx %}
+      <li>
+        <a class="dropdown-item d-flex align-items-center gap-2"
+           href="#"
+           role="menuitem"
+           data-character-pk="{{ c.pk }}"
+           data-bs-toggle="tooltip"
+           data-bs-html="true"
+           data-wm-preview-url="{% url 'characters:preview' club.slug c.pk %}"
+           title="Loading…"
+           {% if c == selected_character %}aria-current="true"{% endif %}>
+          <span class="wm-avatar wm-avatar-sm" aria-hidden="true">{{ c.name|first|upper }}</span>
+          <span class="flex-grow-1">{{ c.name }}</span>
+          {% if c == selected_character %}<span class="visually-hidden">(current)</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
   <noscript><button type="submit" class="btn btn-sm btn-outline-primary">Switch</button></noscript>
 </form>
 {% elif selected_character %}

@@ -37,4 +37,11 @@ urlpatterns = [
         name="player_consume",
     ),
     path("<int:pk>/items/<int:item_pk>/junk/", character_junk.junk, name="junk"),
+    path(
+        "<int:pk>/print-session-pack/",
+        character_print.print_session_pack,
+        name="print_session_pack",
+    ),
+    path("<int:pk>/preview/", selection.character_preview, name="preview"),
+    path("bulk-award/", character_adjust.bulk_award, name="bulk_award"),
 ]

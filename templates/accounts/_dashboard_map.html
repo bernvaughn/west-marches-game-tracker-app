@@ -5,6 +5,13 @@
       {% include "components/icon.html" with name="map" %}
       Map
     </h3>
+    {% if provider_context.request_url %}
+    <a href="{{ provider_context.request_url }}" class="btn btn-sm btn-primary">
+      {% include "components/icon.html" with name="map" class="me-1" %}
+      Request Map Credit
+      <span class="badge text-bg-light ms-1">{{ provider_context.total_uncredited }}</span>
+    </a>
+    {% endif %}
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">

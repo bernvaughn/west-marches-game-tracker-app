@@ -1,6 +1,15 @@
 import pytest
 
 from accounts.models import Membership, User
+from quests.tests.conftest import (  # noqa: F401
+    ended_quest,
+    give,
+    limited_quest,
+    other_club_quest,
+    quest,
+    reward_item,
+    upcoming_quest,
+)
 
 
 def _member(club, email, name, **flags):

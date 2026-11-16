@@ -232,6 +232,11 @@ a.wm-chip:hover { color: var(--wm-accent); }
 
 .wm-avatar-sm { width: 1.75rem; height: 1.75rem; font-size: var(--wm-text-xs); flex: none; }
 
+/* ---- Character preview tooltip (S3) ---- */
+.wm-preview-card { background: var(--wm-surface-raised); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-md); box-shadow: var(--wm-shadow-1); }
+.wm-preview-card .fw-bold { font-variant-numeric: tabular-nums; }
+.tooltip .wm-preview-card { max-width: none; }
+
 /* ---- Back link (components/back_link.html) ---- */
 .wm-back-link { display: inline-flex; align-items: center; gap: var(--wm-space-1); color: var(--wm-text-muted); text-decoration: none; margin-bottom: var(--wm-space-2); }
 .wm-back-link:hover { color: var(--wm-accent); text-decoration: underline; }

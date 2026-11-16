@@ -9,13 +9,13 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.dashboard_providers import get_provider
+from accounts.dashboard_providers import get_provider, get_providers
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_queryset
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from ledger.services import available_items
-from map.models import HexMap
+from map.models import FoundMark, HexMap, Location, LocationCredit, TileVisit
 from player_characters.inventory import coin_summary
 from player_characters.junk import junk_rows, junk_value
 from player_characters.models import Trade
@@ -26,39 +26,6 @@ from quests.models import Quest, QuestCompletion
 # =============================================================================
 # Dashboard Provider Classes
 # =============================================================================
-
-
-@dataclass
-class QuickActionsProvider:
-    """Quick actions for common town tasks."""
-
-    key: str = "quick_actions"
-    order: int = 1
-    template: str = "accounts/_dashboard_quick_actions.html"
-
-    def get_context(self, request, club, character, membership):
-        # Get junk info for sell action
-        junk = junk_rows(character)
-        junk_val = junk_value(character, junk)
-
-        items = [
-            {
-                "label": "Sell Junk",
-                "url": reverse("shops:index", args=[club.slug]),
-                "icon": "cash-coin",
-                "subtext": f"{len(junk)} items, {junk_val} value" if junk else "No junk marked",
-            },
-            {
-                "label": "Buy Potions",
-                "url": reverse("shops:index", args=[club.slug]),
-                "icon": "droplet",
-                "subtext": "Healing potions & supplies",
-            },
-        ]
-        return {"items": items, "junk_count": len(junk), "junk_value": junk_val}
-
-    def should_show(self, request, club, character, membership):
-        return True
 
 
 @dataclass
@@ -259,17 +226,97 @@ class DowntimeProvider:
         return True
 
 
-@dataclass
-class MapProvider:
-    """Visible maps."""
+class MapDashboardProvider:
+    """Map section with Request Map Credit shortcut for uncredited visits."""
 
     key: str = "map"
     order: int = 5
     template: str = "accounts/_dashboard_map.html"
 
-    def get_context(self, request, club, character, membership):
-        maps = HexMap.objects.for_club(club).order_by("name")
+    def _get_uncredited_data(self, club, character):
+        """Get maps with uncredited tiles for the character."""
+        # Get all tile visits for this character
+        visits = TileVisit.objects.for_club(club).filter(character=character).select_related("map")
+        
+        # Group visits by map
+        map_visits = {}
+        for visit in visits:
+            if visit.map_id not in map_visits:
+                map_visits[visit.map_id] = []
+            map_visits[visit.map_id].append((visit.q, visit.r))
+        
+        if not map_visits:
+            return [], 0, None
+        
+        # Get maps with visits
+        maps_with_visits = (
+            HexMap.objects.for_club(club)
+            .filter(pk__in=map_visits.keys())
+            .order_by("name")
+        )
+        
+        maps_data = []
+        total_uncredited = 0
+        first_map_with_uncredited = None
+        first_map_uncredited_tiles = None
+        
+        for hex_map in maps_with_visits:
+            visited_positions = set(map_visits[hex_map.pk])
+            
+            # Get locations on visited tiles
+            locations = Location.objects.for_club(club).filter(
+                tile__map=hex_map,
+                tile__q__in=[q for q, r in visited_positions],
+                tile__r__in=[r for q, r in visited_positions],
+            ).select_related("tile")
+            
+            # Check each location for missing credits
+            map_uncredited_tiles = set()
+            for loc in locations:
+                pos = (loc.tile.q, loc.tile.r)
+                if pos not in visited_positions:
+                    continue
+                
+                # Check if character has credit for this location
+                has_discovered = LocationCredit.objects.for_club(club).filter(
+                    location=loc,
+                    kind=LocationCredit.Kind.DISCOVERED,
+                    characters=character
+                ).exists()
+                
+                has_explored = LocationCredit.objects.for_club(club).filter(
+                    location=loc,
+                    kind=LocationCredit.Kind.EXPLORED,
+                    characters=character
+                ).exists()
+                
+                has_found = FoundMark.objects.for_club(club).filter(
+                    location=loc,
+                    character=character
+                ).exists()
+                
+                # If any credit type is missing, this tile needs credit
+                if not (has_discovered and has_explored and has_found):
+                    map_uncredited_tiles.add(pos)
+            
+            uncredited_count = len(map_uncredited_tiles)
+            if uncredited_count > 0:
+                total_uncredited += uncredited_count
+                maps_data.append({
+                    "map": hex_map,
+                    "uncredited_count": uncredited_count,
+                })
+                if first_map_with_uncredited is None:
+                    first_map_with_uncredited = hex_map
+                    first_map_uncredited_tiles = map_uncredited_tiles
+        
+        return maps_data, total_uncredited, (first_map_with_uncredited, first_map_uncredited_tiles)
 
+    def get_context(self, request, club, character, membership):
+        maps_data, total_uncredited, first_map_data = self._get_uncredited_data(club, character)
+        
+        # Build map items for the template (always show all maps)
+        all_maps = HexMap.objects.for_club(club).order_by("name")
         map_items = [
             {
                 "label": m.name,
@@ -277,7 +324,7 @@ class MapProvider:
                 "icon": "map",
                 "subtext": "View map",
             }
-            for m in maps
+            for m in all_maps
         ]
         if not map_items:
             map_items.append({
@@ -286,14 +333,26 @@ class MapProvider:
                 "icon": "map",
                 "subtext": "No maps yet",
             })
-
+        
+        # Build request URL for the first map with uncredited tiles
+        request_url = None
+        if first_map_data:
+            hex_map, uncredited_tiles = first_map_data
+            base_url = reverse("map:detail", args=[club.slug, hex_map.pk])
+            # Pre-filter to this character's visits
+            request_url = f"{base_url}?characters={character.pk}&view=mine"
+        
         return {
-            "maps": maps,
+            "maps": all_maps,
             "map_items": map_items,
+            "maps_data": maps_data,
+            "total_uncredited": total_uncredited,
+            "request_url": request_url,
         }
 
     def should_show(self, request, club, character, membership):
-        return True
+        _, total_uncredited, _ = self._get_uncredited_data(club, character)
+        return total_uncredited > 0
 
 
 @dataclass
@@ -327,39 +386,6 @@ class MessagesProvider:
 
     def should_show(self, request, club, character, membership):
         return True
-
-
-@dataclass
-class PlayerShopProvider:
-    """Player shop status (conditional)."""
-
-    key: str = "player_shop"
-    order: int = 7
-    template: str = "accounts/_dashboard_player_shop.html"
-
-    def get_context(self, request, club, character, membership):
-        from player_characters.player_shop import listed_rows
-
-        # Only show if character has shop_open = True
-        if not character.shop_open:
-            return {"shop_open": False}
-
-        # Count listed items
-        listed = listed_rows(character)
-        listed_count = len(listed)
-
-        # TODO: Add recent sales count when sales tracking is available
-        recent_sales = 0
-
-        return {
-            "shop_open": True,
-            "listed_count": listed_count,
-            "recent_sales": recent_sales,
-            "manage_url": reverse("shops:player_shop", args=[club.slug, character.pk]),
-        }
-
-    def should_show(self, request, club, character, membership):
-        return character.shop_open
 
 
 @dataclass
@@ -446,8 +472,6 @@ class ConsumablesProvider:
 
 def _get_dashboard_context(request, club, character, membership):
     """Build the context dictionary for the player dashboard using providers."""
-    from accounts.dashboard_providers import get_providers
-
     providers = []
     for provider in get_providers():
         if provider.should_show(request, club, character, membership):
@@ -598,4 +622,22 @@ def character_preview(request, club_slug, pk):
         "junk_value": junk_val,
         "downtime_balance": downtime_balance,
         "open_trades_count": open_trades_count,
+    })
+
+
+@club_member_required
+def print_session_pack_modal(request, club_slug, pk):
+    """HTMX partial endpoint for the Print Session Pack options modal."""
+    from accounts.scoping import club_get_object_or_404
+    from player_characters.models import Character
+    character = club_get_object_or_404(request, Character, pk=pk)
+
+    # Verify ownership
+    if character.owner_id != request.membership.id:
+        from django.http import Http404
+        raise Http404("Not your character.")
+
+    return render(request, "accounts/_print_session_pack_modal.html", {
+        "club": request.club,
+        "character": character,
     })

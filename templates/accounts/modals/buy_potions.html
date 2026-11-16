@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load coins %}
+{% block content %}
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+      <div class="card wm-card-raised">
+        <div class="card-header">
+          <h2 class="h4 mb-0">Buy Potions</h2>
+        </div>
+        <div class="card-body">
+          {% include "accounts/modals/_buy_potions.html" %}
+        </div>
+      </div>
+      <div class="text-center mt-3">
+        <a href="{% url 'accounts:player_dashboard' club.slug %}" class="btn btn-outline-secondary">
+          {% include "components/icon.html" with name="arrow-left" %} Back to Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

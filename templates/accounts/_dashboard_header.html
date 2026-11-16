@@ -30,6 +30,12 @@
           </button>
         </form>
         {% endif %}
+        <a class="btn btn-sm btn-primary ms-2"
+           hx-get="{% url 'accounts:print_session_pack_modal' club.slug character.pk %}"
+           hx-target="#app-modal .modal-content"
+           data-app-modal>
+          {% include "components/icon.html" with name="printer" %} Print Session Pack
+        </a>
       </div>
     </div>
     <hr class="my-3">

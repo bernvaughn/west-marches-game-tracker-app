@@ -37,6 +37,7 @@ MODAL_SELECTORS = {
     "where_to_buy_modal": 'a[data-app-modal][href*="/where-to-buy/"]',
     "details_modal": 'a[data-app-modal][href*="/details-modal/"]',
     "agenda_add_modal": "a.agenda-plus[data-app-modal]",
+    "print_session_pack_modal": 'a[data-app-modal][href*="print-session-pack-modal/"]',
 }
 # `sell_modal` submits a form (the confirm modal comes from a POST), so it has no link selector.
 MODAL_ACTIONS = set(MODAL_SELECTORS) | {"sell_modal"}
@@ -202,6 +203,7 @@ EXCLUDED = {
     "accounts:message_status": "POST only.",
     "characters:select": "POST only.",
     "characters:shop_toggle": "POST only.",
+    "characters:preview": "JSON endpoint for tooltip preview, not a page.",
     "trades:accept": "POST only.",
     "trades:decline": "POST only.",
     "trades:cancel": "POST only.",
@@ -231,8 +233,14 @@ EXCLUDED = {
     "agent_access:batch_reverse": "POST only.",
     "agent_access:proposed_item_approve": "POST only.",
     "agent_access:proposed_item_reject": "POST only.",
+    "accounts:quick_action_sell_junk": "HTMX partial endpoint for sell junk modal.",
+    "accounts:quick_action_buy_potions": "HTMX partial endpoint for buy potions modal.",
     "accounts:character_preview": "HTMX partial (JSON), not a page.",
     "accounts:dashboard_partial": "HTMX partial, not a page.",
+    "accounts:dashboard_downtime_spend": "HTMX partial endpoint for downtime spend wheel modal.",
+    "accounts:dashboard_quest_turnin": "HTMX partial endpoint for quest turn-in modal.",
+    "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
+
 }
 
 
@@ -315,6 +323,7 @@ def _build_pages() -> list[Page]:
         ),
         P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
+        P("characters-print-session-pack", "alice", _c("characters:print_session_pack", "aria.pk")),
         # downtime
         P("downtime-play", "alice", lambda d: reverse("downtime:play", args=[d.slug])),
         P("downtime-actions", "gm", lambda d: reverse("downtime:actions", args=[d.slug])),
@@ -439,6 +448,13 @@ def _build_pages() -> list[Page]:
             "characters-print-item-choose",
             "alice",
             _c("characters:print_item", "aria.pk", "owned_item.pk"),
+        ),
+        P(
+            "print-session-pack-modal",
+            "alice",
+            _c("accounts:player_dashboard"),
+            action="print_session_pack_modal",
+            modal_url=_c("accounts:print_session_pack_modal", "aria.pk"),
         ),
         P(
             "characters-print-item-full",

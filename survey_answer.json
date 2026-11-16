@@ -1,0 +1,7 @@
+{
+  "answers": {
+    "least_necessary": {"text": "Writing the survey response itself was the least necessary task"},
+    "most_expensive": {"text": "Creating the PlayerShopDashboardProvider with sales tracking logic and unit tests"},
+    "redundant": {"text": "Removing the duplicate PlayerShopProvider from dashboard.py that was left over from S0"}
+  }
+}

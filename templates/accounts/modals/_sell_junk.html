@@ -1,0 +1,51 @@
+{% extends "components/modal_frame.html" %}
+{% load coins %}
+{% block content %}
+<form
+  method="post"
+  action="{% url 'accounts:quick_action_sell_junk' request.club.slug %}"
+  hx-post="{% url 'accounts:quick_action_sell_junk' request.club.slug %}"
+  hx-target="#app-modal .modal-content"
+>
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Sell Junk{% endblock %}
+{% block body %}
+{% if not character %}
+{% include "components/empty_state.html" with text="You have no character in this club." icon="person" %}
+{% elif not rows %}
+{% include "components/empty_state.html" with text="No junk to sell. Mark items as junk on your character sheet." icon="bag" %}
+{% else %}
+<p>Selling as <strong>{{ character.name }}</strong> to {{ shop.name }}.</p>
+{% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
+<input type="hidden" name="recalc" value="1">
+<div class="wm-table-scroll"
+     hx-get="{% url 'accounts:quick_action_sell_junk' request.club.slug %}"
+     hx-trigger="change, input changed delay:300ms"
+     hx-include="closest form"
+     hx-target="#junk-total"
+     hx-select="#junk-total"
+     hx-swap="outerHTML">
+<table class="table table-sm wm-data-table">
+  <thead><tr><th scope="col">Sell</th><th scope="col">Item</th><th scope="col">Quantity</th><th class="num" scope="col">Price (each)</th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+  <tr>
+    <td><input type="checkbox" class="form-check-input" name="item" value="{{ row.item.pk }}" id="junk-tick-{{ row.item.pk }}"{% if row.ticked %} checked{% endif %} aria-label="Sell {{ row.item.name }}"></td>
+    <td>{% include "items/_item_name.html" with item=row.item %}
+      {% if row.quests %}<div class="text-warning-emphasis small">Needed for quest: {% for q in row.quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}</td>
+    <td><input class="form-control form-control-sm w-auto" type="number" name="qty_{{ row.item.pk }}" min="1" max="{{ row.junk }}" value="{{ row.quantity }}" aria-label="Quantity of {{ row.item.name }}"> <span class="wm-sheet-note">of {{ row.junk }}</span></td>
+    <td class="num">{{ row.price|coins }}</td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+<p id="junk-total" aria-live="polite">Total for ticked rows: <strong>{{ total|coins }}</strong></p>
+{% endif %}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+{% if character and rows %}<button class="btn btn-primary" type="submit">Sell ticked items</button>{% endif %}
+{% endblock %}
