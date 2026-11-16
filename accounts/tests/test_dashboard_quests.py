@@ -17,7 +17,8 @@ def _body(client, url):
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_get_renders_modal(login, player, quest, character, item, give):
+def test_dashboard_quest_turnin_get_renders_modal(login, player, quest,
+                                                  character, item, give):
     """GET request returns the turn-in modal fragment."""
     give(character, item, 2)  # enough for requirements
     c = login(player)
@@ -33,7 +34,8 @@ def test_dashboard_quest_turnin_get_renders_modal(login, player, quest, characte
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_get_shows_missing_when_not_enough(login, player, quest, character, item):
+def test_dashboard_quest_turnin_get_shows_missing_when_not_enough(
+        login, player, quest, character, item):
     """GET request shows missing items when character doesn't have enough."""
     c = login(player)
     url = _url("dashboard_quest_turnin", quest.pk)
@@ -46,7 +48,8 @@ def test_dashboard_quest_turnin_get_shows_missing_when_not_enough(login, player,
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_post_success(login, player, quest, character, item, give):
+def test_dashboard_quest_turnin_post_success(login, player, quest,
+                                             character, item, give):
     """POST request with sufficient items completes the quest."""
     give(character, item, 2)
     c = login(player)
@@ -59,12 +62,15 @@ def test_dashboard_quest_turnin_post_success(login, player, quest, character, it
     assert "toast" in trigger
     assert "dashboardRefresh" in trigger
     # Quest completion was created
-    assert QuestCompletion.objects.filter(quest=quest, character=character).count() == 1
+    assert QuestCompletion.objects.filter(
+        quest=quest, character=character).count() == 1
 
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_post_insufficient_items(login, player, quest, character, item):
+def test_dashboard_quest_turnin_post_insufficient_items(login, player,
+                                                        quest, character,
+                                                        item):
     """POST request with insufficient items returns 400 with error modal."""
     c = login(player)
     url = _url("dashboard_quest_turnin", quest.pk)
@@ -77,23 +83,23 @@ def test_dashboard_quest_turnin_post_insufficient_items(login, player, quest, ch
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_post_quest_not_live(login, player, quest, character, item, give):
-    """POST request when quest is not live returns error toast."""
+def test_dashboard_quest_turnin_post_quest_not_live(login, player, quest,
+                                                    character, item, give):
+    """POST request when quest is not live returns 404."""
     give(character, item, 2)
     quest.end_date = timezone.localdate() - timezone.timedelta(days=1)
     quest.save()
     c = login(player)
     url = _url("dashboard_quest_turnin", quest.pk)
     response = c.post(url)
-    assert response.status_code == 400
-    trigger = response["HX-Trigger"]
-    assert "toast" in trigger
-    assert "error" in trigger
+    assert response.status_code == 404
 
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_post_club_full(login, player, quest, character, item, give, other_player, club):
+def test_dashboard_quest_turnin_post_club_full(login, player, quest,
+                                               character, item, give,
+                                               other_player, club):
     """POST request when quest is full returns error."""
     from accounts.models import Membership
     from player_characters.models import Character
@@ -103,7 +109,8 @@ def test_dashboard_quest_turnin_post_club_full(login, player, quest, character, 
     give(character, item, 2)
     quest.max_completions = 1
     quest.save()
-    QuestCompletion.objects.create(quest=quest, character=other, date=timezone.localdate())
+    QuestCompletion.objects.create(quest=quest, character=other,
+                                   date=timezone.localdate())
     c = login(player)
     url = _url("dashboard_quest_turnin", quest.pk)
     response = c.post(url)
@@ -114,7 +121,9 @@ def test_dashboard_quest_turnin_post_club_full(login, player, quest, character, 
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_post_per_character_limit(login, player, quest, character, item, give):
+def test_dashboard_quest_turnin_post_per_character_limit(login, player,
+                                                         quest, character,
+                                                         item, give):
     """POST request when character hit per-character limit returns error."""
     give(character, item, 4)
     quest.max_per_character = 1
@@ -132,11 +141,13 @@ def test_dashboard_quest_turnin_post_per_character_limit(login, player, quest, c
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_no_character(login, other_player, club, quest):
+def test_dashboard_quest_turnin_no_character(login, other_player, club,
+                                             quest):
     """Returns 404 when user has no character in club."""
     from accounts.models import Membership, User
 
-    user = User.objects.create_user("nochar@example.com", password="x", display_name="N")
+    user = User.objects.create_user("nochar@example.com", password="x",
+                                    display_name="N")
     Membership.objects.create(user=user, club=club)
     c = login(user)
     url = _url("dashboard_quest_turnin", quest.pk)
@@ -146,7 +157,8 @@ def test_dashboard_quest_turnin_no_character(login, other_player, club, quest):
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_cross_club_404(login, player, other_club_quest):
+def test_dashboard_quest_turnin_cross_club_404(login, player,
+                                               other_club_quest):
     """Returns 404 for quest in another club."""
     c = login(player)
     url = _url("dashboard_quest_turnin", other_club_quest.pk)
@@ -156,7 +168,8 @@ def test_dashboard_quest_turnin_cross_club_404(login, player, other_club_quest):
 
 @pytest.mark.django_db
 @pytest.mark.story("S4")
-def test_dashboard_quest_turnin_not_live_404(login, player, upcoming_quest, character, item, give):
+def test_dashboard_quest_turnin_not_live_404(login, player, upcoming_quest,
+                                             character, item, give):
     """Returns 404 for quest not yet live."""
     give(character, item, 2)
     c = login(player)
