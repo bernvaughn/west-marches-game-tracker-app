@@ -1,30 +1,50 @@
 {% comment %}Quick Actions dashboard section{% endcomment %}
+{% load accounts_tags %}
 <div class="wm-dashboard-section card wm-card-raised h-100">
   <div class="card-header d-flex align-items-center justify-content-between py-2">
     <h3 class="h6 mb-0 d-flex align-items-center gap-2">
-      {% include "components/icon.html" with name="zap" %}
+      {% include "components/icon.html" with name="lightning" %}
       Quick Actions
     </h3>
-    {% if provider_context.junk_count and provider_context.junk_count > 0 %}
-    <span class="badge text-bg-warning badge-pill">{{ provider_context.junk_count }}</span>
-    {% endif %}
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">
-      {% for item in provider_context.items %}
-      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
-        <a href="{{ item.url }}" class="text-decoration-none stretched-link d-flex align-items-center gap-2 flex-grow-1">
-          {% if item.icon %}{% include "components/icon.html" with name=item.icon class="text-muted" %}{% endif %}
-          <span>{{ item.label }}</span>
-          {% if item.subtext %}<small class="text-muted ms-2">{{ item.subtext }}</small>{% endif %}
-        </a>
-        {% if item.badge %}<span class="badge text-bg-secondary">{{ item.badge }}</span>{% endif %}
+      {% if has_junk %}
+      <li class="list-group-item px-3 py-2">
+        <button
+          type="button"
+          class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-start gap-2"
+          hx-get="{% url 'accounts:quick_action_sell_junk' club.slug %}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          aria-label="Sell all junk items"
+        >
+          {% include "components/icon.html" with name="bag-dash" class="text-primary" %}
+          <span>Sell Junk</span>
+          {% if junk_count %}<span class="badge text-bg-primary ms-auto">{{ junk_count }}</span>{% endif %}
+        </button>
       </li>
-      {% empty %}
+      {% endif %}
+      {% if has_potions %}
+      <li class="list-group-item px-3 py-2">
+        <button
+          type="button"
+          class="btn btn-outline-success w-100 d-flex align-items-center justify-content-start gap-2"
+          hx-get="{% url 'accounts:quick_action_buy_potions' club.slug %}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          aria-label="Buy healing potions"
+        >
+          {% include "components/icon.html" with name="droplet" class="text-success" %}
+          <span>Buy Potions</span>
+        </button>
+      </li>
+      {% endif %}
+      {% if not has_junk and not has_potions %}
       <li class="list-group-item text-center py-4 text-muted small">
-        {{ empty_message|default:"No quick actions available." }}
+        No quick actions available.
       </li>
-      {% endfor %}
+      {% endif %}
     </ul>
   </div>
 </div>

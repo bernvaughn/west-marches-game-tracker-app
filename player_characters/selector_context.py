@@ -1,12 +1,13 @@
 """Character selector context (Contract): provides quick stats for each character in the selector dropdown."""
 
-from django.db.models import Sum, Q
+from django.db.models import Q, Sum
+
+from downtime.models import DowntimePointEntry
 
 from .inventory import coin_summary
 from .junk import junk_rows, junk_value
 from .models import Trade
 from .trade_services import OPEN
-from downtime.models import DowntimePointEntry
 
 
 def character_selector_context(character):

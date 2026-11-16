@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.dashboard_providers import get_provider
+from accounts.dashboard_providers import get_provider, get_providers
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_queryset
 from downtime import services as downtime_services
@@ -26,39 +26,6 @@ from quests.models import Quest, QuestCompletion
 # =============================================================================
 # Dashboard Provider Classes
 # =============================================================================
-
-
-@dataclass
-class QuickActionsProvider:
-    """Quick actions for common town tasks."""
-
-    key: str = "quick_actions"
-    order: int = 1
-    template: str = "accounts/_dashboard_quick_actions.html"
-
-    def get_context(self, request, club, character, membership):
-        # Get junk info for sell action
-        junk = junk_rows(character)
-        junk_val = junk_value(character, junk)
-
-        items = [
-            {
-                "label": "Sell Junk",
-                "url": reverse("shops:index", args=[club.slug]),
-                "icon": "cash-coin",
-                "subtext": f"{len(junk)} items, {junk_val} value" if junk else "No junk marked",
-            },
-            {
-                "label": "Buy Potions",
-                "url": reverse("shops:index", args=[club.slug]),
-                "icon": "droplet",
-                "subtext": "Healing potions & supplies",
-            },
-        ]
-        return {"items": items, "junk_count": len(junk), "junk_value": junk_val}
-
-    def should_show(self, request, club, character, membership):
-        return True
 
 
 @dataclass
@@ -423,8 +390,6 @@ class ConsumablesProvider:
 
 def _get_dashboard_context(request, club, character, membership):
     """Build the context dictionary for the player dashboard using providers."""
-    from accounts.dashboard_providers import get_providers
-
     providers = []
     for provider in get_providers():
         if provider.should_show(request, club, character, membership):
