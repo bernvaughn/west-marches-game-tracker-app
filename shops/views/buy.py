@@ -16,6 +16,7 @@ from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import Shop, ShopStock
 from shops.services import ShopError, is_open, sell_price
+from shops.views.browse import add_recent_shop
 
 
 @club_member_required
@@ -46,6 +47,7 @@ def buy(request, club_slug, shop_id, stock_id):
                 error = str(exc)
             else:
                 messages.success(request, entry.note)
+                add_recent_shop(request, shop.pk)
                 if is_htmx(request):
                     response = HttpResponse(status=204)
                     response["HX-Redirect"] = reverse(

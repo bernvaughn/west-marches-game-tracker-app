@@ -20,12 +20,3 @@
 {% include "components/empty_state.html" with text="No shops are open today." icon="shop" %}
 {% endif %}
 {% endblock %}
-
-{% block extra_js %}
-{% if character %}
-  <script>
-    window.wmCharacterPk = {{ character.pk }};
-  </script>
-  <script src="{% static 'shops/shop_favorites.js' %}"></script>
-{% endif %}
-{% endblock %}

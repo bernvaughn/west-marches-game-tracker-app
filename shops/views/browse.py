@@ -23,6 +23,23 @@ from shops.services import (
 MAX_RECENT_SHOPS = 10
 
 
+def add_recent_shop(request, shop_id):
+    """Add a shop to the character's recent shops in session."""
+    character = selected_character(request)
+    if not character:
+        return
+    session_key = f"wm_recent_shops_{character.pk}"
+    recent = list(request.session.get(session_key, []))
+    # Remove if already present
+    recent = [sid for sid in recent if sid != shop_id]
+    # Add to front
+    recent.insert(0, shop_id)
+    # Limit to max
+    if len(recent) > MAX_RECENT_SHOPS:
+        recent = recent[:MAX_RECENT_SHOPS]
+    request.session[session_key] = recent
+
+
 def _load_shop(request, shop_id):
     shop = club_get_object_or_404(request, Shop, pk=shop_id)
     open_now = is_open(shop, timezone.localdate())
