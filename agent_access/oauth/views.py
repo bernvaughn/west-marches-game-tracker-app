@@ -1,6 +1,7 @@
 import json
 from functools import wraps
 
+from django.conf import settings
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -14,8 +15,7 @@ from .forms import ConsentForm
 from .tokens import create_connection, prepare_approval
 
 RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource/mcp"
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
+CORS_HEADERS_BASE = {
     "Access-Control-Allow-Headers": (
         "Authorization, Content-Type, Mcp-Protocol-Version, Mcp-Session-Id, Accept"
     ),
@@ -24,16 +24,32 @@ CORS_HEADERS = {
 }
 
 
+def _is_origin_allowed(origin: str) -> bool:
+    """Check if the origin is in the allowed list."""
+    allowed = getattr(settings, "CORS_ALLOWED_ORIGINS", [])
+    return origin in allowed
+
+
 def cors(view):
-    """Let browser-based MCP clients (Inspector direct mode) reach the OAuth and MCP routes."""
+    """Let browser-based MCP clients (Inspector direct mode) reach the OAuth and MCP routes.
+    Only allows origins configured in CORS_ALLOWED_ORIGINS setting.
+    """
 
     @wraps(view)
     def wrapped(request, *args, **kwargs):
+        origin = request.headers.get("Origin")
+        allowed = origin and _is_origin_allowed(origin)
+
         if request.method == "OPTIONS":
+            if not allowed:
+                return HttpResponse(status=403)
             response = HttpResponse(status=204)
         else:
             response = view(request, *args, **kwargs)
-        for key, value in CORS_HEADERS.items():
+
+        if allowed:
+            response["Access-Control-Allow-Origin"] = origin
+        for key, value in CORS_HEADERS_BASE.items():
             response[key] = value
         return response
 
