@@ -203,6 +203,7 @@ EXCLUDED = {
     "accounts:message_status": "POST only.",
     "characters:select": "POST only.",
     "characters:shop_toggle": "POST only.",
+    "characters:preview": "JSON endpoint for tooltip preview, not a page.",
     "trades:accept": "POST only.",
     "trades:decline": "POST only.",
     "trades:cancel": "POST only.",
