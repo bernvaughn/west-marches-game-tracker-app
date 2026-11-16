@@ -15,7 +15,7 @@ from accounts.scoping import club_queryset
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from ledger.services import available_items
-from map.models import HexMap
+from map.models import FoundMark, HexMap, Location, LocationCredit, TileVisit
 from player_characters.inventory import coin_summary
 from player_characters.junk import junk_rows, junk_value
 from player_characters.models import Trade
@@ -203,17 +203,97 @@ class DowntimeProvider:
         return True
 
 
-@dataclass
-class MapProvider:
-    """Visible maps."""
+class MapDashboardProvider:
+    """Map section with Request Map Credit shortcut for uncredited visits."""
 
     key: str = "map"
     order: int = 5
     template: str = "accounts/_dashboard_map.html"
 
-    def get_context(self, request, club, character, membership):
-        maps = HexMap.objects.for_club(club).order_by("name")
+    def _get_uncredited_data(self, club, character):
+        """Get maps with uncredited tiles for the character."""
+        # Get all tile visits for this character
+        visits = TileVisit.objects.for_club(club).filter(character=character).select_related("map")
+        
+        # Group visits by map
+        map_visits = {}
+        for visit in visits:
+            if visit.map_id not in map_visits:
+                map_visits[visit.map_id] = []
+            map_visits[visit.map_id].append((visit.q, visit.r))
+        
+        if not map_visits:
+            return [], 0, None
+        
+        # Get maps with visits
+        maps_with_visits = (
+            HexMap.objects.for_club(club)
+            .filter(pk__in=map_visits.keys())
+            .order_by("name")
+        )
+        
+        maps_data = []
+        total_uncredited = 0
+        first_map_with_uncredited = None
+        first_map_uncredited_tiles = None
+        
+        for hex_map in maps_with_visits:
+            visited_positions = set(map_visits[hex_map.pk])
+            
+            # Get locations on visited tiles
+            locations = Location.objects.for_club(club).filter(
+                tile__map=hex_map,
+                tile__q__in=[q for q, r in visited_positions],
+                tile__r__in=[r for q, r in visited_positions],
+            ).select_related("tile")
+            
+            # Check each location for missing credits
+            map_uncredited_tiles = set()
+            for loc in locations:
+                pos = (loc.tile.q, loc.tile.r)
+                if pos not in visited_positions:
+                    continue
+                
+                # Check if character has credit for this location
+                has_discovered = LocationCredit.objects.for_club(club).filter(
+                    location=loc,
+                    kind=LocationCredit.Kind.DISCOVERED,
+                    characters=character
+                ).exists()
+                
+                has_explored = LocationCredit.objects.for_club(club).filter(
+                    location=loc,
+                    kind=LocationCredit.Kind.EXPLORED,
+                    characters=character
+                ).exists()
+                
+                has_found = FoundMark.objects.for_club(club).filter(
+                    location=loc,
+                    character=character
+                ).exists()
+                
+                # If any credit type is missing, this tile needs credit
+                if not (has_discovered and has_explored and has_found):
+                    map_uncredited_tiles.add(pos)
+            
+            uncredited_count = len(map_uncredited_tiles)
+            if uncredited_count > 0:
+                total_uncredited += uncredited_count
+                maps_data.append({
+                    "map": hex_map,
+                    "uncredited_count": uncredited_count,
+                })
+                if first_map_with_uncredited is None:
+                    first_map_with_uncredited = hex_map
+                    first_map_uncredited_tiles = map_uncredited_tiles
+        
+        return maps_data, total_uncredited, (first_map_with_uncredited, first_map_uncredited_tiles)
 
+    def get_context(self, request, club, character, membership):
+        maps_data, total_uncredited, first_map_data = self._get_uncredited_data(club, character)
+        
+        # Build map items for the template (always show all maps)
+        all_maps = HexMap.objects.for_club(club).order_by("name")
         map_items = [
             {
                 "label": m.name,
@@ -221,7 +301,7 @@ class MapProvider:
                 "icon": "map",
                 "subtext": "View map",
             }
-            for m in maps
+            for m in all_maps
         ]
         if not map_items:
             map_items.append({
@@ -230,14 +310,26 @@ class MapProvider:
                 "icon": "map",
                 "subtext": "No maps yet",
             })
-
+        
+        # Build request URL for the first map with uncredited tiles
+        request_url = None
+        if first_map_data:
+            hex_map, uncredited_tiles = first_map_data
+            base_url = reverse("map:detail", args=[club.slug, hex_map.pk])
+            # Pre-filter to this character's visits
+            request_url = f"{base_url}?characters={character.pk}&view=mine"
+        
         return {
-            "maps": maps,
+            "maps": all_maps,
             "map_items": map_items,
+            "maps_data": maps_data,
+            "total_uncredited": total_uncredited,
+            "request_url": request_url,
         }
 
     def should_show(self, request, club, character, membership):
-        return True
+        _, total_uncredited, _ = self._get_uncredited_data(club, character)
+        return total_uncredited > 0
 
 
 @dataclass

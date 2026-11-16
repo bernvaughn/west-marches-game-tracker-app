@@ -51,7 +51,7 @@ class AccountsConfig(AppConfig):
         from .views.dashboard import (
             ConsumablesProvider,
             DowntimeProvider,
-            MapProvider,
+            MapDashboardProvider,
             MessagesProvider,
             PlayerShopProvider,
             QuestsProvider,
@@ -61,7 +61,7 @@ class AccountsConfig(AppConfig):
         register_provider(TradesProvider())
         register_provider(QuestsProvider())
         register_provider(DowntimeProvider())
-        register_provider(MapProvider())
+        register_provider(MapDashboardProvider())
         register_provider(MessagesProvider())
         register_provider(PlayerShopProvider())
         register_provider(ConsumablesProvider())
