@@ -1,6 +1,7 @@
 import pytest
 
 from accounts.models import Membership, User
+from quests.tests.conftest import quest, upcoming_quest, ended_quest, limited_quest, other_club_quest, give, reward_item
 
 
 def _member(club, email, name, **flags):
