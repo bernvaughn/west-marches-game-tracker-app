@@ -53,7 +53,14 @@ def _seed(
 
 
 def test_registry_has_real_providers():
-    for p in (pending_batches, pending_proposed_items, open_map_requests, open_messages, open_trades_needing_action):
+    providers = (
+        pending_batches,
+        pending_proposed_items,
+        open_map_requests,
+        open_messages,
+        open_trades_needing_action,
+    )
+    for p in providers:
         assert p in approvals._providers
 
 

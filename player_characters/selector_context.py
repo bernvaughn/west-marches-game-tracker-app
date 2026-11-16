@@ -1,4 +1,5 @@
-"""Character selector context (Contract): provides quick stats for each character in the selector dropdown."""
+"""Character selector context (Contract): provides quick stats
+for each character in the selector dropdown."""
 
 from django.db.models import Q, Sum
 
@@ -34,7 +35,11 @@ def character_selector_context(character):
     ).count()
     
     # Downtime points
-    dt_balance = DowntimePointEntry.objects.filter(character=character).aggregate(total=Sum("delta"))["total"] or 0
+    dt_balance = (
+        DowntimePointEntry.objects.filter(character=character)
+        .aggregate(total=Sum("delta"))["total"]
+        or 0
+    )
     
     return {
         "coins": coin_str,

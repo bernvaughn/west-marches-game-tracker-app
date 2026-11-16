@@ -19,7 +19,12 @@ class ProposedItemForm(forms.ModelForm):
     description = forms.CharField(required=False, max_length=5000, widget=forms.Textarea)
     traits = forms.CharField(required=False, max_length=5000, widget=forms.Textarea)
     details = forms.CharField(required=False, max_length=5000, widget=forms.Textarea)
-    gm_details = forms.CharField(required=False, max_length=5000, widget=forms.Textarea, label="GM-only details")
+    gm_details = forms.CharField(
+        required=False,
+        max_length=5000,
+        widget=forms.Textarea,
+        label="GM-only details",
+    )
 
     class Meta:
         model = ProposedItem

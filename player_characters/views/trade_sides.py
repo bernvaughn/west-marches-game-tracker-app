@@ -110,7 +110,9 @@ def _act_with_toast(request, club_slug, pk, service, done_msg, toast_type, extra
         messages.success(request, done_msg)
         if request.headers.get("HX-Request"):
             response = redirect("trades:detail", club_slug=club_slug, pk=trade.pk)
-            response["HX-Trigger"] = json.dumps({"toast": {"message": done_msg, "type": toast_type}})
+            response["HX-Trigger"] = json.dumps(
+                {"toast": {"message": done_msg, "type": toast_type}}
+            )
             return response
     return redirect("trades:detail", club_slug=club_slug, pk=trade.pk)
 
