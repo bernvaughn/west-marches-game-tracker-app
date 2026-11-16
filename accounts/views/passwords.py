@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.shortcuts import render
 
 from ..models import Membership
-from ..passwords import set_temporary_password
+from ..passwords import save_password_history, set_temporary_password
 from ..permissions import can_reset_password, club_admin_required
 from ..scoping import club_get_object_or_404
 
@@ -15,7 +15,9 @@ class ClearFlagPasswordChangeView(PasswordChangeView):
     def form_valid(self, form):
         form.user.must_change_password = False
         # form.save() saves the user; the base view then refreshes the session hash.
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        save_password_history(form.user, form.cleaned_data["new_password1"])
+        return response
 
 
 password_change = login_required(ClearFlagPasswordChangeView.as_view())
@@ -28,6 +30,7 @@ def reset_password(request, club_slug, membership_id):
         raise PermissionDenied
     if request.method == "POST":
         temp = set_temporary_password(membership.user)
+        save_password_history(membership.user, temp)
         response = render(
             request,
             "accounts/passwords/reset_done.html",
