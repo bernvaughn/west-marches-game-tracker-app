@@ -103,8 +103,11 @@ def index(request, club_slug):
     shops = list(ordered_shops(open_shops(club, timezone.localdate())))
 
     # Filter shops for "My Shops" tab
-    if active_tab == "my_shops" and recent_shop_ids:
-        shops = [s for s in shops if s.pk in recent_shop_ids]
+    if active_tab == "my_shops":
+        if recent_shop_ids:
+            shops = [s for s in shops if s.pk in recent_shop_ids]
+        else:
+            shops = []
 
     stalls = street_stalls(club)
     lots = street_lots(
