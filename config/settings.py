@@ -204,7 +204,9 @@ OAUTH2_PROVIDER = {
     "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
     "ROTATE_REFRESH_TOKEN": True,
     "DCR_ENABLED": True,
-    "DCR_REGISTRATION_PERMISSION_CLASSES": ("oauth2_provider.dcr.AllowAllDCRPermission",),
+    "DCR_REGISTRATION_PERMISSION_CLASSES": (
+        "agent_access.oauth.permissions.ClubAdminOrGameMasterDCRPermission",
+    ),
     "OAUTH2_PROTECTED_RESOURCE_NAME": f"{APP_NAME} MCP",
 }
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
