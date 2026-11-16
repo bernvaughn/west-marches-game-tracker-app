@@ -310,3 +310,26 @@ def message_give(request, club_slug, pk, kind):
                     ctx,
                 )
     return render_modal_or_page(request, *fill, ctx)
+
+
+@club_member_required
+def message_detail(request, club_slug, pk):
+    """Read-only view of a message for the sender (player) or club admins."""
+    msg = club_get_object_or_404(request, Message, pk=pk)
+
+    # Check permissions: only sender or club admins/GM can view
+    membership = request.membership
+    if msg.sender_id != membership.id:
+        if not (membership.is_game_master or membership.is_club_admin):
+            raise Http404
+
+    return render(
+        request,
+        "accounts/inbox/message_detail.html",
+        {
+            "msg": msg,
+            "is_sender": msg.sender_id == membership.id,
+            "is_admin": membership.is_game_master or membership.is_club_admin,
+        },
+    )
+
