@@ -54,7 +54,6 @@ class AccountsConfig(AppConfig):
         # Register built-in dashboard providers
         from .views.dashboard import (
             ConsumablesProvider,
-            DowntimeDashboardProvider,
             MapDashboardProvider,
             MessagesProvider,
             PlayerShopProvider,
