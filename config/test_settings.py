@@ -1,6 +1,31 @@
 """Test settings optimized for speed."""
 
+import os
+
+# Set test environment variables BEFORE importing base settings
+os.environ.setdefault("DJANGO_DEBUG", "1")
+os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key-for-testing-only")
+os.environ.setdefault("DJANGO_SECURE_SSL_REDIRECT", "0")
+os.environ.setdefault("DJANGO_SECURE_HSTS_SECONDS", "0")
+os.environ.setdefault("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", "0")
+os.environ.setdefault("DJANGO_SECURE_HSTS_PRELOAD", "0")
+os.environ.setdefault("DJANGO_SESSION_COOKIE_SECURE", "0")
+os.environ.setdefault("DJANGO_CSRF_COOKIE_SECURE", "0")
+
 from .settings import *  # noqa: F403,F401
+
+# Override security settings for test environment
+SECURE_SSL_REDIRECT = False
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
+# CSP settings - more permissive for tests
+CSP_DEFAULT_SRC = ("'self'", "'unsafe-inline'")
+CSP_SCRIPT_SRC = ("'self'", "'unsafe-inline'")
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
 
 # Use in-memory SQLite for faster tests
 DATABASES = {
@@ -35,10 +60,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }
-
-# Disable CSRF for tests (not needed for API tests)
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
 
 # Faster template loading
 TEMPLATE_LOADERS = [
