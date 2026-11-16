@@ -9,6 +9,7 @@ from django.utils import timezone
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from items.magic_types import MagicType
+from ledger.services import available_items
 from player_characters.junk import junk_rows
 from shops.models import ShopStock
 from shops.services import open_shops
@@ -107,6 +108,57 @@ class QuickActionsProvider:
             item__magic_type=MagicType.POTION,
             quantity__gt=0,
         ).exists()
+
+
+class ConsumablesDashboardProvider:
+    """Provides 'Consumables' section with 'Use 1' buttons for consumable items."""
+
+    key = "consumables"
+    order = 8
+    template = "accounts/_dashboard_consumables.html"
+
+    def _is_consumable(self, item, quantity) -> bool:
+        """Check if item is consumable based on quantity or traits."""
+        if quantity > 1:
+            return True
+        if item.traits and "consumable" in item.traits.lower():
+            return True
+        return False
+
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        have = available_items(character)
+        if not have:
+            return {"consumable_items": []}
+
+        from items.models import Item
+        consumable_items = []
+        for item_id, qty in have.items():
+            if qty <= 0:
+                continue
+            item = Item.objects.filter(pk=item_id).first()
+            if item and self._is_consumable(item, qty):
+                consumable_items.append({
+                    "item": item,
+                    "quantity": qty,
+                    "consume_partial_url": reverse(
+                        "accounts:consumable_consume_partial",
+                        args=[club.slug, item.pk],
+                    ),
+                })
+
+        return {"consumable_items": consumable_items}
+
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
+        have = available_items(character)
+        if not have:
+            return False
+        from items.models import Item
+        for item_id, qty in have.items():
+            if qty > 0:
+                item = Item.objects.filter(pk=item_id).first()
+                if item and self._is_consumable(item, qty):
+                    return True
+        return False
 
 
 _providers: dict[str, DashboardProvider] = {}

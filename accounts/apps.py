@@ -35,6 +35,7 @@ class AccountsConfig(AppConfig):
         from . import approvals, navigation
         from .approval_providers import open_messages, open_trades_needing_action
         from .dashboard_providers import (
+            ConsumablesDashboardProvider,
             DowntimeDashboardProvider,
             QuickActionsProvider,
             register_provider,
@@ -53,7 +54,6 @@ class AccountsConfig(AppConfig):
 
         # Register built-in dashboard providers
         from .views.dashboard import (
-            ConsumablesProvider,
             MapDashboardProvider,
             MessagesProvider,
             QuestsProvider,
@@ -69,4 +69,4 @@ class AccountsConfig(AppConfig):
         register_provider(MessagesProvider())
         register_provider(PlayerShopDashboardProvider())
         register_provider(MessagesDashboardProvider())
-        register_provider(ConsumablesProvider())
+        register_provider(ConsumablesDashboardProvider())

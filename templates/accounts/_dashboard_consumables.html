@@ -15,13 +15,23 @@
         <div class="d-flex align-items-center gap-2 flex-grow-1">
           {% include "components/icon.html" with name="droplet" class="text-muted" %}
           <div>
-            <div class="fw-medium">{{ c.item.name }} ({{ c.quantity }})</div>
+            <div class="fw-medium">{{ c.item.name }}</div>
             <small class="text-muted">
-              {% if c.item.uses %}Uses: {{ c.item.uses }}{% else %}Consumable{% endif %}
+              Qty: {{ c.quantity }}
+              {% if c.item.uses %} · Uses: {{ c.item.uses }}{% endif %}
             </small>
           </div>
         </div>
-        <a href="{{ c.consume_url }}" class="btn btn-sm btn-outline-primary">Consume</a>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-primary"
+          hx-get="{{ c.consume_partial_url }}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          aria-label="Use 1 {{ c.item.name }}"
+        >
+          Use 1
+        </button>
       </li>
       {% endfor %}
     </ul>
