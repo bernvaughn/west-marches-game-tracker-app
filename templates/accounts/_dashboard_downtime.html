@@ -5,26 +5,39 @@
       {% include "components/icon.html" with name="clock" %}
       Downtime
     </h3>
-    {% if provider_context.downtime_cards|length > 0 %}
+    {% if provider_context.actions|length > 0 %}
     <span class="badge text-bg-info badge-pill">{{ provider_context.downtime_balance }}</span>
     {% endif %}
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">
-      {% for item in provider_context.downtime_items %}
+      {% for action_data in provider_context.actions %}
       <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
-        <a href="{{ item.url }}" class="text-decoration-none stretched-link d-flex align-items-center gap-2 flex-grow-1 {% if item.badge == 'disabled' %}text-muted{% endif %}">
-          {% if item.icon %}{% include "components/icon.html" with name=item.icon class="text-muted" %}{% endif %}
-          <span>{{ item.label }}</span>
-          {% if item.subtext %}<small class="text-muted ms-2">{{ item.subtext }}</small>{% endif %}
-        </a>
-        {% if item.badge == 'disabled' %}
-        <span class="badge text-bg-secondary">Insufficient points</span>
-        {% elif item.badge %}<span class="badge text-bg-secondary">{{ item.badge }}</span>{% endif %}
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="clock" class="text-muted" %}
+          <div>
+            <span class="fw-medium">{{ action_data.action.name }}</span>
+            {% if action_data.reason %}
+            <br><small class="text-muted">{{ action_data.cost }} point{{ action_data.cost|pluralize }} &mdash; {{ action_data.reason }}</small>
+            {% else %}
+            <br><small class="text-muted">{{ action_data.cost }} point{{ action_data.cost|pluralize }}</small>
+            {% endif %}
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn btn-sm wm-chalk-button"
+          hx-get="{{ action_data.spend_url }}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          {% if not action_data.affordable %}disabled{% endif %}
+          {% if action_data.reason %}title="{{ action_data.reason }}"{% endif %}>
+          Spend
+        </button>
       </li>
       {% empty %}
       <li class="list-group-item text-center py-4 text-muted small">
-        {{ empty_message|default:"No downtime actions." }}
+        No downtime actions available.
       </li>
       {% endfor %}
     </ul>

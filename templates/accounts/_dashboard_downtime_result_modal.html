@@ -1,0 +1,12 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}{{ result.action.name }}{% endblock %}
+{% block body %}
+<div class="wm-chalk-modal">
+{% if wheel %}{% include "downtime/play/_wheel.html" with json_id="downtime-wheel-data-modal" %}{% endif %}
+{% include "downtime/play/_result_body.html" %}
+</div>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn wm-chalk-button" data-bs-dismiss="modal" hx-get="{% url 'accounts:dashboard_partial' club.slug 'downtime' %}" hx-target=".wm-dashboard-section:has(h3:contains('Downtime'))" hx-swap="outerHTML">Close & Refresh</button>
+<button type="button" class="btn wm-chalk-button" data-bs-dismiss="modal">Close</button>
+{% endblock %}
