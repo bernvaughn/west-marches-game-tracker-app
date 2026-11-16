@@ -14,7 +14,7 @@ from ..inventory import coin_summary, inventory_rows
 from ..item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 from ..junk import junk_rows
 from ..models import Character
-from ..sheet import ability_rows, ability_modifier, passive_perception
+from ..sheet import ability_modifier, ability_rows, passive_perception
 from ..trade_services import OPEN
 
 LAYOUTS = ("full", "grid")
@@ -113,7 +113,7 @@ def print_session_pack(request, club_slug, pk):
 
     # Abilities (using shared sheet helper)
     abilities = ability_rows(character)
-    passive_perception = passive_perception(ability_modifier(character.wisdom))
+    passive_perception_val = passive_perception(ability_modifier(character.wisdom))
 
     # Item cards data
     pairs = [(r.item, r.owned) for r in inv_rows]
@@ -194,7 +194,7 @@ def print_session_pack(request, club_slug, pk):
             "junk": junk,
             "junk_value": junk_val,
             "abilities": abilities,
-            "passive_perception": passive_perception,
+            "passive_perception": passive_perception_val,
             "item_sheets": item_sheets,
             "too_many": over,
             "card_cap": CARD_CAP,
