@@ -21,7 +21,7 @@ from player_characters.junk import junk_rows, junk_value
 from player_characters.models import Trade
 from player_characters.selection import selected_character
 from player_characters.trade_services import OPEN
-
+from quests.models import Quest, QuestCompletion
 
 # =============================================================================
 # Dashboard Provider Classes
