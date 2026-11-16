@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% load static character_tags coins %}
+{% block title %}Award Loot to Party{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Award Loot to Party" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <!-- Datalist for item autocomplete -->
+  <datalist id="item-catalogue">
+    {% for item in items %}
+    <option value="{{ item.pk }}" data-name="{{ item.name }}" data-value="{{ item.value_cp }}">
+      {% if item.symbol %}{{ item.symbol }} {% endif %}{{ item.name }} ({{ item.value_cp|coins }})
+    </option>
+    {% endfor %}
+  </datalist>
+
+  <h2 class="h6">Characters</h2>
+  {{ form.characters.errors }}
+  {% if character_data %}
+  <div class="mb-2 no-print">
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-check-all hidden>Select all</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-check-none hidden>Clear</button>
+  </div>
+  <div class="wm-table-scroll"><table class="table table-sm wm-data-table">
+    <thead>
+      <tr>
+        <th scope="col">Award</th>
+        <th scope="col">Name</th>
+        <th scope="col">Player</th>
+        <th scope="col">Level</th>
+        <th scope="col">Class</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for cd in character_data %}{% with c=cd.character %}
+      <tr>
+        <td>
+          <input class="form-check-input" type="checkbox" name="characters" value="{{ c.pk }}"
+                 id="award-{{ c.pk }}" aria-label="Award loot to {{ c.name }}"
+                 {% if cd.checked %} checked{% endif %}
+                 data-wm-toggle="#char-section-{{ c.pk }}">
+        </td>
+        <td><label for="award-{{ c.pk }}">{{ c.name }}</label></td>
+        <td>{{ c.owner.user.display_name|default:c.owner.user.email }}</td>
+        <td>{{ c.level|default_if_none:"—" }}</td>
+        <td>{{ c.char_class|default:"—" }}</td>
+      </tr>
+    {% endwith %}{% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="wm-sheet-note">No characters in this club.</p>
+  {% endif %}
+
+  {% for cd in character_data %}{% with c=cd.character %}
+  <div id="char-section-{{ c.pk }}" class="wm-char-section {% if not cd.checked %}d-none{% endif %}" data-char-pk="{{ c.pk }}">
+    <hr class="my-3">
+    <h3 class="h6 mb-2">{{ c.name }}</h3>
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label" for="coins_{{ c.pk }}">Coins</label>
+        <input type="text" class="form-control wm-coins-input" name="coins_{{ c.pk }}" id="coins_{{ c.pk }}"
+               placeholder="e.g. 50gp 10sp 5cp" value="{{ request.POST|get_coins:c.pk }}">
+      </div>
+    </div>
+
+    <h4 class="h6 mb-2">Items</h4>
+    <input type="hidden" name="items_{{ c.pk }}-TOTAL_FORMS" id="id_items_{{ c.pk }}-TOTAL_FORS" value="3">
+    <input type="hidden" name="items_{{ c.pk }}-INITIAL_FORMS" id="id_items_{{ c.pk }}-INITIAL_FORMS" value="0">
+    <input type="hidden" name="items_{{ c.pk }}-MIN_NUM_FORMS" id="id_items_{{ c.pk }}-MIN_NUM_FORMS" value="0">
+    <input type="hidden" name="items_{{ c.pk }}-MAX_NUM_FORMS" id="id_items_{{ c.pk }}-MAX_NUM_FORMS" value="3">
+
+    <div class="wm-item-rows" data-prefix="items_{{ c.pk }}">
+      {% for row_num in "012"|make_list %}
+      <div class="wm-form-row wm-form-row--wide-first wm-item-row">
+        <div class="col-md-5">
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row_num }}-item">Item</label>
+          <input type="text" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row_num }}-item"
+                 id="id_items_{{ c.pk }}-{{ row_num }}-item" list="item-catalogue"
+                 placeholder="Search items by name...">
+          <input type="hidden" name="items_{{ c.pk }}-{{ row_num }}-item_id"
+                 id="id_items_{{ c.pk }}-{{ row_num }}-item_id" value="">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row_num }}-quantity">Quantity</label>
+          <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row_num }}-quantity"
+                 id="id_items_{{ c.pk }}-{{ row_num }}-quantity" min="1" value="">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row_num }}-value_override">Value (cp)</label>
+          <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row_num }}-value_override"
+                 id="id_items_{{ c.pk }}-{{ row_num }}-value_override" min="0" value=""
+                 placeholder="Override value (optional)">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endwith %}{% endfor %}
+
+  {% for field in form.visible_fields %}{% if field.name != "characters" %}
+  <div class="mb-3">
+    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %}<span class="wm-required" aria-hidden="true">*</span>{% endif %}</label>
+    {{ field }}
+    {{ field.errors }}
+  </div>
+  {% endif %}{% endfor %}
+
+  <div class="wm-form-actions">
+    <button class="btn btn-primary" type="submit" data-wm-tooltip title="Award the coins and items to every ticked character.">Award Loot</button>
+    <a class="btn btn-outline-secondary" href="{% url 'characters:index' club_slug=club.slug %}">Cancel</a>
+  </div>
+</form>
+<script src="{% static 'js/check_all.js' %}" defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Toggle character sections when checkboxes change
+  document.querySelectorAll('input[name="characters"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var target = document.querySelector(this.dataset.wmToggle);
+      if (target) {
+        target.classList.toggle('d-none', !this.checked);
+      }
+    });
+    // Initialize visibility
+    var target = document.querySelector(cb.dataset.wmToggle);
+    if (target) {
+      target.classList.toggle('d-none', !cb.checked);
+    }
+  });
+
+  // Handle item autocomplete: update hidden field with selected item ID
+  document.querySelectorAll('input[list="item-catalogue"]').forEach(function(input) {
+    input.addEventListener('input', function() {
+      var hiddenField = document.getElementById(this.id.replace('-item', '-item_id'));
+      var selectedOption = document.querySelector('#item-catalogue option[value="' + this.value + '"]');
+      if (selectedOption) {
+        hiddenField.value = selectedOption.value;
+      } else {
+        hiddenField.value = '';
+      }
+    });
+  });
+});
+</script>
+{% endblock %}
