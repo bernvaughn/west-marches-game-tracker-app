@@ -1,17 +1,15 @@
+## plan
+- [x] Implementation plan written and stored in task plan field
+
 ## code
-- [ ] `DashboardProvider` protocol defined in `accounts/dashboard_providers.py`
-- [ ] Provider registry in `accounts/apps.py` `ready()`
-- [ ] `_get_dashboard_context()` refactored to use providers
-- [ ] HTMX partial endpoint pattern implemented (`dashboard/<slug>/partial/<key>/`)
-- [ ] Character preview endpoint (`characters/<slug>/preview/<pk>/`) returns JSON
-- [ ] `dashboard.html` renders providers dynamically in order
-- [ ] Character selector dropdown options show Bootstrap tooltip on hover/focus
-- [ ] Tooltip fetches `/characters/<slug>/preview/<pk>/` via HTMX on `shown.bs.tooltip`
-- [ ] Preview JSON: `{name, level, class, species, coins_available, junk_count, junk_value, downtime, open_trades}`
-- [ ] Tooltip renders as small card with avatar, key stats
-- [ ] Works on mobile (tap to show, tap elsewhere to dismiss)
-- [ ] Ruff clean, unit + browser tests pass
+- [ ] "My Trades" section on dashboard (provider order 2)
+- [ ] Lists each open trade with: other character, status badge, primary action button
+- [ ] Status badges match U78 wording: "Waiting for X to accept", "Both can change. Approve when ready", etc.
+- [ ] "Act Now" button links to correct page: `trades:detail` (accepted) or `trades:edit_side` (propose)
+- [ ] HTMX poll refreshes widget every 10s (`hx-trigger="every 10s"`)
+- [ ] Only shows for player with open trades
 
 ## verify
-- [ ] All existing dashboard functionality preserved (tests pass)
-- [ ] Ruff clean, 1942+ tests pass
+- [ ] Ruff clean
+- [ ] Unit tests pass
+- [ ] Browser tests pass
