@@ -34,7 +34,11 @@ class AccountsConfig(AppConfig):
     def ready(self):
         from . import approvals, navigation
         from .approval_providers import open_messages, open_trades_needing_action
-        from .dashboard_providers import (DowntimeDashboardProvider, QuickActionsProvider, register_provider)
+        from .dashboard_providers import (
+            DowntimeDashboardProvider,
+            QuickActionsProvider,
+            register_provider,
+        )
 
         approvals.register(open_messages)
         approvals.register(open_trades_needing_action)

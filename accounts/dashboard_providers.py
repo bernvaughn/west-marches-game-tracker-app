@@ -54,12 +54,15 @@ class DowntimeDashboardProvider:
             reason = ""
             if downtime_balance < action.cost:
                 reason = "Not enough downtime points."
+            spend_url = reverse(
+                "accounts:dashboard_downtime_spend", args=[club.slug, action.pk]
+            )
             actions.append({
                 "action": action,
                 "cost": action.cost,
                 "reason": reason,
                 "affordable": not reason,
-                "spend_url": reverse("accounts:dashboard_downtime_spend", args=[club.slug, action.pk]),
+                "spend_url": spend_url,
             })
 
         return {
@@ -69,7 +72,8 @@ class DowntimeDashboardProvider:
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         today = timezone.localdate()
-        return DowntimeAction.objects.for_club(club).live_on(today).filter(entries__isnull=False).exists()
+        live_actions = DowntimeAction.objects.for_club(club).live_on(today)
+        return live_actions.filter(entries__isnull=False).exists()
 
 
 class QuickActionsProvider:
