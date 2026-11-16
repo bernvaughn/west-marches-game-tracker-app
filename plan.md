@@ -128,3 +128,69 @@ Each section from current `_get_dashboard_context()` becomes a provider:
 
 ### Ruff Check (verify stage)
 - Run `uv run ruff check .` and fix any issues
+
+---
+
+# Implementation Plan: S3 Character Switch Preview
+
+## Overview
+Add Bootstrap tooltip on character selector dropdown showing character preview (coins, junk, downtime, open trades) fetched via HTMX on hover/focus.
+
+## Files to Modify
+
+### 1. `player_characters/views/selection.py`
+Add `character_preview` view:
+- Accept `club_slug` and `pk` parameters
+- Verify character belongs to current club and user owns it
+- Return JSON with: `name`, `level`, `class`, `species`, `coins_available` (int), `coins_formatted` (string), `junk_count`, `junk_value`, `downtime`, `open_trades`
+- Reuse logic from `selector_context.character_selector_context()`
+
+### 2. `player_characters/urls_characters.py`
+Add URL pattern:
+- Path: `<int:pk>/preview/`
+- Name: `preview`
+- View: `selection.character_preview`
+
+### 3. `templates/player_characters/characters/_selector.html`
+Convert native `<select>` to Bootstrap dropdown:
+- Replace `<select>` with dropdown button + `<ul class="dropdown-menu">`
+- Each character becomes `<a class="dropdown-item">` with:
+  - `data-bs-toggle="tooltip"`
+  - `data-bs-html="true"`
+  - `data-wm-preview-url="{% url 'characters:preview' club.slug c.pk %}"`
+  - `title="Loading…"` (placeholder)
+  - `onclick` to submit the character switch form
+- Keep hidden form for POST submission
+
+### 4. `static/js/tooltips.js`
+Add handler for `shown.bs.tooltip` on elements with `data-wm-preview-url`:
+- Fetch preview URL via `fetch()` (not HTMX, since we need JSON)
+- Build HTML card from JSON response
+- Update tooltip content using `tooltip.setContent({ '.tooltip-inner': html })`
+- Handle loading/error states
+- Ensure tooltip is disposed on `hide.bs.tooltip` or dropdown close
+
+## Testing
+
+### Unit Tests (`player_characters/tests/test_selection.py`)
+- Test `character_preview` returns correct JSON structure
+- Test 403 for other player's character
+- Test 404 for non-existent character
+- Test 404 for character not in club
+
+### Browser Tests (Playwright)
+- Test tooltip appears on hover/focus
+- Test tooltip shows correct data
+- Test mobile tap behavior
+- Test tooltip dismisses on click elsewhere
+
+## Acceptance Criteria Mapping
+
+| AC | Proof Stage |
+|----|-------------|
+| Selector dropdown options show Bootstrap tooltip on hover/focus | code (unit + browser) |
+| Tooltip fetches `/characters/<slug>/preview/<pk>/` via HTMX on `shown.bs.tooltip` | code (browser) |
+| Preview JSON: `{name, level, class, species, coins_available, junk_count, junk_value, downtime, open_trades}` | code (unit) |
+| Tooltip renders as small card with avatar, key stats | code (browser) |
+| Works on mobile (tap to show, tap elsewhere to dismiss) | code (browser) |
+| Ruff clean, unit + browser tests pass | verify |

@@ -42,4 +42,5 @@ urlpatterns = [
         character_print.print_session_pack,
         name="print_session_pack",
     ),
+    path("<int:pk>/preview/", selection.character_preview, name="preview"),
 ]

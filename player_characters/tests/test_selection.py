@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from accounts import approvals
 from accounts.models import Membership
-from player_characters.models import Character, SelectedCharacter
+from player_characters.models import Character, SelectedCharacter, Trade
 from player_characters.selection import selected_character
 
 pytestmark = pytest.mark.django_db
@@ -150,3 +150,126 @@ def test_demo_gives_alice_two_characters(db):
     call_command("seed_demo")
     call_command("seed_demo")
     assert Character.objects.filter(owner__user__email="alice@example.com").count() == 2
+
+
+@pytest.fixture
+def aria(club, player):
+    membership = Membership.objects.get(user=player, club=club)
+    return Character.objects.create(
+        club=club,
+        owner=membership,
+        name="Aria",
+        level=3,
+        char_class="Ranger",
+        species="Human",
+    )
+
+
+@pytest.fixture
+def borin(club, player):
+    membership = Membership.objects.get(user=player, club=club)
+    return Character.objects.create(
+        club=club,
+        owner=membership,
+        name="Borin",
+        level=2,
+        char_class="Fighter",
+        species="Dwarf",
+    )
+
+
+@pytest.fixture
+def other_char(other_club, other_player):
+    membership = Membership.objects.create(user=other_player, club=other_club)
+    return Character.objects.create(
+        club=other_club,
+        owner=membership,
+        name="Other",
+        level=1,
+        char_class="Wizard",
+        species="Elf",
+    )
+
+
+@pytest.mark.story("S3")
+def test_character_preview_returns_json(login, club, player, aria):
+    client = login(player)
+    url = reverse("characters:preview", args=[club.slug, aria.pk])
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "Aria"
+    assert data["level"] == 3
+    assert data["class"] == "Ranger"
+    assert data["species"] == "Human"
+    assert "coins_available" in data
+    assert "junk_count" in data
+    assert "junk_value" in data
+    assert "downtime" in data
+    assert "open_trades" in data
+
+
+@pytest.mark.story("S3")
+def test_character_preview_other_players_character_404(login, club, player, other_char):
+    client = login(player)
+    url = reverse("characters:preview", args=[club.slug, other_char.pk])
+    response = client.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.story("S3")
+def test_character_preview_nonexistent_404(login, club, player):
+    client = login(player)
+    url = reverse("characters:preview", args=[club.slug, 9999])
+    response = client.get(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.story("S3")
+def test_character_preview_includes_open_trades(login, club, player, aria, borin):
+    # Create an open trade between aria and borin
+    Trade.objects.create(
+        club=club,
+        sender=aria,
+        receiver=borin,
+        status=Trade.Status.REQUESTED,
+    )
+    client = login(player)
+    url = reverse("characters:preview", args=[club.slug, aria.pk])
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["open_trades"] == 1
+
+
+@pytest.mark.story("S3")
+def test_character_preview_includes_downtime(login, club, player, aria):
+    from downtime.models import DowntimePointEntry
+    DowntimePointEntry.objects.create(
+        character=aria, delta=2, kind=DowntimePointEntry.Kind.AWARD, note="Test award"
+    )
+    client = login(player)
+    url = reverse("characters:preview", args=[club.slug, aria.pk])
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["downtime"] == 2
+
+
+@pytest.mark.story("S3")
+def test_character_preview_coins_available(login, club, player, aria):
+    from ledger.models import LedgerEntry
+    from ledger.services import Line, record
+    # Award some coins
+    record(
+        character=aria,
+        kind=LedgerEntry.Kind.AWARD,
+        lines=[Line(coins=5000)],  # 50 gp
+        note="Test award",
+    )
+    client = login(player)
+    url = reverse("characters:preview", args=[club.slug, aria.pk])
+    response = client.get(url)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["coins_available"] == "50 gp"
