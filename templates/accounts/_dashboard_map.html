@@ -1,0 +1,27 @@
+{% comment %}Map dashboard section{% endcomment %}
+<div class="wm-dashboard-section card wm-card-raised h-100">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="map" %}
+      Map
+    </h3>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for item in provider_context.map_items %}
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <a href="{{ item.url }}" class="text-decoration-none stretched-link d-flex align-items-center gap-2 flex-grow-1">
+          {% if item.icon %}{% include "components/icon.html" with name=item.icon class="text-muted" %}{% endif %}
+          <span>{{ item.label }}</span>
+          {% if item.subtext %}<small class="text-muted ms-2">{{ item.subtext }}</small>{% endif %}
+        </a>
+        {% if item.badge %}<span class="badge text-bg-secondary">{{ item.badge }}</span>{% endif %}
+      </li>
+      {% empty %}
+      <li class="list-group-item text-center py-4 text-muted small">
+        {{ empty_message|default:"No maps." }}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>

@@ -231,6 +231,8 @@ EXCLUDED = {
     "agent_access:batch_reverse": "POST only.",
     "agent_access:proposed_item_approve": "POST only.",
     "agent_access:proposed_item_reject": "POST only.",
+    "accounts:character_preview": "HTMX partial (JSON), not a page.",
+    "accounts:dashboard_partial": "HTMX partial, not a page.",
 }
 
 
