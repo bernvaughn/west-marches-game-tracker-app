@@ -37,4 +37,9 @@ urlpatterns = [
         name="player_consume",
     ),
     path("<int:pk>/items/<int:item_pk>/junk/", character_junk.junk, name="junk"),
+    path(
+        "<int:pk>/print-session-pack/",
+        character_print.print_session_pack,
+        name="print_session_pack",
+    ),
 ]

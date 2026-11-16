@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% load coins static %}
+{% block title %}Session Pack: {{ character.name }}{% endblock %}
+{% block main_class %}wm-card-print{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/print.css' %}">
+
+<div class="no-print">
+  {% with c=coins.owned|coins_text %}
+  {% with coins_sub="Coins: "|add:c %}
+  {% url "characters:detail" club.slug character.pk as sheet_url %}
+  {% include "components/page_header.html" with title=character.name subtitle=coins_sub back_url=sheet_url back_label="Back to sheet" %}
+  {% endwith %}
+  {% endwith %}
+</div>
+
+<div class="wm-toolbar no-print" role="toolbar" aria-label="Print actions">
+  <button class="btn btn-sm btn-primary wm-print-btn" type="button" onclick="window.print()">{% include "components/icon.html" with name="printer" %} Print</button>
+</div>
+
+<p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</div>
+
+<div class="no-print wm-print-options mb-3 p-3 border rounded bg-light">
+  <strong>Print Options:</strong>
+  <ul class="mb-0 mt-2">
+    <li>{% if include_sheet %}☑{% else %}☐{% endif %} Character Sheet</li>
+    <li>{% if include_items %}☑{% else %}☐{% endif %} Item Cards (all, grid)</li>
+    <li>{% if include_quests %}☑{% else %}☐{% endif %} Ready Quests</li>
+    <li>{% if include_map %}☑{% else %}☐{% endif %} Map</li>
+    <li>{% if include_trades %}☑{% else %}☐{% endif %} Open Trades</li>
+  </ul>
+  <p class="small text-muted mb-0">Adjust options in the dashboard modal before printing.</p>
+</div>
+
+{% if include_sheet %}
+<!-- Character Sheet Section -->
+<section class="wm-sheet wm-sheet--page" aria-labelledby="sheet-header">
+  <header class="wm-sheet-header" id="sheet-header">
+    <h1>{{ character.name }}</h1>
+    <p>
+      {% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %}
+      {% if character.char_class %} &middot; {{ character.char_class }}{% endif %}
+      {% if character.species %} &middot; {{ character.species }}{% endif %}
+      {% if character.pronouns %} &middot; {{ character.pronouns }}{% endif %}
+      {% if character.alignment %} &middot; {{ character.alignment }}{% endif %}
+    </p>
+    <p>Played by {{ owner }} &middot; {{ club.name }}</p>
+  </header>
+
+  <div class="wm-sheet-grid wm-sheet-layout">
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-coins" aria-labelledby="sheet-coins">
+      <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
+      <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+      {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
+      {% if coins.has_holds %}<p class="wm-sheet-note">In open trades: {{ coins.held|coins }} &middot; Available: {{ coins.available|coins }}</p>{% endif %}
+    </section>
+
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-abilities">
+      <h2 class="wm-sheet-box-title" id="sheet-abilities">Abilities</h2>
+      <ul class="wm-sheet-abilities">
+        {% for a in abilities %}
+        <li class="wm-sheet-ability">
+          <span class="wm-sheet-ability-abbr" title="{{ a.label }}">{{ a.abbr }}</span>
+          <span class="wm-sheet-ability-score">{{ a.score }}</span>
+          <span class="wm-sheet-ability-mod">{{ a.modifier }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="wm-sheet-box wm-sheet-half" aria-labelledby="sheet-combat">
+      <h2 class="wm-sheet-box-title" id="sheet-combat">Combat</h2>
+      <dl class="wm-sheet-stats">
+        <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Max HP</dt><dd>{% if character.max_hp is not None %}{{ character.max_hp }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Passive Perception</dt><dd>{{ passive_perception }}</dd>
+        <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
+      </dl>
+    </section>
+
+    <section class="wm-sheet-box wm-sheet-half" aria-labelledby="sheet-description">
+      <h2 class="wm-sheet-box-title" id="sheet-description">Description</h2>
+      {% if character.description %}{{ character.description|linebreaks }}
+      {% else %}<p class="wm-sheet-note">No description.</p>{% endif %}
+    </section>
+
+    {% if inv_rows %}
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-items">
+      <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
+      <div class="wm-table-scroll wm-sheet-inventory"><table class="table table-sm wm-data-table wm-sheet-table">
+        <thead><tr><th>Item</th><th class="num">Owned</th><th class="num">Available</th></tr></thead>
+        <tbody>
+        {% for r in inv_rows %}
+        <tr>
+          <td>{% include "items/_item_name.html" with item=r.item info=True %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
+          <td class="num">{{ r.owned }}</td>
+          <td class="num">{{ r.available }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+      <p class="wm-sheet-note">No items.</p>
+      {% endif %}
+    </section>
+  </div>
+</section>
+{% endif %}
+
+{% if include_items %}
+<!-- Item Cards Section -->
+{% if not too_many %}
+{% for sheet in item_sheets %}
+<section class="wm-card-sheet">
+{% for card in sheet %}{% include "player_characters/characters/_item_card.html" %}{% endfor %}
+</section>
+{% empty %}
+{% if not too_many %}{% include "components/empty_state.html" with text="No items." %}{% endif %}
+{% endfor %}
+{% else %}
+<div class="wm-too-many">
+  <p>Too many cards to print (limit: {{ card_cap }}). Select fewer items or use individual item print.</p>
+</div>
+{% endif %}
+{% endif %}
+
+{% if include_quests %}
+<!-- Ready Quests Section -->
+{% if ready_quests %}
+{% for quest in ready_quests %}
+{% include "quests/_notice.html" with quest=quest character=character stamp="ready" heading="h2" large=True hide_title=False %}
+<hr class="wm-pass-rule">
+{% endfor %}
+{% else %}
+<p class="wm-sheet-note">No quests ready to turn in.</p>
+{% endif %}
+{% endif %}
+
+{% if include_map and show_map %}
+<!-- Map Section (Placeholder) -->
+<section class="wm-map-print">
+  <h2>Map</h2>
+  <p class="wm-sheet-note">Map printing is not yet implemented in the session pack. Visit the map page to print.</p>
+</section>
+{% endif %}
+
+{% if include_trades %}
+<!-- Open Trades Section -->
+{% if open_trades %}
+{% for trade_data in open_trades %}
+<div class="wm-trade-print mb-3 p-3 border rounded">
+  <h3>Trade with {{ trade_data.other_character.name }} ({{ trade_data.status_display }})</h3>
+  <p>Status: {{ trade_data.side|capfirst }} side</p>
+  {% if trade_data.trade.note %}<p class="wm-sheet-note">Note: {{ trade_data.trade.note }}</p>{% endif %}
+  <table class="table table-sm wm-data-table">
+    <thead><tr><th>From {{ trade_data.other_character.name }}</th><th>From You</th></tr></thead>
+    <tbody>
+    {% for line in trade_data.trade.lines.all %}
+    <tr>
+      <td>{% if line.from_sender and trade_data.side == "receiver" or not line.from_sender and trade_data.side == "sender" %}
+        {% if line.item %}{{ line.quantity }} x {% include "items/_item_name.html" with item=line.item %}{% else %}{{ line.coins|coins }}{% endif %}
+      {% else %}&mdash;{% endif %}</td>
+      <td>{% if line.from_sender and trade_data.side == "sender" or not line.from_sender and trade_data.side == "receiver" %}
+        {% if line.item %}{{ line.quantity }} x {% include "items/_item_name.html" with item=line.item %}{% else %}{{ line.coins|coins }}{% endif %}
+      {% else %}&mdash;{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+<hr class="wm-pass-rule">
+{% endfor %}
+{% else %}
+<p class="wm-sheet-note">No open trades.</p>
+{% endif %}
+{% endif %}
+
+<footer class="wm-print-footer no-print mt-4 text-center text-muted small">
+  Session pack for {{ character.name }} &middot; {{ club.name }} &middot; Printed {{ printed_on|date:"Y-m-d" }}
+</footer>
+{% endblock %}

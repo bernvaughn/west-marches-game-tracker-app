@@ -1,0 +1,39 @@
+{% comment %}Print Session Pack Options Modal{% endcomment %}
+<div class="modal-header">
+  <h5 class="modal-title">{% include "components/icon.html" with name="printer" %} Print Session Pack</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<form hx-get="{% url 'characters:print_session_pack' club.slug character.pk %}" hx-target="_blank" hx-trigger="submit">
+  <div class="modal-body">
+    <p class="text-muted small mb-3">Choose what to include in your session pack:</p>
+    
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="sheet" id="opt-sheet" value="1" checked>
+      <label class="form-check-label" for="opt-sheet"><strong>Character Sheet</strong> &mdash; Abilities, combat stats, inventory table, description</label>
+    </div>
+    
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="items" id="opt-items" value="1" checked>
+      <label class="form-check-label" for="opt-items"><strong>Item Cards (all, grid)</strong> &mdash; 9 cards per sheet, one per item type</label>
+    </div>
+    
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="quests" id="opt-quests" value="1" checked>
+      <label class="form-check-label" for="opt-quests"><strong>Ready Quests</strong> &mdash; Quests you can turn in right now</label>
+    </div>
+    
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="map" id="opt-map" value="1">
+      <label class="form-check-label" for="opt-map"><strong>Map</strong> &mdash; Current map view with locations (not yet implemented)</label>
+    </div>
+    
+    <div class="form-check form-switch mb-2">
+      <input class="form-check-input" type="checkbox" name="trades" id="opt-trades" value="1">
+      <label class="form-check-label" for="opt-trades"><strong>Open Trades</strong> &mdash; Your pending trade offers and details</label>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+    <button type="submit" class="btn btn-primary" onclick="this.form.target='_blank';">{% include "components/icon.html" with name="printer" %} Open Print Preview</button>
+  </div>
+</form>

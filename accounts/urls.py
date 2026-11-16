@@ -16,6 +16,11 @@ urlpatterns = [
         dashboard.character_preview,
         name="character_preview",
     ),
+    path(
+        "characters/<int:pk>/print-session-pack-modal/",
+        dashboard.print_session_pack_modal,
+        name="print_session_pack_modal",
+    ),
     path("whitelist/", people.whitelist, name="whitelist"),
     path(
         "members/<int:membership_id>/reset-password/",
