@@ -131,9 +131,9 @@ def bulk_award(request, club_slug):
             prefix = f"items_{character.pk}"
             total_forms = int(request.POST.get(f"{prefix}-TOTAL_FORMS", 0) or 0)
             for i in range(total_forms):
-                item_key = f"{prefix}-{i}-item"
+                item_id_key = f"{prefix}-{i}-item_id"
                 qty_key = f"{prefix}-{i}-quantity"
-                item_id = request.POST.get(item_key)
+                item_id = request.POST.get(item_id_key)
                 qty = request.POST.get(qty_key)
                 if item_id and qty:
                     try:

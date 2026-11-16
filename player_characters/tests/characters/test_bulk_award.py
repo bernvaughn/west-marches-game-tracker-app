@@ -30,7 +30,7 @@ def bulk_payload(characters, items, coins=None, note="Party loot", date="2025-01
         data[f"{prefix}-MIN_NUM_FORMS"] = "0"
         data[f"{prefix}-MAX_NUM_FORMS"] = "3"
         for i, (item, qty) in enumerate(item_lines):
-            data[f"{prefix}-{i}-item"] = str(item.pk)
+            data[f"{prefix}-{i}-item_id"] = str(item.pk)
             data[f"{prefix}-{i}-quantity"] = str(qty)
     return data
 
