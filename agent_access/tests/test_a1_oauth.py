@@ -21,7 +21,10 @@ CHALLENGE = (
 )
 
 
-def register(auth_method="none", **extra):
+def register(user, auth_method="none", **extra):
+    """Register an OAuth client as the given authenticated user."""
+    client = Client()
+    client.force_login(user)
     body = {
         "client_name": "Test <b>agent</b>",
         "redirect_uris": [REDIRECT],
@@ -29,7 +32,7 @@ def register(auth_method="none", **extra):
         "grant_types": ["authorization_code", "refresh_token"],
         **extra,
     }
-    return Client().post("/oauth/register/", json.dumps(body), content_type="application/json")
+    return client.post("/oauth/register/", json.dumps(body), content_type="application/json")
 
 
 def authorize_params(client_id, **extra):
@@ -79,8 +82,8 @@ def exchange(client_id, code, verifier=VERIFIER):
 
 
 @pytest.fixture
-def client_id():
-    return register().json()["client_id"]
+def client_id(game_master):
+    return register(game_master).json()["client_id"]
 
 
 @pytest.fixture
@@ -110,13 +113,13 @@ def test_discovery_documents(db):
     assert "mcp" in prm["scopes_supported"]
 
 
-def test_registers_public_client_only(db):
-    response = register()
+def test_registers_public_client_only(game_master):
+    response = register(game_master)
     assert response.status_code == 201
     body = response.json()
     assert body["client_id"] and "client_secret" not in body
-    assert register("client_secret_basic").status_code == 400
-    assert register(grant_types=["client_credentials"]).status_code == 400
+    assert register(game_master, "client_secret_basic").status_code == 400
+    assert register(game_master, grant_types=["client_credentials"]).status_code == 400
 
 
 def test_full_flow_reaches_mcp(gm_client, client_id, club, game_master, mcp):
@@ -179,8 +182,8 @@ def test_expired_token_gets_401(gm_client, client_id, club, mcp):
     assert mcp(token, "whoami")[0] == 401
 
 
-def test_registration_token_refused_on_mcp(db, mcp):
-    registration = register().json()["registration_access_token"]
+def test_registration_token_refused_on_mcp(game_master, mcp):
+    registration = register(game_master).json()["registration_access_token"]
     assert mcp(registration, "whoami")[0] == 401
 
 
@@ -257,3 +260,53 @@ def test_consent_post_with_unknown_client_is_refused(gm_client, client_id, club)
     response = gm_client.post(url, data)
     assert response.status_code == 400
     assert not AgentConnection.objects.filter(kind="oauth").exists()
+
+
+def test_unauthenticated_registration_returns_401(db):
+    """Unauthenticated users cannot register OAuth clients."""
+    client = Client()
+    body = {
+        "client_name": "Test Agent",
+        "redirect_uris": [REDIRECT],
+        "token_endpoint_auth_method": "none",
+        "grant_types": ["authorization_code", "refresh_token"],
+    }
+    response = client.post("/oauth/register/", json.dumps(body), content_type="application/json")
+    # OAuth2 DCR returns 401 for access denied (per RFC 7591 and oauth2_provider)
+    assert response.status_code == 401
+
+
+def test_authenticated_non_admin_rejected(player, club):
+    """Regular players (not club admin/GM) cannot register OAuth clients."""
+    response = register(player)
+    # OAuth2 DCR returns 401 for access denied (per RFC 7591 and oauth2_provider)
+    assert response.status_code == 401
+
+
+def test_club_admin_can_register(club_admin, club):
+    """Club admins can register OAuth clients."""
+    response = register(club_admin)
+    assert response.status_code == 201
+    body = response.json()
+    assert body["client_id"] and "client_secret" not in body
+
+
+def test_game_master_can_register(game_master):
+    """Game masters can register OAuth clients."""
+    response = register(game_master)
+    assert response.status_code == 201
+    body = response.json()
+    assert body["client_id"] and "client_secret" not in body
+
+
+def test_superuser_can_register(site_admin):
+    """Superusers can register OAuth clients (they have access to all clubs)."""
+    # Superuser needs to be a club admin or GM in at least one club
+    # Let's make them a club admin
+    from accounts.models import Club, Membership
+    club = Club.objects.create(name="Admin Club", slug="admin-club")
+    Membership.objects.create(user=site_admin, club=club, is_club_admin=True)
+    response = register(site_admin)
+    assert response.status_code == 201
+    body = response.json()
+    assert body["client_id"] and "client_secret" not in body
