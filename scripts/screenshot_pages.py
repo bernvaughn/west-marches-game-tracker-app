@@ -237,6 +237,7 @@ EXCLUDED = {
     "accounts:quick_action_buy_potions": "HTMX partial endpoint for buy potions modal.",
     "accounts:character_preview": "HTMX partial (JSON), not a page.",
     "accounts:dashboard_partial": "HTMX partial, not a page.",
+    "accounts:dashboard_downtime_spend": "HTMX partial endpoint for downtime spend wheel modal.",
 }
 
 
