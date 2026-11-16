@@ -11,7 +11,7 @@ from oauth2_provider.www_authenticate import build_bearer_challenge
 
 from agent_access.mcp.server import mcp_view
 
-from .forms import ConsentForm
+from .forms import ConsentForm, validate_redirect_uris
 from .tokens import create_connection, prepare_approval
 
 RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource/mcp"
@@ -92,6 +92,15 @@ class PublicClientRegistrationView(DynamicClientRegistrationView):
             "refresh_token",
         }:
             return _bad_metadata("grant_types must be authorization_code and refresh_token only.")
+        
+        # Validate redirect URIs
+        redirect_uris = data.get("redirect_uris", [])
+        if not isinstance(redirect_uris, list):
+            return _bad_metadata("redirect_uris must be an array.")
+        redirect_errors = validate_redirect_uris(redirect_uris)
+        if redirect_errors:
+            return _bad_metadata("; ".join(redirect_errors))
+        
         return super().post(request, *args, **kwargs)
 
 
