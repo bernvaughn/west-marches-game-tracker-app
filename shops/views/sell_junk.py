@@ -14,6 +14,7 @@ from quests.services import needed_by_open_quests
 from shops.models import Shop, ShopStock
 from shops.selling import sell_many
 from shops.services import ShopError, is_open, percent_price
+from shops.views.browse import add_recent_shop
 
 NONE_TICKED = "Tick at least one item."
 
@@ -92,6 +93,7 @@ def sell_junk(request, club_slug, shop_id):
                     line.coins for entry in entries for line in entry.lines.all() if line.coins
                 )
                 messages.success(request, f"Sold junk to {shop} for {format_coins(total)}.")
+                add_recent_shop(request, shop.pk)
                 shop_url = reverse("shops:detail", args=[club_slug, shop.pk])
                 if is_htmx(request):
                     # A full reload shows the "Sold junk" message with the total.

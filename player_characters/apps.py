@@ -21,6 +21,7 @@ class PlayerCharactersConfig(AppConfig):
         )
         reg("character", "Character directory", "characters:directory", None, 15)
         reg("gm", "All characters", "characters:index", is_gm_or_admin, 60)
+        reg("gm", "Award Loot to Party", "characters:bulk_award", is_gm_or_admin, 65)
         reg(
             "trades",
             "My trades",

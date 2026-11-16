@@ -240,6 +240,8 @@ EXCLUDED = {
     "accounts:dashboard_downtime_spend": "HTMX partial endpoint for downtime spend wheel modal.",
     "accounts:dashboard_quest_turnin": "HTMX partial endpoint for quest turn-in modal.",
     "accounts:consumable_consume_partial": "HTMX partial endpoint for consumable confirm modal.",
+    "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
+    "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
 }
 
 

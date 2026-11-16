@@ -33,7 +33,7 @@
 /* Signs sit below the building at every width (U77; replaces U54's wide-screen layout). */
 .wm-street-sign {
   position: static; margin: var(--wm-space-1) 0; padding: .125rem 1px; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 0; overflow: visible;
+  align-items: center; justify-content: center; gap: var(--wm-space-1); overflow: visible;
   background: var(--wm-shop-tint); color: var(--wm-text); border: 2px solid var(--wm-shop-edge);
   border-radius: var(--wm-radius-sm); font-size: var(--wm-text-sm); line-height: 1.1; text-align: center;
 }
@@ -52,6 +52,27 @@
   .wm-street-lot::after, .wm-building { display: none; }
   .wm-street-link { padding: 0; }
   .wm-street-sign { position: static; display: inline; border: 0; background: none; }
+}
+
+/* ---- Shop tabs (S11) ---- */
+.wm-shop-tabs {
+  display: flex; gap: var(--wm-space-2); margin-bottom: var(--wm-space-4); flex-wrap: wrap;
+}
+.wm-shop-tab {
+  display: inline-flex; align-items: center; padding: var(--wm-space-1) var(--wm-space-3);
+  background: var(--wm-neutral-bg); color: var(--wm-text); border: 1px solid var(--wm-border);
+  border-radius: var(--wm-radius-sm); font-size: var(--wm-text-sm); font-weight: 500;
+  text-decoration: none; transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.wm-shop-tab:hover { background: var(--wm-hover-bg); border-color: var(--wm-border-strong); text-decoration: none; }
+.wm-shop-tab.active {
+  background: var(--wm-primary); color: var(--wm-on-primary); border-color: var(--wm-primary);
+}
+.wm-shop-tab:focus-visible { outline: var(--wm-focus-outline); outline-offset: 2px; }
+
+/* ---- Recent badge (S11) ---- */
+.wm-recent-badge {
+  font-size: var(--wm-text-xs); padding: 1px var(--wm-space-2); white-space: nowrap;
 }
 
 /* U84 S4: shop customer pages */

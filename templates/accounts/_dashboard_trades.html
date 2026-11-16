@@ -1,28 +1,46 @@
-{% comment %}Trades dashboard section{% endcomment %}
-<div class="wm-dashboard-section card wm-card-raised h-100">
+{% comment %}Trades dashboard section with status badges and Act Now buttons{% endcomment %}
+<div id="dashboard-trades" class="wm-dashboard-section card wm-card-raised h-100"
+     hx-get="{% url 'accounts:dashboard_partial' club.slug 'trades' %}"
+     hx-trigger="every 10s"
+     hx-swap="outerHTML">
   <div class="card-header d-flex align-items-center justify-content-between py-2">
     <h3 class="h6 mb-0 d-flex align-items-center gap-2">
       {% include "components/icon.html" with name="arrow-left-right" %}
-      Trades
+      My Trades
     </h3>
-    {% if provider_context.open_trades|length > 0 %}
-    <span class="badge text-bg-primary badge-pill">{{ provider_context.open_trades|length }}</span>
+    {% if provider_context.open_trades_data|length > 0 %}
+    <span class="badge text-bg-primary badge-pill">{{ provider_context.open_trades_data|length }}</span>
     {% endif %}
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">
-      {% for item in provider_context.trade_items %}
-      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
-        <a href="{{ item.url }}" class="text-decoration-none stretched-link d-flex align-items-center gap-2 flex-grow-1">
-          {% if item.icon %}{% include "components/icon.html" with name=item.icon class="text-muted" %}{% endif %}
-          <span>{{ item.label }}</span>
-          {% if item.subtext %}<small class="text-muted ms-2">{{ item.subtext }}</small>{% endif %}
-        </a>
-        {% if item.badge %}<span class="badge text-bg-secondary">{{ item.badge }}</span>{% endif %}
+      {% for trade_data in provider_context.open_trades_data %}
+      <li class="list-group-item px-3 py-2">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+          <div class="d-flex align-items-center gap-2 flex-grow-1 min-width-0">
+            {% include "components/icon.html" with name="arrow-left-right" class="text-muted" %}
+            <div>
+              <div class="fw-medium">Trade with {{ trade_data.other_character.name }}</div>
+              <div class="text-muted small wm-trade-status-text">{{ trade_data.status_text }}</div>
+            </div>
+          </div>
+          {% if trade_data.action_url and trade_data.action_label %}
+          <div class="d-flex gap-2 flex-shrink-0">
+            {% if trade_data.action_method == "post" %}
+            <form method="post" action="{{ trade_data.action_url }}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-primary">{{ trade_data.action_label }}</button>
+            </form>
+            {% else %}
+            <a href="{{ trade_data.action_url }}" class="btn btn-sm btn-primary">{{ trade_data.action_label }}</a>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
       </li>
       {% empty %}
       <li class="list-group-item text-center py-4 text-muted small">
-        {{ empty_message|default:"No trades." }}
+        No open trades.
       </li>
       {% endfor %}
     </ul>
