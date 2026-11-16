@@ -208,5 +208,9 @@ OAUTH2_PROVIDER = {
         "agent_access.oauth.permissions.ClubAdminOrGameMasterDCRPermission",
     ),
     "OAUTH2_PROTECTED_RESOURCE_NAME": f"{APP_NAME} MCP",
+    # Redirect URI validation
+    "ALLOW_URI_WILDCARDS": False,
+    "ALLOW_LOCALHOST_LOOPBACK": DEBUG,
+    "ALLOWED_REDIRECT_URI_SCHEMES": ["https"] if not DEBUG else ["http", "https"],
 }
 OAUTH2_PROVIDER_APPLICATION_MODEL = "oauth2_provider.Application"
