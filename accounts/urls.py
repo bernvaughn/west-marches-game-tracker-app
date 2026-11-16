@@ -1,6 +1,14 @@
 from django.urls import path
 
-from .views import dashboard, dashboard_downtime, dashboard_quests, dashboard_quick_actions, inbox, passwords, people
+from .views import (
+    dashboard,
+    dashboard_downtime,
+    dashboard_quests,
+    dashboard_quick_actions,
+    inbox,
+    passwords,
+    people,
+)
 
 app_name = "accounts"
 urlpatterns = [

@@ -56,15 +56,15 @@ class AccountsConfig(AppConfig):
             ConsumablesProvider,
             MapDashboardProvider,
             MessagesProvider,
-            PlayerShopProvider,
             QuestsProvider,
             TradesProvider,
         )
+        from .views.dashboard_shop import PlayerShopDashboardProvider
 
         register_provider(TradesProvider())
         register_provider(QuestsProvider())
         register_provider(DowntimeDashboardProvider())
         register_provider(MapDashboardProvider())
         register_provider(MessagesProvider())
-        register_provider(PlayerShopProvider())
+        register_provider(PlayerShopDashboardProvider())
         register_provider(ConsumablesProvider())
