@@ -13,10 +13,10 @@
       <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
         <div class="d-flex align-items-center gap-2 flex-grow-1">
           {% include "components/icon.html" with name="box" class="text-muted" %}
-          <div>
-            <div class="fw-medium">{{ provider_context.listed_count }} item{{ provider_context.listed_count|pluralize }} listed</div>
+          <div class="fw-medium">
+            {{ provider_context.listed_count }} item{{ provider_context.listed_count|pluralize }} listed
             {% if provider_context.recent_sales > 0 %}
-            <small class="text-muted">{{ provider_context.recent_sales }} sale{{ provider_context.recent_sales|pluralize }} today</small>
+            &middot; {{ provider_context.recent_sales }} sale{{ provider_context.recent_sales|pluralize }} today
             {% endif %}
           </div>
         </div>

@@ -274,39 +274,6 @@ class MessagesProvider:
 
 
 @dataclass
-class PlayerShopProvider:
-    """Player shop status (conditional)."""
-
-    key: str = "player_shop"
-    order: int = 7
-    template: str = "accounts/_dashboard_player_shop.html"
-
-    def get_context(self, request, club, character, membership):
-        from player_characters.player_shop import listed_rows
-
-        # Only show if character has shop_open = True
-        if not character.shop_open:
-            return {"shop_open": False}
-
-        # Count listed items
-        listed = listed_rows(character)
-        listed_count = len(listed)
-
-        # TODO: Add recent sales count when sales tracking is available
-        recent_sales = 0
-
-        return {
-            "shop_open": True,
-            "listed_count": listed_count,
-            "recent_sales": recent_sales,
-            "manage_url": reverse("shops:player_shop", args=[club.slug, character.pk]),
-        }
-
-    def should_show(self, request, club, character, membership):
-        return character.shop_open
-
-
-@dataclass
 class ConsumablesProvider:
     """Quick consume for known consumable items (conditional)."""
 
