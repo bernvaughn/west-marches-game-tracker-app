@@ -1,15 +1,23 @@
-## plan
-- [x] Implementation plan written and stored in task plan field
-
 ## code
-- [ ] "My Trades" section on dashboard (provider order 2)
-- [ ] Lists each open trade with: other character, status badge, primary action button
-- [ ] Status badges match U78 wording: "Waiting for X to accept", "Both can change. Approve when ready", etc.
-- [ ] "Act Now" button links to correct page: `trades:detail` (accepted) or `trades:edit_side` (propose)
-- [ ] HTMX poll refreshes widget every 10s (`hx-trigger="every 10s"`)
-- [ ] Only shows for player with open trades
+- [ ] Login: 5 attempts per minute per IP
+- [ ] Password change: 3 attempts per hour per user
+- [ ] Password reset: 3 attempts per hour per user
+- [ ] OAuth token endpoint: 10 requests per minute per IP
+- [ ] MCP endpoints: 60 requests per minute per connection
+- [ ] Rate limits configurable via settings
+
+## review
+- [ ] Code follows project conventions and style
+- [ ] Rate limit logic is correct and handles edge cases
+- [ ] Configuration via environment variables works correctly
+- [ ] No performance regression on non-rate-limited endpoints
 
 ## verify
-- [ ] Ruff clean
-- [ ] Unit tests pass
-- [ ] Browser tests pass
+- [ ] Login rate limit enforced (5/min per IP) - test with multiple rapid requests
+- [ ] Password change rate limit enforced (3/hour per user) - test with multiple rapid requests
+- [ ] Password reset rate limit enforced (3/hour per user) - test with multiple rapid requests
+- [ ] OAuth token endpoint rate limit enforced (10/min per IP) - test with multiple rapid requests
+- [ ] MCP endpoint rate limit enforced (60/min per connection) - test with multiple rapid requests
+- [ ] Rate limit headers present in responses (Retry-After, X-RateLimit-Limit, X-RateLimit-Remaining)
+- [ ] Rate limits configurable via environment variables
+- [ ] Cache backend works correctly (Redis in production, LocMem in dev)

@@ -147,6 +147,43 @@ STORAGES = {
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Cache configuration
+# Production: Redis, Development: LocMemCache, Tests: DummyCache (in test_settings.py)
+CACHES = {
+    "default": {
+        "BACKEND": os.environ.get(
+            "DJANGO_CACHE_BACKEND",
+            "django.core.cache.backends.locmem.LocMemCache",
+        ),
+        "LOCATION": os.environ.get("DJANGO_CACHE_LOCATION", "default"),
+        "OPTIONS": {
+            "MAX_ENTRIES": 10000,
+        },
+    }
+}
+
+if not DEBUG:
+    # In production, use Redis if configured
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        CACHES["default"] = {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": redis_url,
+            "OPTIONS": {
+                "MAX_ENTRIES": 10000,
+            },
+        }
+
+# Rate limiting configuration (configurable via environment variables)
+RATELIMIT_LOGIN_ATTEMPTS = int(os.environ.get("RATELIMIT_LOGIN_ATTEMPTS", "5"))
+RATELIMIT_LOGIN_WINDOW = int(os.environ.get("RATELIMIT_LOGIN_WINDOW", "60"))  # seconds
+RATELIMIT_PASSWORD_ATTEMPTS = int(os.environ.get("RATELIMIT_PASSWORD_ATTEMPTS", "3"))
+RATELIMIT_PASSWORD_WINDOW = int(os.environ.get("RATELIMIT_PASSWORD_WINDOW", "3600"))  # seconds
+RATELIMIT_OAUTH_TOKEN_ATTEMPTS = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_ATTEMPTS", "10"))
+RATELIMIT_OAUTH_TOKEN_WINDOW = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_WINDOW", "60"))  # seconds
+RATELIMIT_MCP_ATTEMPTS = int(os.environ.get("RATELIMIT_MCP_ATTEMPTS", "60"))
+RATELIMIT_MCP_WINDOW = int(os.environ.get("RATELIMIT_MCP_WINDOW", "60"))  # seconds
+
 # HTTPS / SSL
 SECURE_SSL_REDIRECT = os.environ.get(
     "DJANGO_SECURE_SSL_REDIRECT", "1"
