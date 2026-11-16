@@ -10,7 +10,6 @@ The feature works correctly as verified by:
 
 import pytest
 
-
 DEMO_CLUB_SLUG = "demo"
 DEMO_PLAYER_EMAIL = "alice@example.com"
 DEMO_PASSWORD = "demo-password"
@@ -206,7 +205,9 @@ def test_my_shops_filter_sell_flow(live_server):
 
 # Skipped due to flaky HTMX form submission interaction in test environment.
 # The feature works correctly as verified by the two passing tests above and unit tests.
-@pytest.mark.skip(reason="Flaky HTMX form submission in test environment; feature verified by other tests")
+@pytest.mark.skip(
+    reason="Flaky HTMX form submission in test environment; feature verified by other tests"
+)
 @pytest.mark.browser
 @pytest.mark.django_db
 def test_recent_badge_on_all_shops_tab(live_server):
