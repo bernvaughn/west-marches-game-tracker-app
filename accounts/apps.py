@@ -54,7 +54,7 @@ class AccountsConfig(AppConfig):
         # Register built-in dashboard providers
         from .views.dashboard import (
             ConsumablesProvider,
-            MapProvider,
+            MapDashboardProvider,
             MessagesProvider,
             PlayerShopProvider,
             QuestsProvider,
@@ -64,7 +64,7 @@ class AccountsConfig(AppConfig):
         register_provider(TradesProvider())
         register_provider(QuestsProvider())
         register_provider(DowntimeDashboardProvider())
-        register_provider(MapProvider())
+        register_provider(MapDashboardProvider())
         register_provider(MessagesProvider())
         register_provider(PlayerShopProvider())
         register_provider(ConsumablesProvider())
