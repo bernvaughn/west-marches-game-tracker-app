@@ -1,0 +1,30 @@
+{% comment %}Consumables dashboard section{% endcomment %}
+{% if provider_context.consumable_items %}
+<div class="wm-dashboard-section card wm-card-raised h-100">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="droplet" %}
+      Consumables
+    </h3>
+    <span class="badge text-bg-info badge-pill">{{ provider_context.consumable_items|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for c in provider_context.consumable_items %}
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="droplet" class="text-muted" %}
+          <div>
+            <div class="fw-medium">{{ c.item.name }} ({{ c.quantity }})</div>
+            <small class="text-muted">
+              {% if c.item.uses %}Uses: {{ c.item.uses }}{% else %}Consumable{% endif %}
+            </small>
+          </div>
+        </div>
+        <a href="{{ c.consume_url }}" class="btn btn-sm btn-outline-primary">Consume</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}

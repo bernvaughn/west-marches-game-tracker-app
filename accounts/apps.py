@@ -46,3 +46,22 @@ class AccountsConfig(AppConfig):
         reg("admin", "Members", "accounts:index", is_admin, 10)
         reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20)
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)
+
+        # Register built-in dashboard providers
+        from .views.dashboard import (
+            ConsumablesProvider,
+            DowntimeProvider,
+            MapProvider,
+            MessagesProvider,
+            PlayerShopProvider,
+            QuestsProvider,
+            TradesProvider,
+        )
+
+        register_provider(TradesProvider())
+        register_provider(QuestsProvider())
+        register_provider(DowntimeProvider())
+        register_provider(MapProvider())
+        register_provider(MessagesProvider())
+        register_provider(PlayerShopProvider())
+        register_provider(ConsumablesProvider())

@@ -1,7 +1,8 @@
-"""Dashboard context providers for extensible dashboard sections."""
+"""Dashboard provider system for extensible dashboard widgets."""
 
 from typing import Protocol
 
+from django.http import HttpRequest
 from django.utils import timezone
 
 from items.magic_types import MagicType
@@ -17,31 +18,32 @@ class DashboardProvider(Protocol):
     order: int
     template: str
 
-    def get_context(self, request, club, character, membership) -> dict:
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         """Return context for this provider's template."""
         ...
 
-    def should_show(self, request, club, character, membership) -> bool:
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         """Whether to render this provider for the current user."""
         return True
 
 
 class QuickActionsProvider:
-    """Provides 'Quick Actions' section: Sell Junk and Buy Potions buttons."""
+    """Provides 'Quick Actions' section: Sell Junk and Buy Potions buttons with HTMX modals."""
 
     key = "quick_actions"
     order = 1
     template = "accounts/_dashboard_quick_actions.html"
 
-    def get_context(self, request, club, character, membership) -> dict:
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         has_junk = len(junk_rows(character)) > 0
         has_potions = self._has_healing_potions(club)
         return {
             "has_junk": has_junk,
             "has_potions": has_potions,
+            "junk_count": len(junk_rows(character)) if has_junk else 0,
         }
 
-    def should_show(self, request, club, character, membership) -> bool:
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         ctx = self.get_context(request, club, character, membership)
         return ctx["has_junk"] or ctx["has_potions"]
 
@@ -58,15 +60,19 @@ class QuickActionsProvider:
         ).exists()
 
 
-# Registry for dashboard providers
-_dashboard_providers: list[DashboardProvider] = []
+_providers: dict[str, DashboardProvider] = {}
 
 
 def register_provider(provider: DashboardProvider) -> None:
     """Register a dashboard provider."""
-    _dashboard_providers.append(provider)
+    _providers[provider.key] = provider
 
 
 def get_providers() -> list[DashboardProvider]:
     """Get all registered providers sorted by order."""
-    return sorted(_dashboard_providers, key=lambda p: p.order)
+    return sorted(_providers.values(), key=lambda p: p.order)
+
+
+def get_provider(key: str) -> DashboardProvider | None:
+    """Get a specific provider by key."""
+    return _providers.get(key)

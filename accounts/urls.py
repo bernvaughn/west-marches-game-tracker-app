@@ -16,6 +16,16 @@ urlpatterns = [
         dashboard_quick_actions.quick_action_buy_potions,
         name="quick_action_buy_potions",
     ),
+    path(
+        "dashboard/partial/<str:provider_key>/",
+        dashboard.dashboard_partial,
+        name="dashboard_partial",
+    ),
+    path(
+        "characters/<int:pk>/preview/",
+        dashboard.character_preview,
+        name="character_preview",
+    ),
     path("whitelist/", people.whitelist, name="whitelist"),
     path(
         "members/<int:membership_id>/reset-password/",
