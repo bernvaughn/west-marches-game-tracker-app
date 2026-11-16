@@ -82,4 +82,9 @@ urlpatterns = [
         {"kind": "map"},
         name="message_give_map",
     ),
+    path(
+        "messages/<int:pk>/",
+        inbox.message_detail,
+        name="message_detail",
+    ),
 ]

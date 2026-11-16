@@ -59,6 +59,7 @@ class AccountsConfig(AppConfig):
             QuestsProvider,
             TradesProvider,
         )
+        from .views.dashboard_messages import MessagesDashboardProvider
         from .views.dashboard_shop import PlayerShopDashboardProvider
 
         register_provider(TradesProvider())
@@ -67,4 +68,5 @@ class AccountsConfig(AppConfig):
         register_provider(MapDashboardProvider())
         register_provider(MessagesProvider())
         register_provider(PlayerShopDashboardProvider())
+        register_provider(MessagesDashboardProvider())
         register_provider(ConsumablesProvider())

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load accounts_tags coins %}
+
+{% block content %}
+<div class="container py-4">
+  <nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'accounts:player_dashboard' club.slug %}">Dashboard</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'accounts:message_new' club.slug %}">Message Admins</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Message #{{ msg.pk }}</li>
+    </ol>
+  </nav>
+
+  <div class="card wm-card-raised">
+    <div class="card-header d-flex align-items-center justify-content-between">
+      <h2 class="h5 mb-0">Message #{{ msg.pk }}</h2>
+      <span class="badge {% if msg.status == 'open' %}text-bg-warning{% elif msg.status == 'handled' %}text-bg-success{% elif msg.status == 'closed' %}text-bg-secondary{% else %}text-bg-light{% endif %}">
+        {{ msg.get_status_display }}
+      </span>
+    </div>
+    <div class="card-body">
+      <dl class="row mb-4">
+        <dt class="col-sm-2">Sent</dt>
+        <dd class="col-sm-10">{{ msg.created|date:"M d, Y H:i" }}</dd>
+
+        <dt class="col-sm-2">From</dt>
+        <dd class="col-sm-10">
+          {{ msg.sender.user.display_name|default:msg.sender.user.email }}
+          {% if msg.character %} ({{ msg.character.name }}){% endif %}
+        </dd>
+
+        <dt class="col-sm-2">Type</dt>
+        <dd class="col-sm-10">{{ msg.get_kind_display }}</dd>
+      </dl>
+
+      <hr>
+
+      <h5 class="mb-3">Your Message</h5>
+      <div class="p-3 bg-light rounded">
+        {{ msg.body|linebreaks }}
+      </div>
+
+      {% if msg.status in "handled closed" or msg.granted_entries.exists or msg.granted_visits.exists or msg.granted_credits.exists or msg.granted_found_marks.exists %}
+      <hr>
+      <h5 class="mb-3">Admin Response</h5>
+
+      {% if msg.granted_entries.exists %}
+        <h6 class="mt-3">Items & Coins Granted</h6>
+        <ul class="list-group mb-3">
+          {% for entry in msg.granted_entries.all %}
+            <li class="list-group-item">
+              <strong>{{ entry.character.name }}</strong>
+              {% if entry.coins %}
+                <span class="text-success ms-2">{{ entry.coins|coins_text }}</span>
+              {% endif %}
+              {% for line in entry.lines.all %}
+                <div class="ms-4">{{ line.item.name }} × {{ line.quantity }}</div>
+              {% endfor %}
+              {% if entry.note %}
+                <div class="text-muted small mt-1">{{ entry.note }}</div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if msg.granted_visits.exists %}
+        <h6 class="mt-3">Map Visits Granted</h6>
+        <ul class="list-group mb-3">
+          {% for visit in msg.granted_visits.all %}
+            <li class="list-group-item">
+              <strong>{{ visit.character.name }}</strong> —
+              {{ visit.map.name }} ({{ visit.q }}, {{ visit.r }})
+              {% if visit.date %}<small class="text-muted ms-2">on {{ visit.date }}</small>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if msg.granted_credits.exists %}
+        <h6 class="mt-3">Map Credits Granted</h6>
+        <ul class="list-group mb-3">
+          {% for credit in msg.granted_credits.all %}
+            <li class="list-group-item">
+              <strong>{{ credit.character.name }}</strong> —
+              {{ credit.credit.location.name }} ({{ credit.credit.get_kind_display }})
+              {% if credit.date %}<small class="text-muted ms-2">on {{ credit.date }}</small>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if msg.granted_found_marks.exists %}
+        <h6 class="mt-3">Map Discoveries Granted</h6>
+        <ul class="list-group mb-3">
+          {% for mark in msg.granted_found_marks.all %}
+            <li class="list-group-item">
+              <strong>{{ mark.character.name }}</strong> —
+              {{ mark.location.name }} ({{ mark.location.tile.map.name }} {{ mark.location.tile.q }}, {{ mark.location.tile.r }})
+              {% if mark.date %}<small class="text-muted ms-2">on {{ mark.date }}</small>{% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if not msg.granted_entries.exists and not msg.granted_visits.exists and not msg.granted_credits.exists and not msg.granted_found_marks.exists %}
+        <div class="text-muted fst-italic">
+          This message was marked as {{ msg.get_status_display|lower }} by an admin without additional grants.
+        </div>
+      {% endif %}
+      {% endif %}
+    </div>
+    <div class="card-footer">
+      <a href="{% url 'accounts:player_dashboard' club.slug %}" class="btn btn-outline-secondary">
+        {% include "components/icon.html" with name="arrow-left" class="me-1" %}
+        Back to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
