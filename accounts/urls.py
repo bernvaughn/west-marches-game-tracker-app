@@ -6,6 +6,16 @@ app_name = "accounts"
 urlpatterns = [
     path("", people.member_list, name="index"),
     path("dashboard/", dashboard.player_dashboard, name="player_dashboard"),
+    path(
+        "dashboard/partial/<str:provider_key>/",
+        dashboard.dashboard_partial,
+        name="dashboard_partial",
+    ),
+    path(
+        "characters/<int:pk>/preview/",
+        dashboard.character_preview,
+        name="character_preview",
+    ),
     path("whitelist/", people.whitelist, name="whitelist"),
     path(
         "members/<int:membership_id>/reset-password/",

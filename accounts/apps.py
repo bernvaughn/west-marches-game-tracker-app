@@ -34,6 +34,7 @@ class AccountsConfig(AppConfig):
     def ready(self):
         from . import approvals, navigation
         from .approval_providers import open_messages, open_trades_needing_action
+        from .dashboard_providers import register_provider
 
         approvals.register(open_messages)
         approvals.register(open_trades_needing_action)
@@ -44,3 +45,24 @@ class AccountsConfig(AppConfig):
         reg("admin", "Members", "accounts:index", is_admin, 10)
         reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20)
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)
+
+        # Register built-in dashboard providers
+        from .views.dashboard import (
+            ConsumablesProvider,
+            DowntimeProvider,
+            MapProvider,
+            MessagesProvider,
+            PlayerShopProvider,
+            QuestsProvider,
+            QuickActionsProvider,
+            TradesProvider,
+        )
+
+        register_provider(QuickActionsProvider())
+        register_provider(TradesProvider())
+        register_provider(QuestsProvider())
+        register_provider(DowntimeProvider())
+        register_provider(MapProvider())
+        register_provider(MessagesProvider())
+        register_provider(PlayerShopProvider())
+        register_provider(ConsumablesProvider())

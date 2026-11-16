@@ -1,0 +1,28 @@
+{% comment %}Player Shop dashboard section{% endcomment %}
+{% if provider_context.shop_open %}
+<div class="wm-dashboard-section card wm-card-raised h-100">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="shop" %}
+      Your Stall
+    </h3>
+    <span class="badge text-bg-success badge-pill">Open</span>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="box" class="text-muted" %}
+          <div>
+            <div class="fw-medium">{{ provider_context.listed_count }} item{{ provider_context.listed_count|pluralize }} listed</div>
+            {% if provider_context.recent_sales > 0 %}
+            <small class="text-muted">{{ provider_context.recent_sales }} sale{{ provider_context.recent_sales|pluralize }} today</small>
+            {% endif %}
+          </div>
+        </div>
+        <a href="{{ provider_context.manage_url }}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </li>
+    </ul>
+  </div>
+</div>
+{% endif %}
