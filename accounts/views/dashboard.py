@@ -4,6 +4,7 @@ from django.db.models import Count, Q
 from django.shortcuts import render
 from django.utils import timezone
 
+from accounts.dashboard_providers import get_providers
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_queryset
 from downtime import services as downtime_services
@@ -191,6 +192,15 @@ def _get_dashboard_context(request, club, character, membership):
         },
     ]
 
+    # Build provider contexts
+    dashboard_providers = []
+    for provider in get_providers():
+        if provider.should_show(request, club, character, membership):
+            dashboard_providers.append({
+                "provider": provider,
+                "ctx": provider.get_context(request, club, character, membership),
+            })
+
     return {
         "character": character,
         "coin_summary": coin_sum,
@@ -209,6 +219,7 @@ def _get_dashboard_context(request, club, character, membership):
         "downtime_items": downtime_items,
         "map_items": map_items,
         "message_items": message_items,
+        "dashboard_providers": dashboard_providers,
     }
 
 

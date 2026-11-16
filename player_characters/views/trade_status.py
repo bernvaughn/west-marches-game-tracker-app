@@ -1,10 +1,10 @@
+import json
+
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
-
-import json
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404

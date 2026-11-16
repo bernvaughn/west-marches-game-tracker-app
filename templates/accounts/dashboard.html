@@ -5,6 +5,9 @@
 {% include "accounts/_dashboard_header.html" with character=character coin_summary=coin_summary downtime_balance=downtime_balance junk_count=junk_count junk_value=junk_value %}
 
 <div class="wm-dashboard-grid">
+  {% for p in dashboard_providers %}
+    {% include p.provider.template with provider_context=p.ctx club=club character=character junk_count=junk_count %}
+  {% endfor %}
   {% include "accounts/_dashboard_section.html" with title="Town" icon="shop" items=town_items %}
   {% include "accounts/_dashboard_section.html" with title="Quests" icon="scroll" items=quest_items badge=ready_quests|length %}
   {% include "accounts/_dashboard_section.html" with title="Trades" icon="arrow-left-right" items=trade_items badge=open_trades|length %}

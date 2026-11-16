@@ -3,9 +3,10 @@
 from django.db.models import Q
 from django.urls import reverse
 
+from player_characters.models import Trade
+
 from .models import Message
 from .permissions import is_club_admin
-from player_characters.models import Trade
 
 
 def open_messages(request):

@@ -1,11 +1,21 @@
 from django.urls import path
 
-from .views import dashboard, inbox, passwords, people
+from .views import dashboard, dashboard_quick_actions, inbox, passwords, people
 
 app_name = "accounts"
 urlpatterns = [
     path("", people.member_list, name="index"),
     path("dashboard/", dashboard.player_dashboard, name="player_dashboard"),
+    path(
+        "dashboard/partial/quick_action_sell_junk/",
+        dashboard_quick_actions.quick_action_sell_junk,
+        name="quick_action_sell_junk",
+    ),
+    path(
+        "dashboard/partial/quick_action_buy_potions/",
+        dashboard_quick_actions.quick_action_buy_potions,
+        name="quick_action_buy_potions",
+    ),
     path("whitelist/", people.whitelist, name="whitelist"),
     path(
         "members/<int:membership_id>/reset-password/",

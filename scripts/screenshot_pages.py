@@ -231,6 +231,8 @@ EXCLUDED = {
     "agent_access:batch_reverse": "POST only.",
     "agent_access:proposed_item_approve": "POST only.",
     "agent_access:proposed_item_reject": "POST only.",
+    "accounts:quick_action_sell_junk": "HTMX partial endpoint for sell junk modal.",
+    "accounts:quick_action_buy_potions": "HTMX partial endpoint for buy potions modal.",
 }
 
 
