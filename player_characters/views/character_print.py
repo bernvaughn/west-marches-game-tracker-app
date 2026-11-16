@@ -1,14 +1,21 @@
+from django.db.models import Count, Q
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils import timezone
 
 from accounts.permissions import club_member_required
-from accounts.scoping import club_get_object_or_404
+from accounts.scoping import club_get_object_or_404, club_queryset
+from ledger.services import available_items
+from player_characters.models import Trade
+from quests.models import Quest, QuestCompletion
 
 from ..access import require_inventory_access
 from ..inventory import coin_summary, inventory_rows
 from ..item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
+from ..junk import junk_rows
 from ..models import Character
+from ..sheet import ability_modifier, ability_rows, passive_perception
+from ..trade_services import OPEN
 
 LAYOUTS = ("full", "grid")
 COPIES = ("type", "item")
@@ -44,7 +51,10 @@ def print_items(request, club_slug, pk):
 def print_item(request, club_slug, pk, item_pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     require_inventory_access(request.user, character)
-    row = next((r for r in inventory_rows(character) if r.item.pk == item_pk), None)
+    row = next(
+        (r for r in inventory_rows(character) if r.item.pk == item_pk),
+        None,
+    )
     if row is None:
         raise Http404
     layout = request.GET.get("layout")
@@ -56,7 +66,11 @@ def print_item(request, club_slug, pk, item_pk):
         "card_cap": CARD_CAP,
     }
     if layout is None:
-        return render(request, "player_characters/characters/print_item_choose.html", context)
+        return render(
+            request,
+            "player_characters/characters/print_item_choose.html",
+            context,
+        )
     if layout not in LAYOUTS:
         return HttpResponseBadRequest("Unknown layout.")
     copies = request.GET.get("copies", "type")
@@ -71,5 +85,122 @@ def print_item(request, club_slug, pk, item_pk):
         sheets = chunk(cards)
         pad = (-len(cards)) % CARDS_PER_SHEET
         context["empty_cells"] = range(pad)
-    context.update(layout=layout, copies=copies, too_many=over, cards=cards, sheets=sheets)
+    context.update(
+        layout=layout, copies=copies, too_many=over, cards=cards, sheets=sheets
+    )
     return render(request, "player_characters/characters/print_item.html", context)
+
+
+@club_member_required
+def print_session_pack(request, club_slug, pk):
+    """Combined print view for session pack: character sheet, item cards,
+    quests, map, trades."""
+    character = club_get_object_or_404(request, Character, pk=pk)
+    require_inventory_access(request.user, character)
+
+    # Parse query parameters for print options
+    include_sheet = request.GET.get("sheet", "1") == "1"
+    include_items = request.GET.get("items", "1") == "1"
+    include_quests = request.GET.get("quests", "1") == "1"
+    include_map = request.GET.get("map", "0") == "1"
+    include_trades = request.GET.get("trades", "0") == "1"
+
+    # Character sheet data
+    coins = coin_summary(character)
+    inv_rows = inventory_rows(character)
+    junk = junk_rows(character)
+    junk_val = sum(r.item.value_cp * r.quantity for r in junk)
+
+    # Abilities (using shared sheet helper)
+    abilities = ability_rows(character)
+    passive_perception_val = passive_perception(ability_modifier(character.wisdom))
+
+    # Item cards data
+    pairs = [(r.item, r.owned) for r in inv_rows]
+    over = too_many(pairs, "type")
+    item_sheets = [] if over else chunk(build_cards(pairs, "type"))
+
+    # Ready quests data (reusing QuestsProvider logic)
+    ready_quests = []
+    if include_quests:
+        today = timezone.localdate()
+        quests_qs = Quest.objects.for_club(request.club).prefetch_related(
+            "requirements__item", "rewards__item"
+        ).annotate(done=Count("completions"))
+
+        have = available_items(character)
+        my_completions = {
+            row["quest"]: row["n"]
+            for row in QuestCompletion.objects.filter(character=character)
+            .values("quest")
+            .annotate(n=Count("id"))
+        }
+
+        for q in quests_qs:
+            if not q.is_live_on(today):
+                continue
+            if q.max_completions is not None and q.done >= q.max_completions:
+                continue
+            if (
+                q.max_per_character is not None
+                and my_completions.get(q.pk, 0) >= q.max_per_character
+            ):
+                continue
+            reqs = list(q.requirements.all())
+            if reqs and all(have.get(r.item_id, 0) >= r.quantity for r in reqs):
+                ready_quests.append(q)
+
+    # Open trades data
+    open_trades_data = []
+    if include_trades:
+        membership = request.membership
+        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
+        my_trades = trades_qs.filter(
+            Q(sender__owner=membership) | Q(receiver__owner=membership)
+        ).select_related("sender__owner__user", "receiver__owner__user")
+
+        for t in my_trades:
+            if t.sender.owner_id == membership.id:
+                other = t.receiver
+                side = "sender"
+            else:
+                other = t.sender
+                side = "receiver"
+            open_trades_data.append({
+                "trade": t,
+                "other_character": other,
+                "side": side,
+                "status_display": t.get_status_display(),
+            })
+
+    # Map data (simplified - just indicate if map should be included)
+    # The actual map rendering would be complex, so we'll include a placeholder
+    # that can be expanded later
+    show_map = include_map
+
+    return render(
+        request,
+        "player_characters/characters/print_session_pack.html",
+        {
+            "character": character,
+            "owner": character.name,
+            "include_sheet": include_sheet,
+            "include_items": include_items,
+            "include_quests": include_quests,
+            "include_map": include_map,
+            "include_trades": include_trades,
+            "coins": coins,
+            "inv_rows": inv_rows,
+            "junk": junk,
+            "junk_value": junk_val,
+            "abilities": abilities,
+            "passive_perception": passive_perception_val,
+            "item_sheets": item_sheets,
+            "too_many": over,
+            "card_cap": CARD_CAP,
+            "ready_quests": ready_quests,
+            "open_trades": open_trades_data,
+            "show_map": show_map,
+            "printed_on": timezone.localdate(),
+        },
+    )

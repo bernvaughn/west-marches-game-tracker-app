@@ -37,6 +37,7 @@ MODAL_SELECTORS = {
     "where_to_buy_modal": 'a[data-app-modal][href*="/where-to-buy/"]',
     "details_modal": 'a[data-app-modal][href*="/details-modal/"]',
     "agenda_add_modal": "a.agenda-plus[data-app-modal]",
+    "print_session_pack_modal": 'a[data-app-modal][href*="print-session-pack-modal/"]',
 }
 # `sell_modal` submits a form (the confirm modal comes from a POST), so it has no link selector.
 MODAL_ACTIONS = set(MODAL_SELECTORS) | {"sell_modal"}
@@ -315,6 +316,7 @@ def _build_pages() -> list[Page]:
         ),
         P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
+        P("characters-print-session-pack", "alice", _c("characters:print_session_pack", "aria.pk")),
         # downtime
         P("downtime-play", "alice", lambda d: reverse("downtime:play", args=[d.slug])),
         P("downtime-actions", "gm", lambda d: reverse("downtime:actions", args=[d.slug])),
@@ -439,6 +441,13 @@ def _build_pages() -> list[Page]:
             "characters-print-item-choose",
             "alice",
             _c("characters:print_item", "aria.pk", "owned_item.pk"),
+        ),
+        P(
+            "print-session-pack-modal",
+            "alice",
+            _c("accounts:player_dashboard"),
+            action="print_session_pack_modal",
+            modal_url=_c("accounts:print_session_pack_modal", "aria.pk"),
         ),
         P(
             "characters-print-item-full",

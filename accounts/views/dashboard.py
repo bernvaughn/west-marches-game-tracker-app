@@ -576,3 +576,21 @@ def character_preview(request, club_slug, pk):
         "downtime_balance": downtime_balance,
         "open_trades_count": open_trades_count,
     })
+
+
+@club_member_required
+def print_session_pack_modal(request, club_slug, pk):
+    """HTMX partial endpoint for the Print Session Pack options modal."""
+    from accounts.scoping import club_get_object_or_404
+    from player_characters.models import Character
+    character = club_get_object_or_404(request, Character, pk=pk)
+
+    # Verify ownership
+    if character.owner_id != request.membership.id:
+        from django.http import Http404
+        raise Http404("Not your character.")
+
+    return render(request, "accounts/_print_session_pack_modal.html", {
+        "club": request.club,
+        "character": character,
+    })
