@@ -1,11 +1,31 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Shops{% endblock %}
 {% block main_class %}wm-main--full{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Shops" %}
+
+{% if character %}
+  <nav class="wm-shop-tabs" aria-label="Shop filters">
+    <a class="wm-shop-tab{% if active_tab == 'all' %} active{% endif %}"
+       href="{% url 'shops:index' club.slug %}?tab=all">All Shops</a>
+    <a class="wm-shop-tab{% if active_tab == 'my_shops' %} active{% endif %}"
+       href="{% url 'shops:index' club.slug %}?tab=my_shops">My Shops</a>
+  </nav>
+{% endif %}
+
 {% if shops or stalls %}
 {% include "shops/browse/_street.html" %}
 {% else %}
 {% include "components/empty_state.html" with text="No shops are open today." icon="shop" %}
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if character %}
+  <script>
+    window.wmCharacterPk = {{ character.pk }};
+  </script>
+  <script src="{% static 'shops/shop_favorites.js' %}"></script>
 {% endif %}
 {% endblock %}
