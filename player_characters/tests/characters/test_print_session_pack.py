@@ -3,8 +3,6 @@
 import pytest
 from django.urls import reverse
 
-from ledger.services import Line, record
-
 pytestmark = pytest.mark.django_db
 
 
@@ -84,7 +82,8 @@ def test_pack_options_exclude_quests(login, club, player, funded, item):
     r = login(player).get(pack_url(club, funded) + "?quests=0")
     assert r.status_code == 200
     body = r.content.decode()
-    assert "Ready Quests" not in body
+    # Should not have quest notice elements
+    assert "wm-notice" not in body
 
 
 @pytest.mark.story("S10")

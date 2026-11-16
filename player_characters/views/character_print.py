@@ -14,6 +14,7 @@ from ..inventory import coin_summary, inventory_rows
 from ..item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 from ..junk import junk_rows
 from ..models import Character
+from ..sheet import ability_rows, ability_modifier, passive_perception
 from ..trade_services import OPEN
 
 LAYOUTS = ("full", "grid")
@@ -110,47 +111,9 @@ def print_session_pack(request, club_slug, pk):
     junk = junk_rows(character)
     junk_val = sum(r.item.value_cp * r.quantity for r in junk)
 
-    # Abilities
-    abilities = [
-        {
-            "abbr": "STR",
-            "label": "Strength",
-            "score": character.str_score,
-            "modifier": character.str_mod,
-        },
-        {
-            "abbr": "DEX",
-            "label": "Dexterity",
-            "score": character.dex_score,
-            "modifier": character.dex_mod,
-        },
-        {
-            "abbr": "CON",
-            "label": "Constitution",
-            "score": character.con_score,
-            "modifier": character.con_mod,
-        },
-        {
-            "abbr": "INT",
-            "label": "Intelligence",
-            "score": character.int_score,
-            "modifier": character.int_mod,
-        },
-        {
-            "abbr": "WIS",
-            "label": "Wisdom",
-            "score": character.wis_score,
-            "modifier": character.wis_mod,
-        },
-        {
-            "abbr": "CHA",
-            "label": "Charisma",
-            "score": character.cha_score,
-            "modifier": character.cha_mod,
-        },
-    ]
-
-    passive_perception = 10 + character.wis_mod
+    # Abilities (using shared sheet helper)
+    abilities = ability_rows(character)
+    passive_perception = passive_perception(ability_modifier(character.wisdom))
 
     # Item cards data
     pairs = [(r.item, r.owned) for r in inv_rows]
