@@ -1,0 +1,36 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form
+  method="post"
+  action="{{ consume_url }}"
+  hx-post="{{ consume_url }}"
+  hx-target="#app-modal .modal-content"
+  hx-swap="outerHTML"
+>
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Consume 1 {{ item.name }}?{% endblock %}
+{% block body %}
+{% if form.non_field_errors %}
+<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">
+  <div>{{ form.non_field_errors|join:" " }}</div>
+</div>
+{% endif %}
+<p>Consume 1 {% include "items/_item_name.html" with item=item info=True %}. You have {{ available }} available.</p>
+<p>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <span class="wm-short-field d-block">{{ form.quantity }}</span>
+  {% if form.quantity.errors %}<span class="error text-danger d-block" role="alert">{{ form.quantity.errors|join:" " }}</span>{% endif %}
+</p>
+<p>
+  <label class="form-label" for="{{ form.note.id_for_label }}">Note (optional)</label>
+  {{ form.note }}
+  {% if form.note.errors %}<span class="error text-danger d-block" role="alert">{{ form.note.errors|join:" " }}</span>{% endif %}
+</p>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Consume</button>
+{% endblock %}

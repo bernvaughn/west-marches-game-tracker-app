@@ -1,7 +1,7 @@
 {
   "answers": {
-    "least_necessary": {"text": "Writing the survey response itself was the least necessary task"},
-    "most_expensive": {"text": "Creating the PlayerShopDashboardProvider with sales tracking logic and unit tests"},
-    "redundant": {"text": "Removing the duplicate PlayerShopProvider from dashboard.py that was left over from S0"}
+    "least_necessary": {"text": "Reading the existing codebase to understand the patterns - this was necessary but felt like overhead"},
+    "most_expensive": {"text": "Analyzing the existing dashboard provider system and consume logic to design the new provider"},
+    "redundant": {"text": "Checking multiple files to understand the same patterns (dashboard_providers.py, views/dashboard.py, apps.py)"}
   }
 }

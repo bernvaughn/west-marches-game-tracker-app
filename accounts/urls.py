@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     dashboard,
+    dashboard_consumables,
     dashboard_downtime,
     dashboard_quests,
     dashboard_quick_actions,
@@ -48,6 +49,11 @@ urlpatterns = [
         "characters/<int:pk>/print-session-pack-modal/",
         dashboard.print_session_pack_modal,
         name="print_session_pack_modal",
+    ),
+    path(
+        "dashboard/partial/consumable_consume/<int:item_pk>/",
+        dashboard_consumables.consumable_consume_partial,
+        name="consumable_consume_partial",
     ),
     path("whitelist/", people.whitelist, name="whitelist"),
     path(

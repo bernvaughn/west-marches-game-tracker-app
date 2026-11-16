@@ -239,6 +239,7 @@ EXCLUDED = {
     "accounts:dashboard_partial": "HTMX partial, not a page.",
     "accounts:dashboard_downtime_spend": "HTMX partial endpoint for downtime spend wheel modal.",
     "accounts:dashboard_quest_turnin": "HTMX partial endpoint for quest turn-in modal.",
+    "accounts:consumable_consume_partial": "HTMX partial endpoint for consumable confirm modal.",
 }
 
 

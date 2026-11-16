@@ -1,60 +1,80 @@
-# Implementation Plan: S5 Downtime Spend from Dashboard
+# Implementation Plan: S12 Consumable Quick-Consume
 
 ## Overview
-Add "Spend on [Action]" buttons for available downtime actions that open the spinning wheel modal directly via HTMX from the dashboard.
+Add a dashboard section for consumable items with "Use 1" confirm buttons that open a modal and record a consume ledger entry.
 
 ## Files to Create/Modify
 
-### 1. New Provider: `accounts/dashboard_providers.py`
-- Add `DowntimeDashboardProvider` class that extends the provider pattern
-- Reuse existing downtime action detection logic from `dashboard.py`
-- Return context with actions, costs, and affordability
+### 1. `accounts/dashboard_providers.py` - Add ConsumablesDashboardProvider
+- Add new `ConsumablesDashboardProvider` class with:
+  - `key = "consumables"`
+  - `order = 8`
+  - `template = "accounts/_dashboard_consumables.html"`
+  - `get_context()`: Find items where `quantity > 1` OR `traits` contains "consumable" (case-insensitive)
+  - `should_show()`: Return True if any consumable items exist
+- Register provider in `accounts/apps.py` ready() (replace existing ConsumablesProvider import)
 
-### 2. New View: `accounts/views/dashboard_downtime.py`
-- Create partial endpoint for wheel modal: `/dashboard/<slug>/partial/downtime_spend/<action_pk>/`
-- Handle HTMX GET to return wheel modal partial
-- Handle POST to spend points and return result modal
-- Reuse existing `downtime.services.spend()` function
+### 2. `accounts/views/dashboard_consumables.py` (NEW)
+- Create new view `consumable_consume_partial(request, club_slug, item_pk)`
+- Returns HTMX modal fragment for confirm modal
+- Uses existing `player_characters.views.consume.player_consume` logic
+- Requires `@club_member_required`, character ownership check
+- Returns 404 if item not available or not consumable
 
-### 3. New Template: `templates/accounts/_dashboard_downtime.html`
-- Replace existing template with new version that has "Spend on [Action]" buttons
-- Buttons use HTMX (`hx-get` + `data-app-modal`) to open wheel modal
-- Disabled with reason if not enough points
-- Wheel result toast + dashboard downtime balance refresh
+### 3. `templates/accounts/_dashboard_consumables.html` (MODIFY)
+- Update existing template
+- Change "Consume" link to "Use 1" button with HTMX attributes:
+  - `hx-get="{% url 'accounts:consumable_consume_partial' club.slug item.pk %}"`
+  - `hx-target="#app-modal .modal-content"`
+  - `data-app-modal`
+- Show item name, quantity, and "Use 1" button per row
 
-### 4. URL Configuration: `accounts/urls.py`
-- Add partial endpoint for downtime spend: `dashboard/partial/downtime_spend/<int:action_pk>/`
+### 4. `templates/accounts/modals/_consume_confirm.html` (NEW)
+- Create confirm modal template extending `components/modal_frame.html`
+- Title: "Consume 1 [Item]?"
+- Body: Form with quantity (default 1, hidden or shown), note field (optional)
+- Uses `PlayerConsumeForm` for validation
+- Submit to `characters:player_consume` endpoint
+- Footer: Cancel + "Consume" button
 
-### 5. Register Provider: `accounts/apps.py`
-- Register `DowntimeDashboardProvider` in `ready()` method
+### 5. `accounts/urls.py` (MODIFY)
+- Add URL pattern:
+  ```python
+  path(
+      "dashboard/partial/consumable_consume/<int:item_pk>/",
+      dashboard_consumables.consumable_consume_partial,
+      name="consumable_consume_partial",
+  ),
+  ```
+
+### 6. `accounts/apps.py` (MODIFY)
+- Replace import of `ConsumablesProvider` from `accounts.views.dashboard` with `ConsumablesDashboardProvider` from `accounts.dashboard_providers`
+- Register the new provider
+
+## Detection Logic
+```python
+def _is_consumable(self, item, quantity):
+    # Item is consumable if:
+    # 1. quantity > 1, OR
+    # 2. traits contains "consumable" (case-insensitive)
+    if quantity > 1:
+        return True
+    if item.traits and "consumable" in item.traits.lower():
+        return True
+    return False
+```
 
 ## Acceptance Criteria Mapping
+| Criteria | Proof Stage |
+|----------|-------------|
+| "Consumables" section (provider order 8) shows items with `quantity > 1` or "consumable" trait | code (unit test) |
+| Each row: item name, qty, "Use 1" button | code (browser test) |
+| Button opens confirm modal: "Consume 1 [Item]?" + optional note | code (browser test) |
+| Confirm records consume ledger entry (player-initiated, U82) | code (unit test) |
+| Ruff clean, unit + browser tests pass | verify |
 
-| AC | Implementation |
-|----|----------------|
-| "Downtime" section (provider order 4) shows "Spend on [Action]" per affordable action | `DowntimeDashboardProvider` with order=4, template renders spend buttons |
-| Button opens spinning wheel modal (D3) directly via HTMX | `hx-get` to `/dashboard/<slug>/partial/downtime_spend/<action_pk>/` with `data-app-modal` |
-| Disabled with reason if not enough points | Provider context includes `reason` for each action, button disabled if reason exists |
-| Wheel result toast + dashboard downtime balance refresh | View returns result modal on POST, dashboard refreshed via HX-Redirect |
-
-## Implementation Steps
-
-1. **Create `accounts/views/dashboard_downtime.py`** - new view for the partial endpoint
-2. **Update `accounts/dashboard_providers.py`** - add `DowntimeDashboardProvider` class
-3. **Update `templates/accounts/_dashboard_downtime.html`** - new template with spend buttons
-4. **Update `accounts/urls.py`** - add the partial endpoint URL
-5. **Update `accounts/apps.py`** - register the new provider
-6. **Run tests** - verify Ruff clean, unit tests pass
-
-## Key Technical Details
-
-- The wheel modal is rendered by `downtime/play/_result_modal.html` which includes `_wheel.html`
-- The `downtime.views.play.spend()` function handles the spend logic - we'll reuse it
-- HTMX partial should return the wheel modal on GET, and result modal on POST
-- Need to handle HTMX vs full page requests properly using `render_modal_or_page`
-
-## Testing
-
-- Unit test for provider `get_context` and `should_show`
-- Unit test for partial view GET and POST
-- Browser test for full spend flow from dashboard
+## Test Strategy
+- Unit tests for provider detection logic (quantity > 1, traits contains "consumable")
+- Unit tests for partial endpoint (GET returns modal, 404 for non-consumable/non-available)
+- Browser test for full flow: dashboard → click "Use 1" → modal opens → confirm → ledger entry created
+- Ruff check on all new/modified files
