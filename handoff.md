@@ -1,44 +1,41 @@
-## Hand-off: Double-check Player Dashboard with Contextual Quick Actions
+## Hand-off: S2 Trade Dashboard Widget (Plan Stage Complete)
 
-### Review Summary
-Reviewed PR #211 (Player Dashboard with Contextual Quick Actions) for correctness, side effects, and adherence to all 6 acceptance criteria.
+### What was done
+1. **Explored the codebase** to understand the existing dashboard provider system, trade models, and trade status display logic
+2. **Created implementation plan** (`plan.md`) detailing:
+   - Files to modify: `accounts/views/dashboard.py` (TradesProvider), `templates/accounts/_dashboard_trades.html`
+   - URL endpoint already exists: `/dashboard/<slug>/partial/trades/`
+   - Provider already registered in `accounts/apps.py` with order=2
+3. **Set acceptance criteria** with proof stages (plan → code → verify)
 
-### Verification Results
-All 6 acceptance criteria verified and passing:
+### Key findings
+- **TradesProvider already exists** in `accounts/views/dashboard.py` with basic functionality but needs enhancement
+- **Template exists** at `templates/accounts/_dashboard_trades.html` but uses simple `trade_items` list instead of detailed trade data
+- **Trade status wording** is in `player_characters/trade_status_line.py` - `trade_status_line()` function
+- **Trade URLs**: `trades:detail`, `trades:edit_side`, `trades:accept`, `trades:decline`, `trades:cancel`
+- **HTMX polling**: Existing `trades:poll` endpoint at `/trades/poll/` polls every 5s for navbar; dashboard widget needs 10s poll to its own partial endpoint
 
-1. **Dashboard shows right quick actions** ✅ — Two templates: `dashboard.html` (with character) and `dashboard_no_character.html` (without). Character summary shows coin balance, downtime points, junk count/value, XP.
+### What the next agent (code stage) should do
+1. **Modify `TradesProvider.get_context()`** in `accounts/views/dashboard.py`:
+   - Import `trade_status_line` from `player_characters.trade_status_line`
+   - Build detailed trade data with status text, action button URL/label per trade state
+   - Return `open_trades_data` list with dicts containing: trade, other_character, side, status_display, action_url, action_label
 
-2. **Quick actions go to right pages** ✅ — All 6 sections link correctly:
-   - Town → `shops:index`
-   - Quests → `quests:detail` (ready) or `quests:index` (fallback)
-   - Trades → `trades:detail` (open) or `trades:propose` (fallback)
-   - Downtime → `downtime:play`
-   - Map → `map:detail` (per map) or `map:index` (fallback)
-   - Messages → `accounts:message_new`
+2. **Rewrite `templates/accounts/_dashboard_trades.html`**:
+   - Iterate over `provider_context.open_trades_data`
+   - Show status badge using U78 wording
+   - Show "Act Now" button with correct link per state machine
+   - Wrap in container with `hx-get="{% url 'accounts:dashboard_partial' club.slug 'trades' %}" hx-trigger="every 10s" hx-swap="outerHTML"`
 
-3. **Responsive at 390px, 768px, 1280px** ✅ — CSS grid `repeat(auto-fill, minmax(280px, 1fr))` with single-column media query at ≤575px. Screenshot tests pass for `dashboard-alice` and `dashboard-bob` at 390px and 1280px.
+3. **Update `TradesProvider.should_show()`** to return True only if user has open trades
 
-4. **Test suite and CI pass** ✅ — 1942 tests pass, 2 skipped.
+### Open questions / decisions
+- The `trade_status_line` function needs `viewer_side` parameter ("sender", "receiver", or None) - need to pass user's side
+- For REQUESTED status: receiver sees "Accept" → `trades:edit_side`; sender sees "Cancel" → `trades:detail` (or cancel POST)
+- For ACCEPTED status: if viewer not approved → "Change" → `trades:edit_side`; if viewer approved but other not → "Approve" → `trades:detail` (approve POST); if both approved → trade completes automatically
 
-5. **No accidental behavior changes outside dashboard** ✅ — 29 files changed in PR #211:
-   - New dashboard view, templates, CSS, URLs (intended)
-   - `club_home` redirect for players → dashboard (intended)
-   - `django.contrib.humanize` added for `|intcomma` filter (intended)
-   - 15 test files updated only to follow redirects (`follow=True`) or extract `<main>` content correctly
-   - Screenshot pages added for dashboard (intended)
-
-6. **Linting issues fixed in this story** ✅ — Fixed in `accounts/views/dashboard.py`:
-   - Removed unused imports: `ledger.services.coin_balance`, `player_characters.inventory.inventory_rows`, `player_characters.models.Character`
-   - Removed unused variable `junk_val_formatted`
-   - Sorted imports per ruff I001
-   - Fixed line-too-long in `scripts/screenshot_pages.py` (E501)
-
-### hx-swap Investigation
-Character switch button uses `hx-post` + `hx-target="body"` + `hx-swap="outerHTML"`. Per workspace knowledge, hx-swap on a container can break modal triggers inside it. However, the button is **not a container** and there are **no modal triggers inside the dashboard header**. The swap targets `body`, replacing the entire page — this is a standard HTMX full-page refresh pattern and is safe.
-
-### PR Status
-PR #216 opened with fixes: https://github.com/bernvaughn/west-marches-game-tracker-app/pull/216
-CI has passed.
-
-### Next Steps
-Ready for merge. No follow-up bugs needed.
+### Files to reference
+- `accounts/views/dashboard.py` - TradesProvider class
+- `templates/accounts/_dashboard_trades.html` - template to rewrite
+- `player_characters/trade_status_line.py` - status wording function
+- `player_characters/urls_trades.py` - trade URL patterns

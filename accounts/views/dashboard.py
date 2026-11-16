@@ -63,13 +63,15 @@ class QuickActionsProvider:
 
 @dataclass
 class TradesProvider:
-    """Open trades with status."""
+    """Open trades with status badges and Act Now buttons."""
 
     key: str = "trades"
     order: int = 2
     template: str = "accounts/_dashboard_trades.html"
 
     def get_context(self, request, club, character, membership):
+        from player_characters.trade_status_line import trade_status_line
+
         trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
         my_trades = trades_qs.filter(
             Q(sender__owner=membership) | Q(receiver__owner=membership)
@@ -83,36 +85,57 @@ class TradesProvider:
             else:
                 other = t.sender
                 side = "receiver"
+
+            # Get U78 status wording
+            status_text = trade_status_line(t, side)
+
+            # Determine Act Now button
+            action_url = None
+            action_label = None
+            action_method = "get"
+
+            if t.status == Trade.Status.REQUESTED:
+                if side == "receiver":
+                    action_label = "Accept"
+                    action_url = reverse("trades:accept", args=[club.slug, t.pk])
+                    action_method = "post"
+                else:  # sender
+                    action_label = "Cancel"
+                    action_url = reverse("trades:cancel", args=[club.slug, t.pk])
+                    action_method = "post"
+            elif t.status == Trade.Status.ACCEPTED:
+                approved = {"sender": t.sender_approved, "receiver": t.receiver_approved}
+                if not approved[side]:
+                    # Viewer has not approved yet
+                    action_label = "Change"
+                    action_url = reverse("trades:edit_side", args=[club.slug, t.pk])
+                    action_method = "get"
+                elif approved[side] and not approved["receiver" if side == "sender" else "sender"]:
+                    # Viewer approved, other hasn't
+                    action_label = "Approve"
+                    action_url = reverse("trades:approve", args=[club.slug, t.pk])
+                    action_method = "post"
+                # else both approved -> trade completes, no action
+
             open_trades_data.append({
                 "trade": t,
                 "other_character": other,
                 "side": side,
-                "status_display": t.get_status_display(),
-            })
-
-        trade_items = []
-        for t in open_trades_data:
-            trade_items.append({
-                "label": f"Trade with {t['other_character'].name}",
-                "url": reverse("trades:detail", args=[club.slug, t['trade'].pk]),
-                "icon": "arrow-left-right",
-                "subtext": t['status_display'],
-            })
-        if not trade_items:
-            trade_items.append({
-                "label": "Propose Trade",
-                "url": reverse("trades:propose", args=[club.slug]),
-                "icon": "plus",
-                "subtext": "Start a new trade",
+                "status_text": status_text,
+                "action_url": action_url,
+                "action_label": action_label,
+                "action_method": action_method,
             })
 
         return {
-            "open_trades": open_trades_data,
-            "trade_items": trade_items,
+            "open_trades_data": open_trades_data,
         }
 
     def should_show(self, request, club, character, membership):
-        return True
+        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
+        return trades_qs.filter(
+            Q(sender__owner=membership) | Q(receiver__owner=membership)
+        ).exists()
 
 
 @dataclass
