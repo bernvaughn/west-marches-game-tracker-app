@@ -33,6 +33,77 @@ Run it with `uv run playwright install chromium` once, then `uv run pytest -m br
 For a list of problems per page, run `uv run python scripts/console_sweep.py`.
 For the UI audit, `uv run python scripts/screenshots.py --audit --out <dir>` captures every page at 1920, 1280, 768 and 390 px (see the Method section of `docs/design/AUDIT-2.md`).
 
+## Running targeted tests
+
+The full test suite (1700+ tests) can take several minutes. For faster feedback during development, run targeted subsets:
+
+### By test file
+```bash
+# Character selection and preview tests (includes tooltip/preview tests)
+uv run pytest player_characters/tests/test_selection.py -v
+
+# Character sheet tests
+uv run pytest player_characters/tests/characters/test_sheet.py -v
+
+# Tooltip tests
+uv run pytest player_characters/tests/characters/test_u71_tooltips.py -v
+
+# Trade tests
+uv run pytest player_characters/tests/trades/ -v
+```
+
+### By keyword
+```bash
+# Tests matching "preview" (character preview tooltips)
+uv run pytest player_characters/tests/test_selection.py -k "preview" -v
+
+# Tests matching "tooltip"
+uv run pytest -k "tooltip" -v
+```
+
+### By user story marker
+```bash
+# Story S3 (character preview tooltips)
+uv run pytest -m "story(S3)" -v
+
+# Story U24 (character selection)
+uv run pytest -m "story(U24)" -v
+
+# List all available story markers
+uv run pytest --collect-only -q | grep "story(" | head -20
+```
+
+### Browser (Playwright) tests
+Browser tests require Chromium and are marked with `@pytest.mark.browser`.
+
+**One-time setup:**
+```bash
+# Install Chromium to a writable directory
+mkdir -p pw-browsers
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run playwright install chromium
+```
+
+**Run browser tests:**
+```bash
+# Run all browser tests
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser -v
+
+# Run specific browser test file
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser shops/tests/test_favorites_browser.py -v
+
+# Run specific browser test
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser shops/tests/test_favorites_browser.py::test_my_shops_filter_buy_flow -v
+
+# Run console sweep (checks all pages for JS errors)
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run python scripts/console_sweep.py
+```
+
+**Mobile viewport testing:**
+The browser tests include mobile viewport checks (390px). To run only mobile-related tests:
+```bash
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser -k "mobile or 390" -v
+```
+
 ### Agent access
 
 `seed_demo` also creates a local agent token and a pending batch, so you can try the MCP endpoint with the MCP Inspector:

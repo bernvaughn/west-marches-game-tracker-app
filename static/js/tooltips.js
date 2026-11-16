@@ -50,23 +50,23 @@
     var level = data.level ? 'Level ' + data.level : '—';
     var charClass = data.class || '—';
     var species = data.species || '—';
-    return '
+    return `
       <div class="wm-preview-card p-2" style="min-width: 220px;">
         <div class="d-flex align-items-center gap-2 mb-2">
-          <span class="wm-avatar wm-avatar-sm" aria-hidden="true">' + (data.name ? data.name[0].toUpperCase() : '?') + '</span>
+          <span class="wm-avatar wm-avatar-sm" aria-hidden="true">${data.name ? data.name[0].toUpperCase() : '?'}</span>
           <div>
-            <div class="fw-bold small">' + escapeHtml(data.name) + '</div>
-            <div class="text-muted small">' + escapeHtml(level) + ' · ' + escapeHtml(charClass) + ' · ' + escapeHtml(species) + '</div>
+            <div class="fw-bold small">${escapeHtml(data.name)}</div>
+            <div class="text-muted small">${escapeHtml(level)} · ${escapeHtml(charClass)} · ${escapeHtml(species)}</div>
           </div>
         </div>
         <div class="row g-1 text-center small">
-          <div class="col-6"><div class="fw-bold">' + escapeHtml(coins) + '</div><div class="text-muted">Coins</div></div>
-          <div class="col-6"><div class="fw-bold">' + junkCount + '</div><div class="text-muted">Junk</div></div>
-          <div class="col-6"><div class="fw-bold">' + downtime + '</div><div class="text-muted">Downtime</div></div>
-          <div class="col-6"><div class="fw-bold">' + openTrades + '</div><div class="text-muted">Open Trades</div></div>
+          <div class="col-6"><div class="fw-bold">${escapeHtml(coins)}</div><div class="text-muted">Coins</div></div>
+          <div class="col-6"><div class="fw-bold">${junkCount}</div><div class="text-muted">Junk</div></div>
+          <div class="col-6"><div class="fw-bold">${downtime}</div><div class="text-muted">Downtime</div></div>
+          <div class="col-6"><div class="fw-bold">${openTrades}</div><div class="text-muted">Open Trades</div></div>
         </div>
       </div>
-    ';
+    `;
   }
   function escapeHtml(text) {
     var div = document.createElement('div');
