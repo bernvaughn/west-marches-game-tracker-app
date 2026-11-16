@@ -7,8 +7,24 @@ APP_NAME = "Downtime Market"
 APP_TAGLINE = "Spend your loot between sessions."
 SITE_COPYRIGHT_YEAR = 2026
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-insecure-key-change-me")
-DEBUG = os.environ.get("DJANGO_DEBUG", "1") not in ("0", "false", "False", "")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+DEBUG = os.environ.get("DJANGO_DEBUG", "0") not in ("0", "false", "False", "")
+
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = "dev-only-insecure-key-change-me"
+    else:
+        raise RuntimeError(
+            "DJANGO_SECRET_KEY environment variable is required "
+            "in production (non-DEBUG mode)"
+        )
+
+# Validate that the dev default secret key is not used in production
+if not DEBUG and SECRET_KEY == "dev-only-insecure-key-change-me":
+    raise RuntimeError(
+        "The default insecure SECRET_KEY cannot be used in production. "
+        "Set DJANGO_SECRET_KEY."
+    )
 ALLOWED_HOSTS = [
     h.strip()
     for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,testserver").split(",")
@@ -25,6 +41,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "rest_framework",
     "oauth2_provider",
+    "csp",
     "accounts",
     "player_characters",
     "items",
@@ -38,6 +55,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "csp.middleware.CSPMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -122,6 +140,54 @@ STORAGES = {
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# HTTPS / SSL
+SECURE_SSL_REDIRECT = os.environ.get(
+    "DJANGO_SECURE_SSL_REDIRECT", "1"
+) not in ("0", "false", "False", "")
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# HSTS
+SECURE_HSTS_SECONDS = int(
+    os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000")
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
+    "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", "1"
+) not in ("0", "false", "False", "")
+SECURE_HSTS_PRELOAD = os.environ.get(
+    "DJANGO_SECURE_HSTS_PRELOAD", "1"
+) not in ("0", "false", "False", "")
+
+# Content Security
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+# Secure Cookies
+SESSION_COOKIE_SECURE = os.environ.get(
+    "DJANGO_SESSION_COOKIE_SECURE", "1"
+) not in ("0", "false", "False", "")
+CSRF_COOKIE_SECURE = os.environ.get(
+    "DJANGO_CSRF_COOKIE_SECURE", "1"
+) not in ("0", "false", "False", "")
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_SAMESITE = "Lax"
+
+# Clickjacking
+X_FRAME_OPTIONS = "DENY"
+
+# Content Security Policy
+CSP_DEFAULT_SRC = ("'self'",)
+CSP_SCRIPT_SRC = ("'self'",)
+CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_FONT_SRC = ("'self'",)
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)
+CSP_FORM_ACTION = ("'self'",)
+CSP_BASE_URI = ("'self'",)
+CSP_OBJECT_SRC = ("'none'",)
 
 OAUTH2_PROVIDER = {
     "SCOPES": {"mcp": f"Use the {APP_NAME} tools for one club"},
