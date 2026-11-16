@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import dashboard, dashboard_quick_actions, inbox, passwords, people
+from .views import dashboard, dashboard_downtime, dashboard_quests, dashboard_quick_actions, inbox, passwords, people
 
 app_name = "accounts"
 urlpatterns = [
@@ -17,9 +17,19 @@ urlpatterns = [
         name="quick_action_buy_potions",
     ),
     path(
+        "dashboard/partial/downtime_spend/<int:action_pk>/",
+        dashboard_downtime.downtime_spend_partial,
+        name="dashboard_downtime_spend",
+    ),
+    path(
         "dashboard/partial/<str:provider_key>/",
         dashboard.dashboard_partial,
         name="dashboard_partial",
+    ),
+    path(
+        "dashboard/partial/quest_turnin/<int:quest_pk>/",
+        dashboard_quests.dashboard_quest_turnin,
+        name="dashboard_quest_turnin",
     ),
     path(
         "characters/<int:pk>/preview/",

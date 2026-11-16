@@ -1,35 +1,32 @@
-## Hand-off: S3 Character Switch Preview — Plan Complete
+## Hand-off: S5 Downtime Spend from Dashboard - Plan Stage Complete
 
-### What was done
-- Created implementation plan (`plan.md`) covering all required files and steps
-- Set acceptance criteria with all 6 items deferred to `code` stage (where they'll be implemented and proven)
-- Analyzed existing codebase: `_selector.html` template, `selection.py` views, `selector_context.py`, `urls_characters.py`, `tooltips.js`
+### Summary
+Created implementation plan for adding "Spend on [Action]" buttons to the dashboard downtime section that open the spinning wheel modal directly via HTMX.
 
-### Key decisions
-1. **Native `<select>` → Bootstrap dropdown**: The current character selector uses a native `<select>` which doesn't support tooltips on `<option>` elements. The plan converts it to a Bootstrap dropdown (button + dropdown-menu) so each character item can have a tooltip.
+### Key Decisions
+1. **Provider Pattern**: Will extend the existing `DashboardProvider` system with a `DowntimeDashboardProvider` class (order=4)
+2. **HTMX Partial Endpoint**: New view at `/dashboard/<slug>/partial/downtime_spend/<action_pk>/` returning wheel modal
+3. **Template Reuse**: Will reuse existing `downtime/play/_result_modal.html` and `downtime/play/_wheel.html` templates
+4. **Spend Logic**: Will reuse existing `downtime.services.spend()` function
 
-2. **JSON endpoint + JS rendering**: The `character_preview` view returns JSON. JavaScript in `tooltips.js` fetches this on `shown.bs.tooltip`, builds an HTML card, and updates the tooltip content via Bootstrap's `setContent()` API.
+### Files to Create/Modify
+1. **NEW**: `accounts/views/dashboard_downtime.py` - partial endpoint view
+2. **MODIFY**: `accounts/dashboard_providers.py` - add `DowntimeDashboardProvider` class
+3. **MODIFY**: `templates/accounts/_dashboard_downtime.html` - new template with spend buttons
+4. **MODIFY**: `accounts/urls.py` - add partial endpoint URL
+5. **MODIFY**: `accounts/apps.py` - register the new provider
 
-3. **Reuse existing logic**: The preview view reuses `selector_context.character_selector_context()` for data fetching (coins, junk, trades, downtime).
+### Next Steps for Code Stage
+1. Implement `DowntimeDashboardProvider` in `dashboard_providers.py`
+2. Create `dashboard_downtime.py` view with GET (wheel modal) and POST (spend + result modal)
+3. Update `_dashboard_downtime.html` template with HTMX buttons
+4. Add URL route in `accounts/urls.py`
+5. Register provider in `accounts/apps.py`
+6. Run tests to verify
 
-### Files to modify (per plan)
-1. `player_characters/views/selection.py` — add `character_preview` view
-2. `player_characters/urls_characters.py` — add `/preview/<pk>/` URL
-3. `templates/player_characters/characters/_selector.html` — convert to Bootstrap dropdown with tooltip attributes
-4. `static/js/tooltips.js` — add handler for `shown.bs.tooltip` on `[data-wm-preview-url]`
-
-### Next steps for code stage
-1. Implement `character_preview` view in `selection.py`
-2. Add URL pattern in `urls_characters.py`
-3. Convert `_selector.html` to Bootstrap dropdown
-4. Add tooltip fetch handler in `tooltips.js`
-5. Write unit tests in `test_selection.py`
-6. Write browser tests (Playwright) for tooltip behavior
-
-### Acceptance criteria (all in code stage)
-- Character selector dropdown options show Bootstrap tooltip on hover/focus
-- Tooltip fetches `/characters/<slug>/preview/<pk>/` via HTMX on `shown.bs.tooltip`
-- Preview JSON: `{name, level, class, species, coins_available, junk_count, junk_value, downtime, open_trades}`
-- Tooltip renders as small card with avatar, key stats
-- Works on mobile (tap to show, tap elsewhere to dismiss)
+### Acceptance Criteria (deferred to code stage)
+- "Downtime" section (provider order 4) shows "Spend on [Action]" per affordable action
+- Button opens spinning wheel modal (D3) directly via HTMX
+- Disabled with reason if not enough points
+- Wheel result toast + dashboard downtime balance refresh
 - Ruff clean, unit + browser tests pass
