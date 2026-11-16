@@ -20,6 +20,25 @@ from shops.services import (
     shop_sort_key,
 )
 
+MAX_RECENT_SHOPS = 10
+
+
+def add_recent_shop(request, shop_id):
+    """Add a shop to the character's recent shops in session."""
+    character = selected_character(request)
+    if not character:
+        return
+    session_key = f"wm_recent_shops_{character.pk}"
+    recent = list(request.session.get(session_key, []))
+    # Remove if already present
+    recent = [sid for sid in recent if sid != shop_id]
+    # Add to front
+    recent.insert(0, shop_id)
+    # Limit to max
+    if len(recent) > MAX_RECENT_SHOPS:
+        recent = recent[:MAX_RECENT_SHOPS]
+    request.session[session_key] = recent
+
 
 def _load_shop(request, shop_id):
     shop = club_get_object_or_404(request, Shop, pk=shop_id)
@@ -87,7 +106,26 @@ def street_stalls(club):
 @club_member_required
 def index(request, club_slug):
     club = request.club
+    character = selected_character(request)
+
+    # Get recent shop IDs from session storage
+    recent_shop_ids = []
+    if character:
+        session_key = f"wm_recent_shops_{character.pk}"
+        recent_shop_ids = request.session.get(session_key, [])
+
+    # Determine active tab
+    active_tab = request.GET.get("tab", "all")
+
     shops = list(ordered_shops(open_shops(club, timezone.localdate())))
+
+    # Filter shops for "My Shops" tab
+    if active_tab == "my_shops":
+        if recent_shop_ids:
+            shops = [s for s in shops if s.pk in recent_shop_ids]
+        else:
+            shops = []
+
     stalls = street_stalls(club)
     lots = street_lots(
         shops,
@@ -97,7 +135,16 @@ def index(request, club_slug):
         stall_gap=club.street_stall_gap,
     )
     return render(
-        request, "shops/browse/index.html", {"shops": shops, "stalls": stalls, "lots": lots}
+        request,
+        "shops/browse/index.html",
+        {
+            "shops": shops,
+            "stalls": stalls,
+            "lots": lots,
+            "recent_shop_ids": recent_shop_ids,
+            "active_tab": active_tab,
+            "character": character,
+        },
     )
 
 

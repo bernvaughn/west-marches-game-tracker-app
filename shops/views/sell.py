@@ -16,6 +16,7 @@ from player_characters.selection import selected_character
 from shops.models import Shop
 from shops.selling import sell as do_sell
 from shops.services import ShopError, buy_price, is_open
+from shops.views.browse import add_recent_shop
 
 
 @club_member_required
@@ -77,6 +78,7 @@ def sell_item(request, club_slug, shop_id, item_id):
                 messages.success(
                     request, f"Sold {quantity} × {item} to {shop} for {format_coins(total)}."
                 )
+                add_recent_shop(request, shop.pk)
     if error:
         messages.error(request, error)
     if is_htmx(request):
