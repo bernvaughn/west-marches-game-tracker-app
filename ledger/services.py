@@ -119,7 +119,7 @@ class LedgerService(BaseService, ClubScopedService):
                 try:
                     self.ensure_same_club(character, line.item)
                 except ValueError as e:
-                    raise LedgerError(str(e))
+                    raise LedgerError(str(e)) from e
 
     def record_many(self, specs):
         """

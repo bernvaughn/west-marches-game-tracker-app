@@ -2,13 +2,19 @@ from django.db.models.functions import Lower
 from django.http import Http404
 from django.shortcuts import render
 from django.utils import timezone
-from django.views import View
 from django.utils.decorators import method_decorator
+from django.views import View
 
-from accounts.mixins import CharacterContextMixin, ClubContextMixin, ClubScopedMixin, PermissionMixin
+from accounts.mixins import (
+    CharacterContextMixin,
+    ClubContextMixin,
+    ClubScopedMixin,
+    PermissionMixin,
+)
 from accounts.permissions import club_member_required
 from player_characters.models import Character
 from player_characters.player_shop import has_listing
+from player_characters.selection import selected_character
 from shops.models import Shop, ShopStock
 from shops.services import (
     is_open,
@@ -37,9 +43,6 @@ def add_recent_shop(request, shop_id):
     if len(recent) > MAX_RECENT_SHOPS:
         recent = recent[:MAX_RECENT_SHOPS]
     request.session[session_key] = recent
-
-
-from player_characters.selection import selected_character
 
 
 def _load_shop(view, shop_id, is_club_admin):
@@ -101,7 +104,9 @@ def street_lots(shops, stalls=(), *, min_gap=0, max_gap=2, stall_gap=1, per_row=
 
 def street_stalls(club):
     """Open player shops in this club with something listed, by name then id."""
-    characters = Character.objects.for_club(club).filter(shop_open=True).order_by(Lower("name"), "id")
+    characters = (
+        Character.objects.for_club(club).filter(shop_open=True).order_by(Lower("name"), "id")
+    )
     return [c for c in characters if has_listing(c)]
 
 
@@ -153,7 +158,7 @@ class IndexView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
 def _inventory_context(character, shop):
     if character is None:
         return {"inventory_character": None}
-    from player_characters.inventory import inventory_rows, coin_summary
+    from player_characters.inventory import coin_summary, inventory_rows
     from player_characters.junk import junk_rows, junk_value, junk_value_at
 
     rows = inventory_rows(character)
@@ -184,7 +189,9 @@ def _inventory_context(character, shop):
 
 
 @method_decorator(club_member_required, name="dispatch")
-class ShopDetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubContextMixin, View):
+class ShopDetailView(
+    ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubContextMixin, View
+):
     def get(self, request, club_slug, shop_id):
         is_admin = self.is_club_admin(request.user, self.club)
         shop, open_now = _load_shop(self, shop_id, is_admin)
@@ -199,4 +206,6 @@ class StockFragmentView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View
     def get(self, request, club_slug, shop_id):
         is_admin = self.is_club_admin(request.user, self.club)
         shop, _ = _load_shop(self, shop_id, is_admin)
-        return render(request, "shops/browse/_stock.html", {"shop": shop, "rows": _visible_rows(shop)})
+        return render(
+            request, "shops/browse/_stock.html", {"shop": shop, "rows": _visible_rows(shop)}
+        )

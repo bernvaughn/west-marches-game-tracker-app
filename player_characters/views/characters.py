@@ -4,10 +4,15 @@ from django.db.models import Prefetch, Q
 from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views import View
 from django.utils.decorators import method_decorator
+from django.views import View
 
-from accounts.mixins import CharacterContextMixin, ClubContextMixin, ClubScopedMixin, PermissionMixin
+from accounts.mixins import (
+    CharacterContextMixin,
+    ClubContextMixin,
+    ClubScopedMixin,
+    PermissionMixin,
+)
 from accounts.permissions import admin_or_gm_required, club_admin_required, club_member_required
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests
@@ -30,7 +35,9 @@ class MineView(ClubContextMixin, CharacterContextMixin, View):
 
 
 @method_decorator(club_member_required, name="dispatch")
-class DirectoryView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubContextMixin, View):
+class DirectoryView(
+    ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubContextMixin, View
+):
     def get(self, request, club_slug):
         sees_all = self.is_club_admin(request.user, self.club) or self.is_game_master(
             request.user, self.club
@@ -80,7 +87,9 @@ class DirectoryView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, Clu
 class IndexView(ClubScopedMixin, View):
     def get(self, request, club_slug):
         characters = self.get_club_queryset(Character).select_related("owner__user")
-        return render(request, "player_characters/characters/index.html", {"characters": characters})
+        return render(
+            request, "player_characters/characters/index.html", {"characters": characters}
+        )
 
 
 @method_decorator(club_member_required, name="dispatch")
@@ -92,7 +101,9 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
         initial = {"owner": self.membership} if can_pick and self.membership else {}
         form = CharacterForm(club=self.club, choose_owner=can_pick, initial=initial)
         return render(
-            request, "player_characters/characters/form.html", {"form": form, "title": "New character"}
+            request,
+            "player_characters/characters/form.html",
+            {"form": form, "title": "New character"},
         )
 
     def post(self, request, club_slug):
@@ -109,7 +120,9 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
             messages.success(request, f"Created {character.name}.")
             return redirect("characters:detail", club_slug=self.club.slug, pk=character.pk)
         return render(
-            request, "player_characters/characters/form.html", {"form": form, "title": "New character"}
+            request,
+            "player_characters/characters/form.html",
+            {"form": form, "title": "New character"},
         )
 
 
@@ -153,7 +166,10 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
                 LedgerEntry.objects.filter(character=character)
                 .select_related("created_by")
                 .prefetch_related(
-                    Prefetch("lines", queryset=LedgerLine.objects.select_related("item").order_by("id"))
+                    Prefetch(
+                        "lines",
+                        queryset=LedgerLine.objects.select_related("item").order_by("id"),
+                    )
                 )
                 .order_by("-date", "-id")[:5]
             )
@@ -207,7 +223,9 @@ class HandoverView(ClubScopedMixin, ClubContextMixin, View):
             new_owner = form.cleaned_data["owner"]
             character.owner = new_owner
             character.save(update_fields=["owner"])
-            messages.success(request, f"{character.name} now belongs to {new_owner.user.display_name}.")
+            messages.success(
+                request, f"{character.name} now belongs to {new_owner.user.display_name}."
+            )
             return redirect("characters:detail", club_slug=self.club.slug, pk=character.pk)
         return render(
             request,
