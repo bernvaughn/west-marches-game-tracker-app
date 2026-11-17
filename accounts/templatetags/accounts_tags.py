@@ -1,7 +1,21 @@
 from django import template
 from django.utils.safestring import mark_safe
 
-from ..permissions import can_reset_password, can_see_email, can_see_gm_details
+from ..permissions import (
+    _membership,
+    can_reset_password,
+    can_see_email,
+    can_see_gm_details,
+)
+from ..permissions import (
+    can_view_inventory as _can_view_inventory,
+)
+from ..permissions import (
+    is_club_admin as _is_club_admin,
+)
+from ..permissions import (
+    is_game_master as _is_game_master,
+)
 
 register = template.Library()
 
@@ -86,3 +100,31 @@ def initials(value):
     if len(words) == 1:
         return words[0][0].upper()
     return (words[0][0] + words[-1][0]).upper()
+
+
+@register.simple_tag
+def is_club_admin(user, club):
+    """True if user is a club admin (or site admin) of club."""
+    return _is_club_admin(user, club)
+
+
+@register.simple_tag
+def is_game_master(user, club):
+    """True if user is a game master (or site admin) of club."""
+    return _is_game_master(user, club)
+
+
+@register.simple_tag
+def is_club_member(user, club):
+    """True if user is a member (or site admin) of club."""
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return _membership(user, club) is not None
+
+
+@register.filter
+def can_view_inventory(user, character):
+    """True if user can view the character's inventory (owner | GM | club admin | site admin)."""
+    return _can_view_inventory(user, character)
