@@ -38,17 +38,6 @@ class DirectoryView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, Clu
             self.get_club_queryset(Character).select_related("owner__user").order_by(Lower("name"))
         )
         sel = self.get_selected_character()
-        by_other = {}
-        if sel:
-            open_trades = (
-                self.get_club_queryset(Trade)
-                .filter(status__in=OPEN)
-                .filter(Q(sender=sel) | Q(receiver=sel))
-                .order_by("-created")
-            )
-            for t in open_trades:
-                other_id = t.receiver_id if t.sender_id == sel.pk else t.sender_id
-                by_other.setdefault(other_id, []).append(t)
         mine = getattr(request.membership, "pk", None)
         rows = []
         for c in characters:
@@ -58,16 +47,11 @@ class DirectoryView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, Clu
                 if sees_all or own
                 else None
             )
-            propose_url = None
-            if sel and not own:
-                propose_url = reverse("trades:propose", args=[self.club.slug]) + f"?to={c.pk}"
             rows.append(
                 {
                     "character": c,
                     "url": url,
                     "own": own,
-                    "trades": [] if own else by_other.get(c.pk, []),
-                    "propose_url": propose_url,
                 }
             )
         return render(
@@ -132,8 +116,6 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "can_request_points": owns_character(request.user, character) and not (admin or gm),
             "is_owner": owns_character(request.user, character),
             "can_handover": admin,
-            "can_transfer": owns_character(request.user, character)
-            and Character.objects.for_club(self.club).filter(owner=character.owner).count() >= 2,
         }
         if can_view:
             char_ctx = self.get_character_context(character)
