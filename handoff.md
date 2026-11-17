@@ -1,41 +1,29 @@
-## Hand-off: S2 Trade Dashboard Widget (Plan Stage Complete)
+Hand-off to review for task "Remove Trade/Transfer Navigation Entries" (01a1e7c9-f1d3-7186-bab0-e9718150b902).
 
-### What was done
-1. **Explored the codebase** to understand the existing dashboard provider system, trade models, and trade status display logic
-2. **Created implementation plan** (`plan.md`) detailing:
-   - Files to modify: `accounts/views/dashboard.py` (TradesProvider), `templates/accounts/_dashboard_trades.html`
-   - URL endpoint already exists: `/dashboard/<slug>/partial/trades/`
-   - Provider already registered in `accounts/apps.py` with order=2
-3. **Set acceptance criteria** with proof stages (plan → code → verify)
+## What the change does
+The change removes all trade and transfer navigation entries. It also removes the trade dashboard and approval providers.
 
-### Key findings
-- **TradesProvider already exists** in `accounts/views/dashboard.py` with basic functionality but needs enhancement
-- **Template exists** at `templates/accounts/_dashboard_trades.html` but uses simple `trade_items` list instead of detailed trade data
-- **Trade status wording** is in `player_characters/trade_status_line.py` - `trade_status_line()` function
-- **Trade URLs**: `trades:detail`, `trades:edit_side`, `trades:accept`, `trades:decline`, `trades:cancel`
-- **HTMX polling**: Existing `trades:poll` endpoint at `/trades/poll/` polls every 5s for navbar; dashboard widget needs 10s poll to its own partial endpoint
+## Key files and decisions
+- player_characters/apps.py: removed the "trades" group ("My trades", "Propose trade") and the "Move items" (characters:transfer_start) entry.
+- accounts/apps.py: removed the TradesDashboardProvider and open_trades_needing_action imports and their registrations.
+- accounts/approval_providers.py: removed the open_trades_needing_action function.
+- accounts/dashboard_providers.py: removed the TradesDashboardProvider class and the OPEN import from trade_services.
+- accounts/navigation.py: removed "trades" from GROUPS and MENU_GROUPS.
+- Tests updated: test_approvals_indicator.py, test_navigation_menus.py, test_u60_top_bar.py, test_u61_top_bar.py.
 
-### What the next agent (code stage) should do
-1. **Modify `TradesProvider.get_context()`** in `accounts/views/dashboard.py`:
-   - Import `trade_status_line` from `player_characters.trade_status_line`
-   - Build detailed trade data with status text, action button URL/label per trade state
-   - Return `open_trades_data` list with dicts containing: trade, other_character, side, status_display, action_url, action_label
+## Decisions and rationale
+I merged origin/main into the branch. Main had already merged "Delete Trade Code" (#262), so the trade test files were gone and the downtime test now asserts Trades is absent. The transfers deletion story is not merged, so main still had the "Move items" entry. My task owns removing "Move items" from navigation, so I removed it and kept the matching test update. I resolved a conflict in accounts/approval_providers.py and test_navigation_menus.py in favour of my version.
 
-2. **Rewrite `templates/accounts/_dashboard_trades.html`**:
-   - Iterate over `provider_context.open_trades_data`
-   - Show status badge using U78 wording
-   - Show "Act Now" button with correct link per state machine
-   - Wrap in container with `hx-get="{% url 'accounts:dashboard_partial' club.slug 'trades' %}" hx-trigger="every 10s" hx-swap="outerHTML"`
+## Verification
+The full non-browser suite passes: 1780 passed in about 93 seconds. Ruff passes across the repo. CI pipeline #44161523295 is green (pytest, ruff, pip-audit). Re-recorded test and lint verifications against this green state. typecheck stays pass because the project has no typecheck tool.
 
-3. **Update `TradesProvider.should_show()`** to return True only if user has open trades
+## What is open
+Nothing is open at the code stage. All 9 code acceptance items are ticked. Items 10 to 15 are deferred to the verify stage.
 
-### Open questions / decisions
-- The `trade_status_line` function needs `viewer_side` parameter ("sender", "receiver", or None) - need to pass user's side
-- For REQUESTED status: receiver sees "Accept" → `trades:edit_side`; sender sees "Cancel" → `trades:detail` (or cancel POST)
-- For ACCEPTED status: if viewer not approved → "Change" → `trades:edit_side`; if viewer approved but other not → "Approve" → `trades:detail` (approve POST); if both approved → trade completes automatically
+## What the next stage should do first
+Review PR #260. It targets main. Confirm the diff is limited to the navigation and provider removals plus test updates. The non-browser suite and CI already pass, so the risk is low.
 
-### Files to reference
-- `accounts/views/dashboard.py` - TradesProvider class
-- `templates/accounts/_dashboard_trades.html` - template to rewrite
-- `player_characters/trade_status_line.py` - status wording function
-- `player_characters/urls_trades.py` - trade URL patterns
+## Links
+- MR: https://github.com/bernvaughn/west-marches-game-tracker-app/pull/260
+- Branch: task/e9718150b902
+- Artifact recorded on the task.

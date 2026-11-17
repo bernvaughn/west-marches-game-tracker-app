@@ -12,5 +12,3 @@ def open_messages(request):
         return None
     count = Message.objects.for_club(club).filter(status=Message.Status.OPEN).count()
     return ("Messages", count, reverse("accounts:message_inbox", args=[club.slug]))
-
-
