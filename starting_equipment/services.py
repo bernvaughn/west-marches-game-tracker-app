@@ -9,18 +9,9 @@ from ledger.services import record as ledger_record
 from starting_equipment.models import StartingEquipmentRequest
 
 if TYPE_CHECKING:
-    from accounts.models import Club, User
-    from items.models import Item
+    from accounts.models import User
     from player_characters.models import Character
-    from starting_equipment.models import (
-        MagicItemStartingOption,
-        StartingEquipmentBackgroundEntry,
-        StartingEquipmentBackgroundLine,
-        StartingEquipmentClassEntry,
-        StartingEquipmentClassLine,
-        StartingEquipmentLevelCoins,
-        StartingEquipmentTemplate,
-    )
+    from starting_equipment.models import StartingEquipmentTemplate
 
 
 class StartingEquipmentError(Exception):

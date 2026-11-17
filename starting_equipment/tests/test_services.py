@@ -192,8 +192,8 @@ class TestApplyStartingEquipment:
         game_master_user,
     ):
         """Service creates single ledger entry with all granted items and coins."""
-        from starting_equipment.services import apply_starting_equipment
         from starting_equipment.models import StartingEquipmentRequest
+        from starting_equipment.services import apply_starting_equipment
 
         # Create an approved request for this specific character
         StartingEquipmentRequest.objects.create(
@@ -308,7 +308,15 @@ class TestApplyStartingEquipment:
         assert "Chain Mail" not in [line.item.name for line in item_lines]
 
     def test_choice_groups_skipped_in_background_lines(
-        self, character_with_class_bg, template, class_entry, class_line, bg_entry, bg_line, bg_line_choice, game_master_user
+        self,
+        character_with_class_bg,
+        template,
+        class_entry,
+        class_line,
+        bg_entry,
+        bg_line,
+        bg_line_choice,
+        game_master_user,
     ):
         """Choice groups in background lines are skipped (is_choice=True)."""
         from starting_equipment.services import apply_starting_equipment
