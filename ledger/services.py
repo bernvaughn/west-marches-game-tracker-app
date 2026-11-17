@@ -3,10 +3,11 @@
 from collections import defaultdict
 from dataclasses import dataclass
 
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Q, Sum
 from django.utils import timezone
 
+from core.services import BaseService, ClubScopedService
 from player_characters.models import Trade, TradeLine
 
 from .models import LedgerEntry, LedgerLine
@@ -33,56 +34,239 @@ class Line:
     coins: int = 0
 
 
+class LedgerService(BaseService, ClubScopedService):
+    """
+    Service for ledger operations.
+
+    Combines BaseService for transaction handling and ClubScopedService
+    for club-scoped validation and queries.
+    """
+
+    def validate(self, *args, **kwargs):
+        """
+        Validate inputs. This is called by the base class before operations.
+        Individual methods perform their own validation.
+        """
+        pass
+
+    def coin_balance(self, character):
+        """Return total coin balance for a character."""
+        total = (
+            LedgerLine.objects.filter(entry__character=character)
+            .aggregate(t=Sum("coins"))["t"]
+        )
+        return total or 0
+
+    def item_quantities(self, character):
+        """Return {item_id: quantity} for items the character owns (non-zero only)."""
+        rows = (
+            LedgerLine.objects.filter(entry__character=character, item__isnull=False)
+            .values("item_id")
+            .annotate(total=Sum("quantity"))
+        )
+        return {r["item_id"]: r["total"] for r in rows if r["total"]}
+
+    def _hold_lines(self, character, exclude_trade=None):
+        """Give-side trade lines of open trades for this character."""
+        qs = TradeLine.objects.filter(
+            Q(trade__sender=character, from_sender=True)
+            | Q(trade__receiver=character, from_sender=False),
+            trade__status__in=OPEN_TRADE_STATUSES,
+        )
+        if exclude_trade is not None:
+            qs = qs.exclude(trade=exclude_trade)
+        return qs
+
+    def held_coins(self, character, exclude_trade=None):
+        return self._hold_lines(character, exclude_trade).aggregate(t=Sum("coins"))["t"] or 0
+
+    def held_items(self, character, exclude_trade=None):
+        rows = (
+            self._hold_lines(character, exclude_trade)
+            .filter(item__isnull=False)
+            .values("item_id")
+            .annotate(total=Sum("quantity"))
+        )
+        return {r["item_id"]: r["total"] for r in rows if r["total"]}
+
+    def available_coins(self, character, exclude_trade=None):
+        return self.coin_balance(character) - self.held_coins(character, exclude_trade)
+
+    def available_items(self, character, exclude_trade=None):
+        owned = self.item_quantities(character)
+        held = self.held_items(character, exclude_trade)
+        result = {i: q - held.get(i, 0) for i, q in owned.items()}
+        return {i: q for i, q in result.items() if q}
+
+    def _validate_spec(self, spec):
+        """Validate a single record spec."""
+        character = spec["character"]
+        if spec["kind"] not in LedgerEntry.Kind.values:
+            raise LedgerError(f"Unknown entry kind: {spec['kind']!r}")
+        lines = spec.get("lines") or []
+        if not lines:
+            raise LedgerError("An entry needs at least one line.")
+        for line in lines:
+            if line.item is None:
+                if not line.coins:
+                    raise LedgerError("A line needs an item or coins.")
+                if line.quantity:
+                    raise LedgerError("A coin line cannot have a quantity.")
+            else:
+                if not line.quantity:
+                    raise LedgerError(f"Line for {line.item} needs a non-zero quantity.")
+                # Use club-scoping validation
+                try:
+                    self.ensure_same_club(character, line.item)
+                except ValueError as e:
+                    raise LedgerError(str(e))
+
+    def record_many(self, specs):
+        """
+        Write several entries atomically. Each spec is a dict of `record` keyword args.
+
+        Negative amounts are summed per character across the whole batch and checked
+        against availability; positives never fund negatives in the same batch. If
+        specs for one character give different `exclude_trade` values, the first
+        non-None one is used.
+        """
+        specs = [dict(s) for s in specs]
+        with self.atomic():
+            for spec in specs:
+                self._validate_spec(spec)
+
+            spend_coins = defaultdict(int)
+            spend_items = defaultdict(lambda: defaultdict(int))
+            characters = {}
+            exclude = {}
+            for spec in specs:
+                c = spec["character"]
+                characters[c.pk] = c
+                if exclude.get(c.pk) is None:
+                    exclude[c.pk] = spec.get("exclude_trade")
+                for line in spec["lines"]:
+                    if line.coins < 0:
+                        spend_coins[c.pk] += -line.coins
+                    if line.item is not None and line.quantity < 0:
+                        spend_items[c.pk][line.item] += -line.quantity
+
+            for pk, needed in spend_coins.items():
+                c = characters[pk]
+                have = self.available_coins(c, exclude[pk])
+                if needed > have:
+                    raise InsufficientFunds(f"{c} has {have} cp available but needs {needed} cp.")
+            for pk, items in spend_items.items():
+                c = characters[pk]
+                avail = self.available_items(c, exclude[pk])
+                for item, needed in items.items():
+                    have = avail.get(item.pk, 0)
+                    if needed > have:
+                        raise InsufficientItems(
+                            f"{c} has {have} x {item} available but needs {needed}."
+                        )
+
+            entries = []
+            for spec in specs:
+                c = spec["character"]
+                entry = LedgerEntry.objects.create(
+                    club=c.club,
+                    character=c,
+                    date=spec.get("date") or timezone.localdate(),
+                    note=spec.get("note", ""),
+                    kind=spec["kind"],
+                    created_by=spec.get("actor"),
+                    via_agent=spec.get("via_agent", False),
+                    shop=spec.get("shop"),
+                    agent_batch=spec.get("agent_batch"),
+                    reverses=spec.get("reverses"),
+                    source_message=spec.get("source_message"),
+                )
+                for line in spec["lines"]:
+                    LedgerLine.objects.create(
+                        entry=entry, item=line.item, quantity=line.quantity, coins=line.coins
+                    )
+                entries.append(entry)
+            return entries
+
+    def record(
+        self,
+        character,
+        kind,
+        lines,
+        note="",
+        date=None,
+        actor=None,
+        via_agent=False,
+        shop=None,
+        agent_batch=None,
+        reverses=None,
+        exclude_trade=None,
+        source_message=None,
+    ):
+        return self.record_many(
+            [
+                dict(
+                    character=character,
+                    kind=kind,
+                    lines=lines,
+                    note=note,
+                    date=date,
+                    actor=actor,
+                    via_agent=via_agent,
+                    shop=shop,
+                    agent_batch=agent_batch,
+                    reverses=reverses,
+                    exclude_trade=exclude_trade,
+                    source_message=source_message,
+                )
+            ]
+        )[0]
+
+    RECENT_KINDS = ("consumed", "adjustment", "award")
+
+    def recent_changes(self, character, days=30, limit=20):
+        """Consume and adjust entries (any actor) in the last `days`, newest first."""
+        since = timezone.localdate() - timezone.timedelta(days=days)
+        return list(
+            LedgerEntry.objects.filter(
+                character=character, kind__in=self.RECENT_KINDS, date__gte=since
+            )
+            .select_related("created_by")
+            .prefetch_related(
+                models.Prefetch(
+                    "lines", queryset=LedgerLine.objects.select_related("item").order_by("id")
+                )
+            )
+            .order_by("-date", "-id")[:limit]
+        )
+
+
+# Backward-compatible module-level functions
+_service = LedgerService()
+
+
 def coin_balance(character):
-    total = LedgerLine.objects.filter(entry__character=character).aggregate(t=Sum("coins"))["t"]
-    return total or 0
+    return _service.coin_balance(character)
 
 
 def item_quantities(character):
-    """Return {item_id: quantity} for items the character owns (non-zero only)."""
-    rows = (
-        LedgerLine.objects.filter(entry__character=character, item__isnull=False)
-        .values("item_id")
-        .annotate(total=Sum("quantity"))
-    )
-    return {r["item_id"]: r["total"] for r in rows if r["total"]}
-
-
-def _hold_lines(character, exclude_trade=None):
-    """Give-side trade lines of open trades for this character."""
-    qs = TradeLine.objects.filter(
-        Q(trade__sender=character, from_sender=True)
-        | Q(trade__receiver=character, from_sender=False),
-        trade__status__in=OPEN_TRADE_STATUSES,
-    )
-    if exclude_trade is not None:
-        qs = qs.exclude(trade=exclude_trade)
-    return qs
+    return _service.item_quantities(character)
 
 
 def held_coins(character, exclude_trade=None):
-    return _hold_lines(character, exclude_trade).aggregate(t=Sum("coins"))["t"] or 0
+    return _service.held_coins(character, exclude_trade)
 
 
 def held_items(character, exclude_trade=None):
-    rows = (
-        _hold_lines(character, exclude_trade)
-        .filter(item__isnull=False)
-        .values("item_id")
-        .annotate(total=Sum("quantity"))
-    )
-    return {r["item_id"]: r["total"] for r in rows if r["total"]}
+    return _service.held_items(character, exclude_trade)
 
 
 def available_coins(character, exclude_trade=None):
-    return coin_balance(character) - held_coins(character, exclude_trade)
+    return _service.available_coins(character, exclude_trade)
 
 
 def available_items(character, exclude_trade=None):
-    owned = item_quantities(character)
-    held = held_items(character, exclude_trade)
-    result = {i: q - held.get(i, 0) for i, q in owned.items()}
-    return {i: q for i, q in result.items() if q}
+    return _service.available_items(character, exclude_trade)
 
 
 def record(
@@ -99,126 +283,25 @@ def record(
     exclude_trade=None,
     source_message=None,
 ):
-    return record_many(
-        [
-            dict(
-                character=character,
-                kind=kind,
-                lines=lines,
-                note=note,
-                date=date,
-                actor=actor,
-                via_agent=via_agent,
-                shop=shop,
-                agent_batch=agent_batch,
-                reverses=reverses,
-                exclude_trade=exclude_trade,
-                source_message=source_message,
-            )
-        ]
-    )[0]
-
-
-def _validate(spec):
-    character = spec["character"]
-    if spec["kind"] not in LedgerEntry.Kind.values:
-        raise LedgerError(f"Unknown entry kind: {spec['kind']!r}")
-    lines = spec.get("lines") or []
-    if not lines:
-        raise LedgerError("An entry needs at least one line.")
-    for line in lines:
-        if line.item is None:
-            if not line.coins:
-                raise LedgerError("A line needs an item or coins.")
-            if line.quantity:
-                raise LedgerError("A coin line cannot have a quantity.")
-        else:
-            if not line.quantity:
-                raise LedgerError(f"Line for {line.item} needs a non-zero quantity.")
-            if line.item.club_id != character.club_id:
-                raise LedgerError(f"{line.item} belongs to a different club.")
+    return _service.record(
+        character,
+        kind,
+        lines,
+        note=note,
+        date=date,
+        actor=actor,
+        via_agent=via_agent,
+        shop=shop,
+        agent_batch=agent_batch,
+        reverses=reverses,
+        exclude_trade=exclude_trade,
+        source_message=source_message,
+    )
 
 
 def record_many(specs):
-    """Write several entries atomically. Each spec is a dict of `record` keyword args.
-
-    Negative amounts are summed per character across the whole batch and checked
-    against availability; positives never fund negatives in the same batch. If
-    specs for one character give different `exclude_trade` values, the first
-    non-None one is used.
-    """
-    specs = [dict(s) for s in specs]
-    with transaction.atomic():
-        for spec in specs:
-            _validate(spec)
-
-        spend_coins = defaultdict(int)
-        spend_items = defaultdict(lambda: defaultdict(int))
-        characters = {}
-        exclude = {}
-        for spec in specs:
-            c = spec["character"]
-            characters[c.pk] = c
-            if exclude.get(c.pk) is None:
-                exclude[c.pk] = spec.get("exclude_trade")
-            for line in spec["lines"]:
-                if line.coins < 0:
-                    spend_coins[c.pk] += -line.coins
-                if line.item is not None and line.quantity < 0:
-                    spend_items[c.pk][line.item] += -line.quantity
-
-        for pk, needed in spend_coins.items():
-            c = characters[pk]
-            have = available_coins(c, exclude[pk])
-            if needed > have:
-                raise InsufficientFunds(f"{c} has {have} cp available but needs {needed} cp.")
-        for pk, items in spend_items.items():
-            c = characters[pk]
-            avail = available_items(c, exclude[pk])
-            for item, needed in items.items():
-                have = avail.get(item.pk, 0)
-                if needed > have:
-                    raise InsufficientItems(
-                        f"{c} has {have} x {item} available but needs {needed}."
-                    )
-
-        entries = []
-        for spec in specs:
-            c = spec["character"]
-            entry = LedgerEntry.objects.create(
-                club=c.club,
-                character=c,
-                date=spec.get("date") or timezone.localdate(),
-                note=spec.get("note", ""),
-                kind=spec["kind"],
-                created_by=spec.get("actor"),
-                via_agent=spec.get("via_agent", False),
-                shop=spec.get("shop"),
-                agent_batch=spec.get("agent_batch"),
-                reverses=spec.get("reverses"),
-                source_message=spec.get("source_message"),
-            )
-            for line in spec["lines"]:
-                LedgerLine.objects.create(
-                    entry=entry, item=line.item, quantity=line.quantity, coins=line.coins
-                )
-            entries.append(entry)
-        return entries
-
-
-RECENT_KINDS = ("consumed", "adjustment", "award")
+    return _service.record_many(specs)
 
 
 def recent_changes(character, days=30, limit=20):
-    """Consume and adjust entries (any actor) in the last `days`, newest first."""
-    since = timezone.localdate() - timezone.timedelta(days=days)
-    return list(
-        LedgerEntry.objects.filter(character=character, kind__in=RECENT_KINDS, date__gte=since)
-        .select_related("created_by")
-        .prefetch_related(
-            models.Prefetch(
-                "lines", queryset=LedgerLine.objects.select_related("item").order_by("id")
-            )
-        )
-        .order_by("-date", "-id")[:limit]
-    )
+    return _service.recent_changes(character, days, limit)
