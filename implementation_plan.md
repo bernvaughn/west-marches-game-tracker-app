@@ -1,80 +1,56 @@
-# Implementation Plan: S12 Consumable Quick-Consume
+# Implementation Plan: Figure out why worktrees not being cleaned up
 
-## Overview
-Add a dashboard section for consumable items with "Use 1" confirm buttons that open a modal and record a consume ledger entry.
+## Problem Analysis
 
-## Files to Create/Modify
+The PI device (CodeHerder device "PI DEVICE WSL DESKTOP-KQ4S3ST") has 27 orphaned worktree slots that cannot be cleaned up, preventing new sessions from spawning. The task events show multiple `task.start_refused` with reason `no_placeable_device`.
 
-### 1. `accounts/dashboard_providers.py` - Add ConsumablesDashboardProvider
-- Add new `ConsumablesDashboardProvider` class with:
-  - `key = "consumables"`
-  - `order = 8`
-  - `template = "accounts/_dashboard_consumables.html"`
-  - `get_context()`: Find items where `quantity > 1` OR `traits` contains "consumable" (case-insensitive)
-  - `should_show()`: Return True if any consumable items exist
-- Register provider in `accounts/apps.py` ready() (replace existing ConsumablesProvider import)
+## Root Cause Hypotheses
 
-### 2. `accounts/views/dashboard_consumables.py` (NEW)
-- Create new view `consumable_consume_partial(request, club_slug, item_pk)`
-- Returns HTMX modal fragment for confirm modal
-- Uses existing `player_characters.views.consume.player_consume` logic
-- Requires `@club_member_required`, character ownership check
-- Returns 404 if item not available or not consumable
+1. **Pi coding agent sessions not properly disposing** - If `AgentSession.dispose()` is not called (process crash, SIGKILL, unhandled exception), `cleanupSessionResources()` won't run, leaving resources orphaned.
 
-### 3. `templates/accounts/_dashboard_consumables.html` (MODIFY)
-- Update existing template
-- Change "Consume" link to "Use 1" button with HTMX attributes:
-  - `hx-get="{% url 'accounts:consumable_consume_partial' club.slug item.pk %}"`
-  - `hx-target="#app-modal .modal-content"`
-  - `data-app-modal`
-- Show item name, quantity, and "Use 1" button per row
+2. **Missing worktree cleanup registration** - The `registerSessionResourceCleanup()` mechanism exists but no worktree cleanup function appears to be registered in the pi coding agent codebase.
 
-### 4. `templates/accounts/modals/_consume_confirm.html` (NEW)
-- Create confirm modal template extending `components/modal_frame.html`
-- Title: "Consume 1 [Item]?"
-- Body: Form with quantity (default 1, hidden or shown), note field (optional)
-- Uses `PlayerConsumeForm` for validation
-- Submit to `characters:player_consume` endpoint
-- Footer: Cancel + "Consume" button
+3. **CodeHerder device agent bug** - The device agent that manages worktree slots may have a bug in its cleanup logic (not in this workspace).
 
-### 5. `accounts/urls.py` (MODIFY)
-- Add URL pattern:
-  ```python
-  path(
-      "dashboard/partial/consumable_consume/<int:item_pk>/",
-      dashboard_consumables.consumable_consume_partial,
-      name="consumable_consume_partial",
-  ),
-  ```
+4. **Session lifecycle issue** - Sessions may be terminated abnormally (OOM kill, device restart, network partition) without graceful shutdown.
 
-### 6. `accounts/apps.py` (MODIFY)
-- Replace import of `ConsumablesProvider` from `accounts.views.dashboard` with `ConsumablesDashboardProvider` from `accounts.dashboard_providers`
-- Register the new provider
+## Investigation Plan
 
-## Detection Logic
-```python
-def _is_consumable(self, item, quantity):
-    # Item is consumable if:
-    # 1. quantity > 1, OR
-    # 2. traits contains "consumable" (case-insensitive)
-    if quantity > 1:
-        return True
-    if item.traits and "consumable" in item.traits.lower():
-        return True
-    return False
-```
+### Stage 1: Plan (Current)
+- [x] Analyze task description and acceptance criteria
+- [x] Explore pi coding agent codebase for worktree/session cleanup
+- [x] Identify key files: `agent-session.js`, `session-manager.js`, `cleanupSessionResources`
+- [ ] Write implementation plan (this document)
+
+### Stage 2: Code (Investigation)
+- [ ] Search CodeHerder SDK/docs for worktree slot management
+- [ ] Check if pi coding agent registers any worktree cleanup via `registerSessionResourceCleanup`
+- [ ] Examine session disposal paths in pi coding agent
+- [ ] Check for any crash/unhandled exception handlers that might prevent dispose()
+- [ ] Look at process signal handling (SIGTERM, SIGINT) in pi agent
+
+### Stage 3: Review
+- [ ] Document root cause found
+- [ ] Propose specific solutions (code changes or config fixes)
+- [ ] Create hand-off comment with findings
+
+## Key Files to Investigate
+
+1. `/opt/pi/node_modules/@earendil-works/pi-coding-agent/dist/core/agent-session.js` - Session disposal and cleanupSessionResources call
+2. `/opt/pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/chunks/chunk-USJZMAIR.js` - cleanupSessionResources implementation
+3. `/opt/pi/node_modules/@earendil-works/pi-coding-agent/dist/core/session-manager.js` - Session persistence
+4. CodeHerder device agent (external - not in workspace)
 
 ## Acceptance Criteria Mapping
-| Criteria | Proof Stage |
-|----------|-------------|
-| "Consumables" section (provider order 8) shows items with `quantity > 1` or "consumable" trait | code (unit test) |
-| Each row: item name, qty, "Use 1" button | code (browser test) |
-| Button opens confirm modal: "Consume 1 [Item]?" + optional note | code (browser test) |
-| Confirm records consume ledger entry (player-initiated, U82) | code (unit test) |
-| Ruff clean, unit + browser tests pass | verify |
 
-## Test Strategy
-- Unit tests for provider detection logic (quantity > 1, traits contains "consumable")
-- Unit tests for partial endpoint (GET returns modal, 404 for non-consumable/non-available)
-- Browser test for full flow: dashboard → click "Use 1" → modal opens → confirm → ledger entry created
-- Ruff check on all new/modified files
+| Criterion | Proof Stage |
+|-----------|-------------|
+| Message/comment revealing reason for orphaned worktree slots | review |
+| Message/comment proposing solutions | review |
+
+## Next Steps
+
+1. Complete investigation in code stage
+2. Post findings as task comment
+3. Propose solutions based on root cause
+4. Transition to review stage

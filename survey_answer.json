@@ -1,7 +1,7 @@
 {
   "answers": {
-    "least_necessary": {"text": "Reading the existing codebase to understand the patterns - this was necessary but felt like overhead"},
-    "most_expensive": {"text": "Analyzing the existing dashboard provider system and consume logic to design the new provider"},
-    "redundant": {"text": "Checking multiple files to understand the same patterns (dashboard_providers.py, views/dashboard.py, apps.py)"}
+    "least_necessary": {"text": "Reading through session transcript logs from previous agent runs to understand context"},
+    "most_expensive": {"text": "Searching through pi coding agent codebase for worktree management code"},
+    "redundant": {"text": "Checking multiple pi agent files that don't contain worktree slot management (it's in CodeHerder device agent)"}
   }
 }
