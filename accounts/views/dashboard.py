@@ -1,19 +1,17 @@
 """Player dashboard view: contextual quick actions for between-session tasks."""
 
-from django.db.models import Q
 from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
 from accounts.dashboard_providers import get_provider, get_providers
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
-from accounts.scoping import club_get_object_or_404, club_queryset
+from accounts.scoping import club_get_object_or_404
 from downtime import services as downtime_services
 from player_characters.inventory import coin_summary
 from player_characters.junk import junk_rows, junk_value
-from player_characters.models import Character, Trade
+from player_characters.models import Character
 from player_characters.selection import selected_character
-from player_characters.trade_services import OPEN
 
 # =============================================================================
 # Dashboard Context Building (Uses Unified Provider System)
@@ -39,26 +37,6 @@ def _get_dashboard_context(request, club, character, membership):
     junk = junk_rows(character)
     junk_val = junk_value(character, junk)
 
-    trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
-    my_trades = trades_qs.filter(
-        Q(sender__owner=membership) | Q(receiver__owner=membership)
-    ).select_related("sender__owner__user", "receiver__owner__user")
-
-    open_trades_data = []
-    for t in my_trades:
-        if t.sender.owner_id == membership.id:
-            other = t.receiver
-            side = "sender"
-        else:
-            other = t.sender
-            side = "receiver"
-        open_trades_data.append({
-            "trade": t,
-            "other_character": other,
-            "side": side,
-            "status_display": t.get_status_display(),
-        })
-
     from accounts.models import Message
     unread_count = Message.objects.for_club(club).filter(
         status=Message.Status.OPEN
@@ -70,7 +48,6 @@ def _get_dashboard_context(request, club, character, membership):
         "downtime_balance": downtime_balance,
         "junk_count": len(junk),
         "junk_value": junk_val,
-        "open_trades": open_trades_data,
         "unread_count": unread_count,
         "membership": membership,
         "dashboard_providers": providers,
@@ -148,12 +125,6 @@ def character_preview(request, club_slug, pk):
     junk = junk_rows(character)
     junk_val = junk_value(character, junk)
 
-    trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
-    my_trades = trades_qs.filter(
-        Q(sender__owner=membership) | Q(receiver__owner=membership)
-    )
-    open_trades_count = my_trades.count()
-
     return JsonResponse({
         "name": character.name,
         "level": character.level,
@@ -163,7 +134,6 @@ def character_preview(request, club_slug, pk):
         "junk_count": len(junk),
         "junk_value": junk_val,
         "downtime_balance": downtime_balance,
-        "open_trades_count": open_trades_count,
     })
 
 

@@ -29,10 +29,11 @@ def test_coins_split(club, login, player, sheet):
 
 
 @pytest.mark.story("U8")
-def test_holds_shown(club, login, player, sheet, make_open_trade):
+def test_no_holds_after_trade_removal(club, login, player, sheet, make_open_trade):
     make_open_trade(coins=100)
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "In open trades" in html and "Available" in html
+    assert "In open trades" not in html
+    assert "Available" in html
 
 
 @pytest.mark.story("U19")
@@ -70,11 +71,11 @@ def test_adjust_links_gm_admin_only(club, login, player, game_master, sheet):
 
 
 @pytest.mark.story("U19")
-def test_transfer_link_owner_with_two_characters(
+def test_no_transfer_link_after_removal(
     club, login, player, game_master, character, second_character
 ):
     t = u("characters:transfer", club, character.pk)
-    assert t in login(player).get(u("characters:detail", club, character.pk)).content.decode()
+    assert t not in login(player).get(u("characters:detail", club, character.pk)).content.decode()
     assert (
         t not in login(game_master).get(u("characters:detail", club, character.pk)).content.decode()
     )

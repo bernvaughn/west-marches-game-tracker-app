@@ -125,5 +125,5 @@ def test_held_line_only_when_held(
     trade = Trade.objects.create(club=club, sender=character, receiver=other_character)
     TradeLine.objects.create(trade=trade, from_sender=True, item=loot, quantity=1)
     r = post(c, club, shop, character, loot, 1)
-    assert b"In open trades" in r.content
+    assert b"In open trades" not in r.content
     assert b"Held" not in r.content

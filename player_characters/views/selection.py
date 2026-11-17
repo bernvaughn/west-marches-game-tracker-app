@@ -82,6 +82,5 @@ def character_preview(request, club_slug, pk):
         "junk_count": ctx["junk_qty"],
         "junk_value": ctx["junk_value"],
         "downtime": ctx["downtime"],
-        "open_trades": ctx["open_trades"],
     }
     return JsonResponse(data)

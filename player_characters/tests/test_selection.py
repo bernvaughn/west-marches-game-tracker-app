@@ -206,7 +206,7 @@ def test_character_preview_returns_json(login, club, player, aria):
     assert "junk_count" in data
     assert "junk_value" in data
     assert "downtime" in data
-    assert "open_trades" in data
+    assert "open_trades" not in data
 
 
 @pytest.mark.story("S3")
@@ -226,8 +226,8 @@ def test_character_preview_nonexistent_404(login, club, player):
 
 
 @pytest.mark.story("S3")
-def test_character_preview_includes_open_trades(login, club, player, aria, borin):
-    # Create an open trade between aria and borin
+def test_character_preview_no_open_trades_after_removal(login, club, player, aria, borin):
+    # Trades removed: open_trades not in preview data
     Trade.objects.create(
         club=club,
         sender=aria,
@@ -239,7 +239,7 @@ def test_character_preview_includes_open_trades(login, club, player, aria, borin
     response = client.get(url)
     assert response.status_code == 200
     data = response.json()
-    assert data["open_trades"] == 1
+    assert "open_trades" not in data
 
 
 @pytest.mark.story("S3")

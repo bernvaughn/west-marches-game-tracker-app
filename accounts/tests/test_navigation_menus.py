@@ -99,8 +99,6 @@ def test_old_nav_links_still_reachable(login, club, player, club_admin, game_mas
             "characters:directory",
             "characters:create",
             "characters:transfer_start",
-            "trades:index",
-            "trades:propose",
             "items:index",
             "shops:index",
             "ledger:index",
