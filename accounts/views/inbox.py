@@ -20,6 +20,7 @@ from player_characters.selection import selected_character
 from ..forms.grants import GRANT_FORMS, GRANT_TITLES, MapGrantForm
 from ..forms.inbox import (
     STATUS_ACTIONS,
+    BulkStatusForm,
     MessageForm,
     StatusForm,
     StockRequestForm,
@@ -95,6 +96,11 @@ def stock_request_new(request, club_slug):
 
 @club_admin_required
 def message_inbox(request, club_slug):
+    return _render_inbox(request)
+
+
+def _render_inbox(request):
+    """Shared context builder for the inbox page (filters, kind, messages list)."""
     status = request.GET.get("status", "open")
     if status not in FILTERS:
         status = "open"
@@ -181,6 +187,25 @@ def message_status(request, club_slug, pk):
     msg.save(update_fields=["status"])
     if is_htmx(request):
         return _modal_done()
+    return redirect(_inbox_url(club_slug, _filter_of(request.POST), _kind_of(request.POST)))
+
+
+@club_admin_required
+@require_POST
+def message_bulk_status(request, club_slug):
+    form = BulkStatusForm(request.POST, club=request.club)
+    if not form.is_valid():
+        return HttpResponseBadRequest("Invalid bulk status request")
+    message_ids = request.POST.getlist("message_ids")
+    if not message_ids:
+        return HttpResponseBadRequest("No messages selected")
+    status = form.cleaned_data["status"]
+    club_queryset(request, Message).filter(pk__in=message_ids).update(status=status)
+    if is_htmx(request):
+        response = HttpResponse(status=204)
+        response["HX-Trigger"] = json.dumps({"inboxChanged": True})
+        return response
+    flash.success(request, "Status updated for the selected messages.")
     return redirect(_inbox_url(club_slug, _filter_of(request.POST), _kind_of(request.POST)))
 
 

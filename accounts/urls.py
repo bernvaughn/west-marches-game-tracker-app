@@ -65,6 +65,7 @@ urlpatterns = [
     path("messages/stock/new/", inbox.stock_request_new, name="stock_request_new"),
     path("messages/", inbox.message_inbox, name="message_inbox"),
     path("messages/<int:pk>/status/", inbox.message_status, name="message_status"),
+    path("messages/bulk-status/", inbox.message_bulk_status, name="message_bulk_status"),
     path(
         "messages/<int:pk>/status/<slug:status>/confirm/",
         inbox.message_status_confirm,

@@ -20,6 +20,10 @@ def _status_url(club, pk):
     return reverse("accounts:message_status", args=[club.slug, pk])
 
 
+def _bulk_url(club):
+    return reverse("accounts:message_bulk_status", args=[club.slug])
+
+
 @pytest.fixture
 def msg(club, player):
     return Message.objects.create(club=club, sender=_mem(player, club), body="Missing ring")
@@ -137,5 +141,75 @@ def test_status_post_cross_club_404(club, other_club, club_admin, club_b_member,
     m = Message.objects.create(club=other_club, sender=_mem(club_b_member, other_club), body="B")
     r = login(club_admin).post(_status_url(club, m.pk), {"status": "closed"})
     assert r.status_code == 404
+    m.refresh_from_db()
+    assert m.status == "open"
+
+
+@pytest.mark.story("U30")
+def test_bulk_mark_handled(club, club_admin, player, login):
+    a = Message.objects.create(club=club, sender=_mem(player, club), body="one")
+    b = Message.objects.create(club=club, sender=_mem(player, club), body="two")
+    c = Message.objects.create(club=club, sender=_mem(player, club), body="three")
+    _, inbox = _urls(club)
+    cl = login(club_admin)
+    r = cl.post(_bulk_url(club), {"message_ids": [a.pk, b.pk], "status": "handled"})
+    assert r.status_code == 302
+    a.refresh_from_db()
+    b.refresh_from_db()
+    c.refresh_from_db()
+    assert a.status == "handled"
+    assert b.status == "handled"
+    assert c.status == "open"
+
+
+@pytest.mark.story("U30")
+def test_bulk_close(club, club_admin, player, login):
+    a = Message.objects.create(club=club, sender=_mem(player, club), body="one")
+    b = Message.objects.create(club=club, sender=_mem(player, club), body="two")
+    cl = login(club_admin)
+    r = cl.post(_bulk_url(club), {"message_ids": [a.pk, b.pk], "status": "closed"})
+    assert r.status_code == 302
+    a.refresh_from_db()
+    b.refresh_from_db()
+    assert a.status == "closed"
+    assert b.status == "closed"
+
+
+@pytest.mark.story("U30")
+def test_bulk_reopen(club, club_admin, player, login):
+    a = Message.objects.create(club=club, sender=_mem(player, club), body="one", status="closed")
+    b = Message.objects.create(club=club, sender=_mem(player, club), body="two", status="closed")
+    cl = login(club_admin)
+    r = cl.post(_bulk_url(club), {"message_ids": [a.pk, b.pk], "status": "open"})
+    assert r.status_code == 302
+    a.refresh_from_db()
+    b.refresh_from_db()
+    assert a.status == "open"
+    assert b.status == "open"
+
+
+@pytest.mark.story("U30")
+def test_bulk_empty_selection_400(club, club_admin, player, login):
+    cl = login(club_admin)
+    assert cl.post(_bulk_url(club), {"status": "handled"}).status_code == 400
+
+
+@pytest.mark.story("U30")
+def test_bulk_unknown_status_400(club, club_admin, player, login):
+    m = Message.objects.create(club=club, sender=_mem(player, club), body="one")
+    cl = login(club_admin)
+    r = cl.post(_bulk_url(club), {"message_ids": [m.pk], "status": "bogus"})
+    assert r.status_code == 400
+    m.refresh_from_db()
+    assert m.status == "open"
+
+
+@pytest.mark.story("U30")
+def test_bulk_non_admin_forbidden(club, club_admin, player, game_master, login):
+    m = Message.objects.create(club=club, sender=_mem(player, club), body="one")
+    cl = login(player)
+    assert cl.post(_bulk_url(club), {"message_ids": [m.pk], "status": "handled"}).status_code == 403
+    cl = login(game_master)
+    assert cl.post(_bulk_url(club), {"message_ids": [m.pk], "status": "handled"}).status_code == 403
     m.refresh_from_db()
     assert m.status == "open"

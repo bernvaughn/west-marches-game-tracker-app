@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.core.management import call_command
 from django.urls import reverse
@@ -71,7 +73,11 @@ def test_buttons_apply_per_status(club, club_admin, msg, login):
     page = c.get(inbox(club)).content.decode()
     assert 'aria-label="Mark handled"' in page and 'aria-label="Close"' in page
     assert 'aria-label="Reopen"' not in page
-    assert 'name="status"' not in page and "<select" not in page
+    # Per-row actions use confirm modals, not inline status selects. The bulk
+    # action bar (below the table) is the only <select name="status"> on the page.
+    for cell in re.findall(r'<td class="actions">.*?</td>', page, re.S):
+        assert 'name="status"' not in cell
+        assert "<select" not in cell
     for status in ("handled", "closed"):
         msg.status = status
         msg.save()
