@@ -1,61 +1,60 @@
-# Implementation Plan: Starting Equipment App Models
+# Implementation Plan: apply_starting_equipment Service
 
-## Overview
-Create the `starting_equipment` Django app with all models specified in the design:
-- StartingEquipmentTemplate
-- StartingEquipmentClassEntry
-- StartingEquipmentClassLine
-- StartingEquipmentBackgroundEntry
-- StartingEquipmentBackgroundLine
-- StartingEquipmentLevelCoins
-- MagicItemStartingOption
-- StartingEquipmentRequest
+## Goal
+Create `starting_equipment/services.py` with the `apply_starting_equipment()` function that uses the ledger's `record()` function to create starting equipment entries.
 
-## Steps
+## Files to Create/Modify
 
-### 1. Create App Structure
-- Create `starting_equipment/` directory
-- Create `__init__.py`, `apps.py`, `models.py`, `admin.py`
-- Add app to `INSTALLED_APPS` in `config/settings.py`
+### 1. Create `starting_equipment/services.py`
+New file with the `apply_starting_equipment()` function that:
+- Takes `character`, `template`, and `actor` (User) as parameters
+- Queries class entries matching character's class and level (case-insensitive, level range)
+- Queries background entries matching character's background (case-insensitive)
+- Queries level coins for characters above level 1
+- Queries approved magic item requests for the character
+- Builds lines using the ledger's `Line` dataclass
+- Calls `ledger.services.record()` to create a single ledger entry with kind "award"
+- Returns the ledger entry or `None` if no lines
 
-### 2. Implement Models (models.py)
-Follow the project's conventions:
-- Use `ClubScopedManager` for club-scoped models
-- Set `club_path` on each model
-- Add proper `related_name` attributes
-- Add indexes for common queries (template+club, character+status, etc.)
-- Add constraints (unique_together, check constraints)
-- Use `on_delete=models.PROTECT` for Item FKs
-- Use `models.TextChoices` for status fields
+### 2. Create `starting_equipment/tests/test_services.py`
+Unit tests covering:
+- Class equipment matching (case-insensitive char_class, level range)
+- Background equipment matching (case-insensitive background)
+- Level-based coins for level > 1
+- Approved magic item requests only (not pending/declined)
+- Empty template (no matching entries)
+- No template provided
+- Multiple approved magic item requests
 
-### 3. Register Models in Admin (admin.py)
-- Register all models
-- Use `TabularInline` for line models (ClassLine, BackgroundLine)
-- Use `StackedInline` for entry models (ClassEntry, BackgroundEntry, LevelCoins, MagicItemOption, Request)
-- Template admin shows inlines for all related entries
+## Implementation Details
 
-### 4. Run Migrations
-- Generate and apply migrations
+### Service Function Signature
+```python
+def apply_starting_equipment(
+    character: "Character",
+    template: "StartingEquipmentTemplate",
+    actor: "User"
+) -> "LedgerEntry | None":
+```
 
-## File Changes
+### Query Logic
+1. **Class equipment**: `template.class_entries.filter(char_class__iexact=character.char_class, min_level__lte=level, max_level__gte=level).first()`
+2. **Background equipment**: `template.background_entries.filter(background__iexact=character.background).first()`
+3. **Level coins**: `template.level_coins.filter(level=character.level).first()` (only if level > 1)
+4. **Magic requests**: `StartingEquipmentRequest.objects.filter(character=character, status=StartingEquipmentRequest.Status.APPROVED)`
 
-### New Files
-- `starting_equipment/__init__.py`
-- `starting_equipment/apps.py`
-- `starting_equipment/models.py`
-- `starting_equipment/admin.py`
-- `starting_equipment/migrations/` (created by Django)
+### Ledger Integration
+- Import `Line` from `ledger.services`
+- Import `record` from `ledger.services`
+- Use `record(character, "award", lines, note="Starting equipment", actor=actor)`
 
-### Modified Files
-- `config/settings.py` - Add `starting_equipment` to INSTALLED_APPS
+## Dependencies
+- SE1 (models) - already done
+- SE2 (Character.background field) - already done (field exists in model)
+- ledger.services.record() - already exists
 
-## Acceptance Criteria Mapping
-Each acceptance item maps to the plan stage where it can be verified:
-- App exists with all models → plan (structure) / code (migrations applied)
-- Proper related_names, indexes, constraints → code (model inspection)
-- Admin registration with inlines → code (admin.py inspection)
-
-## Proof Stages
-- `plan`: Structure exists, files created
-- `code`: Migrations applied, models work, admin registered
-- `verify`: All tests pass
+## Testing Approach
+- Use pytest with Django test database
+- Create fixtures for character, template, items, club, user
+- Test each equipment type independently and in combination
+- Verify ledger entry is created with correct lines
