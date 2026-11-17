@@ -2,7 +2,11 @@
 
 from accounts.permissions import (
     can_view_inventory as _can_view_inventory,
+)
+from accounts.permissions import (
     is_club_admin as _is_club_admin,
+)
+from accounts.permissions import (
     is_game_master as _is_game_master,
 )
 from accounts.scoping import club_get_object_or_404 as _club_get_object_or_404

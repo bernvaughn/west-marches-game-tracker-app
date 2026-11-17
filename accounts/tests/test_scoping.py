@@ -10,7 +10,6 @@ ROUTES = [
     "club_home",
     "accounts:index",
     "characters:directory",
-    "trades:index",
     "items:index",
     "shops:index",
     "ledger:index",

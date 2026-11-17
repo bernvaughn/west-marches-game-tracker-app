@@ -1,14 +1,12 @@
 """Character selector context (Contract): provides quick stats
 for each character in the selector dropdown."""
 
-from django.db.models import Q, Sum
+from django.db.models import Sum
 
 from downtime.models import DowntimePointEntry
 
 from .inventory import coin_summary
 from .junk import junk_rows, junk_value
-from .models import Trade
-from .trade_services import OPEN
 
 
 def character_selector_context(character):
@@ -28,12 +26,6 @@ def character_selector_context(character):
     junk_total_qty = sum(r.quantity for r in junk)
     junk_val = junk_value(character, junk)
     
-    # Open trades count
-    open_trades = Trade.objects.filter(
-        Q(sender=character) | Q(receiver=character),
-        status__in=OPEN
-    ).count()
-    
     # Downtime points
     dt_balance = (
         DowntimePointEntry.objects.filter(character=character)
@@ -45,7 +37,6 @@ def character_selector_context(character):
         "coins": coin_str,
         "junk_qty": junk_total_qty,
         "junk_value": junk_val,
-        "open_trades": open_trades,
         "downtime": dt_balance,
     }
 

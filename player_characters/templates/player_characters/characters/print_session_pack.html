@@ -27,7 +27,6 @@
     <li>{% if include_items %}☑{% else %}☐{% endif %} Item Cards (all, grid)</li>
     <li>{% if include_quests %}☑{% else %}☐{% endif %} Ready Quests</li>
     <li>{% if include_map %}☑{% else %}☐{% endif %} Map</li>
-    <li>{% if include_trades %}☑{% else %}☐{% endif %} Open Trades</li>
   </ul>
   <p class="small text-muted mb-0">Adjust options in the dashboard modal before printing.</p>
 </div>
@@ -52,7 +51,6 @@
       <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
       <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
       {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
-      {% if coins.has_holds %}<p class="wm-sheet-note">In open trades: {{ coins.held|coins }} &middot; Available: {{ coins.available|coins }}</p>{% endif %}
     </section>
 
     <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-abilities">
@@ -142,37 +140,6 @@
   <h2>Map</h2>
   <p class="wm-sheet-note">Map printing is not yet implemented in the session pack. Visit the map page to print.</p>
 </section>
-{% endif %}
-
-{% if include_trades %}
-<!-- Open Trades Section -->
-{% if open_trades %}
-{% for trade_data in open_trades %}
-<div class="wm-trade-print mb-3 p-3 border rounded">
-  <h3>Trade with {{ trade_data.other_character.name }} ({{ trade_data.status_display }})</h3>
-  <p>Status: {{ trade_data.side|capfirst }} side</p>
-  {% if trade_data.trade.note %}<p class="wm-sheet-note">Note: {{ trade_data.trade.note }}</p>{% endif %}
-  <table class="table table-sm wm-data-table">
-    <thead><tr><th>From {{ trade_data.other_character.name }}</th><th>From You</th></tr></thead>
-    <tbody>
-    {% for line in trade_data.trade.lines.all %}
-    <tr>
-      <td>{% if line.from_sender and trade_data.side == "receiver" or not line.from_sender and trade_data.side == "sender" %}
-        {% if line.item %}{{ line.quantity }} x {% include "items/_item_name.html" with item=line.item %}{% else %}{{ line.coins|coins }}{% endif %}
-      {% else %}&mdash;{% endif %}</td>
-      <td>{% if line.from_sender and trade_data.side == "sender" or not line.from_sender and trade_data.side == "receiver" %}
-        {% if line.item %}{{ line.quantity }} x {% include "items/_item_name.html" with item=line.item %}{% else %}{{ line.coins|coins }}{% endif %}
-      {% else %}&mdash;{% endif %}</td>
-    </tr>
-    {% endfor %}
-    </tbody>
-  </table>
-</div>
-<hr class="wm-pass-rule">
-{% endfor %}
-{% else %}
-<p class="wm-sheet-note">No open trades.</p>
-{% endif %}
 {% endif %}
 
 <footer class="wm-print-footer no-print mt-4 text-center text-muted small">

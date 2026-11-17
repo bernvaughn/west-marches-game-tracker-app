@@ -1,0 +1,60 @@
+name: dependency-scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Every Monday at 00:00 UTC, so a new advisory for an unchanged lockfile is still caught.
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  security-events: write # upload SARIF to the Security tab
+
+jobs:
+  pip-audit:
+    name: pip-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Export the locked dependencies
+        run: uv export --locked --no-hashes --no-emit-project -o requirements-audit.txt
+
+      - name: Audit with pip-audit
+        # pip-audit exits 1 when it finds anything. Let the next step decide by severity.
+        # Any other non-zero exit is a real error and fails here.
+        run: |
+          rc=0
+          uv run pip-audit -r requirements-audit.txt --no-deps --disable-pip \
+            -f json -o pip-audit.json || rc=$?
+          [ "$rc" -le 1 ]
+
+      - name: Fail on HIGH or CRITICAL, write SARIF
+        run: uv run python scripts/pip_audit_to_sarif.py pip-audit.json --sarif results.sarif
+
+      - name: Upload SARIF to the Security tab
+        # Run even when the step above failed, so the findings are still shown.
+        # A pull request from a fork has a read-only token, so skip it there.
+        if: >-
+          always() && hashFiles('results.sarif') != '' &&
+          (github.event_name != 'pull_request' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
+          category: pip-audit

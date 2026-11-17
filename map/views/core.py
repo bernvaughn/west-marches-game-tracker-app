@@ -3,8 +3,8 @@ from urllib.parse import urlencode
 from django.http import Http404
 from django.shortcuts import render
 from django.urls import reverse
-from django.views import View
 from django.utils.decorators import method_decorator
+from django.views import View
 
 from accounts.htmx import render_modal_or_page
 from accounts.mixins import ClubContextMixin, ClubScopedMixin
@@ -98,7 +98,9 @@ class DetailView(ClubScopedMixin, ClubContextMixin, View):
         pan = [
             {
                 "name": name,
-                "url": with_params(base, urlencode({"q": q, "r": r, "radius": radius}), char_params),
+                "url": with_params(
+                    base, urlencode({"q": q, "r": r, "radius": radius}), char_params
+                ),
             }
             for name, (q, r) in pan_links(cq, cr, radius).items()
         ]

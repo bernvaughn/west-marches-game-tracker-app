@@ -28,6 +28,11 @@
 .wm-inline-form .form-select { width: auto; min-width: 6rem; }
 .wm-narrow-block { max-width: var(--wm-size-form); }
 
+/* Inbox bulk actions: hide the bulk bar until at least one row is checked.
+   :has() keeps this HTMX-safe (no load-time-only JS); #inbox-list is re-swapped on refresh. */
+#inbox-bulk-bar { display: none; }
+#inbox-bulk-area:has(tbody input[name="message_ids"]:checked) #inbox-bulk-bar { display: block; }
+
 /* One-time passwords */
 .wm-temp-secret { font-family: var(--wm-font-body); display: flex; gap: var(--wm-space-3); align-items: flex-start; padding: var(--wm-space-4); margin-bottom: var(--wm-space-4); background: var(--wm-warning-bg); color: var(--wm-warning); border: 1px solid var(--wm-warning); border-radius: var(--wm-radius-md); }
 .wm-temp-secret p { margin: 0 0 var(--wm-space-1); }
