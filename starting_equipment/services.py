@@ -4,14 +4,13 @@ from typing import TYPE_CHECKING
 
 from django.db.models import Q
 
-from core.services import BaseService, ClubScopedService
-from ledger.models import LedgerEntry
-from ledger.services import LedgerLine, ledger
+from ledger.models import LedgerEntry, LedgerLine
+from ledger.services import record as ledger_record
+from starting_equipment.models import StartingEquipmentRequest
 
 if TYPE_CHECKING:
     from accounts.models import Club, User
     from items.models import Item
-    from ledger.models import LedgerEntry
     from player_characters.models import Character
     from starting_equipment.models import (
         MagicItemStartingOption,
@@ -21,7 +20,6 @@ if TYPE_CHECKING:
         StartingEquipmentClassLine,
         StartingEquipmentLevelCoins,
         StartingEquipmentTemplate,
-        StartingEquipmentRequest,
     )
 
 
@@ -147,7 +145,7 @@ def apply_starting_equipment(
     if total_coins > 0:
         entry_lines.append(LedgerLine(item=None, quantity=0, coins=total_coins))
 
-    return ledger.record(
+    return ledger_record(
         character=character,
         kind=LedgerEntry.Kind.AWARD,
         lines=entry_lines,

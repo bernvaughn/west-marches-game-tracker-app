@@ -186,11 +186,21 @@ class TestApplyStartingEquipment:
         bg_entry,
         bg_line,
         level_coins,
-        approved_request,
+        magic_option,
         game_master_user,
     ):
         """Service creates single ledger entry with all granted items and coins."""
         from starting_equipment.services import apply_starting_equipment
+        from starting_equipment.models import StartingEquipmentRequest
+
+        # Create an approved request for this specific character
+        StartingEquipmentRequest.objects.create(
+            club=character_level_5.club,
+            character=character_level_5,
+            item=magic_option.item,
+            quantity=1,
+            status=StartingEquipmentRequest.Status.APPROVED,
+        )
 
         entry = apply_starting_equipment(character_level_5, template, game_master_user)
 
@@ -242,12 +252,10 @@ class TestApplyStartingEquipment:
         entry = apply_starting_equipment(character_level_3_wizard, template, game_master_user)
 
         # Character is level 3, class entry is for levels 5-10
-        # Should NOT grant class equipment
-        assert entry is not None
-        lines = entry.lines.select_related("item")
-        item_lines = [line for line in lines if line.item is not None]
-        # No class item should be granted (no matching class entry for level 3)
-        assert len(item_lines) == 0
+        # Should NOT grant class equipment (no matching class entry for level 3)
+        # Also no background entry for "Sage" in this template
+        assert entry is None
+        assert LedgerEntry.objects.count() == 0
 
     def test_class_entry_level_range_respected_max_level(
         self,
@@ -298,7 +306,7 @@ class TestApplyStartingEquipment:
         assert "Chain Mail" not in [line.item.name for line in item_lines]
 
     def test_choice_groups_skipped_in_background_lines(
-        self, character_with_class_bg, template, bg_entry, bg_line, bg_line_choice, game_master_user
+        self, character_with_class_bg, template, class_entry, class_line, bg_entry, bg_line, bg_line_choice, game_master_user
     ):
         """Choice groups in background lines are skipped (is_choice=True)."""
         from starting_equipment.services import apply_starting_equipment
@@ -363,7 +371,7 @@ class TestApplyStartingEquipment:
         assert item_lines[0].item.name == "Holy Symbol"
 
     def test_character_level_none_defaults_to_1(
-        self, club, player, template, class_entry, class_line, game_master_user
+        self, club, player, template, class_entry, class_line, bg_entry, game_master_user
     ):
         """Character with level=None defaults to level 1 (no level coins)."""
         from starting_equipment.services import apply_starting_equipment
@@ -463,12 +471,12 @@ class TestApplyStartingEquipment:
         assert item_lines[0].item.name == "Longsword"
 
     def test_class_coins_included(
-        self, character_with_class_bg, template, class_entry, class_line, game_master_user
+        self, character_no_bg, template, class_entry, class_line, game_master_user
     ):
         """Class entry coins_cp is included in ledger."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = apply_starting_equipment(character_no_bg, template, game_master_user)
 
         assert entry is not None
         lines = entry.lines.all()
