@@ -9,11 +9,11 @@ from oauth2_provider.models import get_application_model
 from oauth2_provider.views import AuthorizationView, DynamicClientRegistrationView, TokenView
 from oauth2_provider.www_authenticate import build_bearer_challenge
 
+from accounts.ratelimit import RateLimitMixin, get_client_ip, rate_limit
 from agent_access.mcp.server import mcp_view
 
 from .forms import ConsentForm, validate_redirect_uris
 from .tokens import create_connection, prepare_approval
-from accounts.ratelimit import RateLimitMixin, get_client_ip, rate_limit
 
 
 def _get_connection_key(request, *args, **kwargs):

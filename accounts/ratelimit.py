@@ -1,9 +1,8 @@
 """Rate limiting utilities using Django's cache framework."""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Optional
 
-from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
 
@@ -68,7 +67,9 @@ def check_rate_limit(
     return True, remaining, retry_after
 
 
-def add_rate_limit_headers(response: HttpResponse, limit: int, remaining: int, retry_after: int) -> None:
+def add_rate_limit_headers(
+    response: HttpResponse, limit: int, remaining: int, retry_after: int
+) -> None:
     """Add rate limit headers to the response."""
     response["X-RateLimit-Limit"] = str(limit)
     response["X-RateLimit-Remaining"] = str(remaining)
@@ -79,7 +80,7 @@ def rate_limit(
     prefix: str,
     limit: int,
     window: int,
-    key_func: Optional[Callable[..., str]] = None,
+    key_func: Callable[..., str] | None = None,
 ):
     """
     Decorator to apply rate limiting to a view.
@@ -133,7 +134,7 @@ class RateLimitMixin:
     ratelimit_prefix: str = ""
     ratelimit_limit: int = 5
     ratelimit_window: int = 60
-    ratelimit_key_func: Optional[Callable[[HttpRequest], str]] = None
+    ratelimit_key_func: Callable[[HttpRequest], str] | None = None
 
     def dispatch(self, request, *args, **kwargs):
         if not self.ratelimit_prefix:

@@ -7,8 +7,8 @@ from django.shortcuts import render
 from ..models import Membership
 from ..passwords import save_password_history, set_temporary_password
 from ..permissions import can_reset_password, club_admin_required
-from ..scoping import club_get_object_or_404
 from ..ratelimit import RateLimitMixin, rate_limit
+from ..scoping import club_get_object_or_404
 
 
 class ClearFlagPasswordChangeView(RateLimitMixin, PasswordChangeView):
@@ -27,7 +27,9 @@ class ClearFlagPasswordChangeView(RateLimitMixin, PasswordChangeView):
 
     def dispatch(self, request, *args, **kwargs):
         # Use user ID as the rate limit key for authenticated users
-        self.ratelimit_key_func = lambda req: str(req.user.id) if req.user.is_authenticated else "anonymous"
+        self.ratelimit_key_func = lambda req: (
+            str(req.user.id) if req.user.is_authenticated else "anonymous"
+        )
         return super().dispatch(request, *args, **kwargs)
 
 
