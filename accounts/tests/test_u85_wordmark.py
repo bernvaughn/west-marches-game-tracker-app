@@ -34,8 +34,10 @@ def test_tokens_define_wordmark():
 
 
 def test_older_rules_do_not_override_wordmark_font():
-    for name, sel in (("css/components.css", ".wm-side-menu .offcanvas-title"),
-                      ("css/areas/accounts.css", ".wm-auth-brand")):
+    for name, sel in (
+        ("css/components.css", ".wm-side-menu .offcanvas-title"),
+        ("css/areas/accounts.css", ".wm-auth-brand"),
+    ):
         rule = re.search(re.escape(sel) + r"\s*\{([^}]*)\}", _css(name)).group(1)
         assert "font-family" not in rule
 

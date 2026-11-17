@@ -83,9 +83,7 @@ def print_item(request, club_slug, pk, item_pk):
         sheets = chunk(cards)
         pad = (-len(cards)) % CARDS_PER_SHEET
         context["empty_cells"] = range(pad)
-    context.update(
-        layout=layout, copies=copies, too_many=over, cards=cards, sheets=sheets
-    )
+    context.update(layout=layout, copies=copies, too_many=over, cards=cards, sheets=sheets)
     return render(request, "player_characters/characters/print_item.html", context)
 
 
@@ -121,9 +119,11 @@ def print_session_pack(request, club_slug, pk):
     ready_quests = []
     if include_quests:
         today = timezone.localdate()
-        quests_qs = Quest.objects.for_club(request.club).prefetch_related(
-            "requirements__item", "rewards__item"
-        ).annotate(done=Count("completions"))
+        quests_qs = (
+            Quest.objects.for_club(request.club)
+            .prefetch_related("requirements__item", "rewards__item")
+            .annotate(done=Count("completions"))
+        )
 
         have = available_items(character)
         my_completions = {

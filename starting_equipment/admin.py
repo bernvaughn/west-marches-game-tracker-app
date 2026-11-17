@@ -150,6 +150,7 @@ class StartingEquipmentRequestAdmin(admin.ModelAdmin):
     @admin.action(description="Approve selected requests")
     def approve_requests(self, request, queryset):
         from django.utils import timezone
+
         queryset.filter(status=StartingEquipmentRequest.Status.PENDING).update(
             status=StartingEquipmentRequest.Status.APPROVED,
             decided_by=request.user,
@@ -159,6 +160,7 @@ class StartingEquipmentRequestAdmin(admin.ModelAdmin):
     @admin.action(description="Decline selected requests")
     def decline_requests(self, request, queryset):
         from django.utils import timezone
+
         queryset.filter(status=StartingEquipmentRequest.Status.PENDING).update(
             status=StartingEquipmentRequest.Status.DECLINED,
             decided_by=request.user,

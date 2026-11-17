@@ -25,7 +25,7 @@ def all_selector_context(context):
 @register.filter
 def get_item(dictionary, key):
     """Get an item from a dictionary-like object (e.g., request.POST)."""
-    if hasattr(dictionary, 'get'):
+    if hasattr(dictionary, "get"):
         return dictionary.get(key)
     try:
         return dictionary[key]

@@ -31,7 +31,7 @@ def names(resp):
     # Each row: <tr><td>Item name + info icon</td><td>Band</td><td>Price</td></tr>
     # Match only the first <td> in each <tr> to get the item name
     html = resp.content.decode()
-    matches = re.findall(r'<tr><td>(?:<span[^>]*>[^<]*</span> )?([^<]+)', html)
+    matches = re.findall(r"<tr><td>(?:<span[^>]*>[^<]*</span> )?([^<]+)", html)
     return matches
 
 

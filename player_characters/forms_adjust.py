@@ -14,11 +14,14 @@ class _DateNoteMixin(forms.Form):
 
 class BulkAwardItemLineForm(forms.Form):
     """Form for a single item line in the bulk award."""
+
     item = forms.ModelChoiceField(queryset=None, required=False)
     quantity = forms.IntegerField(min_value=1, required=False)
     value_override = forms.IntegerField(
-        required=False, min_value=0, label="Value (cp)",
-        help_text="Override item value in cp (optional)"
+        required=False,
+        min_value=0,
+        label="Value (cp)",
+        help_text="Override item value in cp (optional)",
     )
 
     def __init__(self, *args, items, **kwargs):
@@ -50,14 +53,15 @@ class BaseBulkAwardItemLineFormSet(forms.BaseFormSet):
 
 class BulkAwardCharacterForm(forms.Form):
     """Form for a single character's coins and items in the bulk award."""
+
     character = forms.ModelChoiceField(queryset=None, widget=forms.HiddenInput)
     coins = CoinsField(required=False, label="Coins")
     note = forms.CharField(max_length=500, required=False)
 
     def __init__(self, *args, items, **kwargs):
         super().__init__(*args, **kwargs)
-        char = self.initial.get('character')
-        char_pk = char.pk if char else 'new'
+        char = self.initial.get("character")
+        char_pk = char.pk if char else "new"
         self.item_formset = item_line_formset(
             items,
             data=self.data if self.is_bound else None,
@@ -85,9 +89,9 @@ class BulkAwardCharacterForm(forms.Form):
         return lines
 
 
-
 class BulkAwardForm(forms.Form):
     """Main form for bulk award - character selection and shared fields."""
+
     characters = forms.ModelMultipleChoiceField(
         queryset=None, widget=forms.CheckboxSelectMultiple, required=True
     )
@@ -99,6 +103,7 @@ class BulkAwardForm(forms.Form):
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
         from player_characters.models import Character
+
         self.fields["characters"].queryset = Character.objects.for_club(club).order_by("name", "id")
 
     def clean(self):

@@ -94,6 +94,7 @@ def _get_user(role, client):
     if email is None:
         return None
     from accounts.models import User
+
     return User.objects.get(email=email)
 
 
@@ -137,10 +138,21 @@ def test_every_page_has_exactly_one_h1(client, login, site_admin, demo):
     problems = []
     for page_def in PAGES:
         # Skip modal-only pages and print variants that may not have h1
-        if page_def.action in ("buy_modal", "sell_modal", "sell_junk_modal", "grant_modal",
-                               "give_items_modal", "status_modal", "junk_modal", "consume_modal",
-                               "stall_buy_modal", "where_to_buy_modal", "tile_modal",
-                               "agenda_add_modal", "menu_open"):
+        if page_def.action in (
+            "buy_modal",
+            "sell_modal",
+            "sell_junk_modal",
+            "grant_modal",
+            "give_items_modal",
+            "status_modal",
+            "junk_modal",
+            "consume_modal",
+            "stall_buy_modal",
+            "where_to_buy_modal",
+            "tile_modal",
+            "agenda_add_modal",
+            "menu_open",
+        ):
             continue
         if "-modal" in page_def.name:
             continue
@@ -150,7 +162,7 @@ def test_every_page_has_exactly_one_h1(client, login, site_admin, demo):
             continue
         if page_def.name in MODAL_PAGE_NAMES:
             continue
-        
+
         user = _get_user(page_def.role, client)
         if user is None:
             resp = client.get(page_def.url(demo))
@@ -188,7 +200,7 @@ def test_every_page_has_exactly_one_h1(client, login, site_admin, demo):
 
 def test_td_actions_are_icon_buttons_with_tooltip():
     """Buttons in td.actions are icon buttons with a title tooltip (B-79).
-    
+
     This checks the template pattern. The actual fix is in the U84 area stories.
     """
     problems = []
@@ -239,11 +251,11 @@ def test_no_raw_date_formats():
                 continue
             # Allow if it's in a comment
             line_start = content.rfind("\n", 0, match.start()) + 1
-            line = content[line_start:content.find("\n", match.end())]
+            line = content[line_start : content.find("\n", match.end())]
             if "{#" in line and "#}" in line:
                 continue
             # Allow ISO format for HTML date inputs (type="date" needs Y-m-d)
-            context = content[max(0, match.start()-100):match.end()+100]
+            context = content[max(0, match.start() - 100) : match.end() + 100]
             if 'type="date"' in context or 'type="datetime-local"' in context:
                 continue
             # Allow specific themed formats that are intentional
@@ -259,10 +271,8 @@ def test_no_raw_date_formats():
             # shop rotations: Y-m-d
             if "shops/rotations" in str(template) and fmt == '|date:"Y-m-d"':
                 continue
-            line_no = content[:match.start()].count(chr(10)) + 1
-            problems.append(
-                f"{template.relative_to(ROOT)}:L{line_no}: raw date format {fmt}"
-            )
+            line_no = content[: match.start()].count(chr(10)) + 1
+            problems.append(f"{template.relative_to(ROOT)}:L{line_no}: raw date format {fmt}")
 
     assert not problems, "\n".join(problems)
 
@@ -280,7 +290,7 @@ def test_scrollable_pre_has_tabindex():
             style = pre.get("style", "")
             if parent or "overflow" in style:
                 if not pre.get("tabindex") == "0":
-                    msg = "scrollable pre missing tabindex=\"0\""
+                    msg = 'scrollable pre missing tabindex="0"'
                     problems.append(f"{template.relative_to(ROOT)}: {msg}")
 
     assert not problems, "\n".join(problems)
@@ -288,7 +298,7 @@ def test_scrollable_pre_has_tabindex():
 
 def test_one_btn_primary_per_page(client, login, site_admin, demo):
     """One btn-primary per rendered page (B-25, B-69).
-    
+
     This checks the template pattern. The actual fix is in the U84 area stories.
     """
     problems = []
@@ -307,17 +317,20 @@ def test_one_btn_primary_per_page(client, login, site_admin, demo):
         primary_btns = soup.find_all(class_="btn-primary")
         # Count unique primary buttons (excluding duplicates from modals that aren't shown)
         visible_primary = [
-            b for b in primary_btns
+            b
+            for b in primary_btns
             if b.get("style") != "display: none" and "d-none" not in b.get("class", [])
         ]
-        
+
         # Known exceptions: modals have their own primary buttons
         # Print pages have print button as primary
         # The design system allows one primary per *context* (page vs modal)
         # For now, we just check the page-level primary (in page_header or main content)
-        page_primary = [b for b in visible_primary 
-                       if b.find_parent(class_="wm-page-header") 
-                       or not b.find_parent(class_="modal")]
+        page_primary = [
+            b
+            for b in visible_primary
+            if b.find_parent(class_="wm-page-header") or not b.find_parent(class_="modal")
+        ]
         if len(page_primary) > 1:
             msg = f"{len(page_primary)} page-level btn-primary buttons (expected ≤1)"
             problems.append(f"{page_def.name}: {msg}")
@@ -466,4 +479,6 @@ def test_no_batch_sample_or_screenshots_committed():
         if ".venv" not in p.parts and "node_modules" not in p.parts
     ]
     assert names == []
+
+
 # CI retry trigger

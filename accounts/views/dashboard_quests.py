@@ -43,12 +43,14 @@ def dashboard_quest_turnin(request, club_slug, quest_pk):
 
     for req in quest.requirements.select_related("item"):
         has = have.get(req.item_id, 0)
-        turnin_rows.append({
-            "item": req.item,
-            "needed": req.quantity,
-            "has": has,
-            "short": max(0, req.quantity - has),
-        })
+        turnin_rows.append(
+            {
+                "item": req.item,
+                "needed": req.quantity,
+                "has": has,
+                "short": max(0, req.quantity - has),
+            }
+        )
 
     # Check blockers (same logic as quests.views.play.detail)
     club_left = services.completions_left(quest)
@@ -60,9 +62,7 @@ def dashboard_quest_turnin(request, club_slug, quest_pk):
     elif club_left == 0:
         blocked_reason = "This quest is full."
     elif char_left == 0:
-        blocked_reason = (
-            f"{character} has completed this quest the maximum number of times."
-        )
+        blocked_reason = f"{character} has completed this quest the maximum number of times."
     elif missing:
         blocked_reason = _missing_text(missing)
 

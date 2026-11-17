@@ -168,6 +168,7 @@ def test_minimum_length_12_enforced_by_django_validator(player):
     # This tests that Django's MinimumLengthValidator is configured with min_length=12
     # The actual validation is done by Django's validator, not our ComplexityValidator
     from django.contrib.auth.password_validation import MinimumLengthValidator
+
     validator = MinimumLengthValidator(min_length=12)
     # 11 chars should fail
     with pytest.raises(ValidationError):
