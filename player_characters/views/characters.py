@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch, Q
+from django.db.models import Prefetch
 from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -14,10 +14,9 @@ from quests.services import needed_by_open_quests
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
-from ..models import Character, Trade
+from ..models import Character
 from ..player_shop import listed_quantity
 from ..sheet import ability_rows, passive_perception_label
-from ..trade_services import OPEN
 
 
 @method_decorator(club_member_required, name="dispatch")
