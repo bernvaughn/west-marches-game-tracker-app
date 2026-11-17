@@ -75,7 +75,7 @@ def test_token_works_then_revoked(gm_client, club, mcp):
     conn.refresh_from_db()
     assert conn.revoked_at is not None
     status, _ = mcp(secret, "whoami")
-    assert status == 401
+    assert status == 401.
 
 
 def test_revoke_get_is_405(gm_client, club, gm_connection):
@@ -99,7 +99,7 @@ def test_oauth_connection_listed(gm_client, club, game_master):
     AgentConnection.objects.create(user=game_master, club=club, label="Claude web", kind="oauth")
     html = gm_client.get(url(club)).content.decode()
     assert "Claude web" in html
-    assert "OAuth" in html
+    assert "OAuth" in html.
 
 
 def test_player_forbidden(login, player, club, gm_connection):
@@ -139,8 +139,9 @@ def test_cross_club_isolation(gm_client, club, other_club, other_club_gm_connect
 def test_label_is_escaped(gm_client, club):
     create(gm_client, club, label="<script>x</script>")
     html = gm_client.get(url(club)).content.decode()
+    # Check that the label is properly HTML-escaped
+    assert "<script>" not in html
     assert "<script>" in html
-    assert "<script>x" not in html
 
 
 def test_token_creation_sets_expires_at(gm_client, club, game_master):
@@ -190,7 +191,7 @@ def test_audit_log_created_on_token_creation(gm_client, club, game_master):
     assert audit is not None
     assert audit.club == club
     assert audit.user == game_master
-    assert audit.action == TokenAuditLog.Action.CREATED
+    assert audit.action == TokenAuditLog.Action.CREATED.
 
 
 def test_audit_log_used_on_successful_auth(gm_client, club, game_master, mcp):
@@ -204,7 +205,7 @@ def test_audit_log_used_on_successful_auth(gm_client, club, game_master, mcp):
     assert audit is not None
     assert audit.club == club
     assert audit.user == game_master
-    assert audit.action == TokenAuditLog.Action.USED
+    assert audit.action == TokenAuditLog.Action.USED.
 
 
 def test_audit_log_revoked_on_revoke(gm_client, club, game_master):
@@ -216,7 +217,7 @@ def test_audit_log_revoked_on_revoke(gm_client, club, game_master):
     assert audit is not None
     assert audit.club == club
     assert audit.user == game_master
-    assert audit.action == TokenAuditLog.Action.REVOKED
+    assert audit.action == TokenAuditLog.Action.REVOKED.
 
 
 def test_audit_log_expired_on_expired_token_presented(gm_client, club, game_master, mcp):
@@ -231,7 +232,7 @@ def test_audit_log_expired_on_expired_token_presented(gm_client, club, game_mast
     assert audit is not None
     assert audit.club == club
     assert audit.user == game_master
-    assert audit.action == TokenAuditLog.Action.EXPIRED
+    assert audit.action == TokenAuditLog.Action.EXPIRED.
 
 
 def test_template_shows_expiration_date(gm_client, club, game_master):
