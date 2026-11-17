@@ -18,7 +18,6 @@ PK_ROUTES = {
     "characters:handover": "player_characters.views.characters",
     "characters:adjust": "player_characters.views.character_adjust",
     "characters:consume": "player_characters.views.character_adjust",
-    "characters:transfer": "player_characters.views.character_transfer",
     "characters:print_items": "player_characters.views.character_print",
     "ledger:character_history": "ledger.views",
 }
@@ -66,11 +65,6 @@ MATRIX = [
         for u in ("game_master", "club_admin", "site_admin")
     ],
     *[(n, "player", 403) for n in ("characters:adjust", "characters:consume")],
-    ("characters:transfer", "player", 200),
-    *[
-        ("characters:transfer", u, 403)
-        for u in ("game_master", "club_admin", "other_player", "site_admin")
-    ],
     *[
         (n, u, 200)
         for n in ("characters:print_items", "ledger:character_history")

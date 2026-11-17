@@ -4,10 +4,15 @@ from django.db.models import Prefetch
 from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views import View
 from django.utils.decorators import method_decorator
+from django.views import View
 
-from accounts.mixins import CharacterContextMixin, ClubContextMixin, ClubScopedMixin, PermissionMixin
+from accounts.mixins import (
+    CharacterContextMixin,
+    ClubContextMixin,
+    ClubScopedMixin,
+    PermissionMixin,
+)
 from accounts.permissions import admin_or_gm_required, club_admin_required, club_member_required
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests

@@ -32,7 +32,9 @@ def test_coins_split(club, login, player, sheet):
 def test_holds_shown(club, login, player, sheet, make_open_trade):
     make_open_trade(coins=100)
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "In open trades" in html and "Available" in html
+    assert "Available" in html
+    # "In open trades" note is no longer shown after trade removal
+    assert "In open trades" not in html
 
 
 @pytest.mark.story("U19")
@@ -43,7 +45,7 @@ def test_other_player_sees_name_and_owner_only(club, login, other_player, sheet)
     assert "Aria" in html and "Player" in html
     for secret in ("Secret backstory", "Rope", "pp: 1"):
         assert secret not in html
-    for name in ("edit", "adjust", "consume", "print_items", "transfer", "handover"):
+    for name in ("edit", "adjust", "consume", "print_items", "handover"):
         assert u(f"characters:{name}", club, sheet.pk) not in html
     assert u("ledger:character_history", club, sheet.pk) not in html
 
@@ -67,23 +69,6 @@ def test_adjust_links_gm_admin_only(club, login, player, game_master, sheet):
     adjust = u("characters:adjust", club, sheet.pk)
     assert adjust not in login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
     assert adjust in login(game_master).get(u("characters:detail", club, sheet.pk)).content.decode()
-
-
-@pytest.mark.story("U19")
-def test_transfer_link_owner_with_two_characters(
-    club, login, player, game_master, character, second_character
-):
-    t = u("characters:transfer", club, character.pk)
-    assert t in login(player).get(u("characters:detail", club, character.pk)).content.decode()
-    assert (
-        t not in login(game_master).get(u("characters:detail", club, character.pk)).content.decode()
-    )
-
-
-@pytest.mark.story("U19")
-def test_transfer_link_absent_with_one_character(club, login, player, character):
-    html = login(player).get(u("characters:detail", club, character.pk)).content.decode()
-    assert u("characters:transfer", club, character.pk) not in html
 
 
 @pytest.mark.story("U19")

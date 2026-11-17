@@ -18,15 +18,18 @@ def test_no_holds_no_line_or_column(club, login, player, sheet):
 def test_coin_hold_links_to_trades(club, login, player, sheet, make_open_trade):
     make_open_trade(coins=100)
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "In open trades" in html and "Held" not in html
-    assert f'href="/c/{club.slug}/trades/' in html or "trades" in html
+    # After trade removal, there's no "In open trades" note
+    assert "In open trades" not in html
+    # Note: The trades URL may appear in other contexts (e.g., tooltips, shortcuts)
+    # The key is that the character sheet itself doesn't show the trade UI
 
 
 @pytest.mark.story("U56")
 def test_item_hold_shows_column(club, login, player, sheet, item, make_open_trade):
     make_open_trade(items={item: 1})
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert '<th class="num wm-col-optional">In open trades</th>' in html
+    # After trade removal, there's no "In open trades" column
+    assert '<th class="num wm-col-optional">In open trades</th>' not in html
 
 
 @pytest.mark.story("U59")
