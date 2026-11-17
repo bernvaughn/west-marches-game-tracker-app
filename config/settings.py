@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "quests",
     "downtime",
     "agent_access",
+    "starting_equipment",
 ]
 
 MIDDLEWARE = [
