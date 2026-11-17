@@ -18,9 +18,7 @@ from ledger.models import LedgerEntry
 from ledger.services import available_items
 from map.models import FoundMark, HexMap, Location, LocationCredit, TileVisit
 from player_characters.junk import junk_rows
-from player_characters.models import Trade
 from player_characters.player_shop import listed_rows
-from player_characters.trade_services import OPEN
 from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
 from shops.services import open_shops
@@ -194,89 +192,6 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
 # =============================================================================
 # Providers migrated from dashboard.py
 # =============================================================================
-
-
-class TradesDashboardProvider(BaseDashboardProvider):
-    """Open trades with status badges and Act Now buttons."""
-
-    key = "trades"
-    order = 2
-    template = "accounts/_dashboard_trades.html"
-
-    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        from django.db.models import Q
-
-        from accounts.scoping import club_queryset
-        from player_characters.trade_status_line import trade_status_line
-
-        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
-        my_trades = trades_qs.filter(
-            Q(sender__owner=membership) | Q(receiver__owner=membership)
-        ).select_related("sender__owner__user", "receiver__owner__user")
-
-        open_trades_data = []
-        for t in my_trades:
-            if t.sender.owner_id == membership.id:
-                other = t.receiver
-                side = "sender"
-            else:
-                other = t.sender
-                side = "receiver"
-
-            # Get U78 status wording
-            status_text = trade_status_line(t, side)
-
-            # Determine Act Now button
-            action_url = None
-            action_label = None
-            action_method = "get"
-
-            if t.status == Trade.Status.REQUESTED:
-                if side == "receiver":
-                    action_label = "Accept"
-                    action_url = reverse("trades:accept", args=[club.slug, t.pk])
-                    action_method = "post"
-                else:  # sender
-                    action_label = "Cancel"
-                    action_url = reverse("trades:cancel", args=[club.slug, t.pk])
-                    action_method = "post"
-            elif t.status == Trade.Status.ACCEPTED:
-                approved = {"sender": t.sender_approved, "receiver": t.receiver_approved}
-                if not approved[side]:
-                    # Viewer has not approved yet
-                    action_label = "Change"
-                    action_url = reverse("trades:edit_side", args=[club.slug, t.pk])
-                    action_method = "get"
-                elif approved[side] and not approved["receiver" if side == "sender" else "sender"]:
-                    # Viewer approved, other hasn't
-                    action_label = "Approve"
-                    action_url = reverse("trades:approve", args=[club.slug, t.pk])
-                    action_method = "post"
-                # else both approved -> trade completes, no action
-
-            open_trades_data.append({
-                "trade": t,
-                "other_character": other,
-                "side": side,
-                "status_text": status_text,
-                "action_url": action_url,
-                "action_label": action_label,
-                "action_method": action_method,
-            })
-
-        return {
-            "open_trades_data": open_trades_data,
-        }
-
-    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        from django.db.models import Q
-
-        from accounts.scoping import club_queryset
-
-        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
-        return trades_qs.filter(
-            Q(sender__owner=membership) | Q(receiver__owner=membership)
-        ).exists()
 
 
 class QuestsDashboardProvider(BaseDashboardProvider):
