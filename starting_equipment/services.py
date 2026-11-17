@@ -127,14 +127,13 @@ def apply_starting_equipment(
             .first()
         )
         if magic_option:
-            for _ in range(request.quantity):
-                lines.append(
-                    LedgerLine(
-                        item=request.item,
-                        quantity=1,
-                        coins=0,
-                    )
+            lines.append(
+                LedgerLine(
+                    item=request.item,
+                    quantity=request.quantity,
+                    coins=0,
                 )
+            )
 
     # If nothing to grant, return None
     if not lines and total_coins == 0:

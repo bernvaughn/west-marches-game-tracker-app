@@ -57,6 +57,8 @@ class TestApplyStartingEquipment:
         self,
         character_lowercase_class_bg,
         template,
+        class_entry,
+        class_line,
         bg_entry,
         bg_line,
         game_master_user,
@@ -564,12 +566,17 @@ class TestApplyStartingEquipment:
         assert entry.created_by is None
 
     def test_character_from_different_club_raises_error(
-        self, other_club, other_player, template, class_entry, class_line, game_master_user
+        self, other_club, template, class_entry, class_line, game_master_user
     ):
         """Character from different club than template should not match entries (club scoping)."""
+        from accounts.models import Membership, User
         from starting_equipment.services import apply_starting_equipment
 
-        owner = Membership.objects.get(user=other_player, club=other_club)
+        # Create a user and membership for other_club
+        other_club_user = User.objects.create_user(
+            "other_club@test.com", password="pw", display_name="Other Club User"
+        )
+        owner = Membership.objects.create(user=other_club_user, club=other_club)
         character = Character.objects.create(
             club=other_club,
             owner=owner,
