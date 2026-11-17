@@ -2,8 +2,6 @@
 
 import pytest
 
-from ledger.models import LedgerEntry
-from player_characters.models import Character
 from starting_equipment.models import (
     StartingEquipmentBackgroundEntry,
     StartingEquipmentBackgroundLine,
