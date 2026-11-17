@@ -2,9 +2,12 @@
 
 import pytest
 
-from accounts.dashboard_providers import get_providers, register_provider
+from accounts.dashboard_providers import (
+    PlayerShopDashboardProvider,
+    get_providers,
+    register_provider,
+)
 from accounts.models import Membership
-from accounts.views.dashboard_shop import PlayerShopDashboardProvider
 from ledger.services import Line, record_many
 from player_characters.junk import set_junk
 from player_characters.models import Character

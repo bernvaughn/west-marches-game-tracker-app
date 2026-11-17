@@ -178,9 +178,9 @@ def test_message_detail_shows_admin_response(
 @pytest.mark.story("S9")
 def test_provider_should_show_logic():
     """Test the should_show method logic."""
-    from accounts.views.dashboard_messages import MessagesDashboardProvider
+    from accounts.dashboard_providers import MyMessagesDashboardProvider
 
-    provider = MessagesDashboardProvider()
+    provider = MyMessagesDashboardProvider()
 
     # We'll test via the view integration instead of unit testing the provider directly
     # since it requires request/club/character/membership
