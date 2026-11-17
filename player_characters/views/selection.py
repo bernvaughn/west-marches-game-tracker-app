@@ -21,7 +21,6 @@ TO_SHEET = {
     "characters:handover",
     "characters:adjust",
     "characters:consume",
-    "characters:transfer",
     "characters:print_item",
 }
 
