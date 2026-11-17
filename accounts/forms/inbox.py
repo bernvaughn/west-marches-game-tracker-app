@@ -25,6 +25,20 @@ class StatusForm(forms.Form):
     status = forms.ChoiceField(choices=Message.Status.choices)
 
 
+class BulkStatusForm(forms.Form):
+    message_ids = forms.ModelMultipleChoiceField(
+        queryset=Message.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=True,
+    )
+    status = forms.ChoiceField(choices=Message.Status.choices)
+
+    def __init__(self, *args, club=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if club is not None:
+            self.fields["message_ids"].queryset = Message.objects.for_club(club)
+
+
 STATUS_ACTIONS = {"handled": "Mark handled", "closed": "Close", "open": "Reopen"}
 
 

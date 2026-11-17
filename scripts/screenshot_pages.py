@@ -203,6 +203,7 @@ EXCLUDED = {
     "oauth2_provider:dcr-register": "A JSON API.",
     "oauth2_provider:dcr-register-management": "A JSON API.",
     "accounts:message_status": "POST only.",
+    "accounts:message_bulk_status": "POST only.",
     "characters:select": "POST only.",
     "characters:shop_toggle": "POST only.",
     "characters:preview": "JSON endpoint for tooltip preview, not a page.",

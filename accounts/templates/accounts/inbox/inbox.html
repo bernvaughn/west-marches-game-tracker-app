@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load accounts_tags coins %}
+{% load accounts_tags coins static %}
 {% block title %}Inbox{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Inbox" subtitle="Messages from players to the club admins." %}
@@ -9,12 +9,36 @@
 <nav class="wm-filter-pills" aria-label="Filter by kind">
   {% for value, label in kind_filters %}<a class="btn btn-sm {% if value == kind %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?status={{ status }}&kind={{ value }}"{% if value == kind %} aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}
 </nav>
-<div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>From</th><th>Character</th><th class="wm-msg-col">Message</th><th>Date</th><th>Status</th><th class="actions">Actions</th></tr></thead>
+
+<form id="inbox-bulk-form"
+      hx-post="{% url 'accounts:message_bulk_status' request.club.slug %}"
+      hx-select="#inbox-list"
+      hx-swap="outerHTML"
+      hx-trigger="submit">
+  <div id="inbox-bulk-area">
+    <div id="inbox-bulk-bar" class="mb-2 d-flex align-items-center gap-2">
+      <select name="status" class="form-select form-select-sm" aria-label="Bulk status">
+        <option value="handled">Mark handled</option>
+        <option value="closed">Close</option>
+        <option value="open">Reopen</option>
+      </select>
+      <button class="btn btn-sm btn-secondary" type="submit">Apply</button>
+    </div>
+
+    <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
+    <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+      <thead><tr>
+        <th scope="col" class="text-center" style="width: 2rem;">
+          <input type="checkbox" id="inbox-select-all" class="form-check-input"
+                 onclick="wmSetCheckboxes(this.form, 'message_ids', this.checked)"
+                 title="Select all" aria-label="Select all messages">
+        </th>
+        <th>From</th><th>Character</th><th class="wm-msg-col">Message</th><th>Date</th><th>Status</th><th class="actions">Actions</th>
+      </tr></thead>
   <tbody>
   {% for m in messages_list %}
   <tr>
+    <td class="text-center"><input type="checkbox" name="message_ids" value="{{ m.pk }}" class="form-check-input"></td>
     <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div></td>
     <td>{{ m.character.name|default:"-" }}</td>
     <td class="wm-msg-col">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% endif %}{{ m.body|linebreaksbr }}
@@ -47,9 +71,12 @@
     </div></td>
   </tr>
   {% empty %}
-  {% include "components/data_table_empty.html" with cols=6 text="No messages." %}
+  {% include "components/data_table_empty.html" with cols=7 text="No messages." %}
   {% endfor %}
   </tbody>
 </table></div>
-</div>
+    </div>
+  </div>
+</form>
+<script src="{% static 'js/check_all.js' %}" defer></script>
 {% endblock %}
