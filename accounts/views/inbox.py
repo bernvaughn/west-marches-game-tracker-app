@@ -1,4 +1,5 @@
 import json
+from datetime import date
 
 from django.contrib import messages as flash
 from django.core.exceptions import PermissionDenied
@@ -245,81 +246,105 @@ def _apply_grant(request, msg, kind, data, lines):
             msg.save(update_fields=["status"])
 
 
-def _apply_batch_grant(request, msg, batch):
+def _apply_batch_grant(request, msg, batch, club):
     """Apply a batch of grants, producing one ledger entry per type.
     Raise LedgerError to roll back.
+    
+    Grant dict structure (stored as primitives in session):
+    - kind: "coins" | "items" | "map"
+    - character_pk: int (fetched with club scoping)
+    - coins: int (for coins type)
+    - item_tuples: [(item_pk, quantity), ...] (for items type)
+    - map_kind: str
+    - location_pk: int (fetched with club scoping)
+    - hex_map_pk, q, r: (for visit type)
+    - note: str
+    - date: ISO date string (fetched as date object)
+    - mark_handled: bool
     """
     with transaction.atomic():
         # Group grants by type: coins, items, map
         coins_total = 0
-        item_lines = []
-        map_entries = []  # List of (kind, character, data, location) for map operations
+        item_tuples = []  # List of (item_pk, quantity)
+        map_entries = []  # List of grant dicts for map operations
+        
+        first_grant = batch[0]
+        character = club_queryset(request, Character).get(pk=first_grant["character_pk"])
+        date_val = first_grant["date"]
+        if isinstance(date_val, str):
+            date_val = date.fromisoformat(date_val)
+        note = first_grant["note"]
+        mark_handled = any(g.get("mark_handled") for g in batch)
 
         for grant in batch:
             grant_kind = grant["kind"]
             if grant_kind == "coins":
                 coins_total += grant["coins"]
             elif grant_kind == "items":
-                item_lines.extend(grant["lines"])
+                for item_pk, qty in grant.get("item_tuples", []):
+                    item_tuples.append((item_pk, qty))
             elif grant_kind == "map":
                 map_entries.append(grant)
 
         # Process coins - one ledger entry
-        if coins_total != 0 or any(g.get("mark_handled") for g in batch):
-            first_grant = batch[0]
-            character = first_grant["character"]
-            date = first_grant["date"]
-            note = first_grant["note"]
+        if coins_total != 0 or mark_handled:
             lines = [Line(coins=coins_total)]
             record(
                 character,
                 "award",
                 lines,
                 note=note,
-                date=date,
+                date=date_val,
                 actor=request.user,
                 source_message=msg,
             )
 
         # Process items - one ledger entry
-        if item_lines:
-            first_grant = batch[0]
-            character = first_grant["character"]
-            date = first_grant["date"]
-            note = first_grant["note"]
+        if item_tuples:
+            from ledger.services import Line as LedgerLine
+            lines = [LedgerLine(item_id=pk, quantity=qty) for pk, qty in item_tuples]
             record(
                 character,
                 "award",
-                item_lines,
+                lines,
                 note=note,
-                date=date,
+                date=date_val,
                 actor=request.user,
                 source_message=msg,
             )
 
         # Process map credits - each entry per grant type
         for grant in map_entries:
-            character = grant["character"]
-            date = grant["date"]
             map_kind = grant.get("map_kind")
-            location = grant.get("location")
+            location = None
+            hex_map = None
+            q, r = grant.get("q"), grant.get("r")
+            
+            if grant.get("location_pk"):
+                location = club_queryset(request, Location).get(pk=grant["location_pk"])
+            elif grant.get("hex_map_pk"):
+                hex_map = club_queryset(request, HexMap).get(pk=grant["hex_map_pk"])
+            
             if map_kind == "visit":
                 if location is not None:
                     hex_map, q, r = location.tile.map, location.tile.q, location.tile.r
-                else:
-                    hex_map, q, r = grant["hex_map"], grant["q"], grant["r"]
-                map_services.record_visits(hex_map, q, r, [character], date, source_message=msg)
+                if hex_map is not None:
+                    map_services.record_visits(
+                        hex_map, q, r, [character], date_val, source_message=msg
+                    )
             elif map_kind in ("discovered", "explored"):
-                map_services.add_to_credit(
-                    location, map_kind, [character], date, source_message=msg
-                )
+                if location is not None:
+                    map_services.add_to_credit(
+                            location, map_kind, [character], date_val, source_message=msg
+                        )
             elif map_kind == "found":
-                map_services.add_found_marks(
-                    location, [character], date, created_by=request.membership, source_message=msg
-                )
+                if location is not None:
+                    map_services.add_found_marks(
+                        location, [character], date_val, created_by=request.membership, source_message=msg
+                    )
 
         # Mark message handled if any grant requested it
-        if any(g.get("mark_handled") for g in batch):
+        if mark_handled:
             msg.status = Message.Status.HANDLED
             msg.save(update_fields=["status"])
 
@@ -394,18 +419,18 @@ def message_give(request, club_slug, pk, kind):
                 ctx,
             )
 
-        # Build summary for batch
+        # Build summary for batch (fetch models for display)
         summary_items = []
         for grant in batch:
             if grant["kind"] == "coins":
                 summary_items.append(f" Coins: {format_coins(grant['coins'])}")
             elif grant["kind"] == "items":
                 items_str = ", ".join(
-                    f"{ln.item.name} × {ln.quantity}" for ln in grant.get("lines", [])
+                    f"Item × {qty}" for item_pk, qty in grant.get("item_tuples", [])
                 )
                 summary_items.append(f" Items: {items_str}")
             elif grant["kind"] == "map":
-                label = dict(MapGrantForm.MAP_KINDS)[grant.get("map_kind")]
+                label = dict(MapGrantForm.MAP_KINDS).get(grant.get("map_kind"), "Map")
                 summary_items.append(f" Map: {label}")
 
         ctx = {
@@ -437,21 +462,22 @@ def message_give(request, club_slug, pk, kind):
                     form.add_error(None, "Add at least one item.")
         
         if form.is_valid() and (kind != "items" or lines):
-            # Build grant dict from form data
+            # Build grant dict from form data - STORE PRIMITIVES ONLY
             grant = {
                 "kind": kind,
-                "character": form.cleaned_data["character"],
-                "coins": form.cleaned_data.get("coins", 0),
+                "character_pk": form.cleaned_data["character"].pk,
+                "date": form.cleaned_data["date"].isoformat(),
                 "note": form.cleaned_data["note"],
-                "date": form.cleaned_data["date"],
                 "mark_handled": form.cleaned_data.get("mark_handled", True),
             }
+            if kind == "coins":
+                grant["coins"] = form.cleaned_data.get("coins", 0)
             if kind == "items":
-                grant["lines"] = lines
+                grant["item_tuples"] = [(ln.item.pk, ln.quantity) for ln in lines]
             if kind == "map":
                 grant["map_kind"] = form.cleaned_data.get("map_kind")
-                grant["location"] = form.cleaned_data.get("location")
-                grant["hex_map"] = form.cleaned_data.get("hex_map")
+                grant["location_pk"] = form.cleaned_data.get("location").pk if form.cleaned_data.get("location") else None
+                grant["hex_map_pk"] = form.cleaned_data.get("hex_map").pk if form.cleaned_data.get("hex_map") else None
                 grant["q"] = form.cleaned_data.get("q")
                 grant["r"] = form.cleaned_data.get("r")
 
@@ -465,7 +491,6 @@ def message_give(request, club_slug, pk, kind):
             if formset is not None:
                 formset = item_line_formset(items, None, extra=3)
             ctx = _build_context(msg, kind, form, formset, back, pk, batch)
-            ctx["give_url"] = reverse(f"accounts:message_give_{kind}", args=[msg.club.slug, msg.pk])
             return render_modal_or_page(request, "accounts/inbox/_give_form.html", ctx)
 
     # Handle back from review - preserve batch
@@ -485,7 +510,7 @@ def message_give(request, club_slug, pk, kind):
         if batch:
             # Apply batch
             try:
-                _apply_batch_grant(request, msg, batch)
+                _apply_batch_grant(request, msg, batch, request.club)
             except LedgerError as exc:
                 form.add_error(None, str(exc))
                 ctx = _build_context(msg, kind, form, formset, back, pk, batch)
@@ -567,14 +592,24 @@ def _build_context(msg, kind, form, formset, back, pk, batch):
             if grant["kind"] == "coins":
                 lines_for_summary.append(Line(coins=grant["coins"]))
             else:
-                lines_for_summary.extend(grant.get("lines", []))
+                # For items, we need to fetch items for display
+                item_tuples = grant.get("item_tuples", [])
+                for item_pk, qty in item_tuples:
+                    line = Line()
+                    line.item_id = item_pk
+                    line.quantity = qty
+                    lines_for_summary.append(line)
         # Use first grant's data for summary
         first = batch[0]
+        character = club_queryset(request, Character).get(pk=first["character_pk"])
+        date_val = first["date"]
+        if isinstance(date_val, str):
+            date_val = date.fromisoformat(date_val)
         ctx["summary"] = _summary(kind, {
-            "character": first["character"],
+            "character": character,
             "coins": sum(g["coins"] for g in batch if g["kind"] == "coins"),
             "note": first["note"],
-            "date": first["date"],
+            "date": date_val,
             "mark_handled": any(g.get("mark_handled") for g in batch),
         }, lines_for_summary)
         ctx["carry"] = []
