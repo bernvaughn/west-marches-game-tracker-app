@@ -44,7 +44,7 @@
     <div class="site-header-fixed d-flex align-items-center gap-2 ms-auto">
       {% if not user.is_authenticated %}{% include "accounts/_donate.html" %}{% endif %}
       {% if user.is_authenticated %}{% with who=user.display_name|default:user.email %}<span class="navbar-text user-name" title="{{ who }}" data-wm-tooltip><span class="wm-avatar wm-avatar-sm" aria-hidden="true">{{ who|initials }}</span><span class="visually-hidden">{{ who }}</span><span class="user-name-text" aria-hidden="true">{{ who }}</span></span>{% endwith %}{% endif %}
-      {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "partials/approvals_menu.html" %}{% endif %}
+      {% if club %}{% include "player_characters/characters/_selector.html" %}{% include "components/_approvals_dropdown.html" %}{% endif %}
     </div>
   </div>
 </nav>

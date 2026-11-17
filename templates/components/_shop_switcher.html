@@ -1,0 +1,13 @@
+{% if open_shops %}
+<div class="dropdown no-print shop-switcher">
+  <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="#" role="button"
+     data-bs-toggle="dropdown" aria-expanded="false" aria-label="Switch shop" title="Switch shop" data-wm-tooltip>
+    {% include "components/icon.html" with name="shop" %}
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end">
+    {% for shop in open_shops %}
+    <li><a class="dropdown-item{% if shop == club %} active{% endif %}" href="{% url 'shops:detail' club.slug shop.pk %}"{% if shop == club %} aria-current="page"{% endif %}>{{ shop.name }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
