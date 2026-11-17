@@ -39,6 +39,11 @@ class Character(models.Model):
     )
     char_class = models.CharField("Class", max_length=60, blank=True)
     species = models.CharField(max_length=60, blank=True)
+    background = models.CharField(
+        max_length=60,
+        blank=True,
+        help_text="Character background (e.g., Acolyte, Soldier)",
+    )
     alignment = models.CharField(max_length=60, blank=True)
     pronouns = models.CharField(max_length=60, blank=True)
     strength = _ability_field()
