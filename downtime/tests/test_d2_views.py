@@ -203,12 +203,12 @@ def test_admin_nav_entry_only_for_admins(login, club, player, club_admin):
     assert link in login(club_admin).get(home).content.decode()
 
 
-def test_shortcut_before_trades(login, club, player):
+def test_no_trades_shortcut_after_removal(login, club, player):
     # Follow redirect for players (dashboard)
     body = login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     bar = body[body.index('<nav class="site-header') :]
     bar = bar[: bar.index("</nav>")]
-    assert bar.index('aria-label="Downtime"') < bar.index('aria-label="Trades"')
+    assert 'aria-label="Trades"' not in bar
     assert bar.index('aria-label="Quests"') < bar.index('aria-label="Downtime"')
 
 
@@ -216,5 +216,6 @@ def test_topbar_css_has_six_ranks():
     from pathlib import Path
 
     css = Path("static/css/components.css").read_text()
-    for i in range(1, 7):
+    for i in range(1, 6):
         assert f".wm-shortcut-rank-{i}" in css
+    assert ".wm-shortcut-rank-6" not in css

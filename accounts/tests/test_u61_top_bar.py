@@ -44,9 +44,9 @@ def test_no_dropdown_menus_in_bar(login, club, club_admin):
 
 def test_shortcut_ranks_in_order(login, club, player):
     b = bar(home(login, player, club))
-    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 7)]
+    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 6)]
     assert pos == sorted(pos)
-    assert b.count("data-wm-tooltip") >= 8 and b.count("wm-shortcut-label") == 6
+    assert b.count("data-wm-tooltip") >= 7 and b.count("wm-shortcut-label") == 5
 
 
 def test_groups_per_role(login, club, player, game_master, club_admin):

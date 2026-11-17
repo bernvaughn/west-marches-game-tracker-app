@@ -32,30 +32,6 @@ def _stored(player, club):
     ).character
 
 
-# --- trade propose
-def test_trade_uses_selected_and_ignores_override(login, club, player, two):
-    aria, wren = two
-    url = reverse("trades:propose", args=[club.slug])
-    c = login(player)
-    assert c.get(url).context["sender"] == wren
-    assert c.get(url, {"from": aria.pk}).context["sender"] == wren
-    assert c.get(url, {"choose": 1}).context["sender"] == wren
-    assert _stored(player, club) == wren
-
-
-def test_trade_no_character(login, club, other_player):
-    url = reverse("trades:propose", args=[club.slug])
-    assert NONE in login(other_player).get(url).content.decode()
-
-
-def test_trade_isolation(login, club, other_club, player, two):
-    aria, wren = two
-    Membership.objects.create(user=player, club=other_club)
-    foreign = _mk(other_club, player, "Far")
-    r = login(player).get(reverse("trades:propose", args=[club.slug]), {"from": foreign.pk})
-    assert r.context["sender"] == wren
-
-
 # --- move items
 def test_transfer_start(login, club, other_club, player, two, other_player):
     aria, wren = two
@@ -134,13 +110,6 @@ def test_message_isolation(login, club, other_club, player, two):
     url = reverse("accounts:message_new", args=[club.slug])
     assert login(player).post(url, {"body": "x", "character": foreign.pk}).status_code == 302
     assert Message.objects.get().character == wren
-
-
-@pytest.mark.story("U27")
-def test_u27_trade_propose_has_no_sender_field(login, club, player, two):
-    html = login(player).get(reverse("trades:propose", args=[club.slug])).content.decode()
-    assert 'name="sender"' not in html and 'name="from"' not in html
-    assert "Propose trade as Wren" in html
 
 
 @pytest.mark.story("U27")
