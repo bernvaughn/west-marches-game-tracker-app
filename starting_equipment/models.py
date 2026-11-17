@@ -43,10 +43,10 @@ class StartingEquipmentClassEntry(models.Model):
         on_delete=models.CASCADE,
         related_name="class_entries",
     )
-    char_class = models.CharField(max_length=60)  # Matches Character.char_class, case-insensitive match
+    char_class = models.CharField(max_length=60)  # Matches Character.char_class, case-insensitive
     min_level = models.PositiveSmallIntegerField(default=1)
     max_level = models.PositiveSmallIntegerField(default=20)
-    coins_cp = models.PositiveIntegerField(default=0)  # Base coins for this class at this level range
+    coins_cp = models.PositiveIntegerField(default=0)  # Base coins for this class
 
     objects = ClubScopedManager()
 
