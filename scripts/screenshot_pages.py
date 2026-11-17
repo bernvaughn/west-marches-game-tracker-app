@@ -302,7 +302,6 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("characters:player_consume", "aria.pk", "owned_item.pk"),
         ),
-        P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
         P("characters-print-session-pack", "alice", _c("characters:print_session_pack", "aria.pk")),
         # downtime
@@ -411,9 +410,8 @@ def _build_pages() -> list[Page]:
             "anon",
             lambda d: reverse("password_reset_confirm", args=["x", "bad"]),
         ),
-        # characters. Alice has characters, so `mine` and `transfer_start` redirect for her.
+        # characters. Alice has characters, so `mine` redirects for her.
         P("characters-mine-empty", "gm_only", _c("characters:mine")),
-        P("characters-transfer-start-empty", "gm_only", _c("characters:transfer_start")),
         P("characters-slips-print", "alice", _c("characters:slips_print")),
         P(
             "characters-slips-print-aria",
