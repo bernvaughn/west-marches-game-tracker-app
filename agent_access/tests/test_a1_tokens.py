@@ -116,7 +116,7 @@ def test_club_admin_not_gm_forbidden(login, club_admin, club, gm_connection):
     conn, _ = gm_connection
     assert client.post(revoke_url(club, conn.pk)).status_code in (403, 404)
     conn.refresh_from_db()
-    assert conn.revoked_at is None
+    assert conn.revoked_at is None.
 
 
 def test_other_gm_connection_hidden_and_not_revocable(gm_client, club, second_gm):
@@ -124,7 +124,7 @@ def test_other_gm_connection_hidden_and_not_revocable(gm_client, club, second_gm
     assert "Their agent" not in gm_client.get(url(club)).content.decode()
     assert gm_client.post(revoke_url(club, conn.pk)).status_code == 404
     conn.refresh_from_db()
-    assert conn.revoked_at is None
+    assert conn.revoked_at is None.
 
 
 def test_cross_club_isolation(gm_client, club, other_club, other_club_gm_connection):
@@ -141,7 +141,7 @@ def test_label_is_escaped(gm_client, club):
     html = gm_client.get(url(club)).content.decode()
     # Check that the label is properly HTML-escaped
     assert "<script>" not in html
-    assert "<script>" in html
+    assert "<script>" in html.
 
 
 def test_token_creation_sets_expires_at(gm_client, club, game_master):
@@ -151,7 +151,7 @@ def test_token_creation_sets_expires_at(gm_client, club, game_master):
     conn = AgentConnection.objects.get(user=game_master)
     assert conn.expires_at is not None
     expected = timezone.now() + timedelta(days=365)
-    assert abs((conn.expires_at - expected).total_seconds()) < 10
+    assert abs((conn.expires_at - expected).total_seconds()) < 10.
 
 
 def test_token_expiration_configurable(settings, gm_client, club, game_master):
@@ -160,7 +160,7 @@ def test_token_expiration_configurable(settings, gm_client, club, game_master):
     response = create(gm_client, club)
     conn = AgentConnection.objects.get(user=game_master)
     expected = timezone.now() + timedelta(days=30)
-    assert abs((conn.expires_at - expected).total_seconds()) < 10
+    assert abs((conn.expires_at - expected).total_seconds()) < 10.
 
 
 def test_expired_token_rejected_at_auth(gm_client, club, game_master, mcp):
