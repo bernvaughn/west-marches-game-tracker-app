@@ -174,6 +174,9 @@ if not DEBUG:
             },
         }
 
+# Token expiration (days)
+AGENT_TOKEN_EXPIRY_DAYS = int(os.environ.get("AGENT_TOKEN_EXPIRY_DAYS", "365"))
+
 # Rate limiting configuration (configurable via environment variables)
 RATELIMIT_LOGIN_ATTEMPTS = int(os.environ.get("RATELIMIT_LOGIN_ATTEMPTS", "5"))
 RATELIMIT_LOGIN_WINDOW = int(os.environ.get("RATELIMIT_LOGIN_WINDOW", "60"))  # seconds
@@ -221,16 +224,20 @@ CSRF_COOKIE_SAMESITE = "Lax"
 X_FRAME_OPTIONS = "DENY"
 
 # Content Security Policy
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'",)
-CSP_STYLE_SRC = ("'self'", "'unsafe-inline'")
-CSP_IMG_SRC = ("'self'", "data:")
-CSP_FONT_SRC = ("'self'",)
-CSP_CONNECT_SRC = ("'self'",)
-CSP_FRAME_ANCESTORS = ("'none'",)
-CSP_FORM_ACTION = ("'self'",)
-CSP_BASE_URI = ("'self'",)
-CSP_OBJECT_SRC = ("'none'",)
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": ("'self'",),
+        "script-src": ("'self'",),
+        "style-src": ("'self'", "'unsafe-inline'"),
+        "img-src": ("'self'", "data:"),
+        "font-src": ("'self'",),
+        "connect-src": ("'self'",),
+        "frame-ancestors": ("'none'",),
+        "form-action": ("'self'",),
+        "base-uri": ("'self'",),
+        "object-src": ("'none'",),
+    }
+}
 
 OAUTH2_PROVIDER = {
     "SCOPES": {"mcp": f"Use the {APP_NAME} tools for one club"},

@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 from accounts.scoping import ClubScopedManager
 
@@ -32,8 +33,20 @@ class AgentConnection(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     objects = ClubScopedManager()
+
+    @property
+    def is_expired(self):
+        if self.expires_at is None:
+            return False
+        return timezone.now() > self.expires_at
+
+    def clean(self):
+        super().clean()
+        if self.expires_at and self.approved_at and self.expires_at < self.approved_at:
+            raise models.ValidationError({"expires_at": "Expiration must be on or after approval."})
 
     def __str__(self):
         return self.label or f"Connection {self.pk}"
@@ -147,3 +160,37 @@ class ProposedLine(models.Model):
 
     def __str__(self):
         return f"Proposed line {self.pk}"
+
+
+class TokenAuditLog(models.Model):
+    club_path = "club"
+
+    class Action(models.TextChoices):
+        CREATED = "created", "Created"
+        USED = "used", "Used"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    club = models.ForeignKey(
+        "accounts.Club", on_delete=models.CASCADE, related_name="token_audit_logs"
+    )
+    connection = models.ForeignKey(
+        AgentConnection, on_delete=models.CASCADE, related_name="audit_logs"
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    action = models.CharField(max_length=10, choices=Action.choices)
+    timestamp = models.DateTimeField(auto_now_add=True, db_index=True)
+    details = models.JSONField(default=dict, blank=True)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["club", "action", "-timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"{self.action} - {self.connection.label} - {self.timestamp}"

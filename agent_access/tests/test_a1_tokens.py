@@ -1,10 +1,13 @@
 import hashlib
+from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import Membership, User
-from agent_access.models import AgentConnection
+from agent_access.models import AgentConnection, TokenAuditLog
 from agent_access.tokens import create_token
 
 pytestmark = [pytest.mark.story("A1"), pytest.mark.django_db]
@@ -139,3 +142,4 @@ def test_label_is_escaped(gm_client, club):
     html = gm_client.get(url(club)).content.decode()
     assert "&lt;script&gt;" in html
     assert "<script>x" not in html
+

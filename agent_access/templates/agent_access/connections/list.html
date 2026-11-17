@@ -21,7 +21,7 @@
 {% include "components/card_open.html" with title="Connections" %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-agent-table">
   <thead>
-    <tr><th>Label</th><th>Kind</th><th>Prefix</th><th>Created</th><th>Last used</th><th>Status</th><th></th></tr>
+    <tr><th>Label</th><th>Kind</th><th>Prefix</th><th>Created</th><th>Expires</th><th>Last used</th><th>Status</th><th></th></tr>
   </thead>
   <tbody>
   {% for c in connections %}
@@ -30,8 +30,9 @@
       <td>{{ c.get_kind_display }}</td>
       <td>{% if c.token_prefix %}<code>{{ c.token_prefix }}…</code>{% endif %}</td>
       <td>{{ c.created|date:"Y-m-d H:i" }}</td>
+      <td>{% if c.expires_at %}{{ c.expires_at|date:"Y-m-d" }}{% else %}Never{% endif %}</td>
       <td>{{ c.last_used_at|date:"Y-m-d H:i"|default:"never" }}</td>
-      <td>{% if c.revoked_at %}{% include "components/badge.html" with status="neutral" text="Revoked" %} <span class="text-muted">{{ c.revoked_at|date:"Y-m-d" }}</span>{% else %}{% include "components/badge.html" with status="success" text="Active" %}{% endif %}</td>
+      <td>{% if c.revoked_at %}{% include "components/badge.html" with status="neutral" text="Revoked" %} <span class="text-muted">{{ c.revoked_at|date:"Y-m-d" }}</span>{% elif c.is_expired %}{% include "components/badge.html" with status="danger" text="Expired" %}{% else %}{% include "components/badge.html" with status="success" text="Active" %}{% endif %}</td>
       <td class="actions">
         {% if not c.revoked_at %}
         <form method="post" action="{% url 'agent_access:connection_revoke' club.slug c.pk %}">
@@ -42,7 +43,7 @@
       </td>
     </tr>
   {% empty %}
-    {% include "components/data_table_empty.html" with cols=7 text="No connections yet." %}
+    {% include "components/data_table_empty.html" with cols=8 text="No connections yet." %}
   {% endfor %}
   </tbody>
 </table></div>
