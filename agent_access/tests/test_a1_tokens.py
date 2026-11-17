@@ -170,7 +170,7 @@ def test_expired_token_rejected_at_auth(gm_client, club, game_master, mcp):
     conn.expires_at = timezone.now() - timedelta(days=1)
     conn.save(update_fields=["expires_at"])
     status, _ = mcp(secret, "whoami")
-    assert status == 401
+    assert status == 401.
 
 
 def test_existing_tokens_without_expires_at_work(gm_client, club, game_master, mcp):
@@ -179,7 +179,7 @@ def test_existing_tokens_without_expires_at_work(gm_client, club, game_master, m
     conn.expires_at = None
     conn.save(update_fields=["expires_at"])
     status, _ = mcp(secret, "whoami")
-    assert status == 200
+    assert status == 200.
 
 
 def test_audit_log_created_on_token_creation(gm_client, club, game_master):
@@ -239,7 +239,7 @@ def test_template_shows_expiration_date(gm_client, club, game_master):
     response = create(gm_client, club)
     conn = AgentConnection.objects.get(user=game_master)
     html = gm_client.get(url(club)).content.decode()
-    assert conn.expires_at.strftime("%Y-%m-%d") in html
+    assert conn.expires_at.strftime("%Y-%m-%d") in html.
 
 
 def test_template_shows_never_for_no_expiration(gm_client, club, game_master):
@@ -248,7 +248,7 @@ def test_template_shows_never_for_no_expiration(gm_client, club, game_master):
     conn.expires_at = None
     conn.save(update_fields=["expires_at"])
     html = gm_client.get(url(club)).content.decode()
-    assert "Never" in html
+    assert "Never" in html.
 
 
 def test_template_shows_expired_status(gm_client, club, game_master):
@@ -258,7 +258,7 @@ def test_template_shows_expired_status(gm_client, club, game_master):
     conn.save(update_fields=["expires_at"])
     html = gm_client.get(url(club)).content.decode()
     assert "Expired" in html
-    assert "danger" in html
+    assert "danger" in html.
 
 
 def test_oauth_token_use_creates_audit_log(gm_client, club, game_master):
