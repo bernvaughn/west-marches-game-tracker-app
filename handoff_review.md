@@ -1,37 +1,32 @@
-## Review Hand-off: S2 Trade Dashboard Widget
+## Review Stage Complete - Security Headers Middleware
 
 ### Summary
-Reviewed PR #234 for the Trade Dashboard Widget implementation. All acceptance criteria have been verified and are passing.
+Reviewed the implementation of `SecurityHeadersMiddleware` in PR #247. All review-stage acceptance criteria are met.
 
 ### Verification Results
-All 10 acceptance criteria verified:
 
-**Code Stage (7 criteria):**
-1. ✅ "My Trades" section on dashboard (provider order 2) — `TradesProvider.order = 2`
-2. ✅ Lists each open trade with: other character, status badge, primary action button — Template iterates `open_trades_data` with all three elements
-3. ✅ Status badges match U78 wording — Uses `trade_status_line()` from `player_characters.trade_status_line`
-4. ✅ "Act Now" button links to correct page — Provider logic routes to `trades:accept`, `trades:cancel`, `trades:edit_side`, or `trades:approve` based on trade status and user side
-5. ✅ HTMX poll refreshes widget every 10s — Template has `hx-trigger="every 10s"` targeting the dashboard partial endpoint
-6. ✅ Only shows for player with open trades — `should_show()` checks for open trades
+**Code Conventions (Item 7)**: ✅
+- `config/middleware.py` follows Django class-based middleware pattern with `__init__(get_response)` and `__call__(request)` methods
+- Consistent with existing `ClubMiddleware` in `accounts/middleware.py`
+- Includes docstrings and inline comments for each header
 
-**Verify Stage (3 criteria):**
-7. ✅ Ruff clean — `uv run ruff check accounts/views/dashboard.py templates/accounts/_dashboard_trades.html` passes
-8. ✅ Unit tests pass — All 1755 tests pass
-9. ✅ Browser tests pass — Screenshot tests in `scripts/test_screenshot_pages.py` pass (6 tests)
+**Linting (Item 8)**: ✅
+- `ruff check config/middleware.py config/tests/test_security_headers_middleware.py` passes with no errors
 
-### Key Implementation Details
-- **Enhanced `TradesProvider`** in `accounts/views/dashboard.py`: Uses `trade_status_line()` for U78 wording, determines correct "Act Now" button per trade state (REQUESTED/ACCEPTED) and user side (sender/receiver)
-- **Rewritten template** `templates/accounts/_dashboard_trades.html`: Shows each trade with other character name, status text, and action button (POST form for accept/cancel/approve, GET link for edit_side). Wrapped in HTMX polling container.
-- **Provider already registered** in `accounts/apps.py` with `order=2`
-- **Partial endpoint** already exists at `/dashboard/<slug>/partial/trades/` via `dashboard_partial` view
+**Type Safety (Item 9)**: ✅
+- Code includes type hints (`add_security_headers(response: HttpResponse) -> None`)
+- No mypy configured in project; type hints present where applicable
 
-### Tests Verified
-- All 1755 unit tests pass
-- Ruff clean on modified files
-- Screenshot/browser tests pass
+**Additional Verification**:
+- All 10 unit tests pass (`config/tests/test_security_headers_middleware.py`)
+- Integration test confirms all 4 headers present on 404 error response
+- Headers verified: `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (restrictive), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`
+- Middleware correctly positioned in `MIDDLEWARE` list after `SecurityMiddleware` and before `CSPMiddleware`
+- Test settings inherit middleware (not filtered out)
 
-### PR Status
-PR #234: https://github.com/bernvaughn/west-marches-game-tracker-app/pull/234
+### Deferred to Verify Stage
+Items 10-15 (unit tests, integration tests, HTML/API/error responses, test settings) are already deferred to verify stage with appropriate reasoning.
 
-### Next Steps
-Ready for merge. All acceptance criteria are ticked and verified. The merge stage will land the PR to main.
+### Next Steps for Merge Stage
+- Merge PR #247 to main branch
+- Verify stage will run full test suite and confirm headers in production-like environment
