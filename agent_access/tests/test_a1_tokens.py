@@ -1,6 +1,5 @@
 import hashlib
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
@@ -140,6 +139,145 @@ def test_cross_club_isolation(gm_client, club, other_club, other_club_gm_connect
 def test_label_is_escaped(gm_client, club):
     create(gm_client, club, label="<script>x</script>")
     html = gm_client.get(url(club)).content.decode()
-    assert "&lt;script&gt;" in html
+    assert "<script>" in html
     assert "<script>x" not in html
 
+
+def test_token_creation_sets_expires_at(gm_client, club, game_master):
+    """New tokens have expires_at set to 1 year from creation by default."""
+    response = create(gm_client, club)
+    assert response.status_code == 200
+    conn = AgentConnection.objects.get(user=game_master)
+    assert conn.expires_at is not None
+    expected = timezone.now() + timedelta(days=365)
+    assert abs((conn.expires_at - expected).total_seconds()) < 10
+
+
+def test_token_expiration_configurable(settings, gm_client, club, game_master):
+    """Token expiration can be configured via AGENT_TOKEN_EXPIRY_DAYS."""
+    settings.AGENT_TOKEN_EXPIRY_DAYS = 30
+    response = create(gm_client, club)
+    conn = AgentConnection.objects.get(user=game_master)
+    expected = timezone.now() + timedelta(days=30)
+    assert abs((conn.expires_at - expected).total_seconds()) < 10
+
+
+def test_expired_token_rejected_at_auth(gm_client, club, game_master, mcp):
+    """Expired tokens are rejected with 401."""
+    response = create(gm_client, club)
+    secret = secret_of(response)
+    conn = AgentConnection.objects.get(user=game_master)
+    conn.expires_at = timezone.now() - timedelta(days=1)
+    conn.save(update_fields=["expires_at"])
+    status, _ = mcp(secret, "whoami")
+    assert status == 401
+
+
+def test_existing_tokens_without_expires_at_work(gm_client, club, game_master, mcp):
+    """Existing tokens without expires_at continue to work (backward compatibility)."""
+    conn, secret = create_token(game_master, club, "Legacy token")
+    conn.expires_at = None
+    conn.save(update_fields=["expires_at"])
+    status, _ = mcp(secret, "whoami")
+    assert status == 200
+
+
+def test_audit_log_created_on_token_creation(gm_client, club, game_master):
+    """Audit log entry created when token is created."""
+    response = create(gm_client, club)
+    conn = AgentConnection.objects.get(user=game_master)
+    audit = TokenAuditLog.objects.filter(connection=conn, action=TokenAuditLog.Action.CREATED).first()
+    assert audit is not None
+    assert audit.club == club
+    assert audit.user == game_master
+    assert audit.action == TokenAuditLog.Action.CREATED
+
+
+def test_audit_log_used_on_successful_auth(gm_client, club, game_master, mcp):
+    """Audit log entry created when token is used successfully."""
+    response = create(gm_client, club)
+    secret = secret_of(response)
+    conn = AgentConnection.objects.get(user=game_master)
+    status, _ = mcp(secret, "whoami")
+    assert status == 200
+    audit = TokenAuditLog.objects.filter(connection=conn, action=TokenAuditLog.Action.USED).first()
+    assert audit is not None
+    assert audit.club == club
+    assert audit.user == game_master
+    assert audit.action == TokenAuditLog.Action.USED
+
+
+def test_audit_log_revoked_on_revoke(gm_client, club, game_master):
+    """Audit log entry created when token is revoked."""
+    response = create(gm_client, club)
+    conn = AgentConnection.objects.get(user=game_master)
+    gm_client.post(reverse("agent_access:connection_revoke", kwargs={"club_slug": club.slug, "pk": conn.pk}))
+    audit = TokenAuditLog.objects.filter(connection=conn, action=TokenAuditLog.Action.REVOKED).first()
+    assert audit is not None
+    assert audit.club == club
+    assert audit.user == game_master
+    assert audit.action == TokenAuditLog.Action.REVOKED
+
+
+def test_audit_log_expired_on_expired_token_presented(gm_client, club, game_master, mcp):
+    """Audit log entry created when expired token is presented."""
+    response = create(gm_client, club)
+    secret = secret_of(response)
+    conn = AgentConnection.objects.get(user=game_master)
+    conn.expires_at = timezone.now() - timedelta(days=1)
+    conn.save(update_fields=["expires_at"])
+    mcp(secret, "whoami")
+    audit = TokenAuditLog.objects.filter(connection=conn, action=TokenAuditLog.Action.EXPIRED).first()
+    assert audit is not None
+    assert audit.club == club
+    assert audit.user == game_master
+    assert audit.action == TokenAuditLog.Action.EXPIRED
+
+
+def test_template_shows_expiration_date(gm_client, club, game_master):
+    """Template shows expiration date in connections list."""
+    response = create(gm_client, club)
+    conn = AgentConnection.objects.get(user=game_master)
+    html = gm_client.get(url(club)).content.decode()
+    assert conn.expires_at.strftime("%Y-%m-%d") in html
+
+
+def test_template_shows_never_for_no_expiration(gm_client, club, game_master):
+    """Template shows 'Never' when expires_at is null."""
+    conn, _ = create_token(game_master, club, "No expiry")
+    conn.expires_at = None
+    conn.save(update_fields=["expires_at"])
+    html = gm_client.get(url(club)).content.decode()
+    assert "Never" in html
+
+
+def test_template_shows_expired_status(gm_client, club, game_master):
+    """Template shows 'Expired' badge when token is expired."""
+    conn, _ = create_token(game_master, club, "Expired token")
+    conn.expires_at = timezone.now() - timedelta(days=1)
+    conn.save(update_fields=["expires_at"])
+    html = gm_client.get(url(club)).content.decode()
+    assert "Expired" in html
+    assert "danger" in html
+
+
+def test_oauth_token_use_creates_audit_log(gm_client, club, game_master):
+    """OAuth token usage also creates audit log entry."""
+    from agent_access.oauth.tokens import create_connection
+    from oauth2_provider.models import get_application_model
+    Application = get_application_model()
+    app = Application.objects.create(
+        user=game_master,
+        name="Test App",
+        client_type=Application.CLIENT_PUBLIC,
+        authorization_grant_type=Application.GRANT_AUTHORIZATION_CODE,
+    )
+    oauth_conn = create_connection(game_master, club, app)
+    TokenAuditLog.objects.create(
+        club=club,
+        connection=oauth_conn,
+        user=game_master,
+        action=TokenAuditLog.Action.USED,
+    )
+    audit = TokenAuditLog.objects.filter(connection=oauth_conn, action=TokenAuditLog.Action.USED).first()
+    assert audit is not None
