@@ -1,14 +1,14 @@
 from django.contrib import admin
 
 from .models import (
-    StartingEquipmentTemplate,
-    StartingEquipmentClassEntry,
-    StartingEquipmentClassLine,
+    MagicItemStartingOption,
     StartingEquipmentBackgroundEntry,
     StartingEquipmentBackgroundLine,
+    StartingEquipmentClassEntry,
+    StartingEquipmentClassLine,
     StartingEquipmentLevelCoins,
-    MagicItemStartingOption,
     StartingEquipmentRequest,
+    StartingEquipmentTemplate,
 )
 
 
@@ -59,7 +59,16 @@ class MagicItemStartingOptionInline(admin.StackedInline):
 class StartingEquipmentRequestInline(admin.StackedInline):
     model = StartingEquipmentRequest
     extra = 0
-    fields = ["character", "item", "quantity", "note", "status", "decided_by", "decided_at", "decision_note"]
+    fields = [
+        "character",
+        "item",
+        "quantity",
+        "note",
+        "status",
+        "decided_by",
+        "decided_at",
+        "decision_note",
+    ]
     readonly_fields = ["created", "decided_by", "decided_at"]
     autocomplete_fields = ["character", "item"]
     search_fields = ["character__name", "item__name"]
