@@ -6,13 +6,33 @@ from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from oauth2_provider.models import get_application_model
-from oauth2_provider.views import AuthorizationView, DynamicClientRegistrationView
+from oauth2_provider.views import AuthorizationView, DynamicClientRegistrationView, TokenView
 from oauth2_provider.www_authenticate import build_bearer_challenge
 
+from accounts.ratelimit import RateLimitMixin, get_client_ip, rate_limit
 from agent_access.mcp.server import mcp_view
 
 from .forms import ConsentForm, validate_redirect_uris
 from .tokens import create_connection, prepare_approval
+
+
+def _get_connection_key(request, *args, **kwargs):
+    """Extract connection identifier from Authorization header for MCP rate limiting."""
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        # Use a prefix of the token as the identifier
+        return auth_header[7:57]  # First 50 chars of token
+    return get_client_ip(request)
+
+
+class RateLimitedTokenView(RateLimitMixin, TokenView):
+    """OAuth token endpoint with rate limiting (10 requests per minute per IP)."""
+
+    ratelimit_prefix = "oauth_token"
+    ratelimit_limit = settings.RATELIMIT_OAUTH_TOKEN_ATTEMPTS
+    ratelimit_window = settings.RATELIMIT_OAUTH_TOKEN_WINDOW
+    ratelimit_key_func = staticmethod(get_client_ip)
+
 
 RESOURCE_METADATA_PATH = "/.well-known/oauth-protected-resource/mcp"
 CORS_HEADERS_BASE = {
@@ -58,6 +78,12 @@ def cors(view):
 
 @csrf_exempt
 @cors
+@rate_limit(
+    prefix="mcp",
+    limit=settings.RATELIMIT_MCP_ATTEMPTS,
+    window=settings.RATELIMIT_MCP_WINDOW,
+    key_func=_get_connection_key,
+)
 def mcp_entry(request, *args, **kwargs):
     response = mcp_view(request, *args, **kwargs)
     if response.status_code == 401:
@@ -92,7 +118,7 @@ class PublicClientRegistrationView(DynamicClientRegistrationView):
             "refresh_token",
         }:
             return _bad_metadata("grant_types must be authorization_code and refresh_token only.")
-        
+
         # Validate redirect URIs
         redirect_uris = data.get("redirect_uris", [])
         if not isinstance(redirect_uris, list):
@@ -100,7 +126,7 @@ class PublicClientRegistrationView(DynamicClientRegistrationView):
         redirect_errors = validate_redirect_uris(redirect_uris)
         if redirect_errors:
             return _bad_metadata("; ".join(redirect_errors))
-        
+
         return super().post(request, *args, **kwargs)
 
 

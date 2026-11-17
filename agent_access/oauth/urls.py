@@ -24,7 +24,7 @@ urlpatterns = [
         name="oauth-resource-metadata-path",
     ),
     path("oauth/authorize/", views.ConsentView.as_view(), name="authorize"),
-    path("oauth/token/", views.cors(dot.TokenView.as_view()), name="token"),
+    path("oauth/token/", views.cors(views.RateLimitedTokenView.as_view()), name="token"),
     path("oauth/revoke_token/", views.cors(dot.RevokeTokenView.as_view()), name="revoke-token"),
     path(
         "oauth/register/",

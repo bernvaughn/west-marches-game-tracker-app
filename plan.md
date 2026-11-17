@@ -1,58 +1,73 @@
-# Implementation Plan: S2 Trade Dashboard Widget
+# Implementation Plan: Add Rate Limiting to Authentication Endpoints
 
 ## Overview
-Enhance the existing "My Trades" dashboard provider to show open trades with status badges matching U78 wording and "Act Now" buttons linking to correct pages. Add HTMX polling every 10s.
+Implement rate limiting on authentication and OAuth endpoints as specified in the acceptance criteria:
+- Login: 5 attempts per minute per IP
+- Password change/reset: 3 attempts per hour per user
+- OAuth token endpoint: 10 requests per minute per IP
+- MCP endpoints: 60 requests per minute per connection
+- Rate limits configurable via settings
 
 ## Files to Modify
 
-### 1. `accounts/views/dashboard.py`
-- **Modify `TradesProvider` class:**
-  - Update `get_context()` to return detailed trade data including:
-    - Trade object, other character, user's side (sender/receiver)
-    - Status badge text (from `trade_status_line` function)
-    - "Act Now" button URL and label based on trade status and user's side
-  - Update `should_show()` to return `True` only if user has open trades
+### 1. config/settings.py
+- Add cache configuration (Redis for production, locmem for development)
+- Add rate limit settings (configurable via environment variables)
+  - `RATELIMIT_LOGIN_ATTEMPTS` (default: 5)
+  - `RATELIMIT_LOGIN_WINDOW` (default: 60 seconds)
+  - `RATELIMIT_PASSWORD_ATTEMPTS` (default: 3)
+  - `RATELIMIT_PASSWORD_WINDOW` (default: 3600 seconds)
+  - `RATELIMIT_OAUTH_TOKEN_ATTEMPTS` (default: 10)
+  - `RATELIMIT_OAUTH_TOKEN_WINDOW` (default: 60 seconds)
+  - `RATELIMIT_MCP_ATTEMPTS` (default: 60)
+  - `RATELIMIT_MCP_WINDOW` (default: 60 seconds)
 
-### 2. `templates/accounts/_dashboard_trades.html`
-- **Rewrite template to:**
-  - Show each trade as a list item with:
-    - Other character name
-    - Status badge (using U78 wording from `trade_status_line`)
-    - Primary "Act Now" button linking to correct page:
-      - REQUESTED + receiver → `trades:edit_side` (Accept)
-      - REQUESTED + sender → `trades:detail` (Cancel)
-      - ACCEPTED + not approved → `trades:edit_side` (Change)
-      - ACCEPTED + approved, other not → `trades:detail` (Approve)
-      - ACCEPTED + both approved → completed (no action)
-  - Add HTMX polling: `hx-get` to dashboard partial endpoint, `hx-trigger="every 10s"`, `hx-swap="outerHTML"`
+### 2. accounts/views/passwords.py
+- Apply rate limiting to `ClearFlagPasswordChangeView` (password change)
+- Apply rate limiting to `reset_password` function (password reset)
+- Use per-user rate limiting (by user ID)
 
-### 3. `accounts/urls.py`
-- **Already has** `/dashboard/<slug>/partial/<provider_key>/` endpoint
-- The existing `dashboard_partial` view will work for `provider_key="trades"`
+### 3. agent_access/oauth/urls.py
+- Apply rate limiting to TokenView (oauth/token/)
+- Use per-IP rate limiting
 
-### 4. Register provider (already done in `accounts/apps.py`)
-- `TradesProvider` is already registered with `order=2`
+### 4. agent_access/oauth/views.py
+- Apply rate limiting to `mcp_entry` view (MCP endpoint)
+- Use per-connection rate limiting (by AgentConnection)
 
-## Key Logic for "Act Now" Button
+## Implementation Approach
 
-| Trade Status | User Side | Button Label | Target URL |
-|--------------|-----------|--------------|------------|
-| REQUESTED | receiver | "Accept" | `trades:edit_side` |
-| REQUESTED | sender | "Cancel" | `trades:detail` (or cancel endpoint) |
-| ACCEPTED | viewer (not approved) | "Change" | `trades:edit_side` |
-| ACCEPTED | viewer (approved, other not) | "Approve" | `trades:detail` |
-| ACCEPTED | both approved | — | — (completed) |
+### Cache Configuration
+Add Django cache backend configuration to settings.py:
+- Production: Redis cache backend
+- Development: LocMemCache (in-memory)
+- Tests: DummyCache (already in test_settings.py)
 
-## Testing
-- Unit tests for `TradesProvider.get_context()` with various trade states
-- Browser test for dashboard display with HTMX polling
-- Ruff clean
+### Rate Limiting Strategy
+Use Django's cache framework with custom decorators/middleware:
+- For Django class-based views: Create a `RateLimitMixin` or use decorators
+- For function-based views: Use decorators
+- For OAuth token endpoint: Wrap the view with rate limiting
+- For MCP endpoint: Add rate limiting in the view function
+
+### Key Design Decisions
+1. **Per-IP rate limiting** for login and OAuth token endpoints (anonymous users)
+2. **Per-user rate limiting** for password change/reset (authenticated users)
+3. **Per-connection rate limiting** for MCP endpoints (authenticated connections)
+4. All rate limits configurable via environment variables with sensible defaults
 
 ## Acceptance Criteria Mapping
-- [ ] "My Trades" section on dashboard (provider order 2) → `TradesProvider.order = 2`
-- [ ] Lists each open trade with: other character, status badge, primary action button → Template + provider context
-- [ ] Status badges match U78 wording → Use `trade_status_line` function
-- [ ] "Act Now" button links to correct page → Logic in provider
-- [ ] HTMX poll refreshes widget every 10s → Template with `hx-trigger="every 10s"`
-- [ ] Only shows for player with open trades → `should_show()` checks for open trades
-- [ ] Ruff clean, unit + browser tests pass → Run tests
+
+| Criterion | Stage | Proof |
+|-----------|-------|-------|
+| Login: 5 attempts per minute per IP | code | Unit test verifying rate limit on LoginView |
+| Password change/reset: 3 attempts per hour per user | code | Unit test verifying rate limit on password views |
+| OAuth token endpoint: 10 requests per minute per IP | code | Unit test verifying rate limit on TokenView |
+| MCP endpoints: 60 requests per minute per connection | code | Unit test verifying rate limit on mcp_entry |
+| Rate limits configurable via settings | code | Verify settings are read from environment |
+
+## Test Strategy
+- Add unit tests for each rate-limited endpoint
+- Test rate limit exceeded responses (HTTP 429)
+- Test rate limit windows reset correctly
+- Test configuration via environment variables
