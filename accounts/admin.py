@@ -26,4 +26,34 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
-admin.site.register([Club, Membership, WhitelistEntry, Message, SiteSettings])
+@admin.register(Club)
+class ClubAdmin(admin.ModelAdmin):
+    list_display = ["name", "slug", "created"]
+    search_fields = ["name", "slug"]
+
+
+@admin.register(Membership)
+class MembershipAdmin(admin.ModelAdmin):
+    list_display = ["user", "club", "is_club_admin", "is_game_master", "created"]
+    list_filter = ["club", "is_club_admin", "is_game_master"]
+    search_fields = ["user__email", "user__display_name", "club__name"]
+    autocomplete_fields = ["user", "club"]
+
+
+@admin.register(WhitelistEntry)
+class WhitelistEntryAdmin(admin.ModelAdmin):
+    list_display = ["email", "club", "created"]
+    list_filter = ["club"]
+    search_fields = ["email"]
+    autocomplete_fields = ["club"]
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ["id", "club", "sender", "character", "kind", "status", "created"]
+    list_filter = ["club", "kind", "status"]
+    search_fields = ["body", "sender__user__email", "character__name"]
+    autocomplete_fields = ["club", "sender", "character"]
+
+
+admin.site.register(SiteSettings)

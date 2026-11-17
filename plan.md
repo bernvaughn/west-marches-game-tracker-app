@@ -1,62 +1,61 @@
-# Implementation Plan: Common Service Base Classes
+# Implementation Plan: Starting Equipment App Models
 
 ## Overview
-Create `core/services.py` with base service classes to standardize transaction handling and club-scoped operations across ledger, downtime, and trade services.
+Create the `starting_equipment` Django app with all models specified in the design:
+- StartingEquipmentTemplate
+- StartingEquipmentClassEntry
+- StartingEquipmentClassLine
+- StartingEquipmentBackgroundEntry
+- StartingEquipmentBackgroundLine
+- StartingEquipmentLevelCoins
+- MagicItemStartingOption
+- StartingEquipmentRequest
 
-## Files to Create
-1. `core/services.py` - New module with base classes
+## Steps
 
-## Files to Modify (Refactor)
-1. `ledger/services.py` - Refactor to use `BaseService` and `ClubScopedService`
-2. `ledger/tests/test_services.py` - Add tests for base class behavior (or create new test file)
+### 1. Create App Structure
+- Create `starting_equipment/` directory
+- Create `__init__.py`, `apps.py`, `models.py`, `admin.py`
+- Add app to `INSTALLED_APPS` in `config/settings.py`
 
-## Implementation Steps
+### 2. Implement Models (models.py)
+Follow the project's conventions:
+- Use `ClubScopedManager` for club-scoped models
+- Set `club_path` on each model
+- Add proper `related_name` attributes
+- Add indexes for common queries (template+club, character+status, etc.)
+- Add constraints (unique_together, check constraints)
+- Use `on_delete=models.PROTECT` for Item FKs
+- Use `models.TextChoices` for status fields
 
-### 1. Create `core/services.py`
-Create a new `core` app directory with `services.py` containing:
+### 3. Register Models in Admin (admin.py)
+- Register all models
+- Use `TabularInline` for line models (ClassLine, BackgroundLine)
+- Use `StackedInline` for entry models (ClassEntry, BackgroundEntry, LevelCoins, MagicItemOption, Request)
+- Template admin shows inlines for all related entries
 
-**`BaseService`** - Abstract base class providing:
-- `atomic()` - Context manager for database transactions (wraps `transaction.atomic()`)
-- `lock_for_update(queryset)` - Helper for `select_for_update()` locking
-- `validate()` - Abstract method for validation logic
+### 4. Run Migrations
+- Generate and apply migrations
 
-**`ClubScopedService`** - Mixin/class providing:
-- `ensure_same_club(*objects)` - Validate all objects belong to same club
-- `get_club(object)` - Extract club from model instance
-- Club-scoped queryset filtering utilities
+## File Changes
 
-### 2. Refactor `ledger/services.py`
-- Import `BaseService` and `ClubScopedService` from `core.services`
-- Refactor `record()` and `record_many()` to use base class transaction handling
-- Use club-scoping utilities for validation
+### New Files
+- `starting_equipment/__init__.py`
+- `starting_equipment/apps.py`
+- `starting_equipment/models.py`
+- `starting_equipment/admin.py`
+- `starting_equipment/migrations/` (created by Django)
 
-### 3. Add Tests
-- Create `core/tests/test_services.py` with tests for:
-  - `BaseService.atomic()` transaction behavior
-  - `BaseService.lock_for_update()` locking behavior
-  - `ClubScopedService.ensure_same_club()` validation
-  - Club-scoped queryset filtering
+### Modified Files
+- `config/settings.py` - Add `starting_equipment` to INSTALLED_APPS
 
-## Design Decisions
+## Acceptance Criteria Mapping
+Each acceptance item maps to the plan stage where it can be verified:
+- App exists with all models → plan (structure) / code (migrations applied)
+- Proper related_names, indexes, constraints → code (model inspection)
+- Admin registration with inlines → code (admin.py inspection)
 
-### BaseService as Abstract Base Class
-Using ABC (Abstract Base Class) rather than Protocol because:
-- Can provide default implementations for transaction handling
-- Can enforce validation contract via abstract method
-- Better for runtime checking
-
-### ClubScopedService as Mixin
-Using a mixin class because:
-- Can be combined with BaseService via multiple inheritance
-- Provides reusable club-scoping utilities without forcing inheritance hierarchy
-- Follows Django's mixin patterns
-
-### Transaction Handling
-- `atomic()` wraps `django.db.transaction.atomic()`
-- Provides consistent error handling and rollback behavior
-- Supports nested transactions via savepoints
-
-## Testing Strategy
-- Unit tests for base class methods in isolation
-- Integration tests showing refactored ledger service works identically
-- Ensure all existing ledger tests still pass
+## Proof Stages
+- `plan`: Structure exists, files created
+- `code`: Migrations applied, models work, admin registered
+- `verify`: All tests pass
