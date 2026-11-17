@@ -37,6 +37,31 @@ KIND_FILTERS = (
     ("stock_request", "Stock requests"),
 )
 
+# Session-based batch storage for grant accumulation
+BATCH_SESSION_KEY = "wm_grant_batch"
+
+
+# Session-based batch storage helpers
+def _batch_get(request, msg_pk):
+    """Get the batch of grants for a message from the session."""
+    batch = request.session.get(BATCH_SESSION_KEY, {})
+    return list(batch.get(str(msg_pk), []))
+
+
+def _batch_set(request, msg_pk, grants):
+    """Set the batch of grants for a message in the session."""
+    batch = request.session.get(BATCH_SESSION_KEY, {})
+    batch[str(msg_pk)] = grants
+    request.session[BATCH_SESSION_KEY] = batch
+
+
+def _batch_clear(request, msg_pk):
+    """Clear the batch of grants for a message from the session."""
+    batch = request.session.get(BATCH_SESSION_KEY, {})
+    if str(msg_pk) in batch:
+        del batch[str(msg_pk)]
+        request.session[BATCH_SESSION_KEY] = batch
+
 
 def _send(request, club_slug, *, kind, form_class, template, url_name, flash_text):
     membership = request.membership
@@ -220,6 +245,85 @@ def _apply_grant(request, msg, kind, data, lines):
             msg.save(update_fields=["status"])
 
 
+def _apply_batch_grant(request, msg, batch):
+    """Apply a batch of grants, producing one ledger entry per type.
+    Raise LedgerError to roll back.
+    """
+    with transaction.atomic():
+        # Group grants by type: coins, items, map
+        coins_total = 0
+        item_lines = []
+        map_entries = []  # List of (kind, character, data, location) for map operations
+
+        for grant in batch:
+            grant_kind = grant["kind"]
+            if grant_kind == "coins":
+                coins_total += grant["coins"]
+            elif grant_kind == "items":
+                item_lines.extend(grant["lines"])
+            elif grant_kind == "map":
+                map_entries.append(grant)
+
+        # Process coins - one ledger entry
+        if coins_total != 0 or any(g.get("mark_handled") for g in batch):
+            first_grant = batch[0]
+            character = first_grant["character"]
+            date = first_grant["date"]
+            note = first_grant["note"]
+            lines = [Line(coins=coins_total)]
+            record(
+                character,
+                "award",
+                lines,
+                note=note,
+                date=date,
+                actor=request.user,
+                source_message=msg,
+            )
+
+        # Process items - one ledger entry
+        if item_lines:
+            first_grant = batch[0]
+            character = first_grant["character"]
+            date = first_grant["date"]
+            note = first_grant["note"]
+            record(
+                character,
+                "award",
+                item_lines,
+                note=note,
+                date=date,
+                actor=request.user,
+                source_message=msg,
+            )
+
+        # Process map credits - each entry per grant type
+        for grant in map_entries:
+            character = grant["character"]
+            date = grant["date"]
+            map_kind = grant.get("map_kind")
+            location = grant.get("location")
+            if map_kind == "visit":
+                if location is not None:
+                    hex_map, q, r = location.tile.map, location.tile.q, location.tile.r
+                else:
+                    hex_map, q, r = grant["hex_map"], grant["q"], grant["r"]
+                map_services.record_visits(hex_map, q, r, [character], date, source_message=msg)
+            elif map_kind in ("discovered", "explored"):
+                map_services.add_to_credit(
+                    location, map_kind, [character], date, source_message=msg
+                )
+            elif map_kind == "found":
+                map_services.add_found_marks(
+                    location, [character], date, created_by=request.membership, source_message=msg
+                )
+
+        # Mark message handled if any grant requested it
+        if any(g.get("mark_handled") for g in batch):
+            msg.status = Message.Status.HANDLED
+            msg.save(update_fields=["status"])
+
+
 def _summary(kind, data, lines):
     """(label, value) rows describing what a confirmed grant will write."""
     rows = [("Character", data["character"].name)]
@@ -244,7 +348,7 @@ def _summary(kind, data, lines):
     return rows
 
 
-_NOT_CARRIED = {"csrfmiddlewaretoken", "confirmed", "edit"}
+_NOT_CARRIED = {"csrfmiddlewaretoken", "confirmed", "edit", "action"}
 
 
 @club_admin_required
@@ -252,6 +356,11 @@ def message_give(request, club_slug, pk, kind):
     msg = club_get_object_or_404(request, Message, pk=pk)
     if msg.kind == Message.Kind.STOCK_REQUEST:
         raise Http404
+
+    # Clear batch on fresh GET of the form
+    if request.method == "GET":
+        _batch_clear(request, pk)
+
     post = request.method == "POST"
     data = request.POST if post else None
     kwargs = {
@@ -266,18 +375,139 @@ def message_give(request, club_slug, pk, kind):
     if kind == "items":
         items = Item.objects.for_club(request.club).filter(retired=False)
         formset = item_line_formset(items, data, extra=3)
+
     back = _filter_of(data or request.GET)
-    ctx = {
-        "msg": msg,
-        "kind": kind,
-        "title": GRANT_TITLES[kind],
-        "form": form,
-        "formset": formset,
-        "filter": back,
-        "give_url": reverse(f"accounts:message_give_{kind}", args=[club_slug, msg.pk]),
-    }
+
+    # Handle batch flow
+    action = data.get("action") if post else request.GET.get("action")
+
+    # GET with action=batch_review: show batch confirm page
+    if post and action == "review":
+        batch = _batch_get(request, pk)
+        if not batch:
+            # Show review page even if empty - will error on confirm
+            ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+            return render_modal_or_page(
+                request,
+                "accounts/inbox/_give_confirm.html",
+                "accounts/inbox/give_confirm.html",
+                ctx,
+            )
+
+        # Build summary for batch
+        summary_items = []
+        for grant in batch:
+            if grant["kind"] == "coins":
+                summary_items.append(f" Coins: {format_coins(grant['coins'])}")
+            elif grant["kind"] == "items":
+                items_str = ", ".join(
+                    f"{ln.item.name} × {ln.quantity}" for ln in grant.get("lines", [])
+                )
+                summary_items.append(f" Items: {items_str}")
+            elif grant["kind"] == "map":
+                label = dict(MapGrantForm.MAP_KINDS)[grant.get("map_kind")]
+                summary_items.append(f" Map: {label}")
+
+        ctx = {
+            "msg": msg,
+            "kind": kind,
+            "title": f"Review batch for {GRANT_TITLES[kind]}",
+            "form": form,
+            "formset": formset,
+            "filter": back,
+            "give_url": reverse(f"accounts:message_give_{kind}", args=[msg.club.slug, msg.pk]),
+            "batch": batch,
+            "batch_summary": summary_items,
+            "carry": [],
+        }
+        return render_modal_or_page(
+            request,
+            "accounts/inbox/_give_confirm.html",
+            "accounts/inbox/give_confirm.html",
+            ctx,
+        )
+
+    # Handle add to batch
+    if post and action == "add" and form.is_valid():
+        lines = []
+        if kind == "items" and formset is not None:
+            if formset.is_valid():
+                lines = formset_lines(formset, 1)
+                if not lines:
+                    form.add_error(None, "Add at least one item.")
+        
+        if form.is_valid() and (kind != "items" or lines):
+            # Build grant dict from form data
+            grant = {
+                "kind": kind,
+                "character": form.cleaned_data["character"],
+                "coins": form.cleaned_data.get("coins", 0),
+                "note": form.cleaned_data["note"],
+                "date": form.cleaned_data["date"],
+                "mark_handled": form.cleaned_data.get("mark_handled", True),
+            }
+            if kind == "items":
+                grant["lines"] = lines
+            if kind == "map":
+                grant["map_kind"] = form.cleaned_data.get("map_kind")
+                grant["location"] = form.cleaned_data.get("location")
+                grant["hex_map"] = form.cleaned_data.get("hex_map")
+                grant["q"] = form.cleaned_data.get("q")
+                grant["r"] = form.cleaned_data.get("r")
+
+            # Add to batch
+            batch = _batch_get(request, pk)
+            batch.append(grant)
+            _batch_set(request, pk, batch)
+
+            # Return empty form (HTMX or full page)
+            form = GRANT_FORMS[kind](None, **kwargs)
+            if formset is not None:
+                formset = item_line_formset(items, None, extra=3)
+            ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+            ctx["give_url"] = reverse(f"accounts:message_give_{kind}", args=[msg.club.slug, msg.pk])
+            return render_modal_or_page(request, "accounts/inbox/_give_form.html", ctx)
+
+    # Handle back from review - preserve batch
+    if post and action == "edit":
+        batch = _batch_get(request, pk)
+        ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+        return render_modal_or_page(
+            request,
+            "accounts/inbox/_give_confirm.html",
+            "accounts/inbox/give_confirm.html",
+            ctx,
+        )
+
+    # Handle confirm batch (only if batch has items)
+    if post and data.get("confirmed"):
+        batch = _batch_get(request, pk)
+        if batch:
+            # Apply batch
+            try:
+                _apply_batch_grant(request, msg, batch)
+            except LedgerError as exc:
+                form.add_error(None, str(exc))
+                ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+                return render_modal_or_page(
+                    request,
+                    "accounts/inbox/_give_confirm.html",
+                    "accounts/inbox/give_confirm.html",
+                    ctx,
+                )
+            else:
+                _batch_clear(request, pk)
+                if is_htmx(request):
+                    return _modal_done()
+                flash.success(request, f"Batch grant done from message #{msg.pk}.")
+                return redirect(_inbox_url(club_slug, back))
+            # If batch is empty, fall through to single-grant logic below
+
+    # Normal form flow (not batch)
     fill = ("accounts/inbox/_give_form.html", "accounts/inbox/give.html")
-    if post and "edit" not in request.POST:
+    # Use all() for cleaner check
+    no_action = all(k not in request.POST for k in ("add", "edit", "review"))
+    if post and no_action:
         valid = form.is_valid()
         if formset is not None:
             valid = formset.is_valid() and valid
@@ -296,6 +526,8 @@ def message_give(request, club_slug, pk, kind):
                     flash.success(request, f"{GRANT_TITLES[kind]} done from message #{msg.pk}.")
                     return redirect(_inbox_url(club_slug, back))
             else:
+                # Show review page for single-grant flow
+                ctx = _build_context(msg, kind, form, formset, back, pk, [])
                 ctx["summary"] = _summary(kind, form.cleaned_data, lines)
                 ctx["carry"] = [
                     (name, value)
@@ -309,7 +541,68 @@ def message_give(request, club_slug, pk, kind):
                     "accounts/inbox/give_confirm.html",
                     ctx,
                 )
+
+    # Build context for final render
+    batch = _batch_get(request, pk) if request.method == "POST" else []
+    ctx = _build_context(msg, kind, form, formset, back, pk, batch)
     return render_modal_or_page(request, *fill, ctx)
+
+
+def _build_context(msg, kind, form, formset, back, pk, batch):
+    """Build context dictionary for grant forms."""
+    ctx = {
+        "msg": msg,
+        "kind": kind,
+        "title": GRANT_TITLES[kind],
+        "form": form,
+        "formset": formset,
+        "filter": back,
+        "give_url": reverse(f"accounts:message_give_{kind}", args=[msg.club.slug, msg.pk]),
+        "batch": batch,
+    }
+    # Build summary if we have batch data
+    if batch:
+        lines_for_summary = []
+        for grant in batch:
+            if grant["kind"] == "coins":
+                lines_for_summary.append(Line(coins=grant["coins"]))
+            else:
+                lines_for_summary.extend(grant.get("lines", []))
+        # Use first grant's data for summary
+        first = batch[0]
+        ctx["summary"] = _summary(kind, {
+            "character": first["character"],
+            "coins": sum(g["coins"] for g in batch if g["kind"] == "coins"),
+            "note": first["note"],
+            "date": first["date"],
+            "mark_handled": any(g.get("mark_handled") for g in batch),
+        }, lines_for_summary)
+        ctx["carry"] = []
+    return ctx
+
+
+def _summary(kind, data, lines):
+    """(label, value) rows describing what a confirmed grant will write."""
+    rows = [("Character", data["character"].name)]
+    if kind == "coins":
+        rows.append(("Coins", format_coins(data["coins"])))
+    elif kind == "items":
+        rows.append(("Items", ", ".join(f"{ln.item.name} × {ln.quantity}" for ln in lines)))
+    else:
+        label = dict(MapGrantForm.MAP_KINDS)[data["map_kind"]]
+        location = data.get("location")
+        if location is not None:
+            tile = location.tile
+            where = f"{location.name} ({tile.map.name} {tile.q}, {tile.r})"
+        else:
+            where = f"{data['hex_map'].name} ({data['q']}, {data['r']})"
+        rows.append(("Map credit", f"{label}: {where}"))
+    rows += [
+        ("Note", data["note"]),
+        ("Date", data["date"].isoformat()),
+        ("Marks the message handled", "Yes" if data["mark_handled"] else "No"),
+    ]
+    return rows
 
 
 @club_member_required
@@ -332,4 +625,3 @@ def message_detail(request, club_slug, pk):
             "is_admin": membership.is_game_master or membership.is_club_admin,
         },
     )
-

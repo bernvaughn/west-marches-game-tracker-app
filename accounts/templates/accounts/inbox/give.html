@@ -5,9 +5,17 @@
 {% url 'accounts:message_inbox' request.club.slug as inbox_url %}
 {% include "components/page_header.html" with title=title subtitle="From "|add:msg.sender.user.display_name|add:": "|add:msg.body|truncatechars:80 back_url=inbox_url|add:"?status="|add:filter back_label="Back to inbox" %}
 <form method="post" class="wm-form" action="{{ give_url }}">
+  {% csrf_token %}
   {% include "accounts/inbox/_give_fields.html" %}
   <div class="wm-form-actions">
-    <button class="btn btn-primary" type="submit">Review</button>
+    {% if batch %}
+    <p class="text-muted small">Batch: {{ batch|length }} grant{{ batch|length|pluralize }}</p>
+    <button type="submit" name="action" value="review" class="btn btn-outline-secondary">Review Batch</button>
+    <button type="submit" name="action" value="edit" class="btn btn-outline-secondary">Back</button>
+    {% else %}
+    <button type="submit" name="action" value="review" class="btn btn-outline-secondary">Review</button>
+    {% endif %}
+    <button type="submit" name="action" value="add" class="btn btn-primary">Add another item/coin</button>
   </div>
 </form>
 {% endblock %}

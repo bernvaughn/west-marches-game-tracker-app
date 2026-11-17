@@ -7,4 +7,16 @@
 {% block title %}{{ title }}{% endblock %}
 {% block subtitle %}<p class="wm-page-subtitle">From {{ msg.sender.user.display_name }}: {{ msg.body|truncatechars:80 }}</p>{% endblock %}
 {% block body %}{% include "accounts/inbox/_give_fields.html" %}{% endblock %}
-{% block footer %}<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" type="submit">Review</button>{% endblock %}
+{% block footer %}
+{% if batch %}
+<p class="text-muted small">Batch: {{ batch|length }} grant{{ batch|length|pluralize }}</p>
+{% endif %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+{% if batch %}
+<button type="submit" name="action" value="review" class="btn btn-outline-info">Review Batch</button>
+<button type="submit" name="action" value="edit" class="btn btn-outline-secondary">Back</button>
+{% else %}
+<button type="submit" name="action" value="review" class="btn btn-outline-secondary">Review</button>
+{% endif %}
+<button type="submit" name="action" value="add" class="btn btn-primary">Add another item/coin</button>
+{% endblock %}
