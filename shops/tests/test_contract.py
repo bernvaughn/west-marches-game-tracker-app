@@ -15,9 +15,9 @@ from shops.views import sell as sell_views
 pytestmark = [pytest.mark.story("FOUNDATION"), pytest.mark.django_db]
 
 VIEWS = {
-    "index": browse.index,
-    "detail": browse.shop_detail,
-    "stock_fragment": browse.stock_fragment,
+    "index": browse.IndexView,
+    "detail": browse.ShopDetailView,
+    "stock_fragment": browse.StockFragmentView,
     "buy": buy_views.buy,
     "sell_item": sell_views.sell_item,
     "manage_list": manage.shop_list,
@@ -64,7 +64,12 @@ def get(client, name, ctx):
 
 def test_urls_resolve(ctx):
     for name, view in VIEWS.items():
-        assert resolve(url(name, *ctx)).func is view
+        resolved = resolve(url(name, *ctx))
+        # Class-based views have view_class attribute
+        if hasattr(resolved, 'func') and hasattr(resolved.func, 'view_class'):
+            assert resolved.func.view_class is view
+        else:
+            assert resolved.func is view
 
 
 def test_member_urls_ok(login, player, ctx):

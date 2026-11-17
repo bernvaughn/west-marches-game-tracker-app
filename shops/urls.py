@@ -4,9 +4,9 @@ from .views import browse, buy, manage, player_shop, rotations, sell, sell_junk
 
 app_name = "shops"
 urlpatterns = [
-    path("", browse.index, name="index"),
-    path("<int:shop_id>/", browse.shop_detail, name="detail"),
-    path("<int:shop_id>/stock/", browse.stock_fragment, name="stock_fragment"),
+    path("", browse.IndexView.as_view(), name="index"),
+    path("<int:shop_id>/", browse.ShopDetailView.as_view(), name="detail"),
+    path("<int:shop_id>/stock/", browse.StockFragmentView.as_view(), name="stock_fragment"),
     path("<int:shop_id>/buy/<int:stock_id>/", buy.buy, name="buy"),
     path("<int:shop_id>/sell/<int:item_id>/", sell.sell_item, name="sell_item"),
     path("<int:shop_id>/sell-junk/", sell_junk.sell_junk, name="sell_junk"),
