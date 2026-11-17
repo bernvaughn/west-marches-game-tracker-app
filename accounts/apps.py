@@ -37,7 +37,13 @@ class AccountsConfig(AppConfig):
         from .dashboard_providers import (
             ConsumablesDashboardProvider,
             DowntimeDashboardProvider,
+            MapDashboardProvider,
+            MessagesDashboardProvider,
+            MyMessagesDashboardProvider,
+            PlayerShopDashboardProvider,
+            QuestsDashboardProvider,
             QuickActionsProvider,
+            TradesDashboardProvider,
             register_provider,
         )
 
@@ -53,20 +59,11 @@ class AccountsConfig(AppConfig):
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)
 
         # Register built-in dashboard providers
-        from .views.dashboard import (
-            MapDashboardProvider,
-            MessagesProvider,
-            QuestsProvider,
-            TradesProvider,
-        )
-        from .views.dashboard_messages import MessagesDashboardProvider
-        from .views.dashboard_shop import PlayerShopDashboardProvider
-
-        register_provider(TradesProvider())
-        register_provider(QuestsProvider())
+        register_provider(TradesDashboardProvider())
+        register_provider(QuestsDashboardProvider())
         register_provider(DowntimeDashboardProvider())
         register_provider(MapDashboardProvider())
-        register_provider(MessagesProvider())
-        register_provider(PlayerShopDashboardProvider())
         register_provider(MessagesDashboardProvider())
+        register_provider(MyMessagesDashboardProvider())
+        register_provider(PlayerShopDashboardProvider())
         register_provider(ConsumablesDashboardProvider())

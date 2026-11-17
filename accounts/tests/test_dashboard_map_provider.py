@@ -1,6 +1,6 @@
 import pytest
 
-from accounts.views.dashboard import MapDashboardProvider
+from accounts.dashboard_providers import MapDashboardProvider
 from map.models import FoundMark, HexMap, Location, LocationCredit, Tile, TileVisit
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("S6")]
