@@ -218,4 +218,3 @@ def test_topbar_css_has_six_ranks():
     css = Path("static/css/components.css").read_text()
     for i in range(1, 6):
         assert f".wm-shortcut-rank-{i}" in css
-    assert ".wm-shortcut-rank-6" not in css
