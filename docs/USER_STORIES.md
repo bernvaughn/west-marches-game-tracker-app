@@ -61,9 +61,11 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 - Adjustments are recorded as new entries with a note and a date; earlier entries are never edited or deleted.
 - The date defaults to the current date and can be changed to any date.
 
-**U15 Move items between my characters.** As a player, I want to be able to send items from one character to another, if both characters are mine, so I can transfer items between my characters. This stays within the same club. *(player_characters, items)*
+**U15 Move items between my characters.** *(Removed)* As a player, I want to be able to send items from one character to another, if both characters are mine, so I can transfer items between my characters. This stays within the same club. *(player_characters, items)*
+- **Rationale:** Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
 
-**U16 Trades.** As a player, I want to be able to propose trades to other players' characters (within the same club), so we can exchange items easily. *(player_characters, items, shops)*
+**U16 Trades.** *(Removed)* As a player, I want to be able to propose trades to other players' characters (within the same club), so we can exchange items easily. *(player_characters, items, shops)*
+- **Rationale:** Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
 
 How a trade works:
 1. Player 1, on character 1a, sends a trade request to character 2a, which is owned by player 2.
@@ -893,6 +895,16 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 - **Slips and cards.** Slips and item cards share the adventurer's-pass look: double border, notched corners, wordmark font. Players can print one card per item type or one per item (U89, U90, U92).
 - **Footer and item details.** Every page has a small footer with copyright and credits, never printed (U96). Item details open from an "i" icon beside the name; items have a GM-only details field that players never see (U97, U98).
 - **Left for later.** Lore and the donate service.
+
+## Removed features
+
+- **U15 Move items**: Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
+- **U16 Trades**: Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
+
+## Database and feature notes
+
+- **Trade/Transfer models remain in database** for ledger history. The `Trade`, `TradeLine`, and `JunkMark` models as well as `LedgerEntry.Kind.TRANSFER` and `Kind.TRADE` are preserved for historical records.
+- **Player shops (U66/U67) remain unchanged** and continue to provide the safe player-to-player economy via fixed-price buying and selling.
 
 ## Still open
 
