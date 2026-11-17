@@ -1,73 +1,55 @@
-# Implementation Plan: Add Rate Limiting to Authentication Endpoints
+# Implementation Plan: Security Headers Middleware
 
 ## Overview
-Implement rate limiting on authentication and OAuth endpoints as specified in the acceptance criteria:
-- Login: 5 attempts per minute per IP
-- Password change/reset: 3 attempts per hour per user
-- OAuth token endpoint: 10 requests per minute per IP
-- MCP endpoints: 60 requests per minute per connection
-- Rate limits configurable via settings
+Add middleware to include additional security headers on all HTTP responses:
+- Referrer-Policy: strict-origin-when-cross-origin
+- Permissions-Policy: restrictive defaults
+- Cross-Origin-Opener-Policy: same-origin
+- Cross-Origin-Embedder-Policy: require-corp
 
-## Files to Modify
+## Files to Create/Modify
 
-### 1. config/settings.py
-- Add cache configuration (Redis for production, locmem for development)
-- Add rate limit settings (configurable via environment variables)
-  - `RATELIMIT_LOGIN_ATTEMPTS` (default: 5)
-  - `RATELIMIT_LOGIN_WINDOW` (default: 60 seconds)
-  - `RATELIMIT_PASSWORD_ATTEMPTS` (default: 3)
-  - `RATELIMIT_PASSWORD_WINDOW` (default: 3600 seconds)
-  - `RATELIMIT_OAUTH_TOKEN_ATTEMPTS` (default: 10)
-  - `RATELIMIT_OAUTH_TOKEN_WINDOW` (default: 60 seconds)
-  - `RATELIMIT_MCP_ATTEMPTS` (default: 60)
-  - `RATELIMIT_MCP_WINDOW` (default: 60 seconds)
+### 1. New File: `config/middleware.py`
+Create a new middleware class `SecurityHeadersMiddleware` that adds the required security headers to all responses.
 
-### 2. accounts/views/passwords.py
-- Apply rate limiting to `ClearFlagPasswordChangeView` (password change)
-- Apply rate limiting to `reset_password` function (password reset)
-- Use per-user rate limiting (by user ID)
+### 2. Modify: `config/settings.py`
+Add the new middleware to the `MIDDLEWARE` list. It should be placed after `SecurityMiddleware` but before other middleware to ensure headers are set on all responses.
 
-### 3. agent_access/oauth/urls.py
-- Apply rate limiting to TokenView (oauth/token/)
-- Use per-IP rate limiting
+## Implementation Details
 
-### 4. agent_access/oauth/views.py
-- Apply rate limiting to `mcp_entry` view (MCP endpoint)
-- Use per-connection rate limiting (by AgentConnection)
+### SecurityHeadersMiddleware Class
+- Uses Django's middleware `__call__` pattern (same as `ClubMiddleware`)
+- In `__call__`, call `self.get_response(request)` to get the response
+- Add the four security headers to the response
+- Return the modified response
 
-## Implementation Approach
+### Header Values
+```python
+# Referrer-Policy
+response["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
-### Cache Configuration
-Add Django cache backend configuration to settings.py:
-- Production: Redis cache backend
-- Development: LocMemCache (in-memory)
-- Tests: DummyCache (already in test_settings.py)
+# Permissions-Policy (restrictive defaults - disable most features)
+response["Permissions-Policy"] = (
+    "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
+    "magnetometer=(), microphone=(), payment=(), usb=(), "
+    "interest-cohort=()"
+)
 
-### Rate Limiting Strategy
-Use Django's cache framework with custom decorators/middleware:
-- For Django class-based views: Create a `RateLimitMixin` or use decorators
-- For function-based views: Use decorators
-- For OAuth token endpoint: Wrap the view with rate limiting
-- For MCP endpoint: Add rate limiting in the view function
+# Cross-Origin-Opener-Policy
+response["Cross-Origin-Opener-Policy"] = "same-origin"
 
-### Key Design Decisions
-1. **Per-IP rate limiting** for login and OAuth token endpoints (anonymous users)
-2. **Per-user rate limiting** for password change/reset (authenticated users)
-3. **Per-connection rate limiting** for MCP endpoints (authenticated connections)
-4. All rate limits configurable via environment variables with sensible defaults
+# Cross-Origin-Embedder-Policy
+response["Cross-Origin-Embedder-Policy"] = "require-corp"
+```
 
-## Acceptance Criteria Mapping
+### Middleware Order
+In `config/settings.py`, add `"config.middleware.SecurityHeadersMiddleware"` after `"django.middleware.security.SecurityMiddleware"` and before `"csp.middleware.CSPMiddleware"`.
 
-| Criterion | Stage | Proof |
-|-----------|-------|-------|
-| Login: 5 attempts per minute per IP | code | Unit test verifying rate limit on LoginView |
-| Password change/reset: 3 attempts per hour per user | code | Unit test verifying rate limit on password views |
-| OAuth token endpoint: 10 requests per minute per IP | code | Unit test verifying rate limit on TokenView |
-| MCP endpoints: 60 requests per minute per connection | code | Unit test verifying rate limit on mcp_entry |
-| Rate limits configurable via settings | code | Verify settings are read from environment |
+## Testing Strategy
+- Unit tests for the middleware to verify headers are added
+- Integration test to verify headers present on actual responses
+- Test with test settings (which disable other security features) to ensure middleware still adds headers
 
-## Test Strategy
-- Add unit tests for each rate-limited endpoint
-- Test rate limit exceeded responses (HTTP 429)
-- Test rate limit windows reset correctly
-- Test configuration via environment variables
+## Rollback Plan
+- Remove middleware from MIDDLEWARE list
+- Delete config/middleware.py
