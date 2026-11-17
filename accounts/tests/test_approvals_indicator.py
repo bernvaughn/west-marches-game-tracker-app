@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from accounts import approvals
 from accounts.approval_providers import open_messages
-from accounts.models import Membership, Message
+from accounts.models import Club, Membership, Message, User
 from agent_access.approvals import pending_batches, pending_proposed_items
 from agent_access.models import ProposedBatch, ProposedItem
 from agent_access.tokens import create_token
@@ -131,3 +131,30 @@ def test_demo_gwen_badge(login):
     for label in ("Agent batches", "Proposed items", "Map requests", "Messages"):
         assert label in html
     assert 'approvals-total">5<' in html
+
+
+def test_no_trade_or_transfer_category_for_any_role(rf):
+    call_command("seed_demo")
+    from django.template import Context, Template
+
+    from conftest import _member  # noqa: PLC0415
+
+    club = Club.objects.get(slug="demo")
+    player = User.objects.get(email="alice@example.com")
+    gm = User.objects.get(email="gm@example.com")
+    club_admin = _member(club, "ca@example.com", "Club Admin", is_club_admin=True)
+    superuser = User.objects.get(email="admin@example.com")
+
+    dropdown = Template("{% include 'components/_approvals_dropdown.html' %}")
+
+    for role, user in (
+        ("player", player),
+        ("game master", gm),
+        ("club admin", club_admin),
+        ("superuser", superuser),
+    ):
+        request = _req(rf, user, club)
+        labels = {a.label.lower() for a in approvals.pending_approvals(request)}
+        assert not any("trade" in label or "transfer" in label for label in labels), role
+        html = dropdown.render(Context(approvals.context_processor(request)))
+        assert "trade" not in html.lower() and "transfer" not in html.lower(), role
