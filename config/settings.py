@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "accounts",
     "player_characters",
     "items",
+    "core",
     "shops",
     "ledger",
     "map",
