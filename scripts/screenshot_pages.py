@@ -191,6 +191,8 @@ def demo_objects() -> SimpleNamespace:
 EXCLUDED = {
     "favicon": "An icon file, not a page.",
     "logout": "POST only.",
+    "starting_equipment:templates": "Placeholder view for starting equipment (implemented in SE3).",
+
     "mcp": "A JSON-RPC endpoint, not a page.",
     "oauth2_provider:oauth-server-metadata": "A JSON metadata document.",
     "oauth2_provider:oauth-resource-metadata": "A JSON metadata document.",
