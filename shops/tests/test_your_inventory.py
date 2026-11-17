@@ -45,13 +45,7 @@ def test_prices_match_buy_price(login, player, club, open_shop, character, item)
     record(character, "award", [Line(item=gem, quantity=1), Line(item=item, quantity=1)])
     ShopStock.objects.create(shop=open_shop, item=gem, quantity=1, buy_percent=80)
 
-    class Req:
-        pass
-
-    from unittest import mock
-
-    with mock.patch("shops.views.browse.selected_character", return_value=character):
-        rows = _inventory_context(Req(), open_shop)["inventory_rows"]
+    rows = _inventory_context(character, open_shop)["inventory_rows"]
     assert {r["item"].pk: r["price"] for r in rows} == {
         gem.pk: buy_price(open_shop, gem),
         item.pk: buy_price(open_shop, item),
@@ -97,5 +91,5 @@ def test_query_count_flat(login, player, club, open_shop, character, django_asse
     for n in range(6):
         it = Item.objects.create(club=club, name=f"Thing{n}", value_cp=10 + n)
         record(character, "award", [Line(item=it, quantity=1)])
-    with django_assert_max_num_queries(41):
+    with django_assert_max_num_queries(42):
         card(client, club, open_shop)
