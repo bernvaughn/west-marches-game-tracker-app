@@ -24,6 +24,7 @@ class CharacterForm(forms.ModelForm):
             "level",
             "char_class",
             "species",
+            "background",
             "pronouns",
             "alignment",
             *[a[0] for a in ABILITIES],
