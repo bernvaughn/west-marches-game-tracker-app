@@ -107,26 +107,26 @@ def bulk_award(request, club_slug):
     club = request.club
     items = Item.objects.for_club(club).filter(retired=False)
     post = request.method == "POST"
-    
+
     form = BulkAwardForm(request.POST if post else None, club=club)
-    
+
     if post and form.is_valid():
         characters = form.cleaned_data["characters"]
         shared_note = form.cleaned_data["note"]
         shared_date = form.cleaned_data["date"]
-        
+
         # Build specs for record_many
         specs = []
         for character in characters:
             # Get per-character coins from POST
             coins_key = f"coins_{character.pk}"
             coins = int(request.POST.get(coins_key, 0) or 0)
-            
+
             # Get per-character items from POST
             lines = []
             if coins:
                 lines.append(Line(coins=coins))
-            
+
             # Process item formset for this character
             prefix = f"items_{character.pk}"
             total_forms = int(request.POST.get(f"{prefix}-TOTAL_FORMS", 0) or 0)
@@ -141,20 +141,23 @@ def bulk_award(request, club_slug):
                         lines.append(Line(item=item, quantity=int(qty)))
                     except (Item.DoesNotExist, ValueError):
                         pass
-            
+
             if lines:
-                specs.append(dict(
-                    character=character,
-                    kind="award",
-                    lines=lines,
-                    note=shared_note,
-                    date=shared_date,
-                    actor=request.user,
-                ))
-        
+                specs.append(
+                    dict(
+                        character=character,
+                        kind="award",
+                        lines=lines,
+                        note=shared_note,
+                        date=shared_date,
+                        actor=request.user,
+                    )
+                )
+
         if not specs:
-            form.add_error(None,
-                "Enter at least one coin or item amount for at least one character.")
+            form.add_error(
+                None, "Enter at least one coin or item amount for at least one character."
+            )
         else:
             try:
                 with transaction.atomic():
@@ -167,19 +170,23 @@ def bulk_award(request, club_slug):
                 messages.success(request, msg)
                 # Redirect to club ledger filtered to the new entries
                 ledger_url = reverse("ledger:index", args=[club_slug])
-                char_pks = ','.join(str(c.pk) for c in characters)
+                char_pks = ",".join(str(c.pk) for c in characters)
                 filter_qs = f"?character={char_pks}&date_from={shared_date}"
                 filter_qs += f"&date_to={shared_date}&kind=award"
                 return redirect(f"{ledger_url}{filter_qs}")
-    
+
     # For GET or invalid POST, prepare character data for template
     character_data = []
     for character in Character.objects.for_club(club).order_by("name", "id"):
-        character_data.append({
-            "character": character,
-            "checked": str(character.pk) in request.POST.getlist("characters") if post else False,
-        })
-    
+        character_data.append(
+            {
+                "character": character,
+                "checked": str(character.pk) in request.POST.getlist("characters")
+                if post
+                else False,
+            }
+        )
+
     return render(
         request,
         "player_characters/characters/bulk_award.html",

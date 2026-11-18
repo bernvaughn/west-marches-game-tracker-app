@@ -18,21 +18,21 @@ def game_master_clubs(user):
 def validate_redirect_uris(redirect_uris):
     """
     Validate redirect URIs against OAuth2 provider settings.
-    
+
     Returns a list of error messages (empty if valid).
     """
     errors = []
-    
+
     if not redirect_uris:
         errors.append("At least one redirect URI is required.")
         return errors
-    
+
     allowed_schemes = oauth2_settings.ALLOWED_REDIRECT_URI_SCHEMES
     allow_localhost = oauth2_settings.ALLOW_LOCALHOST_LOOPBACK
-    
+
     for uri in redirect_uris:
         parsed = urlparse(uri)
-        
+
         # Check scheme
         if parsed.scheme not in allowed_schemes:
             errors.append(
@@ -40,39 +40,37 @@ def validate_redirect_uris(redirect_uris):
                 f"Allowed schemes: {', '.join(allowed_schemes)}."
             )
             continue
-        
+
         # Check localhost/loopback
         hostname = parsed.hostname
         is_loopback = hostname in ("127.0.0.1", "::1")
         is_localhost = hostname == "localhost"
-        
+
         if is_localhost and not allow_localhost:
             errors.append(
                 f"Redirect URI '{uri}' uses localhost which is only allowed in development mode."
             )
             continue
-        
+
         # For loopback IPs, require http scheme (per RFC 8252)
         if is_loopback and parsed.scheme != "http":
-            errors.append(
-                f"Loopback redirect URI '{uri}' must use http scheme per RFC 8252."
-            )
+            errors.append(f"Loopback redirect URI '{uri}' must use http scheme per RFC 8252.")
             continue
-        
+
         # Check for fragments (not allowed per RFC 6749)
         if "#" in uri:
             errors.append(
                 f"Redirect URI '{uri}' contains a fragment which is not allowed per RFC 6749."
             )
             continue
-        
+
         # Check for userinfo credentials
         if "@" in parsed.netloc:
             errors.append(
                 f"Redirect URI '{uri}' contains userinfo credentials which are not allowed."
             )
             continue
-    
+
     return errors
 
 

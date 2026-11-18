@@ -65,13 +65,13 @@ def select(request, club_slug):
 def character_preview(request, club_slug, pk):
     """Return JSON preview data for a character selector tooltip."""
     character = club_get_object_or_404(request, Character, pk=pk)
-    
+
     # Verify the character belongs to the current user
     if character not in own_characters(request):
         raise Http404("No such character.")
-    
+
     ctx = character_selector_context(character)
-    
+
     data = {
         "name": character.name,
         "level": character.level,

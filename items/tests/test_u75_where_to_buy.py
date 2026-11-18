@@ -58,17 +58,18 @@ def test_icon_only_when_for_sale(login, club, player, item):
     r = c.get(index(club))
     html = r.content.decode()
     # Debug: check for_sale attribute
-    for i in r.context['items']:
-        print(f'DEBUG: Item {i.name} for_sale={getattr(i, "for_sale", "NOT SET")}')
-    print(f'DEBUG: #shop in html: {"#shop" in html}')
-    print(f'DEBUG: bi-shop in html: {"bi-shop" in html}')
+    for i in r.context["items"]:
+        print(f"DEBUG: Item {i.name} for_sale={getattr(i, 'for_sale', 'NOT SET')}")
+    print(f"DEBUG: #shop in html: {'#shop' in html}")
+    print(f"DEBUG: bi-shop in html: {'bi-shop' in html}")
     import re
-    for m in re.finditer(r'.{0,50}#shop.{0,50}', html):
-        print(f'DEBUG: Found #shop: {repr(m.group())}')
-    for m in re.finditer(r'.{0,50}#info-circle.{0,50}', html):
-        print(f'DEBUG: Found #info-circle: {repr(m.group())}')
-    for m in re.finditer(r'.{0,50}bi-shop.{0,50}', html):
-        print(f'DEBUG: Found bi-shop: {repr(m.group())}')
+
+    for m in re.finditer(r".{0,50}#shop.{0,50}", html):
+        print(f"DEBUG: Found #shop: {repr(m.group())}")
+    for m in re.finditer(r".{0,50}#info-circle.{0,50}", html):
+        print(f"DEBUG: Found #info-circle: {repr(m.group())}")
+    for m in re.finditer(r".{0,50}bi-shop.{0,50}", html):
+        print(f"DEBUG: Found bi-shop: {repr(m.group())}")
     # The test should check that the WHERE TO BUY icon (shop) is not present
     # The info icon (info-circle) SHOULD be present now (story 4 requirement)
     assert "bi-shop" not in html

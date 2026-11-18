@@ -357,4 +357,3 @@ def message_detail(request, club_slug, pk):
             "is_admin": membership.is_game_master or membership.is_club_admin,
         },
     )
-

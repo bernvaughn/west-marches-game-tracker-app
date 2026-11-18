@@ -40,11 +40,13 @@ Add a dashboard section for consumable items with "Use 1" confirm buttons that o
 ### 5. `accounts/urls.py` (MODIFY)
 - Add URL pattern:
   ```python
-  path(
-      "dashboard/partial/consumable_consume/<int:item_pk>/",
-      dashboard_consumables.consumable_consume_partial,
-      name="consumable_consume_partial",
-  ),
+  (
+      path(
+          "dashboard/partial/consumable_consume/<int:item_pk>/",
+          dashboard_consumables.consumable_consume_partial,
+          name="consumable_consume_partial",
+      ),
+  )
   ```
 
 ### 6. `accounts/apps.py` (MODIFY)

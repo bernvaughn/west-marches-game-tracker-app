@@ -144,7 +144,7 @@ def test_max_10_recent_shops(client_without_recent_shops, club, shop_a, shop_b, 
     # the view doesn't break with more than 10 shops
     session = client_without_recent_shops.session
     session_key = f"wm_recent_shops_{character.pk}"
-    
+
     # Create 12 fake shop IDs
     shop_ids = list(range(100, 112))
     session[session_key] = shop_ids
@@ -161,19 +161,22 @@ def test_no_character_no_tabs(login, club, shop_a):
     """Test that tabs don't appear when user has no character."""
     # Create a user with no characters
     from django.contrib.auth import get_user_model
+
     User = get_user_model()
     user_no_char = User.objects.create_user(
         email="nochar@example.com", password="pass", display_name="NoChar"
     )
     from accounts.models import Membership
+
     Membership.objects.create(
         user=user_no_char, club=club, is_club_admin=False, is_game_master=False
     )
-    
+
     from django.test import Client
+
     c = Client()
     c.force_login(user_no_char)
-    
+
     body = c.get(url("index", club)).content.decode()
     assert "My Shops" not in body
     assert "All Shops" not in body

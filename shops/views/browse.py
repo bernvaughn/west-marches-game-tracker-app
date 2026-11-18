@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 
+from accounts.htmx import render_modal_or_page
 from accounts.mixins import (
     CharacterContextMixin,
     ClubContextMixin,
@@ -198,7 +199,9 @@ class ShopDetailView(
         context = {"shop": shop, "is_open": open_now, "rows": _visible_rows(shop)}
         character = self.get_selected_character()
         context.update(_inventory_context(character, shop))
-        return render(request, "shops/browse/detail.html", context)
+        return render_modal_or_page(
+            request, "shops/browse/_detail_fragment.html", "shops/browse/detail.html", context
+        )
 
 
 @method_decorator(club_member_required, name="dispatch")

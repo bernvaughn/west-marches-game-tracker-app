@@ -18,9 +18,7 @@ def test_is_club_admin_tag(club, club_admin, game_master, player, site_admin):
         player: False,
     }
     for user, expected in cases.items():
-        out = _render(
-            "{% load accounts_tags %}{% is_club_admin user club %}", user=user, club=club
-        )
+        out = _render("{% load accounts_tags %}{% is_club_admin user club %}", user=user, club=club)
         assert out.strip() == str(expected), f"is_club_admin({user})"
 
 
@@ -84,7 +82,7 @@ def test_approvals_dropdown_shows_counts_by_type():
     assert "approvals-menu" in html
     assert "approvals-total" in html
     assert "Trades" in html and "Map requests" in html
-    assert '/c/club/trades/' in html and '/c/club/map/requests/' in html
+    assert "/c/club/trades/" in html and "/c/club/map/requests/" in html
 
 
 def test_approvals_dropdown_hidden_when_zero():
