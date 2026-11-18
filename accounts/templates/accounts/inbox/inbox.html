@@ -41,7 +41,7 @@
     <td class="text-center"><input type="checkbox" name="message_ids" value="{{ m.pk }}" class="form-check-input"></td>
     <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div></td>
     <td>{{ m.character.name|default:"-" }}</td>
-    <td class="wm-msg-col">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% endif %}{{ m.body|linebreaksbr }}
+    <td class="wm-msg-col">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% elif m.kind == "starting_request" %}<span class="badge text-bg-primary">Starting request</span><br>{% endif %}{{ m.body|linebreaksbr }}
       {% if m.granted_entries.all or m.granted_visits.all or m.granted_credits.all or m.granted_found_marks.all %}
       <div class="wm-granted"><strong>Granted</strong>
         <ul>

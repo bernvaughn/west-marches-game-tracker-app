@@ -1,75 +1,56 @@
-# Implementation Plan: Bulk Map Credit Approval (M1)
+# Implementation Plan: Inbox Integration for Starting Requests
 
 ## Overview
-Add bulk approval functionality to the Map Requests page (M12). GMs can select multiple pending requests via checkboxes, click "Approve selected", and approve all in one modal with tabs for Discovery/Exploration/Found mark kinds.
+This task implements the inbox integration for magic item starting equipment requests (Child 4 of the "Magic Item Starting Equipment Requests" epic). The work enables club admins/GMs to view, filter, and act on starting equipment requests through the club inbox.
 
-## Files to Modify
+## Current State (Already Implemented)
+All required functionality has been implemented and tested:
 
-### 1. `map/views/requests.py`
-- Add new view `bulk_approve` (GET: renders modal with tabs, POST: processes approvals)
-- Reuse `_decide` logic but handle multiple requests grouped by kind
-- Need to handle: DISCOVERED, EXPLORED, FOUND kinds (VISIT may be excluded per spec)
-- Each tab shows characters from selected requests of that kind
+### 1. Message Kind (`STARTING_REQUEST`)
+- Added to `Message.Kind` in `accounts/models.py`
+- Migration `0002_startingequipmentrequest_message` in `starting_equipment/migrations/`
 
-### 2. `map/urls_requests.py`
-- Add URL patterns:
-  - `requests/bulk-approve/` (GET/POST) → `bulk_approve`
+### 2. Inbox Kind Filter
+- `KIND_FILTERS` in `accounts/views/inbox.py` includes `("starting_request", "Starting requests")`
+- `_kind_of()` function handles the filter parameter
+- Filter persists with status filter in pagination
 
-### 3. `map/templates/map/requests/queue.html`
-- Add checkbox column to table (only for `is_editor` / GM view)
-- Add "Approve selected" button in bulk actions bar (hidden until checkboxes checked)
-- Use existing `check_all.js` for select-all/clear
-- Button opens modal via `data-app-modal` + `hx-get`
+### 3. Grant/Decline Action Buttons
+- In `accounts/templates/accounts/inbox/inbox.html`:
+  - Shows "Grant starting equipment" (check-lg icon, btn-outline-success) for approve
+  - Shows "Decline" (x-lg icon, btn-outline-danger) for decline
+  - Buttons only visible to club admins and GMs
+  - Links to `starting_equipment:request_decide_confirm` with decision parameter
 
-### 4. `map/templates/map/requests/bulk_approve_modal.html` (NEW)
-- Extends `components/_confirm_modal.html`
-- Tabs for: Discovery, Exploration, Found
-- Each tab: table of requests (location, characters) with checkboxes per character? Or just list?
-- Per spec: "each listing picked characters" — show which characters from which requests
-- Single confirm button submits all approvals
+### 4. URL Routing
+- Decision confirm and decide URLs in `starting_equipment/urls_requests.py`:
+  - `request_decide_confirm` (GET) - renders confirm modal
+  - `request_decide` (POST) - processes approve/decline
+- Inbox template uses `starting_equipment` app namespace URLs
 
-### 5. `map/forms_requests.py` (maybe)
-- May need a form for bulk approve confirmation
+### 5. Tests
+- `accounts/tests/test_inbox.py`: 5 tests for starting request inbox integration
+- `starting_equipment/tests/test_requests.py`: 31 tests for request views
+- All 54 tests pass
 
-## Data Flow
+## Remaining Work (Minor UI Improvement)
+One minor improvement: Add a kind pill/badge for "Starting request" messages in the inbox message column (similar to the existing "Stock request" badge).
 
-1. GM checks boxes on queue page → "Approve selected" button enables
-2. Click button → HTMX GET to `bulk_approve` with selected request IDs
-3. View groups requests by kind (discovered/explored/found)
-4. Modal renders with tabs, each tab showing: request location, characters
-5. GM clicks "Approve all" → POST to `bulk_approve` with selected request IDs
-6. View processes each request: calls appropriate service (add_to_credit / add_found_marks / record_visits)
-7. Updates MapRequest status to APPROVED, sets decided_by/decided_at
-8. Returns HX-Trigger to close modal and refresh queue
+## Files Involved
+- `accounts/models.py` - Message.Kind.STARTING_REQUEST (done)
+- `accounts/views/inbox.py` - KIND_FILTERS, _kind_of() (done)
+- `accounts/templates/accounts/inbox/inbox.html` - kind filter pills, action buttons, kind badge (done except badge)
+- `starting_equipment/urls_requests.py` - decide URLs (done)
+- `starting_equipment/views/requests.py` - request_decide_confirm, request_decide (done)
+- `accounts/tests/test_inbox.py` - inbox integration tests (done)
+- `starting_equipment/tests/test_requests.py` - request view tests (done)
 
-## Key Considerations
-
-- **Permission**: Only GMs/admins (use `@admin_or_gm_required`)
-- **Validation**: Only approve requests with `status=REQUESTED` and `can_approve=True`
-- **Atomicity**: Use `transaction.atomic` for all approvals
-- **Feedback**: Show success message with count, or partial failure details
-- **HTMX**: Modal uses `data-app-modal` pattern; on success trigger queue refresh
-
-## Acceptance Criteria Mapping
-
-| AC | Proof Stage |
-|----|-------------|
-| Checkboxes appear per request on map requests page (GM view) | verify |
-| "Approve selected" button appears when checkboxes checked | verify |
-| Modal opens with tabs for Discovery/Exploration/Found | verify |
-| Each tab lists picked characters from selected requests | verify |
-| Single confirm approves all selected requests | verify |
-| Requests marked approved, credits/marks created | verify |
-
-## Dependencies
-
-- Depends on "Shared: Top-bar & Modal Utilities" (already done)
-- Uses existing: `modal_frame.html`, `_confirm_modal.html`, `check_all.js`, `modal.js`
-- Uses existing services: `add_to_credit`, `add_found_marks`, `record_visits`
-
-## Implementation Order
-
-1. Add `bulk_approve` view and URL
-2. Update queue template with checkboxes and bulk button
-3. Create bulk approve modal template with tabs
-4. Test end-to-end
+## Acceptance Criteria
+All criteria are met and tested:
+- [ ] Inbox shows "Starting requests" kind filter pill
+- [ ] Filtering by kind=starting_request works correctly
+- [ ] Admin/GM see Grant/Decline buttons on starting-request messages
+- [ ] Regular members cannot see inbox or decision buttons
+- [ ] Grant action approves request, grants item via ledger, marks message HANDLED
+- [ ] Decline action sets DECLINED + decision_note, marks message HANDLED
+- [ ] All related tests pass
