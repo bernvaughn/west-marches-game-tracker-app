@@ -58,9 +58,7 @@ def test_provider_should_show_is_true(provider, player, club, character):
 
 
 @pytest.mark.django_db
-def test_provider_get_context_returns_expected_keys(
-    provider, player, club, character
-):
+def test_provider_get_context_returns_expected_keys(provider, player, club, character):
     """get_context returns all header context keys."""
     request = MockRequest(club, player)
     membership = _membership(player, club)
@@ -78,13 +76,17 @@ def test_provider_get_context_returns_expected_keys(
 @pytest.mark.django_db
 def test_provider_context_coins(provider, player, club, character, item):
     """coin_summary.available reflects awarded coins."""
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=1), Line(coins=1000)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=1), Line(coins=1000)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = _membership(player, club)
@@ -95,20 +97,22 @@ def test_provider_context_coins(provider, player, club, character, item):
 
 
 @pytest.mark.django_db
-def test_provider_context_junk_count_and_value(
-    provider, player, club, character, item
-):
+def test_provider_context_junk_count_and_value(provider, player, club, character, item):
     """junk_count and junk_value reflect marked junk."""
     item.value_cp = 250
     item.save(update_fields=["value_cp"])
 
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=3)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=3)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
     JunkMark.objects.create(character=character, item=item, quantity=2)
 
     request = MockRequest(club, player)
@@ -122,9 +126,7 @@ def test_provider_context_junk_count_and_value(
 
 
 @pytest.mark.django_db
-def test_provider_context_open_trades(
-    provider, player, club, character, other_player
-):
+def test_provider_context_open_trades(provider, player, club, character, other_player):
     """open_trades lists trades involving the character's membership."""
     other_char = Character.objects.create(
         club=club, owner=_membership(other_player, club), name="Other"
@@ -160,17 +162,19 @@ def test_provider_context_unread_count(provider, player, club, character):
 
 
 @pytest.mark.django_db
-def test_dashboard_view_renders_header_stats(
-    club, player, character, item, login
-):
+def test_dashboard_view_renders_header_stats(club, player, character, item, login):
     """Dashboard view renders header stats via the provider."""
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(coins=1000)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(coins=1000)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     c = login(player)
     resp = c.get(reverse("accounts:player_dashboard", args=[club.slug]))
