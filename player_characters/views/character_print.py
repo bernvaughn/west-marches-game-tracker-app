@@ -1,12 +1,11 @@
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils import timezone
 
 from accounts.permissions import club_member_required
-from accounts.scoping import club_get_object_or_404, club_queryset
+from accounts.scoping import club_get_object_or_404
 from ledger.services import available_items
-from player_characters.models import Trade
 from quests.models import Quest, QuestCompletion
 
 from ..access import require_inventory_access
@@ -15,7 +14,6 @@ from ..item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 from ..junk import junk_rows
 from ..models import Character
 from ..sheet import ability_modifier, ability_rows, passive_perception
-from ..trade_services import OPEN
 
 LAYOUTS = ("full", "grid")
 COPIES = ("type", "item")
@@ -103,7 +101,6 @@ def print_session_pack(request, club_slug, pk):
     include_items = request.GET.get("items", "1") == "1"
     include_quests = request.GET.get("quests", "1") == "1"
     include_map = request.GET.get("map", "0") == "1"
-    include_trades = request.GET.get("trades", "0") == "1"
 
     # Character sheet data
     coins = coin_summary(character)
@@ -150,29 +147,6 @@ def print_session_pack(request, club_slug, pk):
             if reqs and all(have.get(r.item_id, 0) >= r.quantity for r in reqs):
                 ready_quests.append(q)
 
-    # Open trades data
-    open_trades_data = []
-    if include_trades:
-        membership = request.membership
-        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
-        my_trades = trades_qs.filter(
-            Q(sender__owner=membership) | Q(receiver__owner=membership)
-        ).select_related("sender__owner__user", "receiver__owner__user")
-
-        for t in my_trades:
-            if t.sender.owner_id == membership.id:
-                other = t.receiver
-                side = "sender"
-            else:
-                other = t.sender
-                side = "receiver"
-            open_trades_data.append({
-                "trade": t,
-                "other_character": other,
-                "side": side,
-                "status_display": t.get_status_display(),
-            })
-
     # Map data (simplified - just indicate if map should be included)
     # The actual map rendering would be complex, so we'll include a placeholder
     # that can be expanded later
@@ -188,7 +162,6 @@ def print_session_pack(request, club_slug, pk):
             "include_items": include_items,
             "include_quests": include_quests,
             "include_map": include_map,
-            "include_trades": include_trades,
             "coins": coins,
             "inv_rows": inv_rows,
             "junk": junk,
@@ -199,7 +172,6 @@ def print_session_pack(request, club_slug, pk):
             "too_many": over,
             "card_cap": CARD_CAP,
             "ready_quests": ready_quests,
-            "open_trades": open_trades_data,
             "show_map": show_map,
             "printed_on": timezone.localdate(),
         },

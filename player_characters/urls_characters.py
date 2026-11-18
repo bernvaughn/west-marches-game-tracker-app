@@ -7,7 +7,6 @@ from .views import (
     character_print,
     character_shop,
     character_slips,
-    character_transfer,
     characters,
     selection,
 )
@@ -19,7 +18,6 @@ urlpatterns = [
     path("directory/", characters.DirectoryView.as_view(), name="directory"),
     path("new/", characters.CreateView.as_view(), name="create"),
     path("select/", selection.select, name="select"),
-    path("transfer/", character_transfer.transfer_start, name="transfer_start"),
     path("slips/", character_slips.slips, name="slips"),
     path("slips/print/", character_slips.slips_print, name="slips_print"),
     path("<int:pk>/", characters.DetailView.as_view(), name="detail"),
@@ -27,7 +25,6 @@ urlpatterns = [
     path("<int:pk>/handover/", characters.HandoverView.as_view(), name="handover"),
     path("<int:pk>/adjust/", character_adjust.adjust, name="adjust"),
     path("<int:pk>/consume/", character_adjust.consume, name="consume"),
-    path("<int:pk>/transfer/", character_transfer.transfer, name="transfer"),
     path("<int:pk>/print/", character_print.print_items, name="print_items"),
     path("<int:pk>/items/<int:item_pk>/print/", character_print.print_item, name="print_item"),
     path("<int:pk>/shop/", character_shop.shop_toggle, name="shop_toggle"),

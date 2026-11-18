@@ -5,14 +5,13 @@ from django.core.management import call_command
 from django.urls import reverse
 
 from accounts import approvals
-from accounts.approval_providers import open_messages, open_trades_needing_action
-from accounts.models import Membership, Message
+from accounts.approval_providers import open_messages
+from accounts.models import Club, Membership, Message, User
 from agent_access.approvals import pending_batches, pending_proposed_items
 from agent_access.models import ProposedBatch, ProposedItem
 from agent_access.tokens import create_token
 from map.approvals import open_map_requests
 from map.models import MapRequest
-from player_characters.models import Character, Trade
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U26")]
 
@@ -58,7 +57,6 @@ def test_registry_has_real_providers():
         pending_proposed_items,
         open_map_requests,
         open_messages,
-        open_trades_needing_action,
     )
     for p in providers:
         assert p in approvals._providers
@@ -135,96 +133,28 @@ def test_demo_gwen_badge(login):
     assert 'approvals-total">5<' in html
 
 
-def test_trade_requested_receiver_needs_action(rf, club, player, game_master, character):
-    # Trade REQUESTED where game_master is receiver - needs to accept/decline
-    sender_char = character
-    gm_membership = Membership.objects.get(user=game_master, club=club)
-    receiver_char = Character.objects.create(club=club, owner=gm_membership, name="GM Char")
-    trade = Trade.objects.create(
-        club=club,
-        sender=sender_char,
-        receiver=receiver_char,
-        status=Trade.Status.REQUESTED,
-    )
-    # Receiver (game_master) should see the trade
-    assert _labels(rf, game_master, club) == {"Trades": 1}
-    # Sender (player) should not see it (not their action needed)
-    assert _labels(rf, player, club) == {}
-    trade.delete()
+def test_no_trade_or_transfer_category_for_any_role(rf):
+    call_command("seed_demo")
+    from django.template import Context, Template
 
+    from conftest import _member  # noqa: PLC0415
 
-def test_trade_accepted_sender_needs_approval(rf, club, player, game_master, character):
-    # Trade ACCEPTED where sender hasn't approved
-    sender_char = character
-    gm_membership = Membership.objects.get(user=game_master, club=club)
-    receiver_char = Character.objects.create(club=club, owner=gm_membership, name="GM Char")
-    trade = Trade.objects.create(
-        club=club,
-        sender=sender_char,
-        receiver=receiver_char,
-        status=Trade.Status.ACCEPTED,
-        sender_approved=False,
-        receiver_approved=True,
-    )
-    # Sender (player) needs to approve
-    assert _labels(rf, player, club) == {"Trades": 1}
-    # Receiver (game_master) already approved
-    assert _labels(rf, game_master, club) == {}
-    trade.delete()
+    club = Club.objects.get(slug="demo")
+    player = User.objects.get(email="alice@example.com")
+    gm = User.objects.get(email="gm@example.com")
+    club_admin = _member(club, "ca@example.com", "Club Admin", is_club_admin=True)
+    superuser = User.objects.get(email="admin@example.com")
 
+    dropdown = Template("{% include 'components/_approvals_dropdown.html' %}")
 
-def test_trade_accepted_receiver_needs_approval(rf, club, player, game_master, character):
-    # Trade ACCEPTED where receiver hasn't approved
-    sender_char = character
-    gm_membership = Membership.objects.get(user=game_master, club=club)
-    receiver_char = Character.objects.create(club=club, owner=gm_membership, name="GM Char")
-    trade = Trade.objects.create(
-        club=club,
-        sender=sender_char,
-        receiver=receiver_char,
-        status=Trade.Status.ACCEPTED,
-        sender_approved=True,
-        receiver_approved=False,
-    )
-    # Receiver (game_master) needs to approve
-    assert _labels(rf, game_master, club) == {"Trades": 1}
-    # Sender (player) already approved
-    assert _labels(rf, player, club) == {}
-    trade.delete()
-
-
-def test_trade_other_statuses_not_counted(rf, club, player, game_master, character):
-    # Trades in DECLINED, COMPLETED, CANCELLED should not be counted
-    sender_char = character
-    gm_membership = Membership.objects.get(user=game_master, club=club)
-    receiver_char = Character.objects.create(club=club, owner=gm_membership, name="GM Char")
-    for status in [Trade.Status.DECLINED, Trade.Status.COMPLETED, Trade.Status.CANCELLED]:
-        trade = Trade.objects.create(
-            club=club,
-            sender=sender_char,
-            receiver=receiver_char,
-            status=status,
-        )
-        assert _labels(rf, player, club) == {}
-        assert _labels(rf, game_master, club) == {}
-        trade.delete()
-
-
-def test_trade_cross_club_isolation(rf, club, other_club, player, game_master, character):
-    # Trade in other_club should not affect club counts
-    sender_char = character
-    # Create a GM membership in other_club
-    other_gm = Membership.objects.create(
-        user=game_master, club=other_club, is_game_master=True
-    )
-    other_char = Character.objects.create(club=other_club, owner=other_gm, name="GM Char")
-    trade = Trade.objects.create(
-        club=other_club,
-        sender=sender_char,
-        receiver=other_char,
-        status=Trade.Status.REQUESTED,
-    )
-    assert _labels(rf, player, club) == {}
-    assert _labels(rf, game_master, club) == {}
-    assert _labels(rf, game_master, other_club) == {"Trades": 1}
-    trade.delete()
+    for role, user in (
+        ("player", player),
+        ("game master", gm),
+        ("club admin", club_admin),
+        ("superuser", superuser),
+    ):
+        request = _req(rf, user, club)
+        labels = {a.label.lower() for a in approvals.pending_approvals(request)}
+        assert not any("trade" in label or "transfer" in label for label in labels), role
+        html = dropdown.render(Context(approvals.context_processor(request)))
+        assert "trade" not in html.lower() and "transfer" not in html.lower(), role

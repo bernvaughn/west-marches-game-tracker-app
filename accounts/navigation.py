@@ -8,13 +8,12 @@ from typing import NamedTuple
 
 from django.urls import reverse
 
-GROUPS = ("primary", "character", "town", "trades", "map", "club", "account", "gm", "admin")
+GROUPS = ("primary", "character", "town", "map", "club", "account", "gm", "admin")
 
 # Menu groups in display order: (key, heading). Read by the top bar and club home (U60).
 MENU_GROUPS = (
     ("character", "Character"),
     ("town", "Town"),
-    ("trades", "Trades"),
     ("map", "Map"),
     ("club", "Club"),
     ("account", "Account"),

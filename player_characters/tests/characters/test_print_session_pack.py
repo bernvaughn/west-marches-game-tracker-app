@@ -87,15 +87,6 @@ def test_pack_options_exclude_quests(login, club, player, funded, item):
 
 
 @pytest.mark.story("S10")
-def test_pack_options_include_trades(login, club, player, funded, item):
-    """Can include trades with trades=1."""
-    r = login(player).get(pack_url(club, funded) + "?trades=1")
-    assert r.status_code == 200
-    body = r.content.decode()
-    assert "Open Trades" in body
-
-
-@pytest.mark.story("S10")
 def test_print_button_present(login, club, player, funded):
     """Print button is present in the output."""
     r = login(player).get(pack_url(club, funded))
@@ -114,12 +105,10 @@ def test_modal_endpoint_returns_form(login, club, player, funded):
     assert "Item Cards" in body
     assert "Ready Quests" in body
     assert "Map" in body
-    assert "Open Trades" in body
     assert 'name="sheet"' in body
     assert 'name="items"' in body
     assert 'name="quests"' in body
     assert 'name="map"' in body
-    assert 'name="trades"' in body
 
 
 @pytest.mark.story("S10")
