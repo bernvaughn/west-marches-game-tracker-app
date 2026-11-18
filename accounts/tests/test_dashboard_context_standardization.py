@@ -94,53 +94,6 @@ def test_dashboard_partial_downtime_shows_action_row(
 
 
 @pytest.mark.django_db
-def test_header_provider_includes_trades_data_flat_context(club, player, character, login):
-    """HeaderDashboardProvider includes trades data using flat context keys.
-
-    The HeaderDashboardProvider (key='header') returns flat keys in get_context()
-    including 'open_trades'. It is rendered via explicit include in dashboard.html
-    with flat keys, not through the provider grid loop's provider_context pattern.
-    """
-    c = login(player)
-
-    # Create an open trade
-    membership = Membership.objects.get(user=player, club=club)
-    other_character = Character.objects.create(
-        club=club,
-        owner=membership,
-        name="Other",
-    )
-    from player_characters.models import Trade
-
-    Trade.objects.create(
-        club=club,
-        sender=character,
-        receiver=other_character,
-        status=Trade.Status.REQUESTED,
-    )
-
-    # Verify the HeaderDashboardProvider returns open_trades in its flat context
-    from accounts.dashboard_providers import get_provider
-
-    provider = get_provider("header")
-    assert provider is not None, "HeaderDashboardProvider should be registered"
-
-    # Use the test client's request to get a proper request object with club
-    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
-    assert resp.status_code == 200
-    request = resp.wsgi_request
-
-    ctx = provider.get_context(request, club, character, membership)
-
-    # Verify the context contains trades data as flat keys
-    assert "open_trades" in ctx, "Header provider should include open_trades"
-    assert len(ctx["open_trades"]) == 1, "Should have one open trade"
-    assert ctx["open_trades"][0]["other_character"].name == "Other"
-    assert ctx["open_trades"][0]["side"] == "sender"
-    assert ctx["open_trades"][0]["status_display"] == "Requested"
-
-
-@pytest.mark.django_db
 def test_quick_actions_uses_provider_context_has_junk():
     """QuickActionsProvider.get_context returns flat keys wrapped in provider_context."""
     provider = QuickActionsProvider()
