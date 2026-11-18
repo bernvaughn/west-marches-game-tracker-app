@@ -18,11 +18,35 @@
   <tbody>
     {% for template in templates %}
     <tr>
-      <td>{{ template.name }}</td>
-      <td class="text-center">{% if template.is_active %}Yes{% else %}No{% endif %}</td>
       <td>
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'starting_equipment:template_edit' club.slug template.pk %}">Edit</a>
-        <a class="btn btn-sm btn-outline-secondary" href="{% url 'starting_equipment:template_detail' club.slug template.pk %}">View</a>
+        <a href="{% url 'starting_equipment:template_detail' club.slug template.pk %}" class="text-decoration-none fw-medium">
+          {{ template.name }}
+        </a>
+      </td>
+      <td class="text-center">
+        {% if template.is_active %}
+        <span class="badge bg-success">Active</span>
+        {% else %}
+        <form method="post" action="{% url 'starting_equipment:template_set_active' club.slug template.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-success" title="Set as active">
+            {% include "components/icon.html" with name="check-circle" %} Set active
+          </button>
+        </form>
+        {% endif %}
+      </td>
+      <td>
+        <div class="btn-group btn-group-sm" role="group">
+          <a class="btn btn-outline-secondary" href="{% url 'starting_equipment:template_detail' club.slug template.pk %}" title="View details">
+            {% include "components/icon.html" with name="eye" %}
+          </a>
+          <a class="btn btn-outline-secondary" href="{% url 'starting_equipment:template_edit' club.slug template.pk %}" title="Edit">
+            {% include "components/icon.html" with name="pencil" %}
+          </a>
+          <a class="btn btn-outline-danger" href="{% url 'starting_equipment:template_delete' club.slug template.pk %}" title="Delete">
+            {% include "components/icon.html" with name="trash" %}
+          </a>
+        </div>
       </td>
     </tr>
     {% endfor %}
