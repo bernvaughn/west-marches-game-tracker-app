@@ -310,9 +310,7 @@ def declined_request(character_with_class_bg, magic_item_2):
 @pytest.fixture
 def game_master_user(club):
     """Game master user for actor parameter."""
-    return User.objects.create_user(
-        "gm_test@example.com", password="pw", display_name="Test GM"
-    )
+    return User.objects.create_user("gm_test@example.com", password="pw", display_name="Test GM")
 
 
 @pytest.fixture

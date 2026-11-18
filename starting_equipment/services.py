@@ -51,8 +51,7 @@ def apply_starting_equipment(
             char_class__iexact=character.char_class,
         )
         .filter(
-            Q(min_level__lte=character_level)
-            & Q(max_level__gte=character_level),
+            Q(min_level__lte=character_level) & Q(max_level__gte=character_level),
         )
         .first()
     )
@@ -73,12 +72,9 @@ def apply_starting_equipment(
 
     # 2. Background equipment - only if character has background set
     if character.background:
-        bg_entry = (
-            template.background_entries.filter(
-                background__iexact=character.background,
-            )
-            .first()
-        )
+        bg_entry = template.background_entries.filter(
+            background__iexact=character.background,
+        ).first()
 
         if bg_entry:
             # Add background coins
@@ -104,19 +100,13 @@ def apply_starting_equipment(
             total_coins += level_coins_entry.coins_cp
 
     # 4. Magic item requests - only approved ones
-    for request in (
-        character.starting_requests.filter(
-            status=StartingEquipmentRequest.Status.APPROVED,
-        )
-        .select_related("item")
-    ):
+    for request in character.starting_requests.filter(
+        status=StartingEquipmentRequest.Status.APPROVED,
+    ).select_related("item"):
         # Check if item is in the template's magic options
-        magic_option = (
-            template.magic_options.filter(
-                item=request.item,
-            )
-            .first()
-        )
+        magic_option = template.magic_options.filter(
+            item=request.item,
+        ).first()
         if magic_option:
             lines.append(
                 LedgerLine(

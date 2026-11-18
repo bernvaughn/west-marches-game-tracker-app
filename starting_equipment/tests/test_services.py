@@ -37,9 +37,7 @@ class TestApplyStartingEquipment:
         from starting_equipment.services import apply_starting_equipment
 
         # Character has char_class="fighter" (lowercase), template has "Fighter"
-        entry = apply_starting_equipment(
-            character_lowercase_class_bg, template, game_master_user
-        )
+        entry = apply_starting_equipment(character_lowercase_class_bg, template, game_master_user)
 
         assert entry is not None
         assert entry.kind == "award"
@@ -68,9 +66,7 @@ class TestApplyStartingEquipment:
         from starting_equipment.services import apply_starting_equipment
 
         # Character has background="acolyte" (lowercase), template has "Acolyte"
-        entry = apply_starting_equipment(
-            character_lowercase_class_bg, template, game_master_user
-        )
+        entry = apply_starting_equipment(character_lowercase_class_bg, template, game_master_user)
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -562,9 +558,7 @@ class TestApplyStartingEquipment:
         total_coins = sum(line.coins for line in coin_lines)
         assert total_coins == 1500
 
-    def test_actor_can_be_none(
-        self, character_with_class_bg, template, class_entry, class_line
-    ):
+    def test_actor_can_be_none(self, character_with_class_bg, template, class_entry, class_line):
         """Actor can be None (no user specified)."""
         from starting_equipment.services import apply_starting_equipment
 
