@@ -733,29 +733,55 @@ Stories for the player experience of starting equipment: automatic grants on cha
 - The status is rendered via an HTMX partial (`_status_row.html`).
 - It shows `PENDING`, `APPROVED`, or `DECLINED` with the admin's decision note.
 
-### Technical decisions (clarifying stories)
+### Technical Decisions (Clarifying Stories)
 
-**U104 Background field on Character.** As a developer, I want the Character model to have a `background` CharField (max 60, optional), so starting equipment can match background-specific gear. *(player_characters)*
+**D1 Background field on Character.** As a developer, I want the Character model to have a `background` CharField (max 60, optional), so starting equipment can match background-specific gear. *(player_characters)*
 - Field: `background = models.CharField(max_length=60, blank=True)`
 - Used by starting equipment templates to grant background-appropriate gear
 
-**U105 Case-insensitive class matching.** As a developer, I want class matching for starting equipment to be case-insensitive, so player-entered class names match admin templates reliably. *(starting_equipment, player_characters)*
+**D2 Case-insensitive class matching.** As a developer, I want class matching for starting equipment to be case-insensitive, so player-entered class names match admin templates reliably. *(starting_equipment, player_characters)*
 - Matching uses `char_class__iexact` against `StartingEquipmentClassEntry.char_class`
 - Players can type class names freely; admin templates use canonical names
 
-**U106 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), with UI for player selection in a future version, so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
+**D3 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), with UI for player selection in a future version, so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
 - `StartingEquipmentClassLine` and `StartingEquipmentBackgroundLine` have `is_choice` and `choice_group` fields
 - MVP grants the first option automatically; player-facing choice UI planned for v2
 
-**U107 Level-based coins table.** As a club admin, I want level-based starting coins to follow the 2024 DMG "Starting Equipment at Higher Levels" table, configurable per template, so higher-level characters start with correct wealth. *(starting_equipment)*
+**D4 Level-based coins table.** As a club admin, I want level-based starting coins to follow the 2024 DMG "Starting Equipment at Higher Levels" table, configurable per template, so higher-level characters start with correct wealth. *(starting_equipment)*
 - Separate `StartingEquipmentLevelCoins` model with `level` (2-20) and `coins_cp` fields
 - Seeded from DMG 2024 table; admins can customise per template
 - Applied when character level > 1 during starting equipment grant
 
-**U108 Player shops unchanged.** As anyone, I want player shops (U66/U67) to remain unchanged by starting equipment changes, so the safe player-to-player economy continues to work as before. *(shops, player_characters, starting_equipment)*
+**D5 Player shops unchanged.** As anyone, I want player shops (U66/U67) to remain unchanged by starting equipment changes, so the safe player-to-player economy continues to work as before. *(shops, player_characters, starting_equipment)*
 - Player shops continue to use fixed base value pricing (S1).
 - Starting equipment changes do not affect player shop inventory, pricing, or street placement.
 - Player shops remain the safe alternative to removed transfers and trades (U15/U16).
+
+## Round 13: Starting Equipment Admin/GM Stories
+
+Stories for club admins and game masters to manage starting equipment templates and approve magic item requests.
+
+**U104 Manage Starting Equipment Templates.** As a club admin, I want to create and manage starting equipment templates for my club, so I can customize what gear new characters receive. *(starting_equipment)*
+- Admins create, edit, and delete templates for their club.
+
+**U105 Configure Class-Based Equipment.** As a club admin, I want to configure class-based starting equipment (items, coins, choice groups) for each class and level range, so characters get class-appropriate gear. *(starting_equipment, items)*
+- One class entry per class and level range; lines list items, quantities, coins, and choice groups. Class matching is case-insensitive (US4).
+
+**U106 Configure Background-Based Equipment.** As a club admin, I want to configure background-based starting equipment, so characters get background-appropriate gear. *(starting_equipment, items)*
+- One background entry per background; uses the Character.background field (US4).
+
+**U107 Configure Level-Based Coins.** As a club admin, I want to configure level-based starting coins per the 2024 DMG table, so higher-level characters start with appropriate wealth. *(starting_equipment)*
+- LevelCoins table per template, levels 2-20, from the 2024 DMG "Starting Equipment at Higher Levels" table.
+
+**U108 Mark Magic Starting Options.** As a club admin, I want to mark specific magic items as available for starting equipment requests, so players can request them. *(starting_equipment, items)*
+- MagicItemStartingOption flags catalogue items; feeds the player request picker (U102).
+
+**U109 Approve or Decline Magic Requests.** As a club admin or GM, I want to approve or decline magic starting item requests from the inbox, so I control which magic items enter play. *(starting_equipment, accounts, ledger)*
+- Pending requests appear in the club inbox (U30). Decisions set status and decision note; approved items grant with starting equipment (U99).
+
+**U110 Set Active Template.** As a club admin, I want to set one template as active per club, so there's a single source of truth for starting equipment. *(starting_equipment)*
+- Exactly one template per club is active; activating a template clears the active flag on the club's other templates.
+
 
 ## Quests
 
