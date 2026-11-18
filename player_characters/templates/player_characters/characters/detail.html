@@ -120,6 +120,44 @@
       <p class="wm-sheet-note">No items.</p>
       {% endif %}
     </section>
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-starting-requests">
+      <h2 class="wm-sheet-box-title" id="sheet-starting-requests">Magic starting item requests</h2>
+      {% if starting_requests %}
+      <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
+        <thead><tr><th>Item</th><th class="num">Qty</th><th>Note</th><th>Status</th><th class="no-print">Decided</th></tr></thead>
+        <tbody>
+        {% for req in starting_requests %}
+        <tr>
+          <td>{% include "items/_item_name.html" with item=req.item info=True %}</td>
+          <td class="num">{{ req.quantity }}</td>
+          <td>{% if req.note %}{{ req.note }}{% else %}<span class="wm-sheet-note">—</span>{% endif %}</td>
+          <td>
+            {% if req.status == "pending" %}
+              {% include "components/badge.html" with text="Pending" status="info" %}
+            {% elif req.status == "approved" %}
+              {% include "components/badge.html" with text="Approved" status="success" %}
+            {% elif req.status == "declined" %}
+              {% include "components/badge.html" with text="Declined" status="danger" %}
+            {% else %}
+              {% include "components/badge.html" with text=req.get_status_display status="neutral" %}
+            {% endif %}
+          </td>
+          <td class="no-print">
+            {% if req.decided_by %}
+              {{ req.decided_by.display_name }}<br>
+              {{ req.decided_at|date:"M d, Y H:i" }}
+            {% else %}
+              <span class="wm-sheet-note">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+      <p class="wm-sheet-note">No magic starting item requests.</p>
+      {% endif %}
+    </section>
     <section class="wm-sheet-box wm-sheet-full wm-sheet-ledger-box" aria-labelledby="sheet-ledger">
       <h2 class="wm-sheet-box-title" id="sheet-ledger">Recent ledger entries</h2>
       <ul class="wm-sheet-ledger">

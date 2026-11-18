@@ -163,6 +163,9 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
                 )
                 .order_by("-date", "-id")[:5]
             )
+            ctx["starting_requests"] = character.starting_requests.select_related(
+                "item", "decided_by"
+            ).order_by("-created")
         return render(request, "player_characters/characters/detail.html", ctx)
 
 
