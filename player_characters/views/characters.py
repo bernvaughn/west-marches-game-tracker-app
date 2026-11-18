@@ -34,9 +34,7 @@ class MineView(ClubContextMixin, CharacterContextMixin, View):
 
 
 @method_decorator(club_member_required, name="dispatch")
-class DirectoryView(
-    ClubScopedMixin, PermissionMixin, ClubContextMixin, View
-):
+class DirectoryView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
     def get(self, request, club_slug):
         sees_all = self.is_club_admin(request.user, self.club) or self.is_game_master(
             request.user, self.club
@@ -60,9 +58,7 @@ class DirectoryView(
                     "own": own,
                 }
             )
-        return render(
-            request, "player_characters/characters/directory.html", {"rows": rows}
-        )
+        return render(request, "player_characters/characters/directory.html", {"rows": rows})
 
 
 @method_decorator(admin_or_gm_required, name="dispatch")
