@@ -1,0 +1,22 @@
+{% extends "components/_confirm_modal.html" %}
+{% block title %}{{ action }} Starting Equipment Request{% endblock %}
+{% block summary %}
+  Are you sure you want to {{ decision }} the starting equipment request
+  for <strong>{{ starting_request.character.name }}</strong>
+  ({{ starting_request.item.name }} × {{ starting_request.quantity }})?
+{% endblock %}
+{% block body %}
+  {{ block.super }}
+  {% if decision == "decline" %}
+    <div class="mb-3">
+      <label class="form-label" for="id_decision_note">Decision note</label>
+      <textarea
+        name="decision_note"
+        id="id_decision_note"
+        class="form-control"
+        rows="3"
+        placeholder="Reason for declining..."></textarea>
+    </div>
+  {% endif %}
+{% endblock %}
+{% block confirm_label %}{{ action }}{% endblock %}

@@ -5,6 +5,7 @@ import json
 from django.contrib import messages as flash
 from django.http import Http404, HttpResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
@@ -107,7 +108,7 @@ def request_new(request, club_slug, character_pk):
         )
 
     # Create the StartingEquipmentRequest
-    StartingEquipmentRequest.objects.create(
+    starting_request = StartingEquipmentRequest.objects.create(
         club=request.club,
         character=character,
         item=item,
@@ -116,18 +117,20 @@ def request_new(request, club_slug, character_pk):
         status=StartingEquipmentRequest.Status.PENDING,
     )
 
-    # Create inbox Message
+    # Create inbox Message and link it to the request
     body = (
         f"{character.name} requests {quantity}x {item.name} as starting equipment."
         f"{f' Note: {note}' if note else ''}"
     )
-    Message.objects.create(
+    msg = Message.objects.create(
         club=request.club,
         sender=membership,
         character=character,
         body=body,
         kind=Message.Kind.STARTING_REQUEST,
     )
+    starting_request.message = msg
+    starting_request.save(update_fields=["message"])
 
     if is_htmx(request):
         response = HttpResponse(status=204)
@@ -219,10 +222,50 @@ def request_decide(request, club_slug, pk, decision):
         starting_request.decision_note = decision_note
         starting_request.save(update_fields=["status", "decided_by", "decided_at", "decision_note"])
 
+    # Mark the linked inbox message handled
+    if starting_request.message_id:
+        starting_request.message.status = Message.Status.HANDLED
+        starting_request.message.save(update_fields=["status"])
+
     if is_htmx(request):
         response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps({"inboxChanged": True})
+        response["HX-Trigger"] = json.dumps({"appModalClose": True, "inboxChanged": True})
         return response
 
     flash.success(request, f"Request {decision}d.")
     return redirect("accounts:message_inbox", club_slug=club_slug)
+
+
+@admin_or_gm_required
+@require_GET
+def request_decide_confirm(request, club_slug, pk, decision):
+    """
+    GET: Render the confirm modal for approving or declining a starting
+    equipment request. The confirm form POSTs to request_decide.
+    """
+    if decision not in ("approve", "decline"):
+        raise Http404
+
+    starting_request = club_get_object_or_404(
+        request,
+        StartingEquipmentRequest,
+        pk=pk,
+    )
+
+    action = "Approve" if decision == "approve" else "Decline"
+    confirm_url = reverse(
+        "starting_equipment:request_decide",
+        kwargs={"club_slug": club_slug, "pk": pk, "decision": decision},
+    )
+
+    return render_modal_or_page(
+        request,
+        "starting_equipment/requests/_decide_confirm.html",
+        "starting_equipment/requests/decide_confirm.html",
+        {
+            "starting_request": starting_request,
+            "decision": decision,
+            "action": action,
+            "confirm_url": confirm_url,
+        },
+    )

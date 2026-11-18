@@ -260,6 +260,13 @@ class StartingEquipmentRequest(models.Model):
     )
     decided_at = models.DateTimeField(null=True, blank=True)
     decision_note = models.TextField(blank=True)
+    message = models.ForeignKey(
+        "accounts.Message",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="starting_request",
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     objects = ClubScopedManager()

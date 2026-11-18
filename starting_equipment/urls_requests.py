@@ -14,6 +14,11 @@ urlpatterns = [
         name="request_decide",
     ),
     path(
+        "requests/<int:pk>/decide/<slug:decision>/confirm/",
+        requests.request_decide_confirm,
+        name="request_decide_confirm",
+    ),
+    path(
         "requests/<int:pk>/status/",
         requests.request_status,
         name="request_status",
