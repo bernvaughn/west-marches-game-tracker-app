@@ -631,30 +631,6 @@ def _build_context(request, msg, kind, form, formset, back, pk, batch):
     return ctx
 
 
-def _summary(kind, data, lines):
-    """(label, value) rows describing what a confirmed grant will write."""
-    rows = [("Character", data["character"].name)]
-    if kind == "coins":
-        rows.append(("Coins", format_coins(data["coins"])))
-    elif kind == "items":
-        rows.append(("Items", ", ".join(f"{ln.item.name} × {ln.quantity}" for ln in lines)))
-    else:
-        label = dict(MapGrantForm.MAP_KINDS)[data["map_kind"]]
-        location = data.get("location")
-        if location is not None:
-            tile = location.tile
-            where = f"{location.name} ({tile.map.name} {tile.q}, {tile.r})"
-        else:
-            where = f"{data['hex_map'].name} ({data['q']}, {data['r']})"
-        rows.append(("Map credit", f"{label}: {where}"))
-    rows += [
-        ("Note", data["note"]),
-        ("Date", data["date"].isoformat()),
-        ("Marks the message handled", "Yes" if data["mark_handled"] else "No"),
-    ]
-    return rows
-
-
 @club_member_required
 def message_detail(request, club_slug, pk):
     """Read-only view of a message for the sender (player) or club admins."""
