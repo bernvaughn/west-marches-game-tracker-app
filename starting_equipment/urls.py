@@ -1,9 +1,8 @@
-from django.urls import path
-
-from . import views
+from django.urls import include, path
 
 app_name = "starting_equipment"
 
 urlpatterns = [
-    path("templates/", views.StartingEquipmentPlaceholderView.as_view(), name="templates"),
+    path("templates/", include("starting_equipment.urls_templates")),
+    path("templates/<int:template_pk>/", include("starting_equipment.urls_entries")),
 ]
