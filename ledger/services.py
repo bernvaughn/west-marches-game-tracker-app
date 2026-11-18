@@ -4,15 +4,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from django.db import models
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.utils import timezone
 
 from core.services import BaseService, ClubScopedService
-from player_characters.models import Trade, TradeLine
 
 from .models import LedgerEntry, LedgerLine
-
-OPEN_TRADE_STATUSES = (Trade.Status.REQUESTED, Trade.Status.ACCEPTED)
 
 
 class LedgerError(Exception):
@@ -63,37 +60,17 @@ class LedgerService(BaseService, ClubScopedService):
         )
         return {r["item_id"]: r["total"] for r in rows if r["total"]}
 
-    def _hold_lines(self, character, exclude_trade=None):
-        """Give-side trade lines of open trades for this character."""
-        qs = TradeLine.objects.filter(
-            Q(trade__sender=character, from_sender=True)
-            | Q(trade__receiver=character, from_sender=False),
-            trade__status__in=OPEN_TRADE_STATUSES,
-        )
-        if exclude_trade is not None:
-            qs = qs.exclude(trade=exclude_trade)
-        return qs
+    def held_coins(self, character):
+        return 0
 
-    def held_coins(self, character, exclude_trade=None):
-        return self._hold_lines(character, exclude_trade).aggregate(t=Sum("coins"))["t"] or 0
+    def held_items(self, character):
+        return {}
 
-    def held_items(self, character, exclude_trade=None):
-        rows = (
-            self._hold_lines(character, exclude_trade)
-            .filter(item__isnull=False)
-            .values("item_id")
-            .annotate(total=Sum("quantity"))
-        )
-        return {r["item_id"]: r["total"] for r in rows if r["total"]}
+    def available_coins(self, character):
+        return self.coin_balance(character)
 
-    def available_coins(self, character, exclude_trade=None):
-        return self.coin_balance(character) - self.held_coins(character, exclude_trade)
-
-    def available_items(self, character, exclude_trade=None):
-        owned = self.item_quantities(character)
-        held = self.held_items(character, exclude_trade)
-        result = {i: q - held.get(i, 0) for i, q in owned.items()}
-        return {i: q for i, q in result.items() if q}
+    def available_items(self, character):
+        return self.item_quantities(character)
 
     def _validate_spec(self, spec):
         """Validate a single record spec."""
@@ -123,9 +100,7 @@ class LedgerService(BaseService, ClubScopedService):
         Write several entries atomically. Each spec is a dict of `record` keyword args.
 
         Negative amounts are summed per character across the whole batch and checked
-        against availability; positives never fund negatives in the same batch. If
-        specs for one character give different `exclude_trade` values, the first
-        non-None one is used.
+        against availability; positives never fund negatives in the same batch.
         """
         specs = [dict(s) for s in specs]
         with self.atomic():
@@ -135,12 +110,9 @@ class LedgerService(BaseService, ClubScopedService):
             spend_coins = defaultdict(int)
             spend_items = defaultdict(lambda: defaultdict(int))
             characters = {}
-            exclude = {}
             for spec in specs:
                 c = spec["character"]
                 characters[c.pk] = c
-                if exclude.get(c.pk) is None:
-                    exclude[c.pk] = spec.get("exclude_trade")
                 for line in spec["lines"]:
                     if line.coins < 0:
                         spend_coins[c.pk] += -line.coins
@@ -149,12 +121,12 @@ class LedgerService(BaseService, ClubScopedService):
 
             for pk, needed in spend_coins.items():
                 c = characters[pk]
-                have = self.available_coins(c, exclude[pk])
+                have = self.available_coins(c)
                 if needed > have:
                     raise InsufficientFunds(f"{c} has {have} cp available but needs {needed} cp.")
             for pk, items in spend_items.items():
                 c = characters[pk]
-                avail = self.available_items(c, exclude[pk])
+                avail = self.available_items(c)
                 for item, needed in items.items():
                     have = avail.get(item.pk, 0)
                     if needed > have:
@@ -197,7 +169,6 @@ class LedgerService(BaseService, ClubScopedService):
         shop=None,
         agent_batch=None,
         reverses=None,
-        exclude_trade=None,
         source_message=None,
     ):
         return self.record_many(
@@ -213,7 +184,6 @@ class LedgerService(BaseService, ClubScopedService):
                     shop=shop,
                     agent_batch=agent_batch,
                     reverses=reverses,
-                    exclude_trade=exclude_trade,
                     source_message=source_message,
                 )
             ]
@@ -250,20 +220,20 @@ def item_quantities(character):
     return _service.item_quantities(character)
 
 
-def held_coins(character, exclude_trade=None):
-    return _service.held_coins(character, exclude_trade)
+def held_coins(character):
+    return _service.held_coins(character)
 
 
-def held_items(character, exclude_trade=None):
-    return _service.held_items(character, exclude_trade)
+def held_items(character):
+    return _service.held_items(character)
 
 
-def available_coins(character, exclude_trade=None):
-    return _service.available_coins(character, exclude_trade)
+def available_coins(character):
+    return _service.available_coins(character)
 
 
-def available_items(character, exclude_trade=None):
-    return _service.available_items(character, exclude_trade)
+def available_items(character):
+    return _service.available_items(character)
 
 
 def record(
@@ -277,7 +247,6 @@ def record(
     shop=None,
     agent_batch=None,
     reverses=None,
-    exclude_trade=None,
     source_message=None,
 ):
     return _service.record(
@@ -291,7 +260,6 @@ def record(
         shop=shop,
         agent_batch=agent_batch,
         reverses=reverses,
-        exclude_trade=exclude_trade,
         source_message=source_message,
     )
 
