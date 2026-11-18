@@ -35,7 +35,6 @@ THEMED_H1_ALLOWLIST = [
     ("characters/print.html", "Print page uses print-specific layout"),
     ("characters/print_item_choose.html", "Print page uses print-specific layout"),
     ("characters/slips.html", "Slips picker uses themed header"),
-    ("trades/edit_side.html", "Trade edit uses custom layout"),
     ("shops/browse/detail.html", "Shop detail uses banner layout"),
     # Modal pages and print variants may not have h1
 ]
@@ -43,7 +42,6 @@ THEMED_H1_ALLOWLIST = [
 # Page names that are modal/partial and don't have h1
 MODAL_PAGE_NAMES = {
     "items-references",
-    "trades-poll",  # JSON API endpoint, no HTML
 }
 
 # Templates that are widgets/partials and don't extend base.html

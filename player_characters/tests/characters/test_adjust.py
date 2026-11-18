@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from items.models import Item
 from ledger.models import LedgerEntry
-from ledger.services import available_coins, coin_balance, item_quantities
+from ledger.services import coin_balance, item_quantities
 
 pytestmark = pytest.mark.django_db
 
@@ -100,19 +100,6 @@ def test_take_beyond_available(login, game_master, club, funded, item):
     assert entries(funded).count() == before
 
 
-@pytest.mark.story("U14")
-def test_take_held_fails(login, game_master, club, funded, item, make_open_trade):
-    make_open_trade(items={item: 5}, coins=1000)
-    before = entries(funded).count()
-    c = login(game_master)
-    assert (
-        c.post(url(club, funded, "adjust"), payload(item, 1, direction="take")).status_code == 200
-    )
-    assert c.post(url(club, funded, "adjust"), payload(cp=1, direction="take")).status_code == 200
-    assert entries(funded).count() == before
-    assert available_coins(funded) == 0
-
-
 @pytest.mark.story("U3")
 def test_retired_item_refused(login, game_master, club, character, item):
     item.retired = True
@@ -156,25 +143,6 @@ def test_consume(login, game_master, club, funded, item):
     assert all(line.coins <= 0 and line.quantity <= 0 for line in e.lines.all())
     assert coin_balance(funded) == 900
     assert item_quantities(funded)[item.pk] == 3
-
-
-@pytest.mark.story("U7")
-def test_consume_held_refused(login, game_master, club, funded, item, second_item, make_open_trade):
-    make_open_trade(items={item: 5})
-    before = entries(funded).count()
-    c = login(game_master)
-    assert c.post(url(club, funded, "consume"), payload(item, 1)).status_code == 200
-    assert c.post(url(club, funded, "consume"), payload(second_item, 1)).status_code == 200
-    assert entries(funded).count() == before
-
-
-@pytest.mark.story("U7")
-def test_consume_partly_held_overflow(login, game_master, club, funded, item, make_open_trade):
-    make_open_trade(items={item: 3})
-    before = entries(funded).count()
-    r = login(game_master).post(url(club, funded, "consume"), payload(item, 4))
-    assert r.status_code == 200
-    assert entries(funded).count() == before
 
 
 @pytest.mark.story("U3")

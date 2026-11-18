@@ -2,7 +2,7 @@ import pytest
 
 from ledger.models import LedgerEntry
 from ledger.services import InsufficientItems, coin_balance, item_quantities
-from player_characters.models import Character, Trade, TradeLine
+from player_characters.models import Character
 from quests import services
 from quests.models import QuestCompletion
 
@@ -29,24 +29,6 @@ def test_success(quest, character, player, item, reward_item, give):
 @pytest.mark.story("Q1")
 def test_missing_items(quest, character, player, item, give):
     give(character, item, 1)
-    before = LedgerEntry.objects.count()
-    with pytest.raises(InsufficientItems):
-        services.turn_in(quest, character, player)
-    assert LedgerEntry.objects.count() == before
-    assert QuestCompletion.objects.count() == 0
-
-
-@pytest.mark.story("Q1")
-def test_held_items_fail(quest, character, player, item, give, club, other_player):
-    from accounts.models import Membership
-
-    give(character, item, 2)
-    other = Character.objects.create(
-        club=club, owner=Membership.objects.get(user=other_player, club=club), name="Borin"
-    )
-    trade = Trade.objects.create(club=club, sender=character, receiver=other)
-    assert trade.status == Trade.Status.REQUESTED
-    TradeLine.objects.create(trade=trade, item=item, quantity=1, from_sender=True)
     before = LedgerEntry.objects.count()
     with pytest.raises(InsufficientItems):
         services.turn_in(quest, character, player)

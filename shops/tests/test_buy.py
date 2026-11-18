@@ -4,7 +4,6 @@ from django.urls import reverse
 from items.models import Item
 from ledger.models import LedgerEntry
 from ledger.services import InsufficientFunds, Line, record
-from player_characters.models import Trade, TradeLine
 from shops.buying import buy
 from shops.models import ShopStock
 from shops.services import AlreadySold, NotStocked, ShopClosed
@@ -66,17 +65,6 @@ def test_cannot_afford(club, shop, always_open, stock, character, player, login)
     resp = login(player).post(url(club, shop, stock), {"character": character.pk, "quantity": 1})
     assert resp.status_code == 200
     assert "cannot afford this: needs 1 gp, has 0 cp available" in resp.content.decode()
-    assert purchases().count() == 0
-    stock.refresh_from_db()
-    assert stock.quantity == 2
-
-
-@pytest.mark.story("C2")
-def test_held_coins_cannot_be_spent(club, shop, always_open, stock, rich_character, funded_other):
-    trade = Trade.objects.create(club=club, sender=rich_character, receiver=funded_other)
-    TradeLine.objects.create(trade=trade, from_sender=True, coins=950)
-    with pytest.raises(InsufficientFunds):
-        buy(rich_character, stock)
     assert purchases().count() == 0
     stock.refresh_from_db()
     assert stock.quantity == 2

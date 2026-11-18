@@ -11,7 +11,6 @@ from accounts.dashboard_providers import (
 from accounts.models import Membership, Message, User
 from ledger.services import Line, record_many
 from player_characters.junk import JunkMark
-from player_characters.models import Character, Trade
 
 
 @pytest.fixture
@@ -69,7 +68,6 @@ def test_provider_get_context_returns_expected_keys(provider, player, club, char
     assert "downtime_balance" in ctx
     assert "junk_count" in ctx
     assert "junk_value" in ctx
-    assert "open_trades" in ctx
     assert "unread_count" in ctx
 
 
@@ -123,26 +121,6 @@ def test_provider_context_junk_count_and_value(provider, player, club, character
     # junk_count is the number of junk rows (one per marked item)
     assert ctx["junk_count"] == 1
     assert ctx["junk_value"] == 500
-
-
-@pytest.mark.django_db
-def test_provider_context_open_trades(provider, player, club, character, other_player):
-    """open_trades lists trades involving the character's membership."""
-    other_char = Character.objects.create(
-        club=club, owner=_membership(other_player, club), name="Other"
-    )
-
-    trade = Trade.objects.create(
-        club=club, sender=character, receiver=other_char, status=Trade.Status.REQUESTED
-    )
-
-    request = MockRequest(club, player)
-    membership = _membership(player, club)
-
-    ctx = provider.get_context(request, club, character, membership)
-
-    assert len(ctx["open_trades"]) == 1
-    assert ctx["open_trades"][0]["trade"].pk == trade.pk
 
 
 @pytest.mark.django_db

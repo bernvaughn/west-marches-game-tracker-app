@@ -109,21 +109,6 @@ def test_bulk_award_coins_and_items_mixed(
 
 
 @pytest.mark.story("S8")
-def test_bulk_award_atomic_failure(
-    login, game_master, club, funded, second_character, item, make_open_trade
-):
-    """If one character fails, none should be awarded."""
-    make_open_trade(items={item: 5})
-    c = login(game_master)
-    data = bulk_payload(
-        [funded, second_character],
-        {funded: [(item, 1)], second_character: [(item, 1)]},
-    )
-    r = c.post(bulk_award_url(club), data)
-    assert r.status_code == 200 or r.status_code == 302
-
-
-@pytest.mark.story("S8")
 def test_bulk_award_redirects_to_ledger(login, game_master, club, character, second_character):
     c = login(game_master)
     r = c.post(

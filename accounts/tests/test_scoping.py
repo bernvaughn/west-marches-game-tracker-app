@@ -2,7 +2,6 @@ import pytest
 from django.urls import reverse
 
 from accounts.models import Membership
-from player_characters.models import Trade, TradeLine
 
 pytestmark = pytest.mark.story("FOUNDATION")
 
@@ -48,12 +47,8 @@ def test_for_club_filters_child_models(club, other_club, player, character):
     other_owner = Membership.objects.create(user=player, club=other_club)
     from player_characters.models import Character
 
-    other_char = Character.objects.create(club=other_club, owner=other_owner, name="Zed")
-    t1 = Trade.objects.create(club=club, sender=character, receiver=character)
-    t2 = Trade.objects.create(club=other_club, sender=other_char, receiver=other_char)
-    TradeLine.objects.create(trade=t1)
-    TradeLine.objects.create(trade=t2)
-    assert TradeLine.objects.for_club(club).count() == 1
+    Character.objects.create(club=other_club, owner=other_owner, name="Zed")
+    assert Character.objects.for_club(club).count() == 1
     HexMap.objects.create(club=club, name="M1")
     HexMap.objects.create(club=other_club, name="M2")
     assert Tile.objects.for_club(club).count() == 1

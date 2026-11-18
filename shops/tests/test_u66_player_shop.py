@@ -6,7 +6,7 @@ from items.models import Item
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_coins, coin_balance, item_quantities, record
 from player_characters import junk, player_shop
-from player_characters.models import Character, JunkMark, Trade, TradeLine
+from player_characters.models import Character, JunkMark
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U66")]
 HX = {"HTTP_HX_REQUEST": "true"}
@@ -44,26 +44,6 @@ def test_listing_is_junk_quantity(seller, item):
     assert [(r.item, r.quantity, r.price) for r in rows] == [(item, 3, 100)]
     assert player_shop.has_listing(seller)
     assert player_shop.listed_quantity(seller) == 3
-
-
-def test_listing_capped_by_available_and_returns_after_release(seller, item, other_character, club):
-    trade = Trade.objects.create(
-        club=club, sender=seller, receiver=other_character, status="requested"
-    )
-    TradeLine.objects.create(trade=trade, from_sender=True, item=item, quantity=4)
-    assert player_shop.listed_rows(seller)[0].quantity == 1
-    trade.status = "cancelled"
-    trade.save()
-    assert player_shop.listed_rows(seller)[0].quantity == 3
-
-
-def test_fully_held_item_left_out(seller, item, other_character, club):
-    trade = Trade.objects.create(
-        club=club, sender=seller, receiver=other_character, status="requested"
-    )
-    TradeLine.objects.create(trade=trade, from_sender=True, item=item, quantity=5)
-    assert player_shop.listed_rows(seller) == []
-    assert not player_shop.has_listing(seller)
 
 
 def test_closed_shop_lists_nothing(seller):

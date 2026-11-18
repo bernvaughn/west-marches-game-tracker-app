@@ -106,15 +106,6 @@ def test_anonymous_redirects_to_login(client, club, character, name):
 # helpers
 
 
-def test_inventory_rows_owned_held_available(funded, item, other_character, make_open_trade):
-    make_open_trade(items={item: 2}, coins=300)
-    (row,) = inventory_rows(funded)
-    assert (row.item, row.owned, row.held, row.available) == (item, 5, 2, 3)
-    summary = coin_summary(funded)
-    assert (summary.owned, summary.held, summary.available) == (1000, 300, 700)
-    assert summary.has_holds
-
-
 def test_inventory_rows_order_retired_and_zero(funded, item, second_item):
     record(funded, "award", [Line(item=second_item, quantity=2)])
     item.retired = True
