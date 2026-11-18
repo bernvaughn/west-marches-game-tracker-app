@@ -17,7 +17,6 @@ from ledger.services import (
     record,
     record_many,
 )
-from player_characters.models import Trade
 
 pytestmark = [pytest.mark.story("FOUNDATION"), pytest.mark.django_db]
 
@@ -36,35 +35,15 @@ def test_balance_and_quantities_are_sums(character, item, second_item):
     assert item_quantities(character) == {item.pk: 2}
 
 
-@pytest.mark.parametrize("status", [Trade.Status.REQUESTED, Trade.Status.ACCEPTED])
-def test_open_trade_sender_lines_held(funded, item, open_trade, status):
-    open_trade(status, lines=[dict(coins=300), dict(item=item, quantity=2)])
-    assert held_coins(funded) == 300
-    assert held_items(funded) == {item.pk: 2}
-    assert available_coins(funded) == 700
-    assert available_items(funded) == {item.pk: 3}
+def test_held_coins_and_items_are_zero(character):
+    assert held_coins(character) == 0
+    assert held_items(character) == {}
 
 
-@pytest.mark.parametrize(
-    "status", [Trade.Status.COMPLETED, Trade.Status.DECLINED, Trade.Status.CANCELLED]
-)
-def test_closed_trade_not_held(funded, open_trade, status):
-    open_trade(status, lines=[dict(coins=300)])
-    assert held_coins(funded) == 0
-
-
-def test_receiver_give_side_held(funded, other_character, open_trade):
-    open_trade(sender=other_character, receiver=funded, lines=[dict(from_sender=False, coins=400)])
-    assert held_coins(funded) == 400
-    assert held_coins(other_character) == 0
-
-
-def test_exclude_trade_removes_one_hold(funded, open_trade):
-    t1 = open_trade(lines=[dict(coins=300)])
-    open_trade(lines=[dict(coins=100)])
-    assert available_coins(funded) == 600
-    assert available_coins(funded, exclude_trade=t1) == 900
-    assert available_coins(funded, exclude_trade=t1.pk) == 900
+def test_available_equals_balance(character, item):
+    record(character, "award", [Line(coins=500), Line(item=item, quantity=3)])
+    assert available_coins(character) == coin_balance(character)
+    assert available_items(character) == item_quantities(character)
 
 
 def test_insufficient_funds_writes_nothing(funded):
@@ -79,20 +58,6 @@ def test_insufficient_items_writes_nothing(funded, item):
     with pytest.raises(InsufficientItems):
         record(funded, "consumed", [Line(item=item, quantity=-6)])
     assert LedgerEntry.objects.count() == before
-
-
-def test_held_blocks_spend(funded, item, open_trade):
-    open_trade(lines=[dict(item=item, quantity=4), dict(coins=900)])
-    with pytest.raises(InsufficientItems):
-        record(funded, "consumed", [Line(item=item, quantity=-2)])
-    with pytest.raises(InsufficientFunds):
-        record(funded, "purchase", [Line(coins=-200)])
-
-
-def test_exclude_trade_allows_completion(funded, open_trade):
-    trade = open_trade(lines=[dict(coins=900)])
-    record(funded, "trade", [Line(coins=-900)], exclude_trade=trade)
-    assert coin_balance(funded) == 100
 
 
 def test_positive_does_not_fund_negative_in_same_entry(character):
@@ -152,8 +117,8 @@ def test_record_many_all_or_nothing(funded, other_character):
 def test_record_many_writes_all(funded, other_character):
     entries = record_many(
         [
-            dict(character=funded, kind="trade", lines=[Line(coins=-100)]),
-            dict(character=other_character, kind="trade", lines=[Line(coins=100)]),
+            dict(character=funded, kind="purchase", lines=[Line(coins=-100)]),
+            dict(character=other_character, kind="award", lines=[Line(coins=100)]),
         ]
     )
     assert len(entries) == 2
