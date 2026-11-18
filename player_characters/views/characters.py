@@ -139,6 +139,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "can_request_points": owns_character(request.user, character) and not (admin or gm),
             "is_owner": owns_character(request.user, character),
             "can_handover": admin,
+            "show_starting_animation": request.GET.get("starting_equipment") == "1",
         }
         if can_view:
             char_ctx = self.get_character_context(character)

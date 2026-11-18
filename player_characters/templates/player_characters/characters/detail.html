@@ -31,6 +31,9 @@
       <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
       <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
       {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
+      {% if show_starting_animation %}
+        {% include "player_characters/characters/_starting_coins_animation.html" with starting_coins=coins.owned %}
+      {% endif %}
     </section>
     <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-abilities">
       <h2 class="wm-sheet-box-title" id="sheet-abilities">Abilities</h2>
