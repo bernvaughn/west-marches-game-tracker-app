@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{% if entry %}Edit {{ entry.item.name }}{% else %}New magic item option{% endif %}{% endblock %}
+
+{% block content %}
+{% url list_url as back_url %}
+{% include "components/page_header.html" with title=page_title subtitle=template.name back_url=back_url back_label="Options" %}
+
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+
+  <div class="wm-field mb-3">
+    <label class="form-label mb-1" for="{{ form.item.id_for_label }}">Item{% if form.item.field.required %}<span class="wm-required" aria-hidden="true">*</span>{% endif %}</label>
+    {% include "starting_equipment/_item_picker.html" with form=form club=club %}
+    {{ form.item.errors }}
+  </div>
+
+  {{ form.max_per_character }}
+  {{ form.notes }}
+
+  <div class="wm-form-actions mt-3">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

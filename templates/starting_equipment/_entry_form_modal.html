@@ -1,0 +1,35 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ request.path }}" hx-post="{{ request.path }}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{% if entry %}Edit {{ entry }}{% else %}New {{ page_title }}{% endif %}{% endblock %}
+{% block body %}
+{{ form.non_field_errors }}
+{{ form }}
+{% if formset %}
+<h3 class="mt-3 mb-2">Items</h3>
+{{ formset.management_form }}
+<div id="line-forms" class="mb-3">
+  {% for line_form in formset.forms %}
+  <div class="row g-2 line-row mb-2 border-start border-secondary">
+    <div class="col-md-4 col-lg-5">{% include "starting_equipment/_item_picker.html" with form=line_form club=club %}</div>
+    <div class="col-md-2 col-lg-2">{{ line_form.quantity }}</div>
+    <div class="col-md-2 col-lg-3 d-flex align-items-end">{{ line_form.is_choice.tag }}<label class="form-check-label ms-2 mb-0">{{ line_form.is_choice.label }}</label></div>
+    <div class="col-md-2 col-lg-2">{{ line_form.choice_group }}</div>
+    <div class="col-md-2 col-lg-1 d-flex align-items-end">
+      {% if not forloop.last or line_form.instance.pk %}
+      <button type="button" class="btn btn-outline-danger btn-sm remove-line w-100">Remove</button>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Save</button>
+{% endblock %}

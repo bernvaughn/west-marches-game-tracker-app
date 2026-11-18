@@ -1,0 +1,22 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ request.path }}" hx-post="{{ request.path }}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{% if entry %}Edit {{ entry.item.name }}{% else %}New magic item option{% endif %}{% endblock %}
+{% block body %}
+{{ form.non_field_errors }}
+<div class="wm-field mb-3">
+  <label class="form-label mb-1" for="{{ form.item.id_for_label }}">Item{% if form.item.field.required %}<span class="wm-required" aria-hidden="true">*</span>{% endif %}</label>
+  {% include "starting_equipment/_item_picker.html" with form=form club=club %}
+  {{ form.item.errors }}
+</div>
+{{ form.max_per_character }}
+{{ form.notes }}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Save</button>
+{% endblock %}

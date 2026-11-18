@@ -1,0 +1,77 @@
+{% extends "starting_equipment/base.html" %}
+{% block title %}{{ page_title }} - {{ club.name }}{% endblock %}
+
+{% block body %}
+{% url 'starting_equipment:template_detail' club.slug template.pk as back_url %}
+{% include "components/page_header.html" with title=page_title subtitle=template.name back_url=back_url back_label="Template" action_url=create_url action_label="Add entry" action_icon="plus-lg" %}
+
+{% if entries %}
+<table class="table table-striped align-middle sm">
+  <thead>
+    <tr>
+      {% if entry_type == "class" %}
+      <th>Character class</th><th class="text-center">Levels</th><th class="text-end">Coins (cp)</th><th>Items</th>
+      {% elif entry_type == "background" %}
+      <th>Background</th><th class="text-end">Coins (cp)</th><th>Items</th>
+      {% elif entry_type == "level-coins" %}
+      <th class="text-center">Level</th><th class="text-end">Coins (cp)</th>
+      {% elif entry_type == "magic-options" %}
+      <th>Item</th><th class="text-center">Max per character</th><th>Notes</th>
+      {% endif %}
+      <th class="text-end">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in entries %}
+    <tr>
+      {% if entry_type == "class" %}
+      <td>{{ entry.char_class }}</td>
+      <td class="text-center">{{ entry.min_level }}&ndash;{{ entry.max_level }}</td>
+      <td class="text-end">{{ entry.coins_cp }}</td>
+      <td>
+        {% for line in entry.lines.all %}
+        {{ line.quantity }}&times; {{ line.item.name }}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+        <span class="text-muted">&mdash;</span>
+        {% endfor %}
+      </td>
+      {% elif entry_type == "background" %}
+      <td>{{ entry.background }}</td>
+      <td class="text-end">{{ entry.coins_cp }}</td>
+      <td>
+        {% for line in entry.lines.all %}
+        {{ line.quantity }}&times; {{ line.item.name }}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}{% if not forloop.last %}, {% endif %}
+        {% empty %}
+        <span class="text-muted">&mdash;</span>
+        {% endfor %}
+      </td>
+      {% elif entry_type == "level-coins" %}
+      <td class="text-center">{{ entry.level }}</td>
+      <td class="text-end">{{ entry.coins_cp }}</td>
+      {% elif entry_type == "magic-options" %}
+      <td>{{ entry.item.name }}</td>
+      <td class="text-center">{{ entry.max_per_character }}</td>
+      <td>{{ entry.notes|default:"&mdash;" }}</td>
+      {% endif %}
+      <td class="text-end">
+        <a href="{% url edit_url_name club.slug template.pk entry.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+        <a
+          href="{% url delete_url_name club.slug template.pk entry.pk %}"
+          hx-get="{% url delete_url_name club.slug template.pk entry.pk %}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          class="btn btn-sm btn-outline-danger"
+          title="Delete {{ entry }}"
+          aria-label="Delete {{ entry }}"
+        >
+          Delete
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+{% include "components/empty_state.html" with text="No entries yet." action_url=create_url action_label="Add entry" %}
+{% endif %}
+{% endblock %}
