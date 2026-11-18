@@ -40,8 +40,6 @@ class LedgerEntry(AppendOnlyModel):
         PURCHASE = "purchase", "Purchase"
         SALE = "sale", "Sale"
         PLAYER_SHOP = "player_shop", "Player shop"
-        TRADE = "trade", "Trade"
-        TRANSFER = "transfer", "Transfer"
         QUEST_TURN_IN = "quest_turn_in", "Quest turn-in"
         QUEST_REWARD = "quest_reward", "Quest reward"
         CONSUMED = "consumed", "Consumed"
