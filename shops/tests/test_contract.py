@@ -11,6 +11,7 @@ from shops.services import AlreadySold, NotStocked, ShopClosed, ShopError, is_op
 from shops.views import browse, manage, rotations
 from shops.views import buy as buy_views
 from shops.views import sell as sell_views
+from shops.views import sell_junk
 
 pytestmark = [pytest.mark.story("FOUNDATION"), pytest.mark.django_db]
 
@@ -20,6 +21,8 @@ VIEWS = {
     "stock_fragment": browse.StockFragmentView,
     "buy": buy_views.buy,
     "sell_item": sell_views.sell_item,
+    "sell_junk": sell_junk.sell_junk,
+    "sell_junk_pick": sell_junk.pick_shop,
     "manage_list": manage.shop_list,
     "manage_create": manage.shop_create,
     "manage_edit": manage.shop_edit,
@@ -31,7 +34,7 @@ VIEWS = {
     "rotation_edit": rotations.rotation_edit,
     "rotation_delete": rotations.rotation_delete,
 }
-MEMBER = ["index", "detail", "stock_fragment", "buy", "sell_item"]
+MEMBER = ["index", "detail", "stock_fragment", "buy", "sell_item", "sell_junk", "sell_junk_pick"]
 ADMIN_GET = [
     "manage_list", "manage_create", "manage_edit", "stock_add", "stock_edit",
     "rotation_list", "rotation_create", "rotation_edit",
@@ -41,7 +44,7 @@ ADMIN_POST = ["stock_remove", "rotation_delete"]
 
 def url(name, club, shop, stock, rotation):
     kwargs = {"club_slug": club.slug}
-    if name in {"detail", "stock_fragment", "buy", "sell_item", "manage_edit", "stock_add",
+    if name in {"detail", "stock_fragment", "buy", "sell_item", "sell_junk", "manage_edit", "stock_add",
                 "stock_edit", "stock_remove"}:  # fmt: skip
         kwargs["shop_id"] = shop.pk
     if name == "sell_item":
@@ -74,7 +77,7 @@ def test_urls_resolve(ctx):
 
 def test_member_urls_ok(login, player, ctx):
     for name in MEMBER:
-        expected = 302 if name == "sell_item" else 200  # GET redirects to the shop page
+        expected = 302 if name in {"sell_item", "sell_junk_pick"} else 200
         assert get(login(player), name, ctx).status_code == expected
 
 

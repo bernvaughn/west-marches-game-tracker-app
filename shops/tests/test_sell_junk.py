@@ -1,3 +1,5 @@
+from datetime import date
+
 import pytest
 from django.urls import reverse
 
@@ -6,6 +8,7 @@ from ledger.models import LedgerEntry
 from ledger.services import Line, available_coins, item_quantities, record
 from player_characters.junk import junk_rows, set_junk
 from quests.models import Quest, QuestRequirement
+from shops.models import Rotation, Shop
 from shops.selling import SellLineError, sell_many
 from shops.services import ShopError
 
@@ -157,8 +160,38 @@ def test_total_follows_ticks_and_quantities(club, login, player, junked, shop, i
         return body[body.index('id="junk-total"') :].split("</p>")[0]
 
     assert "0 cp" in total({f"qty_{item.pk}": "3", f"qty_{torch.pk}": "4"})
-    assert "1 gp</span></strong>" in total(
+    assert "1 gp</strong>" in total(
         {"item": [item.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
     )
     both = {"item": [item.pk, torch.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
     assert "2 sp" in total(both)
+
+
+def pick_url(club):
+    return reverse("shops:sell_junk_pick", args=[club.slug])
+
+
+def test_pick_shop_no_shops_shows_no_shops_message(club, login, player, character):
+    body = login(player).get(pick_url(club), HTTP_HX_REQUEST="true").content.decode()
+    assert "No shops are open right now" in body
+
+
+def test_pick_shop_single_shop_redirects(club, login, player, junked, shop):
+    r = login(player).get(pick_url(club), HTTP_HX_REQUEST="true")
+    assert r.status_code == 204
+    assert r.headers["HX-Redirect"] == reverse("shops:sell_junk", args=[club.slug, shop.pk])
+
+
+def test_pick_shop_multiple_shops_shows_picker(club, login, player, junked, shop):
+    second_shop = Shop.objects.create(club=club, name="Second Shop")
+    Rotation.objects.create(club=club, name="Open", open_date=date(2000, 1, 1)).shops.add(
+        shop, second_shop
+    )
+    body = login(player).get(pick_url(club), HTTP_HX_REQUEST="true").content.decode()
+    assert "Sell junk — pick a shop" in body
+    assert "Second Shop" in body
+
+
+def test_pick_shop_no_character_404(club, login, other_player, always_open):
+    r = login(other_player).get(pick_url(club), HTTP_HX_REQUEST="true")
+    assert r.status_code == 404
