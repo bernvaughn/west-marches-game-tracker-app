@@ -1,0 +1,11 @@
+{% extends "components/_confirm_modal.html" %}
+{% load i18n %}
+
+{% block title %}Delete Template{% endblock %}
+
+{% block summary %}
+<p>Are you sure you want to delete the starting equipment template <strong>"{{ template.name }}"</strong>?</p>
+<p class="text-danger">This will also delete all associated class entries, background entries, level coins, and magic item options. This action cannot be undone.</p>
+{% endblock %}
+
+{% block confirm_label %}Delete{% endblock %}
