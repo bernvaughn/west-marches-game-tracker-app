@@ -6,15 +6,15 @@ Roles and permissions:
 
 - **Site admin**: runs the whole site (you). Sees every club and sets up the donate button.
 - Inside each club, **admin** and **game master (GM)** are two separate permissions on an account. A club's admins are expected to be the same people as its game masters, but one account can hold either permission or both.
-  - **Club admin**: manages the club's email whitelist, shops, items, and content.
-  - **Game master (GM)**: runs a game; awards loot and keeps track of what players use up.
+  - **Club admin**: manages the club's email whitelist, shops, items, content, starting equipment templates, and magic item starting options.
+  - **Game master (GM)**: runs a game; awards loot, keeps track of what players use up, and approves or declines magic starting item requests via the inbox.
 - **Player**: owns one or more characters and spends their coins. Anyone in a club without those permissions is a player. Game masters can also own characters and play as players when they are not running a session. A person can have characters in more than one club, but a character never moves between clubs.
 
 In the stories below, "admin" means a club admin, except U11 (donate button) and C7 and C8 (backup and cost), which are the site admin's.
 
 A **club** is a group of people and its data (players, characters, shops, items). Data in one club is never visible to another.
 
-Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `ledger`, `map`, `quests`, `agent_access`. Lore is out of scope for now (see Later).
+Apps (names tentative; see the README): `accounts`, `player_characters`, `items`, `shops`, `ledger`, `map`, `quests`, `agent_access`, `starting_equipment`. Lore is out of scope for now (see Later).
 
 ## Stories
 
@@ -732,6 +732,11 @@ Stories for the player experience of starting equipment: automatic grants on cha
 **U103 Magic Request Status.** As a player, I want to see the status of my magic item request on my character sheet, so I know if it was approved or declined. *(player_characters, starting_equipment)*
 - The status is rendered via an HTMX partial (`_status_row.html`).
 - It shows `PENDING`, `APPROVED`, or `DECLINED` with the admin's decision note.
+
+**U104 Player shops unchanged.** As anyone, I want player shops (U66/U67) to remain unchanged by starting equipment changes, so the safe player-to-player economy continues to work as before. *(shops, player_characters, starting_equipment)*
+- Player shops continue to use fixed base value pricing (S1).
+- Starting equipment changes do not affect player shop inventory, pricing, or street placement.
+- Player shops remain the safe alternative to removed transfers and trades (U15/U16).
 
 ## Quests
 
