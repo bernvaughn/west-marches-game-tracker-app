@@ -8,10 +8,9 @@ from items.models import Item
 from shops import buying
 from shops.models import Rotation, Shop, ShopStock
 from shops.services import AlreadySold, NotStocked, ShopClosed, ShopError, is_open, open_shops
-from shops.views import browse, manage, rotations
+from shops.views import browse, manage, rotations, sell_junk
 from shops.views import buy as buy_views
 from shops.views import sell as sell_views
-from shops.views import sell_junk
 
 pytestmark = [pytest.mark.story("FOUNDATION"), pytest.mark.django_db]
 
@@ -44,8 +43,10 @@ ADMIN_POST = ["stock_remove", "rotation_delete"]
 
 def url(name, club, shop, stock, rotation):
     kwargs = {"club_slug": club.slug}
-    if name in {"detail", "stock_fragment", "buy", "sell_item", "sell_junk", "manage_edit", "stock_add",
-                "stock_edit", "stock_remove"}:  # fmt: skip
+    if name in {
+        "detail", "stock_fragment", "buy", "sell_item", "sell_junk",
+        "manage_edit", "stock_add", "stock_edit", "stock_remove",
+    }:  # fmt: skip
         kwargs["shop_id"] = shop.pk
     if name == "sell_item":
         kwargs["item_id"] = stock.item_id
