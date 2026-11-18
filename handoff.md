@@ -1,29 +1,49 @@
-Hand-off to review for task "Remove Trade/Transfer Navigation Entries" (01a1e7c9-f1d3-7186-bab0-e9718150b902).
+# Hand-off: Extract Map Credit Logic to Service
 
-## What the change does
-The change removes all trade and transfer navigation entries. It also removes the trade dashboard and approval providers.
+## Task
+Move the complex map credit logic from `MapDashboardProvider._get_uncredited_data()` in `accounts/dashboard_providers.py` to a dedicated service function `get_uncredited_tiles()` in `map/services.py`.
 
-## Key files and decisions
-- player_characters/apps.py: removed the "trades" group ("My trades", "Propose trade") and the "Move items" (characters:transfer_start) entry.
-- accounts/apps.py: removed the TradesDashboardProvider and open_trades_needing_action imports and their registrations.
-- accounts/approval_providers.py: removed the open_trades_needing_action function.
-- accounts/dashboard_providers.py: removed the TradesDashboardProvider class and the OPEN import from trade_services.
-- accounts/navigation.py: removed "trades" from GROUPS and MENU_GROUPS.
-- Tests updated: test_approvals_indicator.py, test_navigation_menus.py, test_u60_top_bar.py, test_u61_top_bar.py.
+## What Was Done (Plan Stage)
+1. **Explored the codebase** - Read the relevant files:
+   - `accounts/dashboard_providers.py` - Contains `MapDashboardProvider` with `_get_uncredited_data()` method
+   - `map/services.py` - Existing map services (where new function will be added)
+   - `map/models.py` - Map-related models (TileVisit, HexMap, Location, LocationCredit, FoundMark)
+   - `accounts/tests/test_dashboard_map_provider.py` - Existing tests for the provider
 
-## Decisions and rationale
-I merged origin/main into the branch. Main had already merged "Delete Trade Code" (#262), so the trade test files were gone and the downtime test now asserts Trades is absent. The transfers deletion story is not merged, so main still had the "Move items" entry. My task owns removing "Move items" from navigation, so I removed it and kept the matching test update. I resolved a conflict in accounts/approval_providers.py and test_navigation_menus.py in favour of my version.
+2. **Created implementation plan** - Saved to `plan.md`
 
-## Verification
-The full non-browser suite passes: 1780 passed in about 93 seconds. Ruff passes across the repo. CI pipeline #44161523295 is green (pytest, ruff, pip-audit). Re-recorded test and lint verifications against this green state. typecheck stays pass because the project has no typecheck tool.
+3. **Set acceptance criteria** - 11 items covering:
+   - New service function in `map/services.py` returning structured data (dataclass)
+   - Updated `MapDashboardProvider` to use the service
+   - Tests for the new service function
 
-## What is open
-Nothing is open at the code stage. All 9 code acceptance items are ticked. Items 10 to 15 are deferred to the verify stage.
+## Key Decisions
+- Use a **dataclass** `UncreditedTilesResult` for type-safe return value
+- The service function will be `get_uncredited_tiles(club, character)` 
+- It returns: maps_data (list of dicts with map and uncredited_count), total_uncredited, first_map (HexMap), first_map_uncredited_tiles (set of (q,r))
+- This matches the exact data structure the provider needs for template context
 
-## What the next stage should do first
-Review PR #260. It targets main. Confirm the diff is limited to the navigation and provider removals plus test updates. The non-browser suite and CI already pass, so the risk is low.
+## What the Next Agent (Code Stage) Should Do First
+1. **Add the service function to `map/services.py`**:
+   - Import required models (TileVisit, HexMap, Location, LocationCredit, FoundMark)
+   - Create `UncreditedTilesResult` dataclass
+   - Implement `get_uncredited_tiles(club, character)` with the logic from `_get_uncredited_data()`
+   - Handle all edge cases: no visits, no locations, full credit, partial credit
 
-## Links
-- MR: https://github.com/bernvaughn/west-marches-game-tracker-app/pull/260
-- Branch: task/e9718150b902
-- Artifact recorded on the task.
+2. **Update `accounts/dashboard_providers.py`**:
+   - Import `get_uncredited_tiles` from `map.services`
+   - Remove `_get_uncredited_data()` method from `MapDashboardProvider`
+   - Update `get_context()` and `should_show()` to call the service
+
+3. **Create tests in `map/tests/test_map_services.py`**:
+   - Port existing provider test cases to directly test the service
+   - Ensure all existing provider tests still pass
+
+## Files to Modify
+- `map/services.py` - Add new function
+- `accounts/dashboard_providers.py` - Update MapDashboardProvider
+- `map/tests/test_map_services.py` - New test file (create)
+
+## Dependencies
+- Upstream task "Unified Dashboard Provider System" (01a1e68f-ddc8-79f7-9df1-6ef168482fef) is done
+- No other blockers
