@@ -37,6 +37,7 @@ class AccountsConfig(AppConfig):
         from .dashboard_providers import (
             ConsumablesDashboardProvider,
             DowntimeDashboardProvider,
+            HeaderDashboardProvider,
             MapDashboardProvider,
             MessagesDashboardProvider,
             MyMessagesDashboardProvider,
@@ -57,6 +58,7 @@ class AccountsConfig(AppConfig):
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)
 
         # Register built-in dashboard providers
+        register_provider(HeaderDashboardProvider())
         register_provider(QuestsDashboardProvider())
         register_provider(DowntimeDashboardProvider())
         register_provider(MapDashboardProvider())

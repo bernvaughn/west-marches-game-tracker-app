@@ -20,8 +20,15 @@ from player_characters.selection import selected_character
 
 def _get_dashboard_context(request, club, character, membership):
     """Build the context dictionary for the player dashboard using providers."""
+    header_provider = get_provider("header")
+    header_ctx = {}
+    if header_provider is not None:
+        header_ctx = header_provider.get_context(request, club, character, membership)
+
     providers = []
     for provider in get_providers():
+        if provider.key == "header":
+            continue
         if provider.should_show(request, club, character, membership):
             ctx = provider.get_context(request, club, character, membership)
             providers.append(
@@ -33,30 +40,11 @@ def _get_dashboard_context(request, club, character, membership):
                 }
             )
 
-    # Build header context
-    coin_sum = coin_summary(character)
-    downtime_balance = downtime_services.balance(character)
-    junk = junk_rows(character)
-    junk_val = junk_value(character, junk)
-
-    from accounts.models import Message
-
-    unread_count = (
-        Message.objects.for_club(club)
-        .filter(status=Message.Status.OPEN)
-        .exclude(sender=membership)
-        .count()
-    )
-
     return {
         "character": character,
-        "coin_summary": coin_sum,
-        "downtime_balance": downtime_balance,
-        "junk_count": len(junk),
-        "junk_value": junk_val,
-        "unread_count": unread_count,
         "membership": membership,
         "dashboard_providers": providers,
+        **header_ctx,
     }
 
 
