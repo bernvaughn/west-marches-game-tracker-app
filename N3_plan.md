@@ -26,7 +26,7 @@ Add `pick_shop` view function:
 ### 2. `shops/urls.py` (modify)
 Add URL pattern:
 ```python
-path("sell-junk-pick/", sell_junk.pick_shop, name="sell_junk_pick"),
+(path("sell-junk-pick/", sell_junk.pick_shop, name="sell_junk_pick"),)
 ```
 
 ### 3. `shops/templates/shops/sell/_shop_picker_modal.html` (new)
@@ -72,7 +72,12 @@ def pick_shop(request, club_slug):
             return response
         return redirect(shop_url)
     # Render shop picker modal
-    return render_modal_or_page(request, "shops/sell/_shop_picker_modal.html", ..., {"character": character, "open_shops": open_shop_qs})
+    return render_modal_or_page(
+        request,
+        "shops/sell/_shop_picker_modal.html",
+        ...,
+        {"character": character, "open_shops": open_shop_qs},
+    )
 ```
 
 ### Button on character sheet

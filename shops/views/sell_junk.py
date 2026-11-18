@@ -26,9 +26,7 @@ def pick_shop(request, club_slug):
     if character is None:
         raise Http404("No character selected.")
     today = timezone.localdate()
-    open_shop_list = list(
-        open_shops(request.club, today).order_by("street_position", "name")
-    )
+    open_shop_list = list(open_shops(request.club, today).order_by("street_position", "name"))
     if not open_shop_list:
         return render_modal_or_page(
             request,
