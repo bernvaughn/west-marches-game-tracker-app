@@ -708,6 +708,31 @@ Story numbers continue from U95. U96 replaces the public-only note in U95.
 - Only game masters and club admins see it: on the item page, in the item modal (U97), the edit form and the catalogue. Players never see it anywhere, including the modal, printed item cards and loot cards, shop and inventory pages, trades and responses to players.
 - A game master's agent can read and propose the field like other item fields (A5). Everything else about an item is visible to players.
 
+## Round 12: Starting Equipment Player Stories
+
+Stories for the player experience of starting equipment: automatic grants on character creation, background field, coin animation, and magic item requests.
+
+**U99 Automatic Starting Equipment.** As a player, I want my new character to receive starting equipment and coins automatically based on their class, background, and level, so I don't need to ask an admin for basic gear. *(player_characters, starting_equipment, ledger)*
+- Template matching is case-insensitive on class and matches the character's background.
+- Starting coins come from the level coins table per the configured template.
+- Approved magic item requests are granted as part of the starting equipment.
+
+**U100 Background Field.** As a player, I want to set my character's background during creation, so my starting equipment includes background-appropriate gear. *(player_characters)*
+- The Character model has a `background` CharField with `max_length=60` and `blank=True`.
+
+**U101 Coin Animation.** As a player, I want to see a fun coin animation when I first view my new character, so the starting gold feels rewarding. *(player_characters)*
+- The animation is triggered by the `?starting_equipment=1` query param.
+- It respects `prefers-reduced-motion` and shows the result straight away when reduced motion is on.
+
+**U102 Request Magic Starting Item.** As a player, I want to request a magic item as starting equipment, so I can start with a special item if my admin allows it. *(player_characters, starting_equipment)*
+- A modal item picker lists only items flagged as `MagicItemStartingOption`.
+- Requesting creates a `StartingEquipmentRequest` with `PENDING` status.
+- The request appears in the club admins' and game masters' inbox for approval.
+
+**U103 Magic Request Status.** As a player, I want to see the status of my magic item request on my character sheet, so I know if it was approved or declined. *(player_characters, starting_equipment)*
+- The status is rendered via an HTMX partial (`_status_row.html`).
+- It shows `PENDING`, `APPROVED`, or `DECLINED` with the admin's decision note.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
