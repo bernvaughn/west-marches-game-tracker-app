@@ -249,7 +249,7 @@ def _apply_grant(request, msg, kind, data, lines):
 def _apply_batch_grant(request, msg, batch, club):
     """Apply a batch of grants, producing one ledger entry per type.
     Raise LedgerError to roll back.
-    
+
     Grant dict structure (stored as primitives in session):
     - kind: "coins" | "items" | "map"
     - character_pk: int (fetched with club scoping)
@@ -267,7 +267,7 @@ def _apply_batch_grant(request, msg, batch, club):
         coins_total = 0
         item_tuples = []  # List of (item_pk, quantity)
         map_entries = []  # List of grant dicts for map operations
-        
+
         first_grant = batch[0]
         character = club_queryset(request, Character).get(pk=first_grant["character_pk"])
         date_val = first_grant["date"]
@@ -303,6 +303,7 @@ def _apply_batch_grant(request, msg, batch, club):
         if item_tuples:
             from items.models import Item
             from ledger.services import Line as LedgerLine
+
             items_qs = Item.objects.for_club(club)
             item_map = {item.pk: item for item in items_qs}
             lines = [
@@ -326,12 +327,12 @@ def _apply_batch_grant(request, msg, batch, club):
             location = None
             hex_map = None
             q, r = grant.get("q"), grant.get("r")
-            
+
             if grant.get("location_pk"):
                 location = club_queryset(request, Location).get(pk=grant["location_pk"])
             elif grant.get("hex_map_pk"):
                 hex_map = club_queryset(request, HexMap).get(pk=grant["hex_map_pk"])
-            
+
             if map_kind == "visit":
                 if location is not None:
                     hex_map, q, r = location.tile.map, location.tile.q, location.tile.r
@@ -342,12 +343,16 @@ def _apply_batch_grant(request, msg, batch, club):
             elif map_kind in ("discovered", "explored"):
                 if location is not None:
                     map_services.add_to_credit(
-                            location, map_kind, [character], date_val, source_message=msg
-                        )
+                        location, map_kind, [character], date_val, source_message=msg
+                    )
             elif map_kind == "found":
                 if location is not None:
                     map_services.add_found_marks(
-                        location, [character], date_val, created_by=request.membership, source_message=msg
+                        location,
+                        [character],
+                        date_val,
+                        created_by=request.membership,
+                        source_message=msg,
                     )
 
         # Mark message handled if any grant requested it
@@ -467,7 +472,7 @@ def message_give(request, club_slug, pk, kind):
                 lines = formset_lines(formset, 1)
                 if not lines:
                     form.add_error(None, "Add at least one item.")
-        
+
         if form.is_valid() and (kind != "items" or lines):
             # Build grant dict from form data - STORE PRIMITIVES ONLY
             grant = {
@@ -483,8 +488,10 @@ def message_give(request, club_slug, pk, kind):
                 grant["item_tuples"] = [(ln.item.pk, ln.quantity) for ln in lines]
             if kind == "map":
                 grant["map_kind"] = form.cleaned_data.get("map_kind")
-                grant["location_pk"] = form.cleaned_data.get("location").pk if form.cleaned_data.get("location") else None
-                grant["hex_map_pk"] = form.cleaned_data.get("hex_map").pk if form.cleaned_data.get("hex_map") else None
+                loc = form.cleaned_data.get("location")
+                grant["location_pk"] = loc.pk if loc else None
+                hmap = form.cleaned_data.get("hex_map")
+                grant["hex_map_pk"] = hmap.pk if hmap else None
                 grant["q"] = form.cleaned_data.get("q")
                 grant["r"] = form.cleaned_data.get("r")
 

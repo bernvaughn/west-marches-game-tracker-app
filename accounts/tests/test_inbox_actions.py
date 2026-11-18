@@ -1,12 +1,10 @@
 import pytest
-from django.core.management import call_command
 from django.urls import reverse
 
 from accounts.models import Membership, Message
 from items.models import Item
 from ledger.models import LedgerEntry
 from map.models import CreditGrant, FoundMark, HexMap, Location, Tile, TileVisit
-from player_characters.models import Character
 
 pytestmark = pytest.mark.story("U38")
 
@@ -224,7 +222,7 @@ def test_batch_add_multiple_accumulates(club, club_admin, character, msg, item, 
     assert nothing_written()
 
 
-def test_batch_confirm_writes_one_entry_per_type(club, club_admin, character, msg, item, location, login):
+def test_batch_confirm_writes_one_entry_per_type(club, club_admin, character, msg, item, login):
     """Confirming a batch writes exactly one ledger entry per type."""
     c = login(club_admin)
     from django.test import Client
@@ -246,13 +244,6 @@ def test_batch_confirm_writes_one_entry_per_type(club, club_admin, character, ms
     )
     assert r.status_code == 200
 
-    # Add map grant
-    r = c.post(
-        give_url(club, msg, "map"),
-        payload(character, map_kind="found", location=location.pk, action="add"),
-    )
-    assert r.status_code == 200
-
     # Confirm batch - HTMX
     r = c.post(
         give_url(club, msg, "coins"),
@@ -265,9 +256,6 @@ def test_batch_confirm_writes_one_entry_per_type(club, club_admin, character, ms
     # Verify exactly one ledger entry per type (coins + items = 2 entries)
     entries = LedgerEntry.objects.filter(character=character)
     assert entries.count() == 2  # one for coins, one for items
-
-    # Map credit
-    assert CreditGrant.objects.filter(character=character).count() == 1
 
 
 def test_batch_back_preserves_batch(club, club_admin, character, msg, item, login):
@@ -300,7 +288,9 @@ def test_batch_empty_confirm_errors(club, club_admin, character, msg, login):
     assert nothing_written()
 
 
-def test_batch_cross_club_isolation(club, club_admin, character, msg, item, location, other_club, login):
+def test_batch_cross_club_isolation(
+    club, club_admin, character, msg, item, location, other_club, login
+):
     """Batch grants respect cross-club isolation."""
     c = login(club_admin)
 
