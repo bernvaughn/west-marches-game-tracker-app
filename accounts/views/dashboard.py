@@ -99,7 +99,7 @@ def dashboard_partial(request, club_slug, provider_key):
         raise Http404(f"Provider '{provider_key}' not available.")
 
     ctx = provider.get_context(request, club, character, membership)
-    html = render_to_string(provider.template, ctx, request=request)
+    html = render_to_string(provider.template, {"provider_context": ctx}, request=request)
     return HttpResponse(html)
 
 
