@@ -5,5 +5,26 @@
 </form>
 {% endblock %}
 {% block title %}{{ title }}{% endblock %}
-{% block body %}{% include "accounts/inbox/_give_summary.html" %}{% endblock %}
-{% block footer %}<button type="submit" name="edit" value="1" class="btn btn-outline-secondary" formnovalidate>Back</button><button class="btn btn-primary" type="submit" name="confirmed" value="1">Give</button>{% endblock %}
+{% block body %}
+{% if batch %}
+<h5>Batch Grant Summary</h5>
+{% if batch_summary %}
+<ul class="list-group mb-3">
+{% for item in batch_summary %}
+<li class="list-group-item">{{ item }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<p class="text-muted small">{{ batch|length }} grant{{ batch|length|pluralize }} from this message.</p>
+{% else %}
+{% include "accounts/inbox/_give_summary.html" %}
+{% endif %}
+{% endblock %}
+{% block footer %}
+{% if batch %}
+<button type="submit" name="action" value="edit" class="btn btn-outline-secondary" formnovalidate>Back</button>
+{% else %}
+<button type="submit" name="edit" value="1" class="btn btn-outline-secondary" formnovalidate>Back</button>
+{% endif %}
+<button class="btn btn-primary" type="submit" name="confirmed" value="1">Give</button>
+{% endblock %}
