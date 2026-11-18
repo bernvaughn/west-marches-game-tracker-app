@@ -24,4 +24,3 @@ class PlayerCharactersConfig(AppConfig):
         reg("gm", "Award Loot to Party", "characters:bulk_award", is_gm_or_admin, 65)
         reg("character", "New character", "characters:create", None, 50)
         reg("character", "Character slips", "characters:slips", None, 57)
-        reg("character", "Move items", "characters:transfer_start", None, 55)

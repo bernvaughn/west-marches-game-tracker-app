@@ -44,7 +44,7 @@ def test_other_player_sees_name_and_owner_only(club, login, other_player, sheet)
     assert "Aria" in html and "Player" in html
     for secret in ("Secret backstory", "Rope", "pp: 1"):
         assert secret not in html
-    for name in ("edit", "adjust", "consume", "print_items", "transfer", "handover"):
+    for name in ("edit", "adjust", "consume", "print_items", "handover"):
         assert u(f"characters:{name}", club, sheet.pk) not in html
     assert u("ledger:character_history", club, sheet.pk) not in html
 
