@@ -14,38 +14,49 @@
     <h2>Jobs on the board</h2>
     {% if character %}<p class="wm-chalk-balance wm-downtime-balance">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>{% endif %}
   </div>
-  {% if cards %}
-  <ul class="wm-chalk-list">
-    {% for card in cards %}
-    <li class="wm-chalk-job">
-      <h3>{{ card.action.name }}</h3>
-      {% if card.action.description %}<p>{{ card.action.description|linebreaksbr }}</p>{% endif %}
-      <p>Cost: <strong>{{ card.action.cost }}</strong> point{{ card.action.cost|pluralize }}</p>
-      <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content">{% csrf_token %}
-        <button class="btn wm-chalk-button" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Take the job</button>
-        {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
-      </form>
-      <h4>Possible rewards</h4>
-      <div class="table-responsive">
-      <table class="wm-chalk-table wm-downtime-rewards">
-        <caption class="visually-hidden">Possible rewards for {{ card.action.name }}</caption>
-        <thead><tr><th scope="col">Outcome</th><th scope="col">Reward</th><th scope="col">Chance</th></tr></thead>
-        <tbody>
-        {% for r in card.rewards %}
-        <tr>
-          <td>{{ r.entry.label }}</td>
-          <td>{% if r.entry.coins %}{{ r.entry.coins|coins }}{% endif %}{% for ei in r.items %}{% if r.entry.coins or not forloop.first %}, {% endif %}{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}{% endfor %}{% if not r.entry.coins and not r.items %}<span class="text-muted">Nothing</span>{% endif %}</td>
-          <td>{{ r.percent|floatformat:1 }}%</td>
-        </tr>
-        {% endfor %}
-        </tbody>
-      </table>
-      </div>
-    </li>
-    {% endfor %}
-  </ul>
-  {% else %}
-  <p class="wm-chalk-muted mb-0">No downtime actions are available right now.</p>
-  {% endif %}
+  <form id="downtime-filters" method="get" action="{% url 'downtime:play' club.slug %}"
+  hx-get="{% url 'downtime:play' club.slug %}"
+  hx-trigger="change"
+  hx-include="closest form"
+  hx-target="#downtime-jobs"
+  hx-swap="outerHTML"
+  class="wm-downtime-filters d-flex flex-wrap gap-3 align-items-start mb-3">
+  <div role="group" aria-label="Filter jobs" class="d-flex flex-wrap gap-3 align-items-end">
+    <div class="wm-filter-group" role="group" aria-label="Cost">
+      <span class="d-block fw-bold text-muted small mb-1">Cost</span>
+      <label class="wm-filter-chip{% if cost_1 %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="cost" value="1"{% if cost_1 %} checked{% endif %}> 1
+      </label>
+      <label class="wm-filter-chip{% if cost_2 %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="cost" value="2"{% if cost_2 %} checked{% endif %}> 2
+      </label>
+      <label class="wm-filter-chip{% if cost_3plus %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="cost" value="3+"{% if cost_3plus %} checked{% endif %}> 3+
+      </label>
+    </div>
+    <div class="wm-filter-group" role="group" aria-label="Reward type">
+      <span class="d-block fw-bold text-muted small mb-1">Reward type</span>
+      <label class="wm-filter-chip{% if reward_coins %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="reward" value="coins"{% if reward_coins %} checked{% endif %}> Coins
+      </label>
+      <label class="wm-filter-chip{% if reward_items %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="reward" value="items"{% if reward_items %} checked{% endif %}> Items
+      </label>
+      <label class="wm-filter-chip{% if reward_mixed %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="reward" value="mixed"{% if reward_mixed %} checked{% endif %}> Mixed
+      </label>
+    </div>
+    <div class="wm-filter-group" role="group" aria-label="Availability">
+      <span class="d-block fw-bold text-muted small mb-1">Availability</span>
+      <label class="wm-filter-chip{% if avail_now %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="availability" value="now"{% if avail_now %} checked{% endif %}> Now
+      </label>
+      <label class="wm-filter-chip{% if avail_upcoming %} wm-filter-chip--active{% endif %}">
+        <input type="checkbox" name="availability" value="upcoming"{% if avail_upcoming %} checked{% endif %}> Upcoming
+      </label>
+    </div>
+  </div>
+</form>
+{% include "downtime/play/_jobs.html" %}
 </div>
 {% endblock %}

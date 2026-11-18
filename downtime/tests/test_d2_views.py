@@ -138,8 +138,13 @@ def test_player_page_lists_live_actions_only(
     empty = DowntimeAction.objects.create(club=club, name="Empty one")
     body = login(player).get(url("play", club)).content.decode()
     assert "Work at a bakery" in body and "75.0%" in body
+    # Job list section only: chip labels ("Upcoming", "Ended", "Other") live in
+    # the filter form, so check inside #downtime-jobs rather than the whole page.
+    import re as _re
+
+    jobs = _re.search(r'<div id="downtime-jobs".*?</div>', body, _re.S).group(0)
     for hidden in ("Upcoming", "Ended", "Other", empty.name):
-        assert hidden not in body
+        assert hidden not in jobs
 
 
 def test_spend_redirects_to_result_and_lowers_balance(
