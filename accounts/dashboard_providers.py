@@ -88,16 +88,21 @@ class HeaderDashboardProvider(BaseDashboardProvider):
             else:
                 other = t.sender
                 side = "receiver"
-            open_trades_data.append({
-                "trade": t,
-                "other_character": other,
-                "side": side,
-                "status_display": t.get_status_display(),
-            })
+            open_trades_data.append(
+                {
+                    "trade": t,
+                    "other_character": other,
+                    "side": side,
+                    "status_display": t.get_status_display(),
+                }
+            )
 
-        unread_count = Message.objects.for_club(club).filter(
-            status=Message.Status.OPEN
-        ).exclude(sender=membership).count()
+        unread_count = (
+            Message.objects.for_club(club)
+            .filter(status=Message.Status.OPEN)
+            .exclude(sender=membership)
+            .count()
+        )
 
         return {
             "coin_summary": coin_sum,
