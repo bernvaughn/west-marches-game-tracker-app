@@ -604,6 +604,7 @@ def _build_pages() -> list[Page]:
         P("accounts-index-club-admin", "club_admin", _c("accounts:index")),
         P("accounts-message-inbox-club-admin", "club_admin", _c("accounts:message_inbox")),
         P("shops-manage-list-club-admin", "club_admin", _c("shops:manage_list")),
+        P("shops-street-editor", "club_admin", _c("shops:street_editor")),
         P("quests-manage-club-admin", "club_admin", _c("quests:manage")),
         P("downtime-agenda-club-admin", "club_admin", _c("downtime:agenda")),
     ]

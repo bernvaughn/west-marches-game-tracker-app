@@ -733,6 +733,12 @@ Story numbers continue from U95. U96 replaces the public-only note in U95.
 - A rotation only sets when its shops open and close.
 - A shop's inventory is an ongoing list that carries over between rotations, and stock quantities are kept per shop, not per rotation.
 
+**S12 Shop street position editor.** As a club admin, I want a drag-and-drop grid showing each lot on my club's street (club shops, player stalls, and filler buildings), so that I can set the shops' street positions visually instead of editing numbers on a form. *(shops)*
+- Only club shops are reorderable; player stalls are shown as context and cannot be dragged.
+- Dragging a shop onto another shop reorders the shop sequence.
+- Saving writes street_position to each of the club's shops in the new order, starting at 0, and redirects back with a success message.
+- Player stalls and shops of other clubs are not changed by saving.
+
 ## Carried over from the first draft
 
 These still apply and are not covered above. Keep, change, or drop them. C6 (correct a mistake) was merged into U14.

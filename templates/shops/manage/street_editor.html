@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Street editor{% endblock %}
+{% block content %}
+{% url 'shops:manage_list' club.slug as list_url %}
+{% include "components/page_header.html" with title="Street editor" subtitle="Drag club shops to set their street order. Player stalls and filler lots are shown for context." back_url=list_url back_label="Back to shops" %}
+<form method="post" action="{% url 'shops:street_editor' club.slug %}" id="street-editor-form">
+  {% csrf_token %}
+  <ul class="wm-street" id="street-editor-grid" aria-label="Street lots">
+  {% for lot in lots %}
+    {% if lot.shop %}
+      {% with shop=lot.shop %}
+        <li class="wm-street-lot wm-shop-card--{{ shop.color }}" data-lot="shop" data-shop-id="{{ shop.pk }}" draggable="true">
+          <a class="wm-street-link" href="{% url 'shops:detail' club.slug shop.id %}">
+            {% include "shops/_building.html" with key=shop.building %}
+            <span class="wm-street-sign">
+              {% if shop.symbol %}<span class="wm-street-symbol" aria-hidden="true">{{ shop.symbol }}</span>{% endif %}
+              <span class="wm-street-name">{{ shop.name }}</span>
+            </span>
+          </a>
+        </li>
+      {% endwith %}
+    {% elif lot.stall %}
+      {% include "shops/browse/_street_stall.html" with stall=lot.stall %}
+    {% else %}
+      {% include "shops/browse/_street_filler.html" with key=lot.shape %}
+    {% endif %}
+  {% endfor %}
+  </ul>
+  <input type="hidden" name="shop_order" id="shop-order-input">
+  <div class="wm-form-actions"><button type="submit" class="btn btn-primary">Save street order</button></div>
+</form>
+<script src="{% static 'js/street_editor.js' %}" defer></script>
+{% endblock %}
