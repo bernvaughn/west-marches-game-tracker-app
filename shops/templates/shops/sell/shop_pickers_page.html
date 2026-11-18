@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Sell junk{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Sell junk" %}
+{% if no_shops %}
+  {% include "components/empty_state.html" with text="No shops are open right now." icon="bag" %}
+{% else %}
+  <p class="wm-sheet-note">Select a shop to sell your junk:</p>
+  {% include "shops/sell/_shop_picker_modal.html" %}
+{% endif %}
+{% endblock %}

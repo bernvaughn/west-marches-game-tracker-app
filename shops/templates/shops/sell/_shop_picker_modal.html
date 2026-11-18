@@ -1,0 +1,23 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}Sell junk — pick a shop{% endblock %}
+{% block body %}
+{% if no_shops %}
+  {% include "components/empty_state.html" with text="No shops are open right now." icon="bag" %}
+{% else %}
+  <div class="wm-shop-picker">
+    {% for shop in open_shops %}
+      <a class="btn btn-outline-secondary w-100 text-start mb-2"
+         href="{% url 'shops:sell_junk' request.club.slug shop.pk %}"
+         hx-get="{% url 'shops:sell_junk' request.club.slug shop.pk %}"
+         hx-target="#app-modal .modal-content"
+         hx-swap="innerHTML"
+         data-app-modal>
+        {{ shop.name }}{% if shop.keeper_name %} ({{ shop.keeper_name }}){% endif %}
+      </a>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+{% endblock %}
