@@ -1,0 +1,174 @@
+{% extends "starting_equipment/base.html" %}
+{% load coins %}
+
+{% block title %}{{ template.name }} - {{ club.name }}{% endblock %}
+
+{% block body %}
+{% url 'starting_equipment:templates' club.slug as list_url %}
+{% url 'starting_equipment:template_edit' club.slug template.pk as edit_url %}
+{% url 'starting_equipment:template_delete' club.slug template.pk as delete_url %}
+{% include "components/page_header.html" with title=template.name subtitle="Starting equipment template" back_url=list_url back_label="Back to templates" secondary='[{"url": edit_url, "label": "Edit"}, {"url": delete_url, "label": "Delete"}]' %}
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header">Basic Information</div>
+      <div class="card-body">
+        <dl class="row">
+          <dt class="col-sm-3">Name</dt>
+          <dd class="col-sm-9">{{ template.name }}</dd>
+          <dt class="col-sm-3">Active</dt>
+          <dd class="col-sm-9">
+            {% if template.is_active %}
+            <span class="badge bg-success">Yes</span>
+            {% else %}
+            <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </dd>
+          <dt class="col-sm-3">Description</dt>
+          <dd class="col-sm-9">{{ template.description|default:"—"|linebreaksbr }}</dd>
+          <dt class="col-sm-3">Created</dt>
+          <dd class="col-sm-9">{{ template.created|date:"M d, Y H:i" }}</dd>
+          <dt class="col-sm-3">Updated</dt>
+          <dd class="col-sm-9">{{ template.updated|date:"M d, Y H:i" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if class_entries or background_entries or level_coins or magic_options %}
+<div class="row">
+  {% if class_entries %}
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        Class Entries
+        {% url 'starting_equipment:class_entries' club.slug template.pk as class_entries_url %}
+        <a href="{{ class_entries_url }}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      <div class="card-body">
+        {% for entry in class_entries %}
+        <div class="mb-3 pb-3 border-bottom">
+          <div class="d-flex justify-content-between align-items-start">
+            <strong>{{ entry.char_class }}</strong>
+            <span class="badge bg-info text-dark">L{{ entry.min_level }}–{{ entry.max_level }}</span>
+          </div>
+          {% if entry.coins_cp %}
+          <div class="text-muted small">Base coins: {{ entry.coins_cp|coins }}</div>
+          {% endif %}
+          {% if entry.lines.all %}
+          <ul class="list-unstyled small mt-2">
+            {% for line in entry.lines.all %}
+            <li class="mb-1">
+              {% if line.is_choice %}
+              <span class="text-muted">[Choice: {{ line.choice_group }}] </span>
+              {% endif %}
+              {{ line.quantity }}× {{ line.item.name }}
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if background_entries %}
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        Background Entries
+        {% url 'starting_equipment:background_entries' club.slug template.pk as bg_entries_url %}
+        <a href="{{ bg_entries_url }}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      <div class="card-body">
+        {% for entry in background_entries %}
+        <div class="mb-3 pb-3 border-bottom">
+          <strong>{{ entry.background }}</strong>
+          {% if entry.coins_cp %}
+          <div class="text-muted small">Coins: {{ entry.coins_cp|coins }}</div>
+          {% endif %}
+          {% if entry.lines.all %}
+          <ul class="list-unstyled small mt-2">
+            {% for line in entry.lines.all %}
+            <li class="mb-1">
+              {% if line.is_choice %}
+              <span class="text-muted">[Choice: {{ line.choice_group }}] </span>
+              {% endif %}
+              {{ line.quantity }}× {{ line.item.name }}
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if level_coins %}
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        Level Coins
+        {% url 'starting_equipment:level_coins' club.slug template.pk as level_coins_url %}
+        <a href="{{ level_coins_url }}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      <div class="card-body">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Coins</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lc in level_coins %}
+            <tr>
+              <td>{{ lc.level }}</td>
+              <td>{{ lc.coins_cp|coins }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if magic_options %}
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        Magic Item Options
+        {% url 'starting_equipment:magic_options' club.slug template.pk as magic_options_url %}
+        <a href="{{ magic_options_url }}" class="btn btn-sm btn-outline-primary">Manage</a>
+      </div>
+      <div class="card-body">
+        <ul class="list-unstyled mb-0">
+          {% for opt in magic_options %}
+          <li class="mb-2">
+            <strong>{{ opt.item.name }}</strong> (max {{ opt.max_per_character }})
+            {% if opt.notes %}
+            <div class="text-muted small">{{ opt.notes }}</div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+<div class="alert alert-info">
+  This template has no entries configured yet. Use the links above to add class entries, background entries, level coins, or magic item options.
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}{% endblock %}
