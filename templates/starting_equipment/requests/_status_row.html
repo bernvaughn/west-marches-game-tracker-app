@@ -1,0 +1,25 @@
+{% load accounts_tags %}
+<tr>
+    <td>{% include "items/_item_name.html" with item=request.item info=True %}</td>
+    <td class="num">{{ request.quantity }}</td>
+    <td>{% if request.note %}{{ request.note }}{% else %}<span class="wm-sheet-note">—</span>{% endif %}</td>
+    <td>
+        {% if request.status == "pending" %}
+            {% include "components/badge.html" with text="Pending" status="info" %}
+        {% elif request.status == "approved" %}
+            {% include "components/badge.html" with text="Approved" status="success" %}
+        {% elif request.status == "declined" %}
+            {% include "components/badge.html" with text="Declined" status="danger" %}
+        {% else %}
+            {% include "components/badge.html" with text=request.get_status_display status="neutral" %}
+        {% endif %}
+    </td>
+    <td class="no-print">
+        {% if request.decided_by %}
+            {{ request.decided_by.display_name }}<br>
+            {{ request.decided_at|date:"M d, Y H:i" }}
+        {% else %}
+            <span class="wm-sheet-note">—</span>
+        {% endif %}
+    </td>
+</tr>
