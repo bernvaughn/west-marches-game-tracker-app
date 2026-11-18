@@ -44,7 +44,13 @@ def street_settings(request, club_slug):
 def street_editor(request, club_slug):
     """Drag-and-drop grid to set the club's shop street order visually."""
     if request.method == "POST":
-        set_street_order(request.club, request.POST.getlist("shop_order"))
+        # The JS joins the ordered IDs into one comma-separated value; accept
+        # either that or several shop_order values (e.g. direct form posts).
+        raw = request.POST.getlist("shop_order")
+        ordered = []
+        for value in raw:
+            ordered.extend([part.strip() for part in value.split(",") if part.strip()])
+        set_street_order(request.club, ordered)
         messages.success(request, "Street order saved.")
         return redirect("shops:street_editor", club_slug=club_slug)
     shops = ordered_shops(club_queryset(request, Shop))

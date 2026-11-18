@@ -1,8 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from accounts.models import User
-from items.models import Item
+from accounts.models import Membership, User
 from player_characters.models import Character, JunkMark
 from shops.models import Shop
 from shops.services import set_street_order
@@ -21,9 +20,9 @@ def admin_client(club_admin, login):
 
 @pytest.fixture
 def other_club_admin(other_club):
-    user = User.objects.create_user("other-admin@example.com", password="pw", display_name="Other Admin")
-    from accounts.models import Membership
-
+    user = User.objects.create_user(
+        "other-admin@example.com", password="pw", display_name="Other Admin"
+    )
     Membership.objects.create(user=user, club=other_club, is_club_admin=True)
     return user
 
@@ -95,6 +94,16 @@ def test_post_redirects_with_success_message(admin_client, club, street_shops):
     assert "Street order saved" in admin_client.get(u(club)).content.decode()
 
 
+def test_post_comma_joined_order_reorders_shops(admin_client, club, street_shops):
+    # Mimics the JS submitting a single comma-separated shop_order value.
+    a, b, c = street_shops
+    admin_client.post(u(club), {"shop_order": f"{c.pk},{a.pk},{b.pk}"})
+    a.refresh_from_db()
+    b.refresh_from_db()
+    c.refresh_from_db()
+    assert (a.street_position, b.street_position, c.street_position) == (1, 2, 0)
+
+
 def test_post_saves_in_visual_order(admin_client, club, street_shops):
     a, b, c = street_shops
     admin_client.post(u(club), {"shop_order": [str(c.pk), str(a.pk), str(b.pk)]})
@@ -104,7 +113,9 @@ def test_post_saves_in_visual_order(admin_client, club, street_shops):
 
 def test_post_ignores_unknown_shop_ids(admin_client, club, street_shops, other_shop):
     a, b, c = street_shops
-    admin_client.post(u(club), {"shop_order": [str(c.pk), str(a.pk), str(other_shop.pk), str(b.pk)]})
+    admin_client.post(
+        u(club), {"shop_order": [str(c.pk), str(a.pk), str(other_shop.pk), str(b.pk)]}
+    )
     a.refresh_from_db()
     b.refresh_from_db()
     c.refresh_from_db()
@@ -115,7 +126,8 @@ def test_post_ignores_unknown_shop_ids(admin_client, club, street_shops, other_s
 
 def test_post_touches_current_club_only(admin_client, club, other_club, street_shops):
     foreign = Shop.objects.create(club=other_club, name="Foreign", street_position=0)
-    admin_client.post(u(club), {"shop_order": [str(s.pk) for s in street_shops] + [str(foreign.pk)]})
+    order = [str(s.pk) for s in street_shops] + [str(foreign.pk)]
+    admin_client.post(u(club), {"shop_order": order})
     foreign.refresh_from_db()
     assert foreign.street_position == 0
 
@@ -149,7 +161,7 @@ def test_site_admin_ok(site_admin, login, club):
 
 
 def test_other_club_admin_403(other_club_admin, club, login):
-    # Non-members of the club get 404 from club middleware; admins of other clubs are not members here.
+    # Non-members get 404 from club middleware; other-club admins are not members here.
     assert login(other_club_admin).get(u(club)).status_code in (403, 404)
 
 
