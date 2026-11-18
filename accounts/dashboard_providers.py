@@ -543,10 +543,6 @@ class PlayerShopDashboardProvider(BaseDashboardProvider):
         return character.shop_open
 
 
-# For backward compatibility with existing imports
-PlayerShopProvider = PlayerShopDashboardProvider
-
-
 # =============================================================================
 # Registration System
 # =============================================================================
