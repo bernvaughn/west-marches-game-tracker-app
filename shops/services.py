@@ -18,6 +18,15 @@ def sell_price(stock):
     return percent_price(stock.item.value_cp, percent)
 
 
+def format_vs_base_text(vs_base_cp):
+    """Format the price difference vs base value as 'vs base: -X gp / +Y gp'."""
+    gp = vs_base_cp / 100
+    if gp == 0:
+        return "vs base: 0 gp"
+    sign = "+" if gp > 0 else "-"
+    return f"vs base: {sign}{abs(gp):g} gp"
+
+
 def buy_price(shop, item):
     stock = ShopStock.objects.filter(shop=shop, item=item).first()
     if stock is not None and stock.buy_percent is not None:
