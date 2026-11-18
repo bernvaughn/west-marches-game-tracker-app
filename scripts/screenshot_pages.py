@@ -196,6 +196,8 @@ EXCLUDED = {
     "starting_equipment:magic_option_create": "Stub view, Entry Mgmt child task.",
     "starting_equipment:magic_option_edit": "Stub view, Entry Mgmt child task.",
     "starting_equipment:magic_option_delete": "Stub view, Entry Mgmt child task.",
+    "starting_equipment:request_decide": "POST only; admin/GM approve or decline.",
+    "starting_equipment:request_status": "HTMX partial for a request status row.",
     "mcp": "A JSON-RPC endpoint, not a page.",
     "oauth2_provider:oauth-server-metadata": "A JSON metadata document.",
     "oauth2_provider:oauth-resource-metadata": "A JSON metadata document.",
@@ -376,6 +378,12 @@ def _build_pages() -> list[Page]:
         # ledger
         P("ledger-index", "gm", _c("ledger:index")),
         P("ledger-character-history", "alice", _c("ledger:character_history", "aria.pk")),
+        # starting equipment
+        P(
+            "starting-equipment-request-new",
+            "alice",
+            _c("starting_equipment:request_new", "aria.pk"),
+        ),
         # map
         P("map-index-alice", "alice", _c("map:index")),
         P("map-index-gm", "gm", _c("map:index")),
