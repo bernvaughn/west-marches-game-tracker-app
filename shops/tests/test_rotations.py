@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
+from items.models import Item
 from shops.models import Rotation, Shop, ShopStock
 from shops.services import is_open, open_shops
 
@@ -171,3 +172,200 @@ def test_cross_club_404(club, other_club, club_admin, other_shop, login):
     assert Rotation.objects.filter(pk=r.pk).exists()
     html = c.get(url("rotation_list", club)).content.decode()
     assert "Elsewhere" not in html
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_modal_get(club, club_admin, shop, login):
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(club_admin)
+    resp = c.get(url("rotation_copy_stock", club, r.pk), HTTP_HX_REQUEST="true")
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert "Copy stock" in html
+    assert "source_rotation" in html
+    assert "source_shop" in html
+    assert "target_shops" in html
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_non_htmx_fallback(club, club_admin, shop, login):
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(club_admin)
+    resp = c.get(url("rotation_copy_stock", club, r.pk))
+    assert resp.status_code == 200
+    assert any(t.name == "base.html" for t in resp.templates)
+    html = resp.content.decode()
+    assert "Copy stock" in html
+    assert "target_shops" in html
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_from_rotation(club, club_admin, shop, item, login):
+    target = Shop.objects.create(club=club, name="Target")
+    torch = Item.objects.create(club=club, name="Torch", value_cp=10)
+    rations = Item.objects.create(club=club, name="Rations", value_cp=20)
+    ShopStock.objects.create(shop=shop, item=item, quantity=2, sell_percent=100, buy_percent=50)
+    ShopStock.objects.create(shop=shop, item=torch, quantity=7, sell_percent=90, buy_percent=40)
+    other = Shop.objects.create(club=club, name="Other")
+    ShopStock.objects.create(shop=other, item=rations, quantity=3, sell_percent=80, buy_percent=45)
+    r = Rotation.objects.create(club=club, name="R", open_date=date(2030, 1, 1))
+    r.shops.set([shop, other])
+    c = login(club_admin)
+    resp = c.post(
+        url("rotation_copy_stock", club, r.pk),
+        {
+            "source_type": "rotation",
+            "source_rotation": r.pk,
+            "target_shops": [target.pk],
+        },
+        HTTP_HX_REQUEST="true",
+    )
+    assert resp.status_code == 204
+    trigger = resp.headers["HX-Trigger"]
+    assert "Copied 3 stock entries" in trigger
+    assert ShopStock.objects.filter(
+        shop=target, item=item, quantity=2, sell_percent=100, buy_percent=50
+    ).exists()
+    assert ShopStock.objects.filter(
+        shop=target, item=torch, quantity=7, sell_percent=90, buy_percent=40
+    ).exists()
+    assert ShopStock.objects.filter(
+        shop=target, item=rations, quantity=3, sell_percent=80, buy_percent=45
+    ).exists()
+    # all source entries copied to the single target
+    assert ShopStock.objects.filter(shop=target).count() == 3
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_from_single_shop(club, club_admin, shop, item, login):
+    target = Shop.objects.create(club=club, name="Target")
+    torch = Item.objects.create(club=club, name="Torch", value_cp=10)
+    ShopStock.objects.create(shop=shop, item=item, quantity=4, sell_percent=100, buy_percent=50)
+    ShopStock.objects.create(shop=shop, item=torch, quantity=1, sell_percent=75, buy_percent=30)
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(club_admin)
+    resp = c.post(
+        url("rotation_copy_stock", club, r.pk),
+        {
+            "source_type": "shop",
+            "source_shop": shop.pk,
+            "target_shops": [target.pk],
+        },
+        HTTP_HX_REQUEST="true",
+    )
+    assert resp.status_code == 204
+    assert ShopStock.objects.filter(
+        shop=target, item=item, quantity=4, sell_percent=100, buy_percent=50
+    ).exists()
+    assert ShopStock.objects.filter(
+        shop=target, item=torch, quantity=1, sell_percent=75, buy_percent=30
+    ).exists()
+    assert ShopStock.objects.filter(shop=target).count() == 2
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_overwrites_existing(club, club_admin, shop, item, login):
+    target = Shop.objects.create(club=club, name="Target")
+    ShopStock.objects.create(shop=target, item=item, quantity=99, sell_percent=10, buy_percent=10)
+    ShopStock.objects.create(shop=shop, item=item, quantity=2, sell_percent=100, buy_percent=50)
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(club_admin)
+    c.post(
+        url("rotation_copy_stock", club, r.pk),
+        {
+            "source_type": "shop",
+            "source_shop": shop.pk,
+            "target_shops": [target.pk],
+        },
+        HTTP_HX_REQUEST="true",
+    )
+    assert ShopStock.objects.filter(shop=target, item=item).count() == 1
+    stock = ShopStock.objects.get(shop=target, item=item)
+    assert stock.quantity == 2
+    assert stock.sell_percent == 100
+    assert stock.buy_percent == 50
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_preserves_overrides(club, club_admin, shop, item, login):
+    target = Shop.objects.create(club=club, name="Target")
+    torch = Item.objects.create(club=club, name="Torch", value_cp=10)
+    ShopStock.objects.create(shop=shop, item=item, quantity=5, sell_percent=80, buy_percent=40)
+    ShopStock.objects.create(
+        shop=shop, item=torch, quantity=None, sell_percent=None, buy_percent=None
+    )
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(club_admin)
+    c.post(
+        url("rotation_copy_stock", club, r.pk),
+        {
+            "source_type": "shop",
+            "source_shop": shop.pk,
+            "target_shops": [target.pk],
+        },
+        HTTP_HX_REQUEST="true",
+    )
+    stock = ShopStock.objects.get(shop=target, item=item)
+    assert stock.quantity == 5
+    assert stock.sell_percent == 80
+    assert stock.buy_percent == 40
+    torch_stock = ShopStock.objects.get(shop=target, item=torch)
+    assert torch_stock.quantity is None
+    assert torch_stock.sell_percent is None
+    assert torch_stock.buy_percent is None
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_empty_source(club, club_admin, shop, login):
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(club_admin)
+    resp = c.post(
+        url("rotation_copy_stock", club, r.pk),
+        {
+            "source_type": "rotation",
+            "source_rotation": r.pk,
+            "target_shops": [shop.pk],
+        },
+        HTTP_HX_REQUEST="true",
+    )
+    assert resp.status_code == 204
+    assert "Copied 0 stock entries" in resp.headers["HX-Trigger"]
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_target_subset(club, club_admin, shop, item, login):
+    target_a = Shop.objects.create(club=club, name="Target A")
+    target_b = Shop.objects.create(club=club, name="Target B")
+    skipped = Shop.objects.create(club=club, name="Skipped")
+    ShopStock.objects.create(shop=shop, item=item, quantity=2, sell_percent=100, buy_percent=50)
+    r = Rotation.objects.create(club=club, name="R", open_date=date(2030, 1, 1))
+    r.shops.set([shop, target_a, target_b])
+    c = login(club_admin)
+    c.post(
+        url("rotation_copy_stock", club, r.pk),
+        {
+            "source_type": "rotation",
+            "source_rotation": r.pk,
+            "target_shops": [target_a.pk, target_b.pk],
+        },
+        HTTP_HX_REQUEST="true",
+    )
+    assert ShopStock.objects.filter(shop=target_a, item=item, quantity=2).exists()
+    assert ShopStock.objects.filter(shop=target_b, item=item, quantity=2).exists()
+    assert not ShopStock.objects.filter(shop=skipped, item=item).exists()
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_cross_club_404(club, other_club, club_admin, other_shop, login):
+    r = make(other_club, other_shop, date(2030, 1, 1))
+    c = login(club_admin)
+    assert c.get(url("rotation_copy_stock", club, r.pk)).status_code == 404
+    assert c.post(url("rotation_copy_stock", club, r.pk), {}).status_code == 404
+
+
+@pytest.mark.story("S2")
+def test_copy_stock_player_forbidden(club, player, shop, login):
+    r = make(club, shop, date(2030, 1, 1))
+    c = login(player)
+    assert c.get(url("rotation_copy_stock", club, r.pk)).status_code == 403
+    assert c.post(url("rotation_copy_stock", club, r.pk), {}).status_code == 403

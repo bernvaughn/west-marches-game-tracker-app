@@ -1,0 +1,19 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{{ request.get_full_path }}" hx-post="{{ request.get_full_path }}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Copy stock from…{% endblock %}
+{% block body %}
+<p class="small text-muted">Copy all stock entries (quantities and sell/buy percent overrides) from a source rotation or shop to the target shops below.</p>
+{{ form.source_type }}
+{{ form.source_rotation }}
+{{ form.source_shop }}
+{{ form.target_shops }}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Copy stock</button>
+{% endblock %}

@@ -40,4 +40,9 @@ urlpatterns = [
         rotations.rotation_delete,
         name="rotation_delete",
     ),
+    path(
+        "rotations/<int:rotation_id>/copy-stock/",
+        rotations.rotation_copy_stock,
+        name="rotation_copy_stock",
+    ),
 ]
