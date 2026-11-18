@@ -37,6 +37,7 @@ KIND_FILTERS = (
     ("all", "All"),
     ("message", "Messages"),
     ("stock_request", "Stock requests"),
+    ("starting_request", "Starting requests"),
 )
 
 # Session-based batch storage for grant accumulation

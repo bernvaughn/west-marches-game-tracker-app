@@ -118,6 +118,7 @@ class Message(models.Model):
     class Kind(models.TextChoices):
         MESSAGE = "message", "Message"
         STOCK_REQUEST = "stock_request", "Stock request"
+        STARTING_REQUEST = "starting_request", "Starting request"
 
     club = models.ForeignKey(Club, on_delete=models.CASCADE, related_name="messages")
     sender = models.ForeignKey(Membership, on_delete=models.CASCADE, related_name="messages")

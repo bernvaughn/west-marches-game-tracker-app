@@ -4,6 +4,8 @@ from django.urls import reverse
 from accounts.models import Membership, Message
 from player_characters.models import Character
 
+SR = Message.Kind.STARTING_REQUEST
+
 
 def _mem(user, club):
     return Membership.objects.get(user=user, club=club)
@@ -14,6 +16,10 @@ def _urls(club):
         reverse("accounts:message_new", args=[club.slug]),
         reverse("accounts:message_inbox", args=[club.slug]),
     )
+
+
+def _inbox(club):
+    return reverse("accounts:message_inbox", args=[club.slug])
 
 
 def _status_url(club, pk):
@@ -213,3 +219,26 @@ def test_bulk_non_admin_forbidden(club, club_admin, player, game_master, login):
     assert cl.post(_bulk_url(club), {"message_ids": [m.pk], "status": "handled"}).status_code == 403
     m.refresh_from_db()
     assert m.status == "open"
+
+
+@pytest.mark.story("U76")
+def test_starting_request_kind_filter(club, club_admin, player, character, login):
+    Message.objects.create(
+        club=club,
+        sender=_mem(player, club),
+        kind=SR,
+        body="Request magic starting item",
+        character=character,
+    )
+    Message.objects.create(club=club, sender=_mem(player, club), body="Missing ring")
+    c = login(club_admin)
+    html = c.get(_inbox(club)).content.decode()
+    assert "Request magic starting item" in html
+    assert "Missing ring" in html
+    html = c.get(_inbox(club) + "?kind=starting_request").content.decode()
+    assert "Request magic starting item" in html and "Missing ring" not in html
+    html = c.get(_inbox(club) + "?kind=message").content.decode()
+    assert "Request magic starting item" not in html and "Missing ring" in html
+    Message.objects.filter(kind=SR).update(status="closed")
+    html = c.get(_inbox(club) + "?kind=starting_request&status=open").content.decode()
+    assert "Request magic starting item" not in html
