@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from accounts.permissions import is_game_master
 
-from .models import AgentConnection
+from .models import AgentConnection, TokenAuditLog
 from .tokens import hash_secret
 
 
@@ -38,7 +38,25 @@ def authenticate_bearer(header):
         connection = authenticator(raw)
         if connection is None:
             continue
+        # Log token use for token connections
+        if authenticator == token_authenticator:
+            TokenAuditLog.objects.create(
+                action=TokenAuditLog.Action.USE,
+                connection=connection,
+                user=connection.user,
+                club=connection.club,
+            )
         if connection.revoked_at is not None or not connection.user.is_active:
+            return None
+        # Check if token is expired
+        if connection.is_expired:
+            # Log the expire action
+            TokenAuditLog.objects.create(
+                action=TokenAuditLog.Action.EXPIRE,
+                connection=connection,
+                user=connection.user,
+                club=connection.club,
+            )
             return None
         if not is_game_master(connection.user, connection.club):
             return None
