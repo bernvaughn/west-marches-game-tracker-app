@@ -145,6 +145,17 @@
 .wm-sheet-header-fields, .wm-sheet-abilities-form { display: grid; gap: var(--wm-space-2); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin-top: var(--wm-space-2); }
 .wm-sheet-abilities-form input[type=number] { max-width: 8rem; }
 .wm-character-form textarea { width: 100%; }
+/* U69: each edit input shows its saved value beside it. */
+.wm-field-pair { display: grid; gap: 0 var(--wm-space-2); grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
+.wm-field-pair--wide { grid-template-columns: minmax(0, 1fr) minmax(0, 14rem); }
+.wm-field-pair .wm-field { margin-bottom: 0; }
+.wm-field-current { margin: var(--wm-space-2) 0 0; font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
+.wm-field-current-label { display: block; font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; }
+.wm-field-current-value { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; color: var(--wm-text); font-variant-numeric: tabular-nums; }
+@media (max-width: 39.999rem) {
+  .wm-field-pair, .wm-field-pair--wide { grid-template-columns: minmax(0, 1fr); }
+  .wm-field-current { margin-top: 0; }
+}
 @media print { .wm-sheet-ledger-box { display: none; } .wm-sheet-abilities { grid-template-columns: repeat(6, 1fr); } }
 
 /* Character slips: 2 x 6 per portrait page. Inch sizes are physical paper sizes. Frame is .wm-pass in components.css. */

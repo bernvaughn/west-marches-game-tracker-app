@@ -453,6 +453,7 @@ From using the build after round 7 (U65–U68) and new ideas from the owner.
 - The Notes, Details and old free-text Stats fields are removed, and their text is dropped. The app hasn't launched, so there is nothing to keep.
 - The sheet (U37) shows the new fields in sheet-style boxes: a header with name, level, class, species, pronouns and player; an abilities box with each score and its modifier; a box with AC, passive Perception and XP; and a description box.
 - The edit character page looks like the sheet, with the same boxes holding the inputs.
+- The edit form shows the saved value of every field beside its input, so a change is clear before saving. Each ability score shows its modifier, and a blank field shows an em dash.
 - The character directory (U41, U51) shows class and species to everyone.
 
 **U70 Character slips for drawing tables.** As a game master or club admin, I want to pick the characters at a session and print slips to cut out and draw, so we can make parties at random. *(player_characters)*
