@@ -733,6 +733,25 @@ Stories for the player experience of starting equipment: automatic grants on cha
 - The status is rendered via an HTMX partial (`_status_row.html`).
 - It shows `PENDING`, `APPROVED`, or `DECLINED` with the admin's decision note.
 
+### Technical decisions (clarifying stories)
+
+**U104 Background field on Character.** As a developer, I want the Character model to have a `background` CharField (max 60, optional), so starting equipment can match background-specific gear. *(player_characters)*
+- Field: `background = models.CharField(max_length=60, blank=True)`
+- Used by starting equipment templates to grant background-appropriate gear
+
+**U105 Case-insensitive class matching.** As a developer, I want class matching for starting equipment to be case-insensitive, so player-entered class names match admin templates reliably. *(starting_equipment, player_characters)*
+- Matching uses `char_class__iexact` against `StartingEquipmentClassEntry.char_class`
+- Players can type class names freely; admin templates use canonical names
+
+**U106 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), with UI for player selection in a future version, so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
+- `StartingEquipmentClassLine` and `StartingEquipmentBackgroundLine` have `is_choice` and `choice_group` fields
+- MVP grants the first option automatically; player-facing choice UI planned for v2
+
+**U107 Level-based coins table.** As a club admin, I want level-based starting coins to follow the 2024 DMG "Starting Equipment at Higher Levels" table, configurable per template, so higher-level characters start with correct wealth. *(starting_equipment)*
+- Separate `StartingEquipmentLevelCoins` model with `level` (2-20) and `coins_cp` fields
+- Seeded from DMG 2024 table; admins can customise per template
+- Applied when character level > 1 during starting equipment grant
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
