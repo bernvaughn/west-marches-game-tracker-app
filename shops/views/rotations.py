@@ -2,6 +2,7 @@ import json
 from datetime import date
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Prefetch
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
@@ -11,8 +12,8 @@ from django.views.decorators.http import require_POST
 from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
-from shops.forms.rotations import RotationForm
-from shops.models import Rotation, Shop
+from shops.forms.rotations import CopyStockForm, RotationForm
+from shops.models import Rotation, Shop, ShopStock
 from shops.services import ordered_shops
 
 
@@ -89,3 +90,73 @@ def rotation_delete(request, club_slug, rotation_id):
     rotation.delete()
     messages.success(request, "Rotation deleted.")
     return redirect("shops:rotation_list", club_slug=club_slug)
+
+
+def _copy_stock(form, rotation):
+    """Copy source stock entries to every target shop.
+
+    Returns the number of stock entries written (created or updated).
+    All writes happen in a single transaction.
+    """
+    source_type = form.cleaned_data["source_type"]
+    target_shops = form.cleaned_data["target_shops"]
+
+    if source_type == CopyStockForm.SOURCE_ROTATION:
+        source_rotation = form.cleaned_data["source_rotation"]
+        source_stocks = ShopStock.objects.filter(
+            shop__in=source_rotation.shops.all()
+        ).select_related("item")
+    else:
+        source_shop = form.cleaned_data["source_shop"]
+        source_stocks = ShopStock.objects.filter(shop=source_shop).select_related("item")
+
+    count = 0
+    with transaction.atomic():
+        for target in target_shops:
+            for source in source_stocks:
+                ShopStock.objects.update_or_create(
+                    shop=target,
+                    item=source.item,
+                    defaults={
+                        "quantity": source.quantity,
+                        "sell_percent": source.sell_percent,
+                        "buy_percent": source.buy_percent,
+                    },
+                )
+                count += 1
+    return count
+
+
+def _copy_result(count):
+    """A success message and HTMX trigger for a completed copy."""
+    entry = "entry" if count == 1 else "entries"
+    message = f"Copied {count} stock {entry}."
+    trigger = json.dumps(
+        {
+            "appModalClose": True,
+            "toast": {"message": message, "type": "success"},
+        }
+    )
+    return message, trigger
+
+
+@club_admin_required
+def rotation_copy_stock(request, club_slug, rotation_id):
+    rotation = club_get_object_or_404(request, Rotation, pk=rotation_id)
+    if request.method == "POST":
+        form = CopyStockForm(request.POST, club=request.club, rotation=rotation)
+        if form.is_valid():
+            count = _copy_stock(form, rotation)
+            message, trigger = _copy_result(count)
+            if is_htmx(request):
+                return HttpResponse(status=204, headers={"HX-Trigger": trigger})
+            messages.success(request, message)
+            return redirect("shops:rotation_list", club_slug=club_slug)
+    else:
+        form = CopyStockForm(club=request.club, rotation=rotation)
+    return render_modal_or_page(
+        request,
+        "shops/rotations/_copy_stock_modal.html",
+        "shops/rotations/_copy_stock_modal_form.html",
+        {"form": form, "rotation": rotation},
+    )

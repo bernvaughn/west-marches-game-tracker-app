@@ -347,6 +347,11 @@ def _build_pages() -> list[Page]:
         P("shops-rotation-list", "gm", _c("shops:rotation_list")),
         P("shops-rotation-create", "gm", _c("shops:rotation_create")),
         P("shops-rotation-edit", "gm", _c("shops:rotation_edit", "rotation.pk")),
+        P(
+            "shops-rotation-copy-stock",
+            "gm",
+            _c("shops:rotation_copy_stock", "rotation.pk"),
+        ),
         # ledger
         P("ledger-index", "gm", _c("ledger:index")),
         P("ledger-character-history", "alice", _c("ledger:character_history", "aria.pk")),
