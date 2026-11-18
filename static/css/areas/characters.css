@@ -65,25 +65,6 @@
 .wm-slips-tick-label { display: flex; align-items: center; justify-content: center; width: var(--wm-size-touch); height: var(--wm-size-touch); cursor: pointer; margin: 0; }
 .wm-slips-tick-label .form-check-input { width: 1.5rem; height: 1.5rem; margin: 0; }
 
-/* Trades */
-.wm-trade-sides { display: grid; gap: var(--wm-space-3); grid-template-columns: 1fr; margin: var(--wm-space-3) 0; }
-@media (min-width: 768px) { .wm-trade-sides { grid-template-columns: 1fr 1fr; } }
-.wm-trade-approvals { display: flex; flex-wrap: wrap; gap: var(--wm-space-2); margin-bottom: var(--wm-space-2); }
-.wm-trade-lines { list-style: none; margin: 0; padding: 0; }
-.wm-trade-sheet .wm-sheet-table input[type=number] { width: 5rem; margin-left: auto; }
-.wm-trade-sheet .wm-sheet-coins .wm-field-group, .wm-trade-sheet .wm-sheet-coins .wm-coins { flex-wrap: wrap; }
-.wm-trade-sheet .wm-form-actions { margin-top: var(--wm-space-3); }
-.wm-form.wm-trade-form { max-width: none; }
-.wm-trade-sheet textarea { min-height: 6rem; height: 8rem; }
-.wm-trade-status-line { margin: 0 0 var(--wm-space-3); padding: var(--wm-space-2) var(--wm-space-3); border-left: 4px solid var(--wm-primary, currentColor); background: var(--wm-surface-subtle, transparent); font-weight: 600; }
-.wm-trade-row-unavailable td { color: var(--wm-text-muted); }
-.wm-trade-table { table-layout: fixed; }
-/* Status and date keep one line. From and To share the rest; a long name wraps (hyphenated where the browser can). */
-.wm-trade-col-status { width: 6.25rem; }
-.wm-trade-col-date { width: 6.25rem; }
-.wm-trade-table td:nth-child(-n+2) { overflow-wrap: break-word; hyphens: auto; }
-.wm-trade-table .badge { white-space: nowrap; }
-
 /* Ledger history: signed amounts. The sign text carries the meaning; colour is an extra cue. */
 .wm-credit { color: var(--wm-success); }
 .wm-debit { color: var(--wm-danger); }

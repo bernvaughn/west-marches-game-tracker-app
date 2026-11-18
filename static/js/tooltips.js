@@ -46,7 +46,6 @@
     var junkCount = data.junk_count || 0;
     var junkValue = data.junk_value || 0;
     var downtime = data.downtime || 0;
-    var openTrades = data.open_trades || 0;
     var level = data.level ? 'Level ' + data.level : '—';
     var charClass = data.class || '—';
     var species = data.species || '—';
@@ -63,7 +62,6 @@
           <div class="col-6"><div class="fw-bold">${escapeHtml(coins)}</div><div class="text-muted">Coins</div></div>
           <div class="col-6"><div class="fw-bold">${junkCount}</div><div class="text-muted">Junk</div></div>
           <div class="col-6"><div class="fw-bold">${downtime}</div><div class="text-muted">Downtime</div></div>
-          <div class="col-6"><div class="fw-bold">${openTrades}</div><div class="text-muted">Open Trades</div></div>
         </div>
       </div>
     `;
