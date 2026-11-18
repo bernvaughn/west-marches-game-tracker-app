@@ -2,7 +2,9 @@ import pytest
 from django.urls import reverse
 
 from accounts.models import Membership, Message
+from ledger.models import LedgerEntry
 from player_characters.models import Character
+from starting_equipment.models import StartingEquipmentRequest
 
 SR = Message.Kind.STARTING_REQUEST
 
@@ -242,3 +244,125 @@ def test_starting_request_kind_filter(club, club_admin, player, character, login
     Message.objects.filter(kind=SR).update(status="closed")
     html = c.get(_inbox(club) + "?kind=starting_request&status=open").content.decode()
     assert "Request magic starting item" not in html
+
+
+def _starting_request(club, character, item, sender):
+    req = StartingEquipmentRequest.objects.create(
+        club=club,
+        character=character,
+        item=item,
+        quantity=1,
+        status=StartingEquipmentRequest.Status.PENDING,
+    )
+    msg = Message.objects.create(
+        club=club,
+        sender=sender,
+        character=character,
+        body=f"{character.name} requests {item.name} as starting equipment.",
+        kind=SR,
+        status=Message.Status.OPEN,
+    )
+    req.message = msg
+    req.save(update_fields=["message"])
+    return req, msg
+
+
+def _confirm_url(club, pk, decision):
+    return reverse(
+        "starting_equipment:request_decide_confirm",
+        kwargs={"club_slug": club.slug, "pk": pk, "decision": decision},
+    )
+
+
+def _decide_urls(club, pk):
+    approve = reverse(
+        "starting_equipment:request_decide",
+        kwargs={"club_slug": club.slug, "pk": pk, "decision": "approve"},
+    )
+    decline = reverse(
+        "starting_equipment:request_decide",
+        kwargs={"club_slug": club.slug, "pk": pk, "decision": "decline"},
+    )
+    return approve, decline
+
+
+@pytest.mark.story("U30")
+def test_starting_request_shows_grant_decline_buttons(
+    club, club_admin, game_master, player, character, item, login
+):
+    """Admin and GM see Grant/Decline buttons on starting-request messages."""
+    sender = _mem(player, club)
+    req, _ = _starting_request(club, character, item, sender)
+    inbox = _inbox(club) + "?kind=starting_request"
+
+    for user in (club_admin, game_master):
+        c = login(user)
+        html = c.get(inbox).content.decode()
+        assert _confirm_url(club, req.pk, "approve") in html
+        assert _confirm_url(club, req.pk, "decline") in html
+
+
+@pytest.mark.story("U30")
+def test_starting_request_buttons_hidden_from_regular_member(club, player, character, item, login):
+    """Regular members cannot see the inbox or the decision buttons."""
+    sender = _mem(player, club)
+    _starting_request(club, character, item, sender)
+    c = login(player)
+    assert c.get(_inbox(club) + "?kind=starting_request").status_code == 403
+
+
+@pytest.mark.story("U30")
+def test_starting_request_grant_approves_and_marks_message_handled(
+    club, club_admin, player, character, item, login
+):
+    """Grant via inbox approves the request, grants the item, marks HANDLED."""
+    sender = _mem(player, club)
+    req, msg = _starting_request(club, character, item, sender)
+    approve, _decline = _decide_urls(club, req.pk)
+
+    c = login(club_admin)
+    assert c.get(_confirm_url(club, req.pk, "approve"), HTTP_HX_REQUEST="true").status_code == 200
+
+    response = c.post(approve, HTTP_HX_REQUEST="true")
+    assert response.status_code == 204
+
+    req.refresh_from_db()
+    assert req.status == StartingEquipmentRequest.Status.APPROVED
+    assert req.decided_by == club_admin
+
+    msg.refresh_from_db()
+    assert msg.status == Message.Status.HANDLED
+
+    entry = LedgerEntry.objects.get(character=character, kind=LedgerEntry.Kind.AWARD)
+    assert entry.note == f"Starting equipment: {item.name}"
+    item_lines = [ln for ln in entry.lines.all() if ln.item is not None]
+    assert len(item_lines) == 1
+    assert item_lines[0].item == item
+    assert item_lines[0].quantity == 1
+
+
+@pytest.mark.story("U30")
+def test_starting_request_decline_sets_declined_and_marks_message_handled(
+    club, club_admin, player, character, item, login
+):
+    """Decline via inbox sets DECLINED + decision_note and marks the message HANDLED."""
+    sender = _mem(player, club)
+    req, msg = _starting_request(club, character, item, sender)
+    _approve, decline = _decide_urls(club, req.pk)
+
+    c = login(club_admin)
+    assert c.get(_confirm_url(club, req.pk, "decline"), HTTP_HX_REQUEST="true").status_code == 200
+
+    response = c.post(
+        decline, {"decision_note": "Not appropriate for level 1"}, HTTP_HX_REQUEST="true"
+    )
+    assert response.status_code == 204
+
+    req.refresh_from_db()
+    assert req.status == StartingEquipmentRequest.Status.DECLINED
+    assert req.decision_note == "Not appropriate for level 1"
+
+    msg.refresh_from_db()
+    assert msg.status == Message.Status.HANDLED
+
+    assert not LedgerEntry.objects.filter(character=character, kind=LedgerEntry.Kind.AWARD).exists()

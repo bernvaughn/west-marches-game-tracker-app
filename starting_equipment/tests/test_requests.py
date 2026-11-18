@@ -6,7 +6,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import Message
+from accounts.models import Membership, Message
 from ledger.models import LedgerEntry
 from starting_equipment.models import (
     MagicItemStartingOption,
@@ -401,7 +401,7 @@ class TestRequestDecide:
         )
 
         assert response.status_code == 204
-        assert response["HX-Trigger"] == json.dumps({"inboxChanged": True})
+        assert response["HX-Trigger"] == json.dumps({"appModalClose": True, "inboxChanged": True})
 
         req.refresh_from_db()
         assert req.status == StartingEquipmentRequest.Status.APPROVED
@@ -419,6 +419,98 @@ class TestRequestDecide:
         assert len(item_lines) == 1
         assert item_lines[0].item == magic_option.item
         assert item_lines[0].quantity == 2
+
+    def test_approve_marks_linked_message_handled(
+        self, club, login, game_master, character_with_class_bg, template, magic_option
+    ):
+        """Approve marks the linked inbox message HANDLED."""
+        req = StartingEquipmentRequest.objects.create(
+            club=club,
+            character=character_with_class_bg,
+            item=magic_option.item,
+            quantity=1,
+            status=StartingEquipmentRequest.Status.PENDING,
+        )
+        msg = Message.objects.create(
+            club=club,
+            sender=Membership.objects.get(user=game_master, club=club),
+            character=character_with_class_bg,
+            body="Starting request",
+            kind=Message.Kind.STARTING_REQUEST,
+            status=Message.Status.OPEN,
+        )
+        req.message = msg
+        req.save(update_fields=["message"])
+
+        client = login(game_master)
+        response = client.post(
+            request_decide_url(club, req.pk, "approve"),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 204
+
+        req.refresh_from_db()
+        assert req.status == StartingEquipmentRequest.Status.APPROVED
+        msg.refresh_from_db()
+        assert msg.status == Message.Status.HANDLED
+
+    def test_decline_marks_linked_message_handled(
+        self, club, login, game_master, character_with_class_bg, template, magic_option
+    ):
+        """Decline sets DECLINED + decision_note and marks the linked message HANDLED."""
+        req = StartingEquipmentRequest.objects.create(
+            club=club,
+            character=character_with_class_bg,
+            item=magic_option.item,
+            quantity=1,
+            status=StartingEquipmentRequest.Status.PENDING,
+        )
+        msg = Message.objects.create(
+            club=club,
+            sender=Membership.objects.get(user=game_master, club=club),
+            character=character_with_class_bg,
+            body="Starting request",
+            kind=Message.Kind.STARTING_REQUEST,
+            status=Message.Status.OPEN,
+        )
+        req.message = msg
+        req.save(update_fields=["message"])
+
+        client = login(game_master)
+        response = client.post(
+            request_decide_url(club, req.pk, "decline"),
+            {"decision_note": "Not appropriate"},
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 204
+
+        req.refresh_from_db()
+        assert req.status == StartingEquipmentRequest.Status.DECLINED
+        assert req.decision_note == "Not appropriate"
+        msg.refresh_from_db()
+        assert msg.status == Message.Status.HANDLED
+
+    def test_decide_without_linked_message(
+        self, club, login, game_master, character_with_class_bg, template, magic_option
+    ):
+        """Deciding a request with no linked message still works."""
+        req = StartingEquipmentRequest.objects.create(
+            club=club,
+            character=character_with_class_bg,
+            item=magic_option.item,
+            quantity=1,
+            status=StartingEquipmentRequest.Status.PENDING,
+        )
+
+        client = login(game_master)
+        response = client.post(
+            request_decide_url(club, req.pk, "decline"),
+            HTTP_HX_REQUEST="true",
+        )
+        assert response.status_code == 204
+
+        req.refresh_from_db()
+        assert req.status == StartingEquipmentRequest.Status.DECLINED
 
     def test_decline_sets_declined_and_decision_note(
         self, club, login, game_master, character_with_class_bg, template, magic_option

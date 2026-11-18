@@ -29,7 +29,7 @@ from ..forms.inbox import (
 )
 from ..htmx import is_htmx, render_modal_or_page
 from ..models import Message
-from ..permissions import club_admin_required, club_member_required
+from ..permissions import admin_or_gm_required, club_admin_required, club_member_required
 from ..scoping import club_get_object_or_404, club_queryset
 
 FILTERS = ("open", "handled", "closed", "all")
@@ -121,7 +121,7 @@ def stock_request_new(request, club_slug):
     )
 
 
-@club_admin_required
+@admin_or_gm_required
 def message_inbox(request, club_slug):
     return _render_inbox(request)
 
@@ -135,6 +135,7 @@ def _render_inbox(request):
         club_queryset(request, Message)
         .select_related("sender__user", "character")
         .prefetch_related(
+            "starting_request__item",
             "granted_entries__lines__item",
             "granted_entries__character",
             "granted_visits__character",

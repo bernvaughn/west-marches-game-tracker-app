@@ -197,6 +197,7 @@ EXCLUDED = {
     "starting_equipment:magic_option_edit": "Stub view, Entry Mgmt child task.",
     "starting_equipment:magic_option_delete": "Stub view, Entry Mgmt child task.",
     "starting_equipment:request_decide": "POST only; admin/GM approve or decline.",
+    "starting_equipment:request_decide_confirm": "HTMX confirm modal; needs a starting request PK.",
     "starting_equipment:request_status": "HTMX partial for a request status row.",
     "mcp": "A JSON-RPC endpoint, not a page.",
     "oauth2_provider:oauth-server-metadata": "A JSON metadata document.",
