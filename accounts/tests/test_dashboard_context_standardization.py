@@ -4,6 +4,10 @@ These tests verify that all provider templates use `provider_context` consistent
 and that the `dashboard_partial` endpoint wraps context correctly.
 
 Related to task 01a1e697-bf0b-76cb-8edb-f2a9b0530e14.
+
+Note: The "trades" provider was replaced by HeaderDashboardProvider (key="header")
+which is intentionally excluded from the provider grid loop and dashboard_partial
+endpoint. Trades data is rendered in the header via explicit include with flat keys.
 """
 
 import pytest
@@ -14,7 +18,7 @@ from downtime.models import DowntimeAction, DowntimeEntry
 from items.models import Item
 from ledger.services import Line, record_many
 from player_characters.junk import set_junk
-from player_characters.models import Character, Trade
+from player_characters.models import Character
 
 
 @pytest.fixture
@@ -90,11 +94,12 @@ def test_dashboard_partial_downtime_shows_action_row(
 
 
 @pytest.mark.django_db
-def test_dashboard_partial_trades_shows_open_trades(club, player, character, login):
-    """dashboard_partial for trades shows each open trade row.
+def test_header_provider_includes_trades_data_flat_context(club, player, character, login):
+    """HeaderDashboardProvider includes trades data using flat context keys.
 
-    Symptom B: Open trades vanished after the first poll because the partial
-    rendered blank due to context mismatch.
+    The HeaderDashboardProvider (key='header') returns flat keys in get_context()
+    including 'open_trades'. It is rendered via explicit include in dashboard.html
+    with flat keys, not through the provider grid loop's provider_context pattern.
     """
     c = login(player)
 
@@ -105,6 +110,8 @@ def test_dashboard_partial_trades_shows_open_trades(club, player, character, log
         owner=membership,
         name="Other",
     )
+    from player_characters.models import Trade
+
     Trade.objects.create(
         club=club,
         sender=character,
@@ -112,11 +119,25 @@ def test_dashboard_partial_trades_shows_open_trades(club, player, character, log
         status=Trade.Status.REQUESTED,
     )
 
-    resp = c.get(f"/c/{club.slug}/accounts/dashboard/partial/trades/")
+    # Verify the HeaderDashboardProvider returns open_trades in its flat context
+    from accounts.dashboard_providers import get_provider
+
+    provider = get_provider("header")
+    assert provider is not None, "HeaderDashboardProvider should be registered"
+
+    # Use the test client's request to get a proper request object with club
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
     assert resp.status_code == 200
-    content = resp.content.decode()
-    assert "My Trades" in content, "Trades partial should show the section header"
-    assert "No open trades" not in content, "Trades partial should show trades, not empty message"
+    request = resp.wsgi_request
+
+    ctx = provider.get_context(request, club, character, membership)
+
+    # Verify the context contains trades data as flat keys
+    assert "open_trades" in ctx, "Header provider should include open_trades"
+    assert len(ctx["open_trades"]) == 1, "Should have one open trade"
+    assert ctx["open_trades"][0]["other_character"].name == "Other"
+    assert ctx["open_trades"][0]["side"] == "sender"
+    assert ctx["open_trades"][0]["status_display"] == "Requested"
 
 
 @pytest.mark.django_db
@@ -193,9 +214,10 @@ def test_all_provider_templates_use_provider_context(club, player, character, lo
     import os
 
     template_dir = "templates/accounts"
+    # _dashboard_trades.html was deleted - trades moved to HeaderDashboardProvider
+    # which uses flat keys via explicit include in dashboard.html
     template_names = [
         "_dashboard_quick_actions.html",
-        "_dashboard_trades.html",
         "_dashboard_quests.html",
         "_dashboard_downtime.html",
         "_dashboard_map.html",
