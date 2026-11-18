@@ -175,7 +175,6 @@ EXCLUDED = {
     "favicon": "An icon file, not a page.",
     "logout": "POST only.",
     "starting_equipment:templates": "Placeholder view for starting equipment (implemented in SE3).",
-
     "mcp": "A JSON-RPC endpoint, not a page.",
     "oauth2_provider:oauth-server-metadata": "A JSON metadata document.",
     "oauth2_provider:oauth-resource-metadata": "A JSON metadata document.",
@@ -320,8 +319,7 @@ def _build_pages() -> list[Page]:
         P(
             "items-loot-cards-print",
             "gm",
-            lambda d: reverse("items:loot_cards_print", args=[d.slug])
-            + f"?qty_{d.item.pk}=1",
+            lambda d: reverse("items:loot_cards_print", args=[d.slug]) + f"?qty_{d.item.pk}=1",
         ),
         # downtime agenda
         P("downtime-agenda", "gm", _c("downtime:agenda")),
@@ -608,6 +606,7 @@ def _build_pages() -> list[Page]:
         P("accounts-index-club-admin", "club_admin", _c("accounts:index")),
         P("accounts-message-inbox-club-admin", "club_admin", _c("accounts:message_inbox")),
         P("shops-manage-list-club-admin", "club_admin", _c("shops:manage_list")),
+        P("shops-street-editor", "club_admin", _c("shops:street_editor")),
         P("quests-manage-club-admin", "club_admin", _c("quests:manage")),
         P("downtime-agenda-club-admin", "club_admin", _c("downtime:agenda")),
     ]
