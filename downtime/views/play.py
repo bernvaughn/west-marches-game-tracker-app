@@ -5,12 +5,17 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_POST
-from django.utils.decorators import method_decorator
 
 from accounts.htmx import is_htmx, render_modal_or_page
-from accounts.mixins import CharacterContextMixin, ClubContextMixin, ClubScopedMixin, PermissionMixin
+from accounts.mixins import (
+    CharacterContextMixin,
+    ClubContextMixin,
+    ClubScopedMixin,
+    PermissionMixin,
+)
 from accounts.permissions import club_member_required
 from downtime import services
 from downtime.models import DowntimeAction, DowntimeResult

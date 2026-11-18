@@ -56,9 +56,6 @@ class Page:
     modal_url: Callable[[SimpleNamespace], str] | None = None
 
 
-PROPOSED_TRADE_NOTE = "Swap for the pelts?"
-
-
 def _role_users(club):
     """A game master who is not a club admin, and a club admin who is not a game master."""
     from accounts.demo import _user
@@ -110,15 +107,6 @@ def _downtime_result(aria):
         )
 
 
-def _proposed_trade(aria, borin):
-    from ledger.services import Line
-    from player_characters.models import Trade
-    from player_characters.trade_services import propose_trade
-
-    if not Trade.objects.filter(club=aria.club, note=PROPOSED_TRADE_NOTE).exists():
-        propose_trade(aria, borin, [Line(coins=100)], PROPOSED_TRADE_NOTE, aria.owner.user)
-
-
 def extra_fixtures():
     """Add objects that `seed_demo` lacks. Safe to run twice.
 
@@ -129,12 +117,10 @@ def extra_fixtures():
 
     club = Club.objects.get(slug="demo")
     aria = Character.objects.get(club=club, name="Aria Windrunner")
-    borin = Character.objects.get(club=club, name="Borin Stonefist")
     _role_users(club)
     _junk(aria)
     _point_request(club, aria)
     _downtime_result(aria)
-    _proposed_trade(aria, borin)
 
 
 def demo_objects() -> SimpleNamespace:
@@ -144,7 +130,7 @@ def demo_objects() -> SimpleNamespace:
     from items.models import Item
     from ledger.services import available_items
     from map.models import Encounter, HexMap, Location, MapRequest
-    from player_characters.models import Character, Trade
+    from player_characters.models import Character
     from quests.models import Quest
     from shops.models import Rotation, Shop, ShopStock
 
@@ -178,9 +164,6 @@ def demo_objects() -> SimpleNamespace:
         alice_membership=Membership.objects.get(user__email="alice@example.com", club=club),
         map_request=MapRequest.objects.first(),
         item=Item.objects.filter(club=club).order_by("name").first(),
-        # The seeded accepted trade. `extra_fixtures` adds a newer, requested one.
-        trade=Trade.objects.filter(status=Trade.Status.ACCEPTED).first(),
-        requested_trade=Trade.objects.filter(note=PROPOSED_TRADE_NOTE).first(),
         torch=Item.objects.get(club=club, name="Torch"),
         result=DowntimeResult.objects.first(),
         point_request=DowntimePointRequest.objects.first(),
@@ -203,15 +186,10 @@ EXCLUDED = {
     "oauth2_provider:dcr-register": "A JSON API.",
     "oauth2_provider:dcr-register-management": "A JSON API.",
     "accounts:message_status": "POST only.",
+    "accounts:message_bulk_status": "POST only.",
     "characters:select": "POST only.",
     "characters:shop_toggle": "POST only.",
     "characters:preview": "JSON endpoint for tooltip preview, not a page.",
-    "trades:accept": "POST only.",
-    "trades:decline": "POST only.",
-    "trades:cancel": "POST only.",
-    "trades:approve": "POST only.",
-    "trades:poll": "HTMX partial (JSON), not a page.",
-    "trades:status_fragment": "HTMX partial, not a page.",
     "items:retire": "POST only.",
     "items:restore": "POST only.",
     "items:delete": "POST only.",
@@ -324,18 +302,12 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("characters:player_consume", "aria.pk", "owned_item.pk"),
         ),
-        P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
         P("characters-print-session-pack", "alice", _c("characters:print_session_pack", "aria.pk")),
         # downtime
         P("downtime-play", "alice", lambda d: reverse("downtime:play", args=[d.slug])),
         P("downtime-actions", "gm", lambda d: reverse("downtime:actions", args=[d.slug])),
         P("downtime-action-new", "gm", lambda d: reverse("downtime:action_new", args=[d.slug])),
-        # trades
-        P("trades-index", "alice", _c("trades:index")),
-        P("trades-propose", "alice", _c("trades:propose")),
-        P("trades-detail-alice", "alice", _c("trades:detail", "trade.pk")),
-        P("trades-detail-bob", "bob", _c("trades:detail", "trade.pk")),
         # items
         P("items-index", "alice", _c("items:index")),
         P("items-index-gm", "gm", _c("items:index")),
@@ -438,9 +410,8 @@ def _build_pages() -> list[Page]:
             "anon",
             lambda d: reverse("password_reset_confirm", args=["x", "bad"]),
         ),
-        # characters. Alice has characters, so `mine` and `transfer_start` redirect for her.
+        # characters. Alice has characters, so `mine` redirects for her.
         P("characters-mine-empty", "gm_only", _c("characters:mine")),
-        P("characters-transfer-start-empty", "gm_only", _c("characters:transfer_start")),
         P("characters-slips-print", "alice", _c("characters:slips_print")),
         P(
             "characters-slips-print-aria",
@@ -573,9 +544,6 @@ def _build_pages() -> list[Page]:
             "gm",
             lambda d: reverse("map:credit", args=[d.slug, d.location.pk, "discovered"]),
         ),
-        # trades
-        P("trades-detail-requested", "alice", _c("trades:detail", "requested_trade.pk")),
-        P("trades-edit-side", "alice", _c("trades:edit_side", "trade.pk")),
         # inbox gives
         P("accounts-message-give-items", "gm", _c("accounts:message_give_items", "message.pk")),
         P("accounts-message-give-map", "gm", _c("accounts:message_give_map", "message.pk")),

@@ -1,18 +1,6 @@
-{% extends "components/modal_frame.html" %}
-{% block content %}
-<form
-  method="post"
-  action="{{ consume_url }}"
-  hx-post="{{ consume_url }}"
-  hx-target="#app-modal .modal-content"
-  hx-swap="outerHTML"
->
-  {% csrf_token %}
-  {{ block.super }}
-</form>
-{% endblock %}
+{% extends "components/_confirm_modal.html" %}
 {% block title %}Consume 1 {{ item.name }}?{% endblock %}
-{% block body %}
+{% block summary %}
 {% if form.non_field_errors %}
 <div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">
   <div>{{ form.non_field_errors|join:" " }}</div>
@@ -30,7 +18,4 @@
   {% if form.note.errors %}<span class="error text-danger d-block" role="alert">{{ form.note.errors|join:" " }}</span>{% endif %}
 </p>
 {% endblock %}
-{% block footer %}
-<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-<button class="btn btn-primary" type="submit">Consume</button>
-{% endblock %}
+{% block confirm_label %}Consume{% endblock %}

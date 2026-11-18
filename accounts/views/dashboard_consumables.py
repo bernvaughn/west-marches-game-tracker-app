@@ -41,7 +41,7 @@ def consumable_consume_partial(request, club_slug, item_pk):
             "item": item,
             "available": available,
             "form": form,
-            "consume_url": reverse(
+            "confirm_url": reverse(
                 "characters:player_consume",
                 args=[club.slug, character.pk, item.pk],
             ),
