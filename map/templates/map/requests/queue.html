@@ -5,11 +5,28 @@
 <link rel="stylesheet" href="{% static 'map/map.css' %}">
 {% url 'map:index' club.slug as back_url %}
 {% include "components/page_header.html" with title="Map requests" back_url=back_url back_label="Back to maps" %}
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle">
-<thead><tr><th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th class="wm-col-optional">Requested by</th><th>Status</th><th class="wm-col-optional">Decided</th>{% if is_editor %}<th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
+{% if is_editor %}
+<div class="bulk-actions mb-3" id="bulk-actions">
+  <button
+    id="bulk-approve-btn"
+    class="btn btn-sm btn-primary"
+    type="button"
+    data-url="{% url 'map:request_bulk_approve' club.slug %}"
+    hidden
+  >
+    {% include "components/icon.html" with name="check-lg" %} Approve selected
+    (<span id="bulk-count">0</span>)
+  </button>
+</div>
+{% endif %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle" id="queue-table">
+<thead><tr>
+{% if is_editor %}<th class="actions"><input type="checkbox" id="bulk-select-all" aria-label="Select all requests"></th>{% endif %}
+<th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th class="wm-col-optional">Requested by</th><th>Status</th><th class="wm-col-optional">Decided</th>{% if is_editor %}<th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
 <tbody>
 {% for req in requests %}
 <tr>
+{% if is_editor %}<td class="actions">{% if req.status == "requested" %}<input type="checkbox" name="requests" value="{{ req.pk }}">{% endif %}</td>{% endif %}
 <td>{% include "components/badge.html" with status="info" text=req.get_kind_display %}</td>
 <td>{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.tile_q is not None %} ({{ req.tile_q }}, {{ req.tile_r }}){% endif %}</td>
 <td>{% if req.kind == "visit" %}-{% else %}{{ req.location_label }}{% endif %}</td>
@@ -26,7 +43,50 @@
 </div>
 {% endif %}</td>{% endif %}
 </tr>
-{% empty %}{% if is_editor %}{% include "components/data_table_empty.html" with cols=10 text="No requests." %}{% else %}{% include "components/data_table_empty.html" with cols=9 text="No requests." %}{% endif %}{% endfor %}
+{% empty %}{% if is_editor %}{% include "components/data_table_empty.html" with cols=11 text="No requests." %}{% else %}{% include "components/data_table_empty.html" with cols=9 text="No requests." %}{% endif %}{% endfor %}
 </tbody>
 </table></div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var btn = document.getElementById("bulk-approve-btn");
+  var allBox = document.getElementById("bulk-select-all");
+  var boxes = document.querySelectorAll('input[name="requests"]');
+  if (!btn || !boxes.length) return;
+  function update() {
+    var checked = document.querySelectorAll('input[name="requests"]:checked');
+    btn.hidden = !checked.length;
+    document.getElementById("bulk-count").textContent = checked.length;
+    if (allBox) {
+      allBox.checked = checked.length === boxes.length && boxes.length > 0;
+    }
+  }
+  boxes.forEach(function (b) { b.addEventListener("change", update); });
+  if (allBox) {
+    allBox.addEventListener("change", function () {
+      boxes.forEach(function (b) { b.checked = allBox.checked; });
+      update();
+    });
+  }
+  update();
+  btn.addEventListener("click", function (e) {
+    e.preventDefault();
+    var ids = Array.from(document.querySelectorAll('input[name="requests"]:checked'))
+      .map(function (b) { return b.value; });
+    var url = btn.getAttribute("data-url") + "?" + ids.map(function (id) {
+      return "requests=" + encodeURIComponent(id);
+    }).join("&");
+    htmx.ajax("get", url, { target: "#app-modal .modal-content" });
+  });
+  document.body.addEventListener("htmx:afterSwap", function (e) {
+    var trigger = e.detail.xhr && e.detail.xhr.getResponseHeader("HX-Trigger");
+    if (!trigger) return;
+    try {
+      var data = JSON.parse(trigger);
+      if (data.refreshQueue) {
+        location.reload();
+      }
+    } catch {}
+  });
+});
+</script>
 {% endblock %}

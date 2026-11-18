@@ -1,0 +1,86 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form
+  method="post"
+  action="{% url 'map:request_bulk_approve' club.slug %}"
+  hx-post="{% url 'map:request_bulk_approve' club.slug %}"
+  hx-target="#app-modal .modal-content"
+  hx-swap="outerHTML"
+>
+  {% csrf_token %}
+  {% for rid in request_ids %}<input type="hidden" name="requests" value="{{ rid }}">{% endfor %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Approve selected map requests{% endblock %}
+{% block body %}
+{% if not groups %}
+<p class="text-muted">No approvable requests were selected.</p>
+{% else %}
+<ul
+  class="nav nav-tabs"
+  id="bulk-approve-tabs"
+  role="tablist"
+>
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link active"
+      id="tab-discovered"
+      data-bs-toggle="tab"
+      data-bs-target="#pane-discovered"
+      type="button"
+      role="tab"
+      aria-selected="true"
+    >
+      Discovery
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link"
+      id="tab-explored"
+      data-bs-toggle="tab"
+      data-bs-target="#pane-explored"
+      type="button"
+      role="tab"
+      aria-selected="false"
+    >
+      Exploration
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button
+      class="nav-link"
+      id="tab-found"
+      data-bs-toggle="tab"
+      data-bs-target="#pane-found"
+      type="button"
+      role="tab"
+      aria-selected="false"
+    >
+      Found mark
+    </button>
+  </li>
+</ul>
+<div class="tab-content mt-3" id="bulk-approve-tab-content">
+  <div
+    class="tab-pane fade show active"
+    id="pane-discovered"
+    role="tabpanel"
+    aria-labelledby="tab-discovered"
+  >
+    {% include "map/requests/_bulk_approve_tab.html" with kind="discovered" requests=groups.discovered %}
+  </div>
+  <div class="tab-pane fade" id="pane-explored" role="tabpanel" aria-labelledby="tab-explored">
+    {% include "map/requests/_bulk_approve_tab.html" with kind="explored" requests=groups.explored %}
+  </div>
+  <div class="tab-pane fade" id="pane-found" role="tabpanel" aria-labelledby="tab-found">
+    {% include "map/requests/_bulk_approve_tab.html" with kind="found" requests=groups.found %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Approve all</button>
+{% endblock %}

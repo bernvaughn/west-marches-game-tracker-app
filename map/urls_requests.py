@@ -12,4 +12,5 @@ urlpatterns = [
     ),
     path("requests/<int:pk>/approve/", views.approve, name="request_approve"),
     path("requests/<int:pk>/decline/", views.decline, name="request_decline"),
+    path("requests/bulk-approve/", views.bulk_approve, name="request_bulk_approve"),
 ]
