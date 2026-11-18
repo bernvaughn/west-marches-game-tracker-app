@@ -51,10 +51,7 @@ def quick_action_sell_junk(request, club_slug):
                 error = str(exc)
             else:
                 total = sum(
-                    line.coins
-                    for entry in entries
-                    for line in entry.lines.all()
-                    if line.coins
+                    line.coins for entry in entries for line in entry.lines.all() if line.coins
                 )
                 messages.success(request, f"Sold junk to {shop} for {format_coins(total)}.")
                 dashboard_url = reverse("accounts:player_dashboard", args=[club_slug])
@@ -169,15 +166,18 @@ def quick_action_buy_potions(request, club_slug):
         if not is_open(stock.shop, today) or stock.item.retired:
             continue
         from shops.services import sell_price
+
         price = sell_price(stock)
         available = stock.quantity if stock.quantity is not None else 999
         if available <= 0:
             continue
-        stock_data.append({
-            "stock": stock,
-            "price": price,
-            "available": available,
-        })
+        stock_data.append(
+            {
+                "stock": stock,
+                "price": price,
+                "available": available,
+            }
+        )
         if selected_stock_id is None:
             selected_stock_id = stock.pk
 
@@ -205,6 +205,7 @@ def quick_action_buy_potions(request, club_slug):
                 request, ShopStock, pk=selected_stock_id, shop__in=open_shop_qs
             )
             from shops.services import sell_price
+
             price = sell_price(selected_stock)
             available = selected_stock.quantity if selected_stock.quantity is not None else 999
             form = BuyForm(request.POST, max_quantity=available)
@@ -232,12 +233,14 @@ def quick_action_buy_potions(request, club_slug):
         else:
             selected_stock = stock_data[0]["stock"]
         from shops.services import sell_price
+
         price = sell_price(selected_stock)
         available = selected_stock.quantity if selected_stock.quantity is not None else 999
         form = BuyForm(max_quantity=available)
 
     # Calculate totals for display
     from ledger.services import available_coins
+
     before = available_coins(character)
     price = sell_price(selected_stock)
     total = price * quantity

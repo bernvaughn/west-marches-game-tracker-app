@@ -82,7 +82,7 @@ def test_keeper_button_and_both_boxes_without_js(login, player, club, open_shop)
 def test_js_toggles_one_box_at_a_time():
     js = open(finders.find("js/shop_banner.js")).read()
     assert "[aria-controls]" in js and "aria-expanded" in js
-    assert "document.body.addEventListener(\"click\"" in js
+    assert 'document.body.addEventListener("click"' in js
     assert "htmx:afterSwap" in js
     assert "show(null)" in js
 

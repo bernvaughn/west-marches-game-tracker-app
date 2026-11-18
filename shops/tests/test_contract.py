@@ -66,7 +66,7 @@ def test_urls_resolve(ctx):
     for name, view in VIEWS.items():
         resolved = resolve(url(name, *ctx))
         # Class-based views have view_class attribute
-        if hasattr(resolved, 'func') and hasattr(resolved.func, 'view_class'):
+        if hasattr(resolved, "func") and hasattr(resolved.func, "view_class"):
             assert resolved.func.view_class is view
         else:
             assert resolved.func is view

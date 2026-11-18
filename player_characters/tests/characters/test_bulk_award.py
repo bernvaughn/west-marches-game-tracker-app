@@ -52,11 +52,14 @@ def test_bulk_award_get(login, game_master, club, character, second_character, i
 @pytest.mark.story("S8")
 def test_bulk_award_coins_to_multiple(login, game_master, club, character, second_character):
     c = login(game_master)
-    r = c.post(bulk_award_url(club), bulk_payload(
-        [character, second_character],
-        {},
-        coins={character: 500, second_character: 300},
-    ))
+    r = c.post(
+        bulk_award_url(club),
+        bulk_payload(
+            [character, second_character],
+            {},
+            coins={character: 500, second_character: 300},
+        ),
+    )
     assert r.status_code == 302
     assert coin_balance(character) == 500
     assert coin_balance(second_character) == 300
@@ -73,10 +76,13 @@ def test_bulk_award_items_to_multiple(
     login, game_master, club, character, second_character, item, second_item
 ):
     c = login(game_master)
-    r = c.post(bulk_award_url(club), bulk_payload(
-        [character, second_character],
-        {character: [(item, 2)], second_character: [(second_item, 1)]},
-    ))
+    r = c.post(
+        bulk_award_url(club),
+        bulk_payload(
+            [character, second_character],
+            {character: [(item, 2)], second_character: [(second_item, 1)]},
+        ),
+    )
     assert r.status_code == 302
     assert item_quantities(character)[item.pk] == 2
     assert item_quantities(second_character)[second_item.pk] == 1
@@ -87,11 +93,14 @@ def test_bulk_award_coins_and_items_mixed(
     login, game_master, club, character, second_character, item, second_item
 ):
     c = login(game_master)
-    r = c.post(bulk_award_url(club), bulk_payload(
-        [character, second_character],
-        {character: [(item, 2)], second_character: [(second_item, 1)]},
-        coins={character: 500, second_character: 300},
-    ))
+    r = c.post(
+        bulk_award_url(club),
+        bulk_payload(
+            [character, second_character],
+            {character: [(item, 2)], second_character: [(second_item, 1)]},
+            coins={character: 500, second_character: 300},
+        ),
+    )
     assert r.status_code == 302
     assert coin_balance(character) == 500
     assert coin_balance(second_character) == 300
@@ -117,11 +126,14 @@ def test_bulk_award_atomic_failure(
 @pytest.mark.story("S8")
 def test_bulk_award_redirects_to_ledger(login, game_master, club, character, second_character):
     c = login(game_master)
-    r = c.post(bulk_award_url(club), bulk_payload(
-        [character, second_character],
-        {},
-        coins={character: 500},
-    ))
+    r = c.post(
+        bulk_award_url(club),
+        bulk_payload(
+            [character, second_character],
+            {},
+            coins={character: 500},
+        ),
+    )
     assert r.status_code == 302
     assert "ledger" in r.url
     assert f"character={character.pk}" in r.url or f"character={second_character.pk}" in r.url
@@ -148,10 +160,13 @@ def test_bulk_award_player_forbidden(login, player, club, character):
 @pytest.mark.story("S8")
 def test_bulk_award_cross_club(login, game_master, club, character, foreign_item):
     c = login(game_master)
-    r = c.post(bulk_award_url(club), bulk_payload(
-        [character],
-        {character: [(foreign_item, 1)]},
-    ))
+    r = c.post(
+        bulk_award_url(club),
+        bulk_payload(
+            [character],
+            {character: [(foreign_item, 1)]},
+        ),
+    )
     assert r.status_code == 200
     assert not entries(character).exists()
 
@@ -160,10 +175,13 @@ def test_bulk_award_cross_club(login, game_master, club, character, foreign_item
 def test_bulk_award_no_characters_selected(login, game_master, club, character):
     """Test that selecting no characters shows an error."""
     c = login(game_master)
-    r = c.post(bulk_award_url(club), {
-        "note": "test",
-        "date": "2025-01-15",
-    })
+    r = c.post(
+        bulk_award_url(club),
+        {
+            "note": "test",
+            "date": "2025-01-15",
+        },
+    )
     assert r.status_code == 200
     assert "Select at least one character" in r.content.decode()
 
@@ -172,10 +190,13 @@ def test_bulk_award_no_characters_selected(login, game_master, club, character):
 def test_bulk_award_empty_amounts(login, game_master, club, character):
     """Test that empty coins/items shows an error."""
     c = login(game_master)
-    r = c.post(bulk_award_url(club), {
-        "note": "test",
-        "date": "2025-01-15",
-        "characters": [str(character.pk)],
-    })
+    r = c.post(
+        bulk_award_url(club),
+        {
+            "note": "test",
+            "date": "2025-01-15",
+            "characters": [str(character.pk)],
+        },
+    )
     assert r.status_code == 200
     assert "at least one" in r.content.decode()

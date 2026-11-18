@@ -105,4 +105,5 @@ class ClubContextMixin:
 
 class ViewMixin(ClubScopedMixin, CharacterContextMixin, PermissionMixin, ClubContextMixin):
     """Combined mixin with all common view functionality."""
+
     pass

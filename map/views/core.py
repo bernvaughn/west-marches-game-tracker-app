@@ -38,10 +38,11 @@ def _map_context(request, hex_map, q, r, view, tile=None):
 def _get_map(request_or_view, map_id, is_editor):
     """Get a club-scoped map by ID, raising Http404 if not found or archived."""
     # Handle both class-based views (with mixin) and function-based views (with request)
-    if hasattr(request_or_view, 'get_club_object_or_404'):
+    if hasattr(request_or_view, "get_club_object_or_404"):
         hex_map = request_or_view.get_club_object_or_404(HexMap, pk=map_id)
     else:
         from accounts.scoping import club_get_object_or_404
+
         hex_map = club_get_object_or_404(request_or_view, HexMap, pk=map_id)
     if hex_map.archived and not is_editor:
         raise Http404
