@@ -5,7 +5,7 @@ from django.urls import reverse
 from ledger.models import LedgerEntry
 from ledger.services import Line, record
 from player_characters.junk import set_junk
-from player_characters.models import JunkMark, Trade, TradeLine
+from player_characters.models import JunkMark
 
 
 @pytest.fixture
@@ -113,17 +113,3 @@ def test_over_available_errors(club, player, login, character, shop, always_open
     assert r.status_code == 302
     assert "Not enough Rope available to sell." in [str(m) for m in get_messages(r.wsgi_request)]
     assert sales() == 0
-
-
-@pytest.mark.story("U58")
-def test_held_line_only_when_held(
-    club, player, login, character, other_character, shop, always_open, loot
-):
-    c = login(player)
-    r = post(c, club, shop, character, loot, 1)
-    assert b"In open trades" not in r.content
-    trade = Trade.objects.create(club=club, sender=character, receiver=other_character)
-    TradeLine.objects.create(trade=trade, from_sender=True, item=loot, quantity=1)
-    r = post(c, club, shop, character, loot, 1)
-    assert b"In open trades" not in r.content
-    assert b"Held" not in r.content

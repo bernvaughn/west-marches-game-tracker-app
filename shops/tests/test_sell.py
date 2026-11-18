@@ -1,11 +1,9 @@
 import pytest
-from django.contrib.messages import get_messages
 from django.urls import reverse
 
 from items.models import Item
 from ledger.models import LedgerEntry
-from ledger.services import InsufficientItems, Line, record
-from player_characters.models import Trade, TradeLine
+from ledger.services import Line, record
 from shops.models import ShopStock
 from shops.selling import sell
 from shops.services import ShopClosed, ShopError
@@ -51,19 +49,6 @@ def test_stock_unchanged(character, shop, always_open, stock, loot):
     assert stock.quantity == 2
 
 
-def _hold(character, other_character, item, club):
-    trade = Trade.objects.create(club=club, sender=character, receiver=other_character)
-    TradeLine.objects.create(trade=trade, from_sender=True, item=item, quantity=3)
-
-
-def test_held_item_cannot_be_sold(club, character, other_character, shop, always_open, loot):
-    _hold(character, other_character, loot, club)
-    before = LedgerEntry.objects.count()
-    with pytest.raises(InsufficientItems):
-        sell(character, shop, loot, 1)
-    assert LedgerEntry.objects.count() == before
-
-
 def test_closed_shop_refused(character, closed_shop, loot):
     before = LedgerEntry.objects.count()
     with pytest.raises(ShopClosed):
@@ -94,16 +79,6 @@ def test_post_success(club, player, login, character, shop, always_open, loot):
     assert r.url == reverse("shops:detail", args=[club.slug, shop.id])
     entry = LedgerEntry.objects.get(kind="sale")
     assert entry.created_by == player
-
-
-def test_post_held_item_message(
-    club, player, login, character, other_character, shop, always_open, loot
-):
-    _hold(character, other_character, loot, club)
-    r = login(player).post(url(club, shop, loot), {"character": character.id, "quantity": 1})
-    assert r.status_code == 302
-    assert "Not enough Rope available to sell." in [str(m) for m in get_messages(r.wsgi_request)]
-    assert not LedgerEntry.objects.filter(kind="sale").exists()
 
 
 def test_closed_shop_404(club, player, login, character, closed_shop, loot):

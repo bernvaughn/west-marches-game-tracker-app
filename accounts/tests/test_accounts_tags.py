@@ -71,7 +71,7 @@ def test_can_view_inventory_filter(
 
 def test_approvals_dropdown_shows_counts_by_type():
     approvals = [
-        {"label": "Trades", "count": 1, "url": "/c/club/trades/"},
+        {"label": "Quests", "count": 1, "url": "/c/club/quests/"},
         {"label": "Map requests", "count": 2, "url": "/c/club/map/requests/"},
     ]
     html = _render(
@@ -81,8 +81,8 @@ def test_approvals_dropdown_shows_counts_by_type():
     )
     assert "approvals-menu" in html
     assert "approvals-total" in html
-    assert "Trades" in html and "Map requests" in html
-    assert "/c/club/trades/" in html and "/c/club/map/requests/" in html
+    assert "Quests" in html and "Map requests" in html
+    assert "/c/club/quests/" in html and "/c/club/map/requests/" in html
 
 
 def test_approvals_dropdown_hidden_when_zero():
