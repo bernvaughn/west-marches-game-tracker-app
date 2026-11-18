@@ -90,54 +90,6 @@ class Character(models.Model):
             raise ValidationError("Owner must be a member of the character's club.")
 
 
-class Trade(models.Model):
-    club_path = "club"
-
-    class Status(models.TextChoices):
-        REQUESTED = "requested", "Requested"
-        ACCEPTED = "accepted", "Accepted"
-        COMPLETED = "completed", "Completed"
-        DECLINED = "declined", "Declined"
-        CANCELLED = "cancelled", "Cancelled"
-
-    club = models.ForeignKey("accounts.Club", on_delete=models.CASCADE, related_name="trades")
-    sender = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="trades_sent")
-    receiver = models.ForeignKey(
-        Character, on_delete=models.CASCADE, related_name="trades_received"
-    )
-    status = models.CharField(max_length=10, choices=Status, default=Status.REQUESTED)
-    note = models.TextField(blank=True)
-    sender_approved = models.BooleanField(default=False)
-    receiver_approved = models.BooleanField(default=False)
-    # Which side ("sender" or "receiver") last changed its lines. Cleared on approval.
-    sides_changed_by = models.CharField(max_length=8, blank=True, default="")
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    objects = ClubScopedManager()
-
-    class Meta:
-        ordering = ["-created"]
-
-    def __str__(self):
-        return f"Trade {self.pk}: {self.sender} -> {self.receiver}"
-
-
-class TradeLine(models.Model):
-    club_path = "trade__club"
-
-    trade = models.ForeignKey(Trade, on_delete=models.CASCADE, related_name="lines")
-    from_sender = models.BooleanField(default=True)
-    item = models.ForeignKey("items.Item", null=True, blank=True, on_delete=models.PROTECT)
-    quantity = models.IntegerField(default=0)
-    coins = models.IntegerField(default=0)
-
-    objects = ClubScopedManager()
-
-    def __str__(self):
-        return f"TradeLine {self.pk} of trade {self.trade_id}"
-
-
 class SelectedCharacter(models.Model):
     """The character a member is acting as in a club (one row per membership)."""
 
