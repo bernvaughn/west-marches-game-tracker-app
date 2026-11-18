@@ -62,10 +62,10 @@ Apps (names tentative; see the README): `accounts`, `player_characters`, `items`
 - The date defaults to the current date and can be changed to any date.
 
 **U15 Move items between my characters.** *(Removed)* As a player, I want to be able to send items from one character to another, if both characters are mine, so I can transfer items between my characters. This stays within the same club. *(player_characters, items)*
-- **Rationale:** Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
+- **Rationale:** Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy via fixed base value pricing.
 
 **U16 Trades.** *(Removed)* As a player, I want to be able to propose trades to other players' characters (within the same club), so we can exchange items easily. *(player_characters, items, shops)*
-- **Rationale:** Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
+- **Rationale:** Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy via fixed base value pricing.
 
 How a trade works:
 1. Player 1, on character 1a, sends a trade request to character 2a, which is owned by player 2.
@@ -935,8 +935,8 @@ Not included: players' agents, spending a player's coins, trades, and anything o
 
 ## Removed features
 
-- **U15 Move items**: Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
-- **U16 Trades**: Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy.
+- **U15 Move items**: Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy via fixed base value pricing.
+- **U16 Trades**: Removed to prevent infinite item duplication. Player shops (U66/U67) provide safe player-to-player economy via fixed base value pricing.
 
 ## Database and feature notes
 
