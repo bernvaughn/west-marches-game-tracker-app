@@ -34,7 +34,7 @@ VIEWS = {
     "rotation_edit": rotations.rotation_edit,
     "rotation_delete": rotations.rotation_delete,
 }
-MEMBER = ["index", "detail", "stock_fragment", "buy", "sell_item", "sell_junk", "sell_junk_pick"]
+MEMBER = ["index", "detail", "stock_fragment", "buy", "sell_item", "sell_junk"]
 ADMIN_GET = [
     "manage_list", "manage_create", "manage_edit", "stock_add", "stock_edit",
     "rotation_list", "rotation_create", "rotation_edit",
@@ -77,7 +77,7 @@ def test_urls_resolve(ctx):
 
 def test_member_urls_ok(login, player, ctx):
     for name in MEMBER:
-        expected = 302 if name in {"sell_item", "sell_junk_pick"} else 200
+        expected = 302 if name == "sell_item" else 200
         assert get(login(player), name, ctx).status_code == expected
 
 

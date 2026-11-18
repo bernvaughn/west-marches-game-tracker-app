@@ -160,7 +160,7 @@ def test_total_follows_ticks_and_quantities(club, login, player, junked, shop, i
         return body[body.index('id="junk-total"') :].split("</p>")[0]
 
     assert "0 cp" in total({f"qty_{item.pk}": "3", f"qty_{torch.pk}": "4"})
-    assert "1 gp</strong>" in total(
+    assert "1 gp</span></strong>" in total(
         {"item": [item.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
     )
     both = {"item": [item.pk, torch.pk], f"qty_{item.pk}": "2", f"qty_{torch.pk}": "4"}
