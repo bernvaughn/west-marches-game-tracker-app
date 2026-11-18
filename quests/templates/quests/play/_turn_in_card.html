@@ -1,5 +1,6 @@
 <section id="turn-in" class="wm-quest-turnin card" aria-labelledby="turn-in-title">
   <h2 id="turn-in-title" class="h4">Turn in</h2>
+  {% load coins %}
   {% if character %}
   <p class="wm-quest-turnin-name"><strong>{{ character.name }}</strong></p>
   <div class="wm-table-scroll">
@@ -12,6 +13,19 @@
       </tbody>
     </table>
   </div>
+  {% if rewards %}
+  <div class="wm-quest-rewards">
+    <h3 class="h6">Rewards</h3>
+    <ul class="wm-reward-list">
+      {% for reward in rewards %}
+        <li class="wm-reward-item">
+          {% if reward.coins %}{{ reward.coins|coins }}{% endif %}
+          {% if reward.item %}{% if reward.coins %}, {% endif %}{{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
   <form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}">
     {% csrf_token %}
     {% if blocked_reason %}<p class="wm-sheet-note" id="turn-in-reason">{{ blocked_reason }}</p>{% endif %}

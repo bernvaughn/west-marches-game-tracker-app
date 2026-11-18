@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from quests.models import QuestCompletion
+from quests.models import Quest, QuestCompletion
 
 
 def _url(name, *args):
@@ -86,3 +86,59 @@ def test_notice_icons_on_board_and_cross_club(login, player, quest, item, other_
     assert "wm-item-symbol" in _body(c, quest)
     assert c.get(_url("detail", other_club_quest.pk)).status_code == 404
     assert other_club_quest.name not in c.get(_url("index")).content.decode()
+
+
+@pytest.mark.story("U55")
+def test_rewards_section_shown_when_quest_has_rewards(login, player, quest, character, item, give):
+    give(character, item, 2)
+    c = login(player)
+    body = _body(c, quest)
+    assert "wm-quest-rewards" in body
+    assert "Rewards" in body
+
+
+@pytest.mark.story("U55")
+def test_rewards_show_coins_formatted_with_coins_filter(
+    login, player, quest, character, item, give
+):
+    give(character, item, 2)
+    c = login(player)
+    body = _body(c, quest)
+    assert "coin coin-" in body
+
+
+@pytest.mark.story("U55")
+def test_rewards_show_item_with_quantity_and_name(
+    login, player, quest, character, item, reward_item, give
+):
+    give(character, item, 2)
+    c = login(player)
+    body = _body(c, quest)
+    assert reward_item.name in body
+    assert "×" in body
+
+
+@pytest.mark.story("U55")
+def test_rewards_section_hidden_when_no_rewards(login, player, club, character, item, give):
+    quest = Quest.objects.create(club=club, name="No Reward Quest")
+    from quests.models import QuestRequirement
+
+    QuestRequirement.objects.create(quest=quest, item=item, quantity=1)
+    give(character, item, 1)
+    c = login(player)
+    body = _body(c, quest)
+    assert "wm-quest-rewards" not in body
+
+
+@pytest.mark.story("U55")
+def test_rewards_read_only_no_interactive_elements(login, player, quest, character, item, give):
+    give(character, item, 2)
+    c = login(player)
+    body = _body(c, quest)
+    start = body.index('class="wm-quest-rewards"')
+    end = body.index("<form", start)
+    rewards_section = body[start:end]
+    assert "<form" not in rewards_section
+    assert "<button" not in rewards_section
+    assert "<input" not in rewards_section
+    assert "<a " not in rewards_section
