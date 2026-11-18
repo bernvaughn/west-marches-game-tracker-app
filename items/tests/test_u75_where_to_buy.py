@@ -122,6 +122,13 @@ def test_your_stall(login, club, player, item):
     assert b"your stall" in r.content
 
 
+def test_closed_stall_excluded(club, player, other_player, item):
+    make_stall(club, other_player, "Shut", item, open_=False)
+    assert item.pk not in available_item_ids(club, TODAY)
+    make_stall(club, other_player, "Open", item)
+    assert item.pk in available_item_ids(club, TODAY)
+
+
 def test_empty_state(login, club, player, item):
     r = login(player).get(wtb(club, item))
     assert b"Not for sale anywhere today." in r.content
