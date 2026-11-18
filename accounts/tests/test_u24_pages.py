@@ -32,33 +32,6 @@ def _stored(player, club):
     ).character
 
 
-# --- move items
-def test_transfer_start(login, club, other_club, player, two, other_player):
-    aria, wren = two
-    url = reverse("characters:transfer_start", args=[club.slug])
-    c = login(player)
-    assert c.get(url).url == reverse("characters:transfer", args=[club.slug, wren.pk])
-    assert c.get(url, {"from": aria.pk}).url == reverse(
-        "characters:transfer", args=[club.slug, aria.pk]
-    )
-    assert _stored(player, club) == wren
-    theirs = _mk(club, other_player, "Theirs")
-    assert c.get(url, {"from": theirs.pk}).status_code == 404
-    assert c.get(url, {"from": "x"}).status_code == 404
-
-
-def test_transfer_start_no_character(login, club, other_player):
-    url = reverse("characters:transfer_start", args=[club.slug])
-    assert NONE in login(other_player).get(url).content.decode()
-
-
-def test_transfer_start_cross_club(login, club, other_club, player, two):
-    Membership.objects.create(user=player, club=other_club)
-    foreign = _mk(other_club, player, "Far")
-    url = reverse("characters:transfer_start", args=[club.slug])
-    assert login(player).get(url, {"from": foreign.pk}).status_code == 404
-
-
 # --- quests
 def test_quest_uses_selected_only(login, club, player, two):
     aria, wren = two
@@ -119,15 +92,3 @@ def test_u27_quest_no_character_input_and_no_form(login, club, player, other_pla
     assert 'name="character"' not in login(player).get(url).content.decode().split("<h1")[1]
     html = login(other_player).get(url).content.decode()
     assert NONE in html and "Turn in as" not in html
-
-
-@pytest.mark.story("U27")
-def test_u27_move_items_keeps_destination_picker(login, club, player, two, other_player):
-    _mk(club, other_player, "Theirs")
-    aria, wren = two
-    html = (
-        login(player)
-        .get(reverse("characters:transfer", args=[club.slug, wren.pk]))
-        .content.decode()
-    )
-    assert 'name="destination"' in html

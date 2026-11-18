@@ -245,6 +245,7 @@ def test_character_preview_no_open_trades_after_removal(login, club, player, ari
 @pytest.mark.story("S3")
 def test_character_preview_includes_downtime(login, club, player, aria):
     from downtime.models import DowntimePointEntry
+
     DowntimePointEntry.objects.create(
         character=aria, delta=2, kind=DowntimePointEntry.Kind.AWARD, note="Test award"
     )
@@ -260,6 +261,7 @@ def test_character_preview_includes_downtime(login, club, player, aria):
 def test_character_preview_coins_available(login, club, player, aria):
     from ledger.models import LedgerEntry
     from ledger.services import Line, record
+
     # Award some coins
     record(
         character=aria,

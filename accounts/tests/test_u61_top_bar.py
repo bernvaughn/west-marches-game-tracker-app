@@ -58,9 +58,9 @@ def test_groups_per_role(login, club, player, game_master, club_admin):
 
 def test_empty_group_hidden(login, club, player, monkeypatch):
     monkeypatch.setattr(
-        navigation, "_entries", [e for e in navigation._entries if e.group != "trades"]
+        navigation, "_entries", [e for e in navigation._entries if e.group != "map"]
     )
-    assert "wm-menu-group-trades" not in home(login, player, club)
+    assert "wm-menu-group-map" not in home(login, player, club)
 
 
 def test_logout_is_last_post_form(login, club, club_admin):

@@ -5,6 +5,31 @@ from .models import ABILITIES
 DASH = "—"
 MINUS = "−"
 
+ABILITY_FIELDS = {name for name, _abbr, _label in ABILITIES}
+
+
+def edit_current_values(form):
+    """Display text for the saved value of each field on the character edit form.
+
+    The values come from form.initial, which holds the record as saved. A
+    failed is_valid() has already copied the submitted values onto
+    form.instance, so the instance is never safe to read here.
+    """
+    values = {}
+    for name, value in form.initial.items():
+        if name not in form.fields:
+            continue
+        if name in ABILITY_FIELDS:
+            modifier = format_modifier(ability_modifier(value))
+            values[name] = f"{value} ({modifier})" if value is not None else DASH
+        elif value is None:
+            values[name] = DASH
+        elif isinstance(value, str):
+            values[name] = value.strip() or DASH
+        else:
+            values[name] = str(value)
+    return values
+
 
 def ability_modifier(score):
     """D&D modifier for a score, or None when the score is blank."""

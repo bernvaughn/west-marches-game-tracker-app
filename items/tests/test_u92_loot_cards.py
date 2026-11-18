@@ -148,6 +148,7 @@ def test_print_no_ledger_or_inventory_changes(login, club, game_master, item, ch
     assert LedgerLine.objects.filter(entry__club=club).count() == before_lines
     # inventory unchanged - character still has 0 of this item
     from player_characters.inventory import inventory_rows
+
     rows = inventory_rows(character)
     assert all(r.owned == 0 for r in rows)
 

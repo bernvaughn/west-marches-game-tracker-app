@@ -44,7 +44,7 @@ def test_other_player_sees_name_and_owner_only(club, login, other_player, sheet)
     assert "Aria" in html and "Player" in html
     for secret in ("Secret backstory", "Rope", "pp: 1"):
         assert secret not in html
-    for name in ("edit", "adjust", "consume", "print_items", "transfer", "handover"):
+    for name in ("edit", "adjust", "consume", "print_items", "handover"):
         assert u(f"characters:{name}", club, sheet.pk) not in html
     assert u("ledger:character_history", club, sheet.pk) not in html
 
@@ -74,7 +74,7 @@ def test_adjust_links_gm_admin_only(club, login, player, game_master, sheet):
 def test_no_transfer_link_after_removal(
     club, login, player, game_master, character, second_character
 ):
-    t = u("characters:transfer", club, character.pk)
+    t = f"/c/{club.slug}/characters/transfer/"
     assert t not in login(player).get(u("characters:detail", club, character.pk)).content.decode()
     assert (
         t not in login(game_master).get(u("characters:detail", club, character.pk)).content.decode()
@@ -84,7 +84,7 @@ def test_no_transfer_link_after_removal(
 @pytest.mark.story("U19")
 def test_transfer_link_absent_with_one_character(club, login, player, character):
     html = login(player).get(u("characters:detail", club, character.pk)).content.decode()
-    assert u("characters:transfer", club, character.pk) not in html
+    assert f"/c/{club.slug}/characters/transfer/" not in html
 
 
 @pytest.mark.story("U19")

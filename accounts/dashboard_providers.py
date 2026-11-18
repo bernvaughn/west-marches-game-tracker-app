@@ -3,25 +3,31 @@
 from abc import ABC
 from typing import Protocol
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import Truncator
 
 from accounts.models import Message
+from accounts.scoping import club_queryset
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from items.magic_types import MagicType
 from items.models import Item
 from ledger.models import LedgerEntry
 from ledger.services import available_items
-from map.models import FoundMark, HexMap, Location, LocationCredit, TileVisit
-from player_characters.junk import junk_rows
+from map.models import HexMap
+from map.services import get_uncredited_tiles
+from player_characters.inventory import coin_summary
+from player_characters.junk import junk_rows, junk_value
+from player_characters.models import Trade
 from player_characters.player_shop import listed_rows
 from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
 from shops.services import open_shops
+
+OPEN = (Trade.Status.REQUESTED, Trade.Status.ACCEPTED)
 
 
 class DashboardProvider(Protocol):
@@ -53,6 +59,61 @@ class BaseDashboardProvider(ABC):
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         """Whether to render this provider for the current user. Default: always show."""
+        return True
+
+
+class HeaderDashboardProvider(BaseDashboardProvider):
+    """Dashboard header stats: coins, downtime, junk count/value, trades, messages."""
+
+    key = "header"
+    order = 0
+    template = "accounts/_dashboard_header.html"
+
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        coin_sum = coin_summary(character)
+        downtime_balance = downtime_services.balance(character)
+        junk = junk_rows(character)
+        junk_val = junk_value(character, junk)
+
+        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
+        my_trades = trades_qs.filter(
+            Q(sender__owner=membership) | Q(receiver__owner=membership)
+        ).select_related("sender__owner__user", "receiver__owner__user")
+
+        open_trades_data = []
+        for t in my_trades:
+            if t.sender.owner_id == membership.id:
+                other = t.receiver
+                side = "sender"
+            else:
+                other = t.sender
+                side = "receiver"
+            open_trades_data.append(
+                {
+                    "trade": t,
+                    "other_character": other,
+                    "side": side,
+                    "status_display": t.get_status_display(),
+                }
+            )
+
+        unread_count = (
+            Message.objects.for_club(club)
+            .filter(status=Message.Status.OPEN)
+            .exclude(sender=membership)
+            .count()
+        )
+
+        return {
+            "coin_summary": coin_sum,
+            "downtime_balance": downtime_balance,
+            "junk_count": len(junk),
+            "junk_value": junk_val,
+            "open_trades": open_trades_data,
+            "unread_count": unread_count,
+        }
+
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         return True
 
 
@@ -118,16 +179,16 @@ class DowntimeDashboardProvider(BaseDashboardProvider):
             reason = ""
             if downtime_balance < action.cost:
                 reason = "Not enough downtime points."
-            spend_url = reverse(
-                "accounts:dashboard_downtime_spend", args=[club.slug, action.pk]
+            spend_url = reverse("accounts:dashboard_downtime_spend", args=[club.slug, action.pk])
+            actions.append(
+                {
+                    "action": action,
+                    "cost": action.cost,
+                    "reason": reason,
+                    "affordable": not reason,
+                    "spend_url": spend_url,
+                }
             )
-            actions.append({
-                "action": action,
-                "cost": action.cost,
-                "reason": reason,
-                "affordable": not reason,
-                "spend_url": spend_url,
-            })
 
         return {
             "downtime_balance": downtime_balance,
@@ -166,14 +227,16 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
                 continue
             item = Item.objects.filter(pk=item_id).first()
             if item and self._is_consumable(item, qty):
-                consumable_items.append({
-                    "item": item,
-                    "quantity": qty,
-                    "consume_partial_url": reverse(
-                        "accounts:consumable_consume_partial",
-                        args=[club.slug, item.pk],
-                    ),
-                })
+                consumable_items.append(
+                    {
+                        "item": item,
+                        "quantity": qty,
+                        "consume_partial_url": reverse(
+                            "accounts:consumable_consume_partial",
+                            args=[club.slug, item.pk],
+                        ),
+                    }
+                )
 
         return {"consumable_items": consumable_items}
 
@@ -204,9 +267,11 @@ class QuestsDashboardProvider(BaseDashboardProvider):
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         today = timezone.localdate()
 
-        quests_qs = Quest.objects.for_club(club).prefetch_related(
-            "requirements__item", "rewards__item"
-        ).annotate(done=Count("completions"))
+        quests_qs = (
+            Quest.objects.for_club(club)
+            .prefetch_related("requirements__item", "rewards__item")
+            .annotate(done=Count("completions"))
+        )
 
         have = available_items(character)
         my_completions = {
@@ -233,19 +298,23 @@ class QuestsDashboardProvider(BaseDashboardProvider):
 
         quest_items = []
         for q in ready_quests:
-            quest_items.append({
-                "label": q.name,
-                "url": reverse("quests:detail", args=[club.slug, q.pk]),
-                "icon": "check-circle",
-                "subtext": "Ready to turn in",
-            })
+            quest_items.append(
+                {
+                    "label": q.name,
+                    "url": reverse("quests:detail", args=[club.slug, q.pk]),
+                    "icon": "check-circle",
+                    "subtext": "Ready to turn in",
+                }
+            )
         if not quest_items:
-            quest_items.append({
-                "label": "Quest Board",
-                "url": reverse("quests:index", args=[club.slug]),
-                "icon": "scroll",
-                "subtext": "Browse available quests",
-            })
+            quest_items.append(
+                {
+                    "label": "Quest Board",
+                    "url": reverse("quests:index", args=[club.slug]),
+                    "icon": "scroll",
+                    "subtext": "Browse available quests",
+                }
+            )
 
         return {
             "ready_quests": ready_quests,
@@ -266,9 +335,12 @@ class MessagesDashboardProvider(BaseDashboardProvider):
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         from accounts.models import Message
 
-        unread_count = Message.objects.for_club(club).filter(
-            status=Message.Status.OPEN
-        ).exclude(sender=membership).count()
+        unread_count = (
+            Message.objects.for_club(club)
+            .filter(status=Message.Status.OPEN)
+            .exclude(sender=membership)
+            .count()
+        )
 
         message_items = [
             {
@@ -295,88 +367,9 @@ class MapDashboardProvider(BaseDashboardProvider):
     order = 5
     template = "accounts/_dashboard_map.html"
 
-    def _get_uncredited_data(self, club, character):
-        """Get maps with uncredited tiles for the character."""
-        # Get all tile visits for this character
-        visits = TileVisit.objects.for_club(club).filter(character=character).select_related("map")
-        
-        # Group visits by map
-        map_visits = {}
-        for visit in visits:
-            if visit.map_id not in map_visits:
-                map_visits[visit.map_id] = []
-            map_visits[visit.map_id].append((visit.q, visit.r))
-        
-        if not map_visits:
-            return [], 0, None
-        
-        # Get maps with visits
-        maps_with_visits = (
-            HexMap.objects.for_club(club)
-            .filter(pk__in=map_visits.keys())
-            .order_by("name")
-        )
-        
-        maps_data = []
-        total_uncredited = 0
-        first_map_with_uncredited = None
-        first_map_uncredited_tiles = None
-        
-        for hex_map in maps_with_visits:
-            visited_positions = set(map_visits[hex_map.pk])
-            
-            # Get locations on visited tiles
-            locations = Location.objects.for_club(club).filter(
-                tile__map=hex_map,
-                tile__q__in=[q for q, r in visited_positions],
-                tile__r__in=[r for q, r in visited_positions],
-            ).select_related("tile")
-            
-            # Check each location for missing credits
-            map_uncredited_tiles = set()
-            for loc in locations:
-                pos = (loc.tile.q, loc.tile.r)
-                if pos not in visited_positions:
-                    continue
-                
-                # Check if character has credit for this location
-                has_discovered = LocationCredit.objects.for_club(club).filter(
-                    location=loc,
-                    kind=LocationCredit.Kind.DISCOVERED,
-                    characters=character
-                ).exists()
-                
-                has_explored = LocationCredit.objects.for_club(club).filter(
-                    location=loc,
-                    kind=LocationCredit.Kind.EXPLORED,
-                    characters=character
-                ).exists()
-                
-                has_found = FoundMark.objects.for_club(club).filter(
-                    location=loc,
-                    character=character
-                ).exists()
-                
-                # If any credit type is missing, this tile needs credit
-                if not (has_discovered and has_explored and has_found):
-                    map_uncredited_tiles.add(pos)
-            
-            uncredited_count = len(map_uncredited_tiles)
-            if uncredited_count > 0:
-                total_uncredited += uncredited_count
-                maps_data.append({
-                    "map": hex_map,
-                    "uncredited_count": uncredited_count,
-                })
-                if first_map_with_uncredited is None:
-                    first_map_with_uncredited = hex_map
-                    first_map_uncredited_tiles = map_uncredited_tiles
-        
-        return maps_data, total_uncredited, (first_map_with_uncredited, first_map_uncredited_tiles)
-
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        maps_data, total_uncredited, first_map_data = self._get_uncredited_data(club, character)
-        
+        result = get_uncredited_tiles(club, character)
+
         # Build map items for the template (always show all maps)
         all_maps = HexMap.objects.for_club(club).order_by("name")
         map_items = [
@@ -389,32 +382,33 @@ class MapDashboardProvider(BaseDashboardProvider):
             for m in all_maps
         ]
         if not map_items:
-            map_items.append({
-                "label": "Map",
-                "url": reverse("map:index", args=[club.slug]),
-                "icon": "map",
-                "subtext": "No maps yet",
-            })
-        
+            map_items.append(
+                {
+                    "label": "Map",
+                    "url": reverse("map:index", args=[club.slug]),
+                    "icon": "map",
+                    "subtext": "No maps yet",
+                }
+            )
+
         # Build request URL for the first map with uncredited tiles
         request_url = None
-        if first_map_data:
-            hex_map, uncredited_tiles = first_map_data
-            base_url = reverse("map:detail", args=[club.slug, hex_map.pk])
+        if result.first_map:
+            base_url = reverse("map:detail", args=[club.slug, result.first_map.pk])
             # Pre-filter to this character's visits
             request_url = f"{base_url}?characters={character.pk}&view=mine"
-        
+
         return {
             "maps": all_maps,
             "map_items": map_items,
-            "maps_data": maps_data,
-            "total_uncredited": total_uncredited,
+            "maps_data": result.maps_data,
+            "total_uncredited": result.total_uncredited,
             "request_url": request_url,
         }
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        _, total_uncredited, _ = self._get_uncredited_data(club, character)
-        return total_uncredited > 0
+        result = get_uncredited_tiles(club, character)
+        return result.total_uncredited > 0
 
 
 # =============================================================================
@@ -455,16 +449,18 @@ class MyMessagesDashboardProvider(BaseDashboardProvider):
             if msg.status in (Message.Status.HANDLED, Message.Status.CLOSED):
                 admin_note_preview = self._get_admin_note_preview(msg)
 
-            message_rows.append({
-                "message": msg,
-                "subject": subject,
-                "sent_date": msg.created,
-                "status": msg.status,
-                "status_display": msg.get_status_display(),
-                "status_badge_class": status_badge_class,
-                "admin_note_preview": admin_note_preview,
-                "detail_url": reverse("accounts:message_detail", args=[club.slug, msg.pk]),
-            })
+            message_rows.append(
+                {
+                    "message": msg,
+                    "subject": subject,
+                    "sent_date": msg.created,
+                    "status": msg.status,
+                    "status_display": msg.get_status_display(),
+                    "status_badge_class": status_badge_class,
+                    "admin_note_preview": admin_note_preview,
+                    "detail_url": reverse("accounts:message_detail", args=[club.slug, msg.pk]),
+                }
+            )
 
         return {
             "message_rows": message_rows,
@@ -473,11 +469,8 @@ class MyMessagesDashboardProvider(BaseDashboardProvider):
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         from accounts.models import Message
         from accounts.scoping import club_queryset
-        return (
-            club_queryset(request, Message)
-            .filter(sender=membership)
-            .exists()
-        )
+
+        return club_queryset(request, Message).filter(sender=membership).exists()
 
     def _get_status_badge_class(self, status):
         """Return Bootstrap badge class for message status."""

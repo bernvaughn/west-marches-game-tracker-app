@@ -1,0 +1,6 @@
+# Commits that only change formatting. `git blame` skips them, so it shows the
+# last real change to a line. GitHub reads this file by itself. For local use:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# style: run ruff format across the repo (formatting only) (#271)
+1514bd196269624d2e2ee6d2e7efe4500cd98283

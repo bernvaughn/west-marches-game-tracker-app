@@ -2,6 +2,7 @@
 
 Works with runserver and tests: no collectstatic step is needed.
 """
+
 import hashlib
 import os
 

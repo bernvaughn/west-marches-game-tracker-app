@@ -36,9 +36,9 @@ def test_confirm_modal_blocks_honored(club):
 
     html = Template(
         '{% extends "components/_confirm_modal.html" %}'
-        '{% block title %}Delete item?{% endblock %}'
-        '{% block summary %}This cannot be undone.{% endblock %}'
-        '{% block confirm_label %}Delete{% endblock %}'
+        "{% block title %}Delete item?{% endblock %}"
+        "{% block summary %}This cannot be undone.{% endblock %}"
+        "{% block confirm_label %}Delete{% endblock %}"
     ).render(Context({"confirm_url": "/delete/"}))
     assert "Delete item?" in html
     assert "This cannot be undone." in html

@@ -125,6 +125,7 @@ def test_details_modal_retired_ok_for_admin(login, club, club_admin, item):
 def test_details_modal_cross_club_isolation(login, club, other_club, player, other_player):
     """Items from other clubs are not accessible."""
     from items.models import Item
+
     other_item = Item.objects.create(club=other_club, name="Foreign Item", value_cp=100)
     r = login(player).get(_details_modal(club, other_item))
     assert r.status_code == 404
