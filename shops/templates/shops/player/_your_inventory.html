@@ -4,7 +4,6 @@
   {% if buyer %}
   <p class="wm-your-inventory-name"><strong>{{ buyer.name }}</strong></p>
   <p class="wm-your-inventory-coins">{{ inventory_coins.owned|coins }}</p>
-  {% if inventory_coins.has_holds %}<p class="wm-sheet-note"><a href="{% url 'trades:index' club.slug %}">In open trades</a>: {{ inventory_coins.held|coins }} &middot; Available: {{ inventory_coins.available|coins }}</p>{% endif %}
   {% if inventory_rows %}
   <div class="wm-table-scroll">
     <table class="table table-sm wm-data-table">

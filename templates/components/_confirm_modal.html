@@ -1,0 +1,30 @@
+{% extends "components/modal_frame.html" %}
+{% comment %}_confirm_modal: a shared confirm modal with a summary.
+   Extends components/modal_frame.html and adds a post form around it.
+   Blocks: title (required), summary (required), confirm_label (optional, defaults to "Confirm").
+   The footer renders Cancel + a primary confirm button.
+   Context: confirm_url (POST target for the form and hx-post).
+   Example:
+     {% extends "components/_confirm_modal.html" %}
+     {% block title %}Delete?{% endblock %}
+     {% block summary %}This cannot be undone.{% endblock %}
+     {% block confirm_label %}Delete{% endblock %}
+{% endcomment %}
+{% block content %}
+<form
+  method="post"
+  action="{{ confirm_url }}"
+  hx-post="{{ confirm_url }}"
+  hx-target="#app-modal .modal-content"
+  hx-swap="outerHTML"
+>
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}{% endblock %}
+{% block body %}{% block summary %}{% endblock %}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">{% block confirm_label %}Confirm{% endblock %}</button>
+{% endblock %}

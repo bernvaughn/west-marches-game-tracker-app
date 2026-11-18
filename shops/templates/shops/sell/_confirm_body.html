@@ -6,6 +6,5 @@
 </dl>
 <p>Selling as <strong>{{ character.name }}</strong></p>
 <div class="alert alert-warning wm-alert wm-alert--warning" role="alert">{% include "components/icon.html" with name="exclamation-triangle-fill" %}<div>{% if junk_quantity %}Only {{ junk_quantity }} of these {% if junk_quantity == 1 %}is{% else %}are{% endif %} marked as junk. All {{ quantity }} sell at {{ price|coins }} each and leave your inventory.{% else %}{{ item.name }} is not marked as junk. If you sell it, the shop still pays {{ price|coins }} each and it leaves your inventory.{% endif %}</div></div>
-{% if held %}<p class="wm-sheet-note"><a href="{% url 'trades:index' request.club.slug %}">In open trades</a>: {{ held }} · Available: {{ available }}</p>{% endif %}
 <input type="hidden" name="quantity" value="{{ quantity }}">
 <input type="hidden" name="confirmed" value="1">

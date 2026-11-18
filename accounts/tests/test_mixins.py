@@ -3,18 +3,15 @@
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
-from django.http import HttpRequest
 
 from accounts.mixins import (
-    ClubScopedMixin,
     CharacterContextMixin,
-    PermissionMixin,
     ClubContextMixin,
+    ClubScopedMixin,
+    PermissionMixin,
     ViewMixin,
 )
-from accounts.models import Club, Membership, User
 from player_characters.models import Character
-from items.models import Item
 
 
 class ClubScopedMixinTests(TestCase):

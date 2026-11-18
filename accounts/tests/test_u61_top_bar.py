@@ -44,9 +44,9 @@ def test_no_dropdown_menus_in_bar(login, club, club_admin):
 
 def test_shortcut_ranks_in_order(login, club, player):
     b = bar(home(login, player, club))
-    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 7)]
+    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 6)]
     assert pos == sorted(pos)
-    assert b.count("data-wm-tooltip") >= 8 and b.count("wm-shortcut-label") == 6
+    assert b.count("data-wm-tooltip") >= 7 and b.count("wm-shortcut-label") == 5
 
 
 def test_groups_per_role(login, club, player, game_master, club_admin):
@@ -58,9 +58,9 @@ def test_groups_per_role(login, club, player, game_master, club_admin):
 
 def test_empty_group_hidden(login, club, player, monkeypatch):
     monkeypatch.setattr(
-        navigation, "_entries", [e for e in navigation._entries if e.group != "trades"]
+        navigation, "_entries", [e for e in navigation._entries if e.group != "map"]
     )
-    assert "wm-menu-group-trades" not in home(login, player, club)
+    assert "wm-menu-group-map" not in home(login, player, club)
 
 
 def test_logout_is_last_post_form(login, club, club_admin):

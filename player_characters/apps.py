@@ -22,17 +22,5 @@ class PlayerCharactersConfig(AppConfig):
         reg("character", "Character directory", "characters:directory", None, 15)
         reg("gm", "All characters", "characters:index", is_gm_or_admin, 60)
         reg("gm", "Award Loot to Party", "characters:bulk_award", is_gm_or_admin, 65)
-        reg(
-            "trades",
-            "My trades",
-            "trades:index",
-            None,
-            20,
-            icon="arrow-left-right",
-            shortcut_order=40,
-            shortcut_label="Trades",
-        )
-        reg("trades", "Propose trade", "trades:propose", None, 30)
         reg("character", "New character", "characters:create", None, 50)
         reg("character", "Character slips", "characters:slips", None, 57)
-        reg("character", "Move items", "characters:transfer_start", None, 55)
