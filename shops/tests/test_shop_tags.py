@@ -28,9 +28,7 @@ def _make_open(club, name, position, keeper_name=""):
 def test_shop_switcher_lists_open_shops_only(club):
     today = timezone.localdate()
     open_shop = Shop.objects.create(club=club, name="Hammer Anvil", street_position=1)
-    Rotation.objects.create(club=club, name="Spring Market", open_date=today).shops.add(
-        open_shop
-    )
+    Rotation.objects.create(club=club, name="Spring Market", open_date=today).shops.add(open_shop)
     Shop.objects.create(club=club, name="Shuttered")
 
     html = _render(club)

@@ -67,13 +67,17 @@ def test_player_shop_provider_get_context_shows_listed_items(player, club, chara
     character.save(update_fields=["shop_open"])
 
     # Add item to inventory via ledger first
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=10)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=10)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
     # Set junk
     set_junk(character, item, 5, player)
 
@@ -111,23 +115,31 @@ def test_player_shop_provider_get_context_counts_todays_sales(player, club, char
     )
 
     # Add item to seller's inventory
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=10)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=10)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
     set_junk(character, item, 5, player)
 
     # Record a player_shop sale for today
-    record_many([dict(
-        character=character,
-        kind="player_shop",
-        lines=[Line(item=item, quantity=-2), Line(coins=200)],
-        note="Sold to buyer",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="player_shop",
+                lines=[Line(item=item, quantity=-2), Line(coins=200)],
+                note="Sold to buyer",
+                actor=player,
+            )
+        ]
+    )
 
     class MockRequest:
         pass

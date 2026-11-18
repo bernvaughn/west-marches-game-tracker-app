@@ -16,9 +16,7 @@ def test_map_dashboard_provider_no_visits_returns_false(club, player, character)
     assert provider.should_show(None, club, character, membership) is False
 
 
-def test_map_dashboard_provider_visits_no_locations_returns_false(
-    club, player, character
-):
+def test_map_dashboard_provider_visits_no_locations_returns_false(club, player, character):
     """should_show returns False when character has visits but no locations."""
     provider = MapDashboardProvider()
     membership = character.owner
@@ -30,9 +28,7 @@ def test_map_dashboard_provider_visits_no_locations_returns_false(
     assert provider.should_show(None, club, character, membership) is False
 
 
-def test_map_dashboard_provider_visits_with_full_credit_returns_false(
-    club, player, character
-):
+def test_map_dashboard_provider_visits_with_full_credit_returns_false(club, player, character):
     """should_show returns False when character has full credit for all visited locations."""
     provider = MapDashboardProvider()
     membership = character.owner
@@ -43,22 +39,16 @@ def test_map_dashboard_provider_visits_with_full_credit_returns_false(
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Give full credit (discovered, explored, found)
-    dc = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.DISCOVERED
-    )
+    dc = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.DISCOVERED)
     dc.characters.add(character)
-    ec = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.EXPLORED
-    )
+    ec = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.EXPLORED)
     ec.characters.add(character)
     FoundMark.objects.create(location=location, character=character)
 
     assert provider.should_show(None, club, character, membership) is False
 
 
-def test_map_dashboard_provider_missing_discovered_returns_true(
-    club, player, character
-):
+def test_map_dashboard_provider_missing_discovered_returns_true(club, player, character):
     """should_show returns True when character is missing discovered credit."""
     provider = MapDashboardProvider()
     membership = character.owner
@@ -69,18 +59,14 @@ def test_map_dashboard_provider_missing_discovered_returns_true(
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Only explored and found credit, missing discovered
-    ec = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.EXPLORED
-    )
+    ec = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.EXPLORED)
     ec.characters.add(character)
     FoundMark.objects.create(location=location, character=character)
 
     assert provider.should_show(None, club, character, membership) is True
 
 
-def test_map_dashboard_provider_missing_explored_returns_true(
-    club, player, character
-):
+def test_map_dashboard_provider_missing_explored_returns_true(club, player, character):
     """should_show returns True when character is missing explored credit."""
     provider = MapDashboardProvider()
     membership = character.owner
@@ -91,18 +77,14 @@ def test_map_dashboard_provider_missing_explored_returns_true(
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Only discovered and found credit, missing explored
-    dc = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.DISCOVERED
-    )
+    dc = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.DISCOVERED)
     dc.characters.add(character)
     FoundMark.objects.create(location=location, character=character)
 
     assert provider.should_show(None, club, character, membership) is True
 
 
-def test_map_dashboard_provider_missing_found_returns_true(
-    club, player, character
-):
+def test_map_dashboard_provider_missing_found_returns_true(club, player, character):
     """should_show returns True when character is missing found mark."""
     provider = MapDashboardProvider()
     membership = character.owner
@@ -113,13 +95,9 @@ def test_map_dashboard_provider_missing_found_returns_true(
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Only discovered and explored credit, missing found
-    dc = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.DISCOVERED
-    )
+    dc = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.DISCOVERED)
     dc.characters.add(character)
-    ec = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.EXPLORED
-    )
+    ec = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.EXPLORED)
     ec.characters.add(character)
 
     assert provider.should_show(None, club, character, membership) is True
@@ -148,9 +126,7 @@ def test_map_dashboard_provider_get_context_count(club, player, character):
     assert "view=mine" in ctx["request_url"]
 
 
-def test_map_dashboard_provider_multiple_maps_first_map_used(
-    club, player, character
-):
+def test_map_dashboard_provider_multiple_maps_first_map_used(club, player, character):
     """request_url points to first map with uncredited tiles."""
     provider = MapDashboardProvider()
     membership = character.owner
@@ -175,16 +151,12 @@ def test_map_dashboard_provider_multiple_maps_first_map_used(
     assert f"map_id={map1.pk}" in ctx["request_url"] or f"/{map1.pk}/" in ctx["request_url"]
 
 
-def test_map_dashboard_provider_archived_map_not_shown(
-    club, player, character
-):
+def test_map_dashboard_provider_archived_map_not_shown(club, player, character):
     """Archived maps don't show in uncredited count."""
     provider = MapDashboardProvider()
     membership = character.owner
 
-    archived_map = HexMap.objects.create(
-        club=club, name="Archived Map", archived=True
-    )
+    archived_map = HexMap.objects.create(club=club, name="Archived Map", archived=True)
     TileVisit.objects.create(map=archived_map, q=1, r=0, character=character)
     tile = Tile.objects.create(map=archived_map, q=1, r=0)
     Location.objects.create(tile=tile, name="Location")
@@ -202,9 +174,7 @@ def test_map_dashboard_provider_provider_attributes(club, player, character):
     assert provider.template == "accounts/_dashboard_map.html"
 
 
-def test_map_dashboard_provider_multiple_locations_same_tile_counted_once(
-    club, player, character
-):
+def test_map_dashboard_provider_multiple_locations_same_tile_counted_once(club, player, character):
     """Multiple locations on same tile count as one uncredited tile."""
     provider = MapDashboardProvider()
     membership = character.owner

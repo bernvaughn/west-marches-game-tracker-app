@@ -24,20 +24,18 @@ def two_open(club, shop, item):
     second = Shop.objects.create(
         club=club, name="Mystic Brew", sell_percent=100, buy_percent=50, street_position=2
     )
-    Rotation.objects.create(
-        club=club, name="Always", open_date=date(2000, 1, 1)
-    ).shops.add(first, second)
+    Rotation.objects.create(club=club, name="Always", open_date=date(2000, 1, 1)).shops.add(
+        first, second
+    )
     return first, second
 
 
 @pytest.fixture
 def other_open_shop(other_club):
-    shop = Shop.objects.create(
-        club=other_club, name="Elsewhere", sell_percent=100, buy_percent=50
+    shop = Shop.objects.create(club=other_club, name="Elsewhere", sell_percent=100, buy_percent=50)
+    Rotation.objects.create(club=other_club, name="Always", open_date=date(2000, 1, 1)).shops.add(
+        shop
     )
-    Rotation.objects.create(
-        club=other_club, name="Always", open_date=date(2000, 1, 1)
-    ).shops.add(shop)
     return shop
 
 
@@ -55,9 +53,7 @@ def page(login, player, club, shop):
 
 
 def fragment(login, player, club, shop):
-    return login(player).get(
-        detail_url(club, shop), HTTP_HX_REQUEST="true"
-    ).content.decode()
+    return login(player).get(detail_url(club, shop), HTTP_HX_REQUEST="true").content.decode()
 
 
 # --- dropdown presence and contents ---
@@ -178,9 +174,7 @@ def test_fragment_keeps_selected_character(login, club, player, open_shop, item)
     assert "Aria" in html_a
     assert ">3<" in html_a
 
-    SelectedCharacter.objects.update_or_create(
-        membership=membership, defaults={"character": wren}
-    )
+    SelectedCharacter.objects.update_or_create(membership=membership, defaults={"character": wren})
     html_b = fragment(login, player, club, open_shop)
     assert "Wren" in html_b
     assert ">7<" in html_b

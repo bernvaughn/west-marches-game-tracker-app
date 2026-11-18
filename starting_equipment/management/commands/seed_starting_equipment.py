@@ -542,9 +542,7 @@ class Command(BaseCommand):
                     line.choice_group = choice_group
                     line.save(update_fields=["quantity", "is_choice", "choice_group"])
 
-        self.stdout.write(
-            f"Class entries: {created_count} created, {updated_count} updated"
-        )
+        self.stdout.write(f"Class entries: {created_count} created, {updated_count} updated")
 
     def _create_background_entries(self, template, force):
         """Create StartingEquipmentBackgroundEntry for each background."""
@@ -586,9 +584,7 @@ class Command(BaseCommand):
                     line.choice_group = choice_group
                     line.save(update_fields=["quantity", "is_choice", "choice_group"])
 
-        self.stdout.write(
-            f"Background entries: {created_count} created, {updated_count} updated"
-        )
+        self.stdout.write(f"Background entries: {created_count} created, {updated_count} updated")
 
     def _create_level_coins(self, template, force):
         """Create StartingEquipmentLevelCoins for levels 2-20."""
@@ -608,6 +604,4 @@ class Command(BaseCommand):
                 lc.save(update_fields=["coins_cp"])
                 updated_count += 1
 
-        self.stdout.write(
-            f"Level coins: {created_count} created, {updated_count} updated"
-        )
+        self.stdout.write(f"Level coins: {created_count} created, {updated_count} updated")

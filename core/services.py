@@ -193,9 +193,7 @@ class ClubScopedService:
         first_club = clubs[0]
         for club in clubs[1:]:
             if club.pk != first_club.pk:
-                raise ValueError(
-                    f"Objects belong to different clubs: {[c.pk for c in clubs]}"
-                )
+                raise ValueError(f"Objects belong to different clubs: {[c.pk for c in clubs]}")
 
         return first_club
 
@@ -222,9 +220,7 @@ class ClubScopedService:
         """
         model = queryset.model
         if not hasattr(model, "club_path"):
-            raise ValueError(
-                f"Model {model.__name__} does not have a club_path attribute."
-            )
+            raise ValueError(f"Model {model.__name__} does not have a club_path attribute.")
         return queryset.filter(**{model.club_path: club})
 
     def get_club_queryset(self, model: type[ModelT], club: models.Model) -> QuerySet[ModelT]:

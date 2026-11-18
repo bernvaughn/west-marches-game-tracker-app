@@ -102,8 +102,7 @@ class ProposedItem(models.Model):
         blank=True,
         verbose_name="GM-only details",
         help_text=(
-            "Only game masters and club admins see this. "
-            "Use it for secrets, such as a curse."
+            "Only game masters and club admins see this. Use it for secrets, such as a curse."
         ),
     )
     value_cp = models.PositiveIntegerField(default=0)

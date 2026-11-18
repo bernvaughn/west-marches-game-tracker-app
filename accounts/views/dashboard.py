@@ -24,12 +24,14 @@ def _get_dashboard_context(request, club, character, membership):
     for provider in get_providers():
         if provider.should_show(request, club, character, membership):
             ctx = provider.get_context(request, club, character, membership)
-            providers.append({
-                "key": provider.key,
-                "order": provider.order,
-                "template": provider.template,
-                "ctx": ctx,
-            })
+            providers.append(
+                {
+                    "key": provider.key,
+                    "order": provider.order,
+                    "template": provider.template,
+                    "ctx": ctx,
+                }
+            )
 
     # Build header context
     coin_sum = coin_summary(character)
@@ -38,9 +40,13 @@ def _get_dashboard_context(request, club, character, membership):
     junk_val = junk_value(character, junk)
 
     from accounts.models import Message
-    unread_count = Message.objects.for_club(club).filter(
-        status=Message.Status.OPEN
-    ).exclude(sender=membership).count()
+
+    unread_count = (
+        Message.objects.for_club(club)
+        .filter(status=Message.Status.OPEN)
+        .exclude(sender=membership)
+        .count()
+    )
 
     return {
         "character": character,
@@ -64,14 +70,19 @@ def player_dashboard(request, club_slug):
     # If user is GM or admin, redirect to club home (navigation cards)
     if is_game_master(request.user, club) or is_club_admin(request.user, club):
         from django.shortcuts import redirect
+
         return redirect("club_home", club_slug=club.slug)
 
     # If no character selected, show character selector prompt
     if character is None:
-        return render(request, "accounts/dashboard_no_character.html", {
-            "club": club,
-            "membership": membership,
-        })
+        return render(
+            request,
+            "accounts/dashboard_no_character.html",
+            {
+                "club": club,
+                "membership": membership,
+            },
+        )
 
     ctx = _get_dashboard_context(request, club, character, membership)
     return render(request, "accounts/dashboard.html", ctx)
@@ -125,16 +136,18 @@ def character_preview(request, club_slug, pk):
     junk = junk_rows(character)
     junk_val = junk_value(character, junk)
 
-    return JsonResponse({
-        "name": character.name,
-        "level": character.level,
-        "char_class": character.char_class,
-        "species": character.species,
-        "coins_available": coin_sum.available,
-        "junk_count": len(junk),
-        "junk_value": junk_val,
-        "downtime_balance": downtime_balance,
-    })
+    return JsonResponse(
+        {
+            "name": character.name,
+            "level": character.level,
+            "char_class": character.char_class,
+            "species": character.species,
+            "coins_available": coin_sum.available,
+            "junk_count": len(junk),
+            "junk_value": junk_val,
+            "downtime_balance": downtime_balance,
+        }
+    )
 
 
 @club_member_required
@@ -146,7 +159,11 @@ def print_session_pack_modal(request, club_slug, pk):
     if character.owner_id != request.membership.id:
         raise Http404("Not your character.")
 
-    return render(request, "accounts/_print_session_pack_modal.html", {
-        "club": request.club,
-        "character": character,
-    })
+    return render(
+        request,
+        "accounts/_print_session_pack_modal.html",
+        {
+            "club": request.club,
+            "character": character,
+        },
+    )

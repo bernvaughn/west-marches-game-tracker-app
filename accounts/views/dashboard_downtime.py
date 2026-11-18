@@ -71,9 +71,11 @@ def downtime_spend_partial(request, club_slug, action_pk):
                     toast_msg += f", {ei.quantity}×{ei.item.name}"
             else:
                 toast_msg = "No reward this time."
-            response["HX-Trigger"] = json.dumps({
-                "toast": {"message": toast_msg, "type": "success"},
-            })
+            response["HX-Trigger"] = json.dumps(
+                {
+                    "toast": {"message": toast_msg, "type": "success"},
+                }
+            )
             return response
         return redirect("downtime:result", club_slug=club.slug, pk=result.pk)
 

@@ -13,8 +13,10 @@ class TestSecurityHeadersMiddleware:
     @pytest.fixture
     def middleware(self):
         """Create middleware instance with a simple get_response."""
+
         def get_response(request):
             return HttpResponse("OK")
+
         return SecurityHeadersMiddleware(get_response)
 
     @pytest.fixture
@@ -75,6 +77,7 @@ class TestSecurityHeadersMiddleware:
 
     def test_headers_on_error_response(self, middleware, factory):
         """Test headers are added on error responses (404, 500)."""
+
         def error_response(request):
             return HttpResponse("Not Found", status=404)
 
@@ -114,6 +117,7 @@ class TestSecurityHeadersMiddleware:
 
     def test_middleware_chaining(self, factory):
         """Test middleware works when chained with other middleware."""
+
         def inner_response(request):
             return HttpResponse("Inner")
 
@@ -122,6 +126,7 @@ class TestSecurityHeadersMiddleware:
                 response = get_response(request)
                 response["X-Custom"] = "test"
                 return response
+
             return middleware
 
         # Create a chain: outer -> security -> inner

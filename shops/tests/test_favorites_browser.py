@@ -18,9 +18,11 @@ DEMO_PASSWORD = "demo-password"
 def _seed_demo():
     """Seed the demo data for browser tests."""
     from django.core.management import call_command
+
     call_command("seed_demo", verbosity=0)
     # Also run extra_fixtures if needed
     from scripts.screenshot_pages import extra_fixtures
+
     extra_fixtures()
 
 
@@ -37,7 +39,7 @@ def _login_url(live_server):
 def test_my_shops_filter_buy_flow(live_server):
     """Test that buying from a shop adds it to My Shops with Recent badge."""
     _seed_demo()
-    
+
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
@@ -71,13 +73,13 @@ def test_my_shops_filter_buy_flow(live_server):
                 pytest.skip("No buyable items in shop")
 
             buy_link.click()
-            
+
             # Wait for the modal to appear (HTMX loads it into #app-modal .modal-content)
-            page.wait_for_selector('#app-modal .modal-content form', timeout=5000)
+            page.wait_for_selector("#app-modal .modal-content form", timeout=5000)
 
             # The buy modal should be visible
             # Find the buy form inside the modal
-            buy_form = page.query_selector('#app-modal .modal-content form')
+            buy_form = page.query_selector("#app-modal .modal-content form")
             if not buy_form:
                 pytest.skip("Buy form not found in modal")
 
@@ -104,11 +106,11 @@ def test_my_shops_filter_buy_flow(live_server):
             page.wait_for_load_state("networkidle")
 
             # The shop should appear in My Shops
-            shop_name = page.query_selector('.wm-street-name')
+            shop_name = page.query_selector(".wm-street-name")
             assert shop_name, "No shop found in My Shops"
 
             # Check for Recent badge
-            recent_badge = page.query_selector('.wm-recent-badge')
+            recent_badge = page.query_selector(".wm-recent-badge")
             assert recent_badge, "★ Recent badge not found"
             assert "Recent" in recent_badge.inner_text()
 
@@ -122,7 +124,7 @@ def test_my_shops_filter_buy_flow(live_server):
 def test_my_shops_filter_sell_flow(live_server):
     """Test that selling to a shop adds it to My Shops with Recent badge."""
     _seed_demo()
-    
+
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
@@ -156,12 +158,12 @@ def test_my_shops_filter_sell_flow(live_server):
                 pytest.skip("No junk to sell or sell junk not available")
 
             sell_junk_link.click()
-            
+
             # Wait for the modal to appear
-            page.wait_for_selector('#app-modal .modal-content form', timeout=5000)
+            page.wait_for_selector("#app-modal .modal-content form", timeout=5000)
 
             # The sell junk modal should appear
-            sell_form = page.query_selector('#app-modal .modal-content form')
+            sell_form = page.query_selector("#app-modal .modal-content form")
             if not sell_form:
                 pytest.skip("Sell junk form not found in modal")
 
@@ -190,11 +192,11 @@ def test_my_shops_filter_sell_flow(live_server):
             page.wait_for_load_state("networkidle")
 
             # The shop should appear in My Shops
-            shop_name = page.query_selector('.wm-street-name')
+            shop_name = page.query_selector(".wm-street-name")
             assert shop_name, "No shop found in My Shops"
 
             # Check for Recent badge
-            recent_badge = page.query_selector('.wm-recent-badge')
+            recent_badge = page.query_selector(".wm-recent-badge")
             assert recent_badge, "★ Recent badge not found"
             assert "Recent" in recent_badge.inner_text()
 
@@ -213,7 +215,7 @@ def test_my_shops_filter_sell_flow(live_server):
 def test_recent_badge_on_all_shops_tab(live_server):
     """Test that Recent badge appears on All Shops tab after buying."""
     _seed_demo()
-    
+
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
@@ -247,11 +249,11 @@ def test_recent_badge_on_all_shops_tab(live_server):
                 pytest.skip("No buyable items in shop")
 
             buy_link.click()
-            
-            # Wait for the modal to appear
-            page.wait_for_selector('#app-modal .modal-content form', timeout=5000)
 
-            buy_form = page.query_selector('#app-modal .modal-content form')
+            # Wait for the modal to appear
+            page.wait_for_selector("#app-modal .modal-content form", timeout=5000)
+
+            buy_form = page.query_selector("#app-modal .modal-content form")
             if not buy_form:
                 pytest.skip("Buy form not found in modal")
 
@@ -268,7 +270,7 @@ def test_recent_badge_on_all_shops_tab(live_server):
             page.wait_for_load_state("networkidle")
 
             # Check for Recent badge on All Shops tab
-            recent_badge = page.query_selector('.wm-recent-badge')
+            recent_badge = page.query_selector(".wm-recent-badge")
             assert recent_badge, "★ Recent badge not found on All Shops tab"
             assert "Recent" in recent_badge.inner_text()
 

@@ -93,6 +93,7 @@ def remove_found_marks(location, characters):
 @dataclass
 class UncreditedTilesResult:
     """Structured result for uncredited tiles query."""
+
     maps_data: list[dict]
     total_uncredited: int
     first_map: HexMap | None
@@ -101,7 +102,7 @@ class UncreditedTilesResult:
 
 def get_uncredited_tiles(club, character) -> UncreditedTilesResult:
     """Get maps with uncredited tiles for a character.
-    
+
     Returns an UncreditedTilesResult with:
     - maps_data: list of dicts with 'map' (HexMap) and 'uncredited_count' (int)
     - total_uncredited: total count of unique uncredited tiles across all maps
@@ -110,79 +111,82 @@ def get_uncredited_tiles(club, character) -> UncreditedTilesResult:
     """
     # Get all tile visits for this character
     visits = TileVisit.objects.for_club(club).filter(character=character).select_related("map")
-    
+
     # Group visits by map
     map_visits = {}
     for visit in visits:
         if visit.map_id not in map_visits:
             map_visits[visit.map_id] = []
         map_visits[visit.map_id].append((visit.q, visit.r))
-    
+
     if not map_visits:
         return UncreditedTilesResult([], 0, None, None)
-    
+
     # Get maps with visits
     maps_with_visits = (
-        HexMap.objects.for_club(club)
-        .filter(pk__in=map_visits.keys())
-        .order_by("name")
+        HexMap.objects.for_club(club).filter(pk__in=map_visits.keys()).order_by("name")
     )
-    
+
     maps_data = []
     total_uncredited = 0
     first_map = None
     first_map_uncredited_tiles = None
-    
+
     for hex_map in maps_with_visits:
         visited_positions = set(map_visits[hex_map.pk])
-        
+
         # Get locations on visited tiles
-        locations = Location.objects.for_club(club).filter(
-            tile__map=hex_map,
-            tile__q__in=[q for q, r in visited_positions],
-            tile__r__in=[r for q, r in visited_positions],
-        ).select_related("tile")
-        
+        locations = (
+            Location.objects.for_club(club)
+            .filter(
+                tile__map=hex_map,
+                tile__q__in=[q for q, r in visited_positions],
+                tile__r__in=[r for q, r in visited_positions],
+            )
+            .select_related("tile")
+        )
+
         # Check each location for missing credits
         map_uncredited_tiles = set()
         for loc in locations:
             pos = (loc.tile.q, loc.tile.r)
             if pos not in visited_positions:
                 continue
-            
+
             # Check if character has credit for this location
-            has_discovered = LocationCredit.objects.for_club(club).filter(
-                location=loc,
-                kind=LocationCredit.Kind.DISCOVERED,
-                characters=character
-            ).exists()
-            
-            has_explored = LocationCredit.objects.for_club(club).filter(
-                location=loc,
-                kind=LocationCredit.Kind.EXPLORED,
-                characters=character
-            ).exists()
-            
-            has_found = FoundMark.objects.for_club(club).filter(
-                location=loc,
-                character=character
-            ).exists()
-            
+            has_discovered = (
+                LocationCredit.objects.for_club(club)
+                .filter(location=loc, kind=LocationCredit.Kind.DISCOVERED, characters=character)
+                .exists()
+            )
+
+            has_explored = (
+                LocationCredit.objects.for_club(club)
+                .filter(location=loc, kind=LocationCredit.Kind.EXPLORED, characters=character)
+                .exists()
+            )
+
+            has_found = (
+                FoundMark.objects.for_club(club).filter(location=loc, character=character).exists()
+            )
+
             # If any credit type is missing, this tile needs credit
             if not (has_discovered and has_explored and has_found):
                 map_uncredited_tiles.add(pos)
-        
+
         uncredited_count = len(map_uncredited_tiles)
         if uncredited_count > 0:
             total_uncredited += uncredited_count
-            maps_data.append({
-                "map": hex_map,
-                "uncredited_count": uncredited_count,
-            })
+            maps_data.append(
+                {
+                    "map": hex_map,
+                    "uncredited_count": uncredited_count,
+                }
+            )
             if first_map is None:
                 first_map = hex_map
                 first_map_uncredited_tiles = map_uncredited_tiles
-    
+
     return UncreditedTilesResult(
         maps_data=maps_data,
         total_uncredited=total_uncredited,

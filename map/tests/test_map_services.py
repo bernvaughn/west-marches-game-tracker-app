@@ -41,13 +41,9 @@ def test_get_uncredited_tiles_visits_with_full_credit_returns_empty(club, player
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Give full credit (discovered, explored, found)
-    dc = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.DISCOVERED
-    )
+    dc = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.DISCOVERED)
     dc.characters.add(character)
-    ec = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.EXPLORED
-    )
+    ec = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.EXPLORED)
     ec.characters.add(character)
     FoundMark.objects.create(location=location, character=character)
 
@@ -67,9 +63,7 @@ def test_get_uncredited_tiles_missing_discovered_returns_uncredited(club, player
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Only explored and found credit, missing discovered
-    ec = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.EXPLORED
-    )
+    ec = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.EXPLORED)
     ec.characters.add(character)
     FoundMark.objects.create(location=location, character=character)
 
@@ -91,9 +85,7 @@ def test_get_uncredited_tiles_missing_explored_returns_uncredited(club, player, 
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Only discovered and found credit, missing explored
-    dc = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.DISCOVERED
-    )
+    dc = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.DISCOVERED)
     dc.characters.add(character)
     FoundMark.objects.create(location=location, character=character)
 
@@ -112,13 +104,9 @@ def test_get_uncredited_tiles_missing_found_returns_uncredited(club, player, cha
     location = Location.objects.create(tile=tile, name="Test Location")
 
     # Only discovered and explored credit, missing found
-    dc = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.DISCOVERED
-    )
+    dc = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.DISCOVERED)
     dc.characters.add(character)
-    ec = LocationCredit.objects.create(
-        location=location, kind=LocationCredit.Kind.EXPLORED
-    )
+    ec = LocationCredit.objects.create(location=location, kind=LocationCredit.Kind.EXPLORED)
     ec.characters.add(character)
 
     result = get_uncredited_tiles(club, character)
@@ -175,9 +163,7 @@ def test_get_uncredited_tiles_multiple_maps_first_map_used(club, player, charact
 
 def test_get_uncredited_tiles_archived_map_included_in_count(club, player, character):
     """Archived maps are included in uncredited count (matching original provider behavior)."""
-    archived_map = HexMap.objects.create(
-        club=club, name="Archived Map", archived=True
-    )
+    archived_map = HexMap.objects.create(club=club, name="Archived Map", archived=True)
     HexMap.objects.create(club=club, name="Active Map")
 
     TileVisit.objects.create(map=archived_map, q=1, r=0, character=character)

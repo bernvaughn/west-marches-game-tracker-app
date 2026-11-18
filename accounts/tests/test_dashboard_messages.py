@@ -75,6 +75,7 @@ def test_dashboard_my_messages_shows_subject_date_status(
     # Date format (M d, Y H:i)
     # Check that date appears
     import re
+
     assert re.search(r"\w{3} \d{1,2}, \d{4} \d{2}:\d{2}", content)
 
 
@@ -108,9 +109,7 @@ def test_dashboard_my_messages_view_response_link(
 
 
 @pytest.mark.story("S9")
-def test_message_detail_view_for_sender(
-    club, player, character, player_with_messages, login
-):
+def test_message_detail_view_for_sender(club, player, character, player_with_messages, login):
     """Sender can view their own message detail (read-only)."""
     msg = player_with_messages[0]
     c = login(player)
@@ -149,9 +148,7 @@ def test_message_detail_view_forbidden_for_other_player(
 
 
 @pytest.mark.story("S9")
-def test_message_detail_shows_admin_response(
-    club, player, character, player_with_messages, login
-):
+def test_message_detail_shows_admin_response(club, player, character, player_with_messages, login):
     """Message detail shows admin response when message is handled."""
     from items.models import Item
     from ledger.models import LedgerEntry
@@ -208,20 +205,12 @@ def test_dashboard_my_messages_shows_character_name(
 
 
 @pytest.mark.story("S9")
-def test_dashboard_my_messages_order_by_created_desc(
-    club, player, character, login
-):
+def test_dashboard_my_messages_order_by_created_desc(club, player, character, login):
     """Messages ordered by created date descending (newest first)."""
     mem = _mem(player, club)
-    Message.objects.create(
-        club=club, sender=mem, character=character, body="First message"
-    )
-    Message.objects.create(
-        club=club, sender=mem, character=character, body="Second message"
-    )
-    Message.objects.create(
-        club=club, sender=mem, character=character, body="Third message"
-    )
+    Message.objects.create(club=club, sender=mem, character=character, body="First message")
+    Message.objects.create(club=club, sender=mem, character=character, body="Second message")
+    Message.objects.create(club=club, sender=mem, character=character, body="Third message")
 
     c = login(player)
     resp = c.get(_url_dashboard(club))

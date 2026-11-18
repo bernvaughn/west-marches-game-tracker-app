@@ -19,9 +19,7 @@ pytestmark = [pytest.mark.django_db]
 @pytest.fixture
 def template(club):
     """Create a starting equipment template."""
-    return StartingEquipmentTemplate.objects.create(
-        club=club, name="Test Template", is_active=True
-    )
+    return StartingEquipmentTemplate.objects.create(club=club, name="Test Template", is_active=True)
 
 
 @pytest.fixture
@@ -64,9 +62,7 @@ def class_entry(template, class_item):
         max_level=5,
         coins_cp=2000,
     )
-    StartingEquipmentClassLine.objects.create(
-        class_entry=entry, item=class_item, quantity=1
-    )
+    StartingEquipmentClassLine.objects.create(class_entry=entry, item=class_item, quantity=1)
     return entry
 
 
@@ -87,14 +83,10 @@ def background_entry(template, background_item):
 @pytest.fixture
 def level_coins_entry(template):
     """Create level coins for level 5."""
-    return StartingEquipmentLevelCoins.objects.create(
-        template=template, level=5, coins_cp=15000
-    )
+    return StartingEquipmentLevelCoins.objects.create(template=template, level=5, coins_cp=15000)
 
 
-def test_class_equipment_case_insensitive_match(
-    character, template, class_entry, club_admin
-):
+def test_class_equipment_case_insensitive_match(character, template, class_entry, club_admin):
     """Test class equipment matches case-insensitively."""
     character.char_class = "fighter"  # lowercase
     character.level = 1
@@ -115,9 +107,7 @@ def test_class_equipment_case_insensitive_match(
     assert coin_lines[0].coins == 2000
 
 
-def test_class_equipment_level_range_filter(
-    character, template, class_entry, club_admin
-):
+def test_class_equipment_level_range_filter(character, template, class_entry, club_admin):
     """Test class equipment only matches within level range."""
     character.char_class = "Fighter"
     character.level = 6  # outside range 1-5
@@ -129,9 +119,7 @@ def test_class_equipment_level_range_filter(
     assert entry is None
 
 
-def test_class_equipment_level_within_range(
-    character, template, class_entry, club_admin
-):
+def test_class_equipment_level_within_range(character, template, class_entry, club_admin):
     """Test class equipment matches when level is within range."""
     character.char_class = "Fighter"
     character.level = 3  # within range 1-5
@@ -169,9 +157,7 @@ def test_background_equipment_case_insensitive_match(
     assert coin_lines[0].coins == 1000
 
 
-def test_background_equipment_no_background_field(
-    character, template, club_admin
-):
+def test_background_equipment_no_background_field(character, template, club_admin):
     """Test no background equipment when character has no background."""
     character.background = ""
     character.char_class = "Wizard"
@@ -183,9 +169,7 @@ def test_background_equipment_no_background_field(
     assert entry is None
 
 
-def test_level_coins_for_level_1_ignored(
-    character, template, level_coins_entry, club_admin
-):
+def test_level_coins_for_level_1_ignored(character, template, level_coins_entry, club_admin):
     """Test level coins are not granted for level 1 characters."""
     character.char_class = "Wizard"
     character.level = 1
@@ -196,9 +180,7 @@ def test_level_coins_for_level_1_ignored(
     assert entry is None
 
 
-def test_level_coins_for_level_greater_than_1(
-    character, template, level_coins_entry, club_admin
-):
+def test_level_coins_for_level_greater_than_1(character, template, level_coins_entry, club_admin):
     """Test level coins are granted for level > 1."""
     character.char_class = "Wizard"
     character.level = 5
@@ -213,9 +195,7 @@ def test_level_coins_for_level_greater_than_1(
     assert coin_lines[0].coins == 15000
 
 
-def test_approved_magic_item_requests_only(
-    character, template, magic_item, club_admin
-):
+def test_approved_magic_item_requests_only(character, template, magic_item, club_admin):
     """Test only APPROVED magic item requests are granted."""
     character.char_class = "Wizard"
     character.level = 1
@@ -236,9 +216,7 @@ def test_approved_magic_item_requests_only(
     assert entry is None
 
 
-def test_approved_magic_item_request_granted(
-    character, template, magic_item, club_admin
-):
+def test_approved_magic_item_request_granted(character, template, magic_item, club_admin):
     """Test APPROVED magic item request is granted."""
     character.char_class = "Wizard"
     character.level = 1
@@ -262,9 +240,7 @@ def test_approved_magic_item_request_granted(
     assert item_lines[0].quantity == 1
 
 
-def test_declined_magic_item_request_not_granted(
-    character, template, magic_item, club_admin
-):
+def test_declined_magic_item_request_not_granted(character, template, magic_item, club_admin):
     """Test DECLINED magic item request is not granted."""
     character.char_class = "Wizard"
     character.level = 1
@@ -283,9 +259,7 @@ def test_declined_magic_item_request_not_granted(
     assert entry is None
 
 
-def test_multiple_approved_magic_item_requests(
-    character, template, club_admin
-):
+def test_multiple_approved_magic_item_requests(character, template, club_admin):
     """Test multiple approved magic item requests are all granted."""
     character.char_class = "Wizard"
     character.level = 1

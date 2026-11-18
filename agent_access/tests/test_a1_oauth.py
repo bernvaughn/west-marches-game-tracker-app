@@ -304,6 +304,7 @@ def test_superuser_can_register(site_admin):
     # Superuser needs to be a club admin or GM in at least one club
     # Let's make them a club admin
     from accounts.models import Club, Membership
+
     club = Club.objects.create(name="Admin Club", slug="admin-club")
     Membership.objects.create(user=site_admin, club=club, is_club_admin=True)
     response = register(site_admin)
