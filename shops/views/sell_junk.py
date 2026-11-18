@@ -13,10 +13,41 @@ from player_characters.selection import selected_character
 from quests.services import needed_by_open_quests
 from shops.models import Shop, ShopStock
 from shops.selling import sell_many
-from shops.services import ShopError, is_open, percent_price
+from shops.services import ShopError, is_open, open_shops, percent_price
 from shops.views.browse import add_recent_shop
 
 NONE_TICKED = "Tick at least one item."
+
+
+@club_member_required
+def pick_shop(request, club_slug):
+    """Pick a shop for selling junk -- redirects to sell_junk for that shop."""
+    character = selected_character(request)
+    if character is None:
+        raise Http404("No character selected.")
+    today = timezone.localdate()
+    open_shop_list = list(open_shops(request.club, today).order_by("street_position", "name"))
+    if not open_shop_list:
+        return render_modal_or_page(
+            request,
+            "shops/sell/_shop_picker_modal.html",
+            "shops/sell/shop_pickers_page.html",
+            {"character": character, "open_shops": [], "no_shops": True},
+        )
+    if len(open_shop_list) == 1:
+        shop = open_shop_list[0]
+        shop_url = reverse("shops:sell_junk", args=[club_slug, shop.pk])
+        if is_htmx(request):
+            response = HttpResponse(status=204)
+            response["HX-Redirect"] = shop_url
+            return response
+        return redirect(shop_url)
+    return render_modal_or_page(
+        request,
+        "shops/sell/_shop_picker_modal.html",
+        "shops/sell/shop_pickers_page.html",
+        {"character": character, "open_shops": open_shop_list, "no_shops": False},
+    )
 
 
 def _rows(character, shop, posted=None):

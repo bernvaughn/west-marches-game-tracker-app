@@ -10,6 +10,7 @@ urlpatterns = [
     path("<int:shop_id>/buy/<int:stock_id>/", buy.buy, name="buy"),
     path("<int:shop_id>/sell/<int:item_id>/", sell.sell_item, name="sell_item"),
     path("<int:shop_id>/sell-junk/", sell_junk.sell_junk, name="sell_junk"),
+    path("sell-junk-pick/", sell_junk.pick_shop, name="sell_junk_pick"),
     path("stall/<int:character_id>/", player_shop.player_shop, name="player_shop"),
     path(
         "stall/<int:character_id>/buy/<int:item_id>/",
