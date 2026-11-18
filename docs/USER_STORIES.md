@@ -733,7 +733,26 @@ Stories for the player experience of starting equipment: automatic grants on cha
 - The status is rendered via an HTMX partial (`_status_row.html`).
 - It shows `PENDING`, `APPROVED`, or `DECLINED` with the admin's decision note.
 
-**U104 Player shops unchanged.** As anyone, I want player shops (U66/U67) to remain unchanged by starting equipment changes, so the safe player-to-player economy continues to work as before. *(shops, player_characters, starting_equipment)*
+### Technical decisions (clarifying stories)
+
+**U104 Background field on Character.** As a developer, I want the Character model to have a `background` CharField (max 60, optional), so starting equipment can match background-specific gear. *(player_characters)*
+- Field: `background = models.CharField(max_length=60, blank=True)`
+- Used by starting equipment templates to grant background-appropriate gear
+
+**U105 Case-insensitive class matching.** As a developer, I want class matching for starting equipment to be case-insensitive, so player-entered class names match admin templates reliably. *(starting_equipment, player_characters)*
+- Matching uses `char_class__iexact` against `StartingEquipmentClassEntry.char_class`
+- Players can type class names freely; admin templates use canonical names
+
+**U106 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), with UI for player selection in a future version, so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
+- `StartingEquipmentClassLine` and `StartingEquipmentBackgroundLine` have `is_choice` and `choice_group` fields
+- MVP grants the first option automatically; player-facing choice UI planned for v2
+
+**U107 Level-based coins table.** As a club admin, I want level-based starting coins to follow the 2024 DMG "Starting Equipment at Higher Levels" table, configurable per template, so higher-level characters start with correct wealth. *(starting_equipment)*
+- Separate `StartingEquipmentLevelCoins` model with `level` (2-20) and `coins_cp` fields
+- Seeded from DMG 2024 table; admins can customise per template
+- Applied when character level > 1 during starting equipment grant
+
+**U108 Player shops unchanged.** As anyone, I want player shops (U66/U67) to remain unchanged by starting equipment changes, so the safe player-to-player economy continues to work as before. *(shops, player_characters, starting_equipment)*
 - Player shops continue to use fixed base value pricing (S1).
 - Starting equipment changes do not affect player shop inventory, pricing, or street placement.
 - Player shops remain the safe alternative to removed transfers and trades (U15/U16).
