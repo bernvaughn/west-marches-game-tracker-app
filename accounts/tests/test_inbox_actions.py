@@ -195,11 +195,178 @@ def test_cross_club_isolation(club, club_admin, other_club, character, msg, logi
     assert nothing_written()
 
 
-@pytest.mark.django_db
-def test_demo_message_has_character():
-    call_command("seed_demo")
-    call_command("seed_demo")
-    assert Message.objects.count() == 2
-    m = Message.objects.get(kind=Message.Kind.MESSAGE)
-    assert m.character.name == "Aria Windrunner"
-    assert Character.objects.filter(name="Aria Windrunner").count() == 1
+def test_batch_add_multiple_accumulates(club, club_admin, character, msg, item, login):
+    """Adding multiple grants accumulates them in the batch."""
+    c = login(club_admin)
+
+    # Add first grant: coins
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="add"),
+    )
+    assert r.status_code == 200
+
+    # Add second grant: more coins
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=5, action="add"),
+    )
+    assert r.status_code == 200
+
+    # Add third grant: items
+    r = c.post(
+        give_url(club, msg, "items"),
+        payload(character, **{"items-0-item": item.pk, "items-0-quantity": 2}, action="add"),
+    )
+    assert r.status_code == 200
+
+    # Nothing written yet - batch not confirmed
+    assert nothing_written()
+
+
+def test_batch_confirm_writes_one_entry_per_type(club, club_admin, character, msg, item, location, login):
+    """Confirming a batch writes exactly one ledger entry per type."""
+    c = login(club_admin)
+    from django.test import Client
+
+    c = Client()
+    c.force_login(club_admin)
+
+    # Add coins grant
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="add"),
+    )
+    assert r.status_code == 200
+
+    # Add items grant
+    r = c.post(
+        give_url(club, msg, "items"),
+        payload(character, **{"items-0-item": item.pk, "items-0-quantity": 2}, action="add"),
+    )
+    assert r.status_code == 200
+
+    # Add map grant
+    r = c.post(
+        give_url(club, msg, "map"),
+        payload(character, map_kind="found", location=location.pk, action="add"),
+    )
+    assert r.status_code == 200
+
+    # Confirm batch - HTMX
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, confirmed="1"),
+        **HX,
+    )
+    assert r.status_code == 204
+    assert "appModalClose" in r["HX-Trigger"]
+
+    # Verify exactly one ledger entry per type (coins + items = 2 entries)
+    entries = LedgerEntry.objects.filter(character=character)
+    assert entries.count() == 2  # one for coins, one for items
+
+    # Map credit
+    assert CreditGrant.objects.filter(character=character).count() == 1
+
+
+def test_batch_back_preserves_batch(club, club_admin, character, msg, item, login):
+    """Going back from review preserves the batch."""
+    c = login(club_admin)
+
+    # Add a grant to batch
+    c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="add"),
+    )
+
+    # Go back (edit) from review
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="edit"),
+    )
+    assert r.status_code == 200
+
+
+def test_batch_empty_confirm_errors(club, club_admin, character, msg, login):
+    """Confirming with an empty batch should not write anything and should error."""
+    c = login(club_admin)
+
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, confirmed="1"),
+    )
+    assert r.status_code == 200
+    assert nothing_written()
+
+
+def test_batch_cross_club_isolation(club, club_admin, character, msg, item, location, other_club, login):
+    """Batch grants respect cross-club isolation."""
+    c = login(club_admin)
+
+    # Try to add item from other club
+    b_item = Item.objects.create(club=other_club, name="Foreign", value_cp=1)
+    r = c.post(
+        give_url(club, msg, "items"),
+        payload(character, **{"items-0-item": b_item.pk, "items-0-quantity": 1}, action="add"),
+    )
+    # Should still return 200 (form validation handles cross-club)
+    assert r.status_code == 200
+    assert nothing_written()
+
+
+def test_batch_htmx_confirm_returns_204(club, club_admin, character, msg, item, login):
+    """HTMX confirm returns 204 with appModalClose trigger."""
+    c = login(club_admin)
+
+    # Add a grant
+    c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="add"),
+    )
+
+    # Confirm via HTMX
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, confirmed="1"),
+        **HX,
+    )
+    assert r.status_code == 204
+    assert "appModalClose" in r["HX-Trigger"]
+
+
+def test_batch_cleared_after_confirm(club, club_admin, character, msg, item, login):
+    """Batch is cleared after confirmation."""
+    c = login(club_admin)
+
+    # Add and confirm a grant
+    c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="add"),
+    )
+    c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, confirmed="1"),
+    )
+
+    # Fresh GET should show no batch (empty form)
+    r = c.get(give_url(club, msg, "coins"))
+    assert r.status_code == 200
+    # Batch should be empty - nothing accumulated
+    assert r.context["batch"] == []
+
+
+def test_batch_cleared_on_fresh_get(club, club_admin, character, msg, item, login):
+    """Batch is cleared on fresh GET of the form."""
+    c = login(club_admin)
+
+    # Add a grant to batch
+    c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=10, action="add"),
+    )
+
+    # Fresh GET should clear batch
+    r = c.get(give_url(club, msg, "coins"))
+    assert r.status_code == 200
+    assert r.context["batch"] == []

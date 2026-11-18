@@ -301,8 +301,15 @@ def _apply_batch_grant(request, msg, batch, club):
 
         # Process items - one ledger entry
         if item_tuples:
+            from items.models import Item
             from ledger.services import Line as LedgerLine
-            lines = [LedgerLine(item_id=pk, quantity=qty) for pk, qty in item_tuples]
+            items_qs = Item.objects.for_club(club)
+            item_map = {item.pk: item for item in items_qs}
+            lines = [
+                LedgerLine(item=item_map[pk], quantity=qty)
+                for pk, qty in item_tuples
+                if pk in item_map
+            ]
             record(
                 character,
                 "award",
@@ -411,7 +418,7 @@ def message_give(request, club_slug, pk, kind):
         batch = _batch_get(request, pk)
         if not batch:
             # Show review page even if empty - will error on confirm
-            ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+            ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
             return render_modal_or_page(
                 request,
                 "accounts/inbox/_give_confirm.html",
@@ -490,13 +497,15 @@ def message_give(request, club_slug, pk, kind):
             form = GRANT_FORMS[kind](None, **kwargs)
             if formset is not None:
                 formset = item_line_formset(items, None, extra=3)
-            ctx = _build_context(msg, kind, form, formset, back, pk, batch)
-            return render_modal_or_page(request, "accounts/inbox/_give_form.html", ctx)
+            ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
+            return render_modal_or_page(
+                request, "accounts/inbox/_give_form.html", "accounts/inbox/give.html", ctx
+            )
 
     # Handle back from review - preserve batch
     if post and action == "edit":
         batch = _batch_get(request, pk)
-        ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+        ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
         return render_modal_or_page(
             request,
             "accounts/inbox/_give_confirm.html",
@@ -513,7 +522,7 @@ def message_give(request, club_slug, pk, kind):
                 _apply_batch_grant(request, msg, batch, request.club)
             except LedgerError as exc:
                 form.add_error(None, str(exc))
-                ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+                ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
                 return render_modal_or_page(
                     request,
                     "accounts/inbox/_give_confirm.html",
@@ -552,7 +561,7 @@ def message_give(request, club_slug, pk, kind):
                     return redirect(_inbox_url(club_slug, back))
             else:
                 # Show review page for single-grant flow
-                ctx = _build_context(msg, kind, form, formset, back, pk, [])
+                ctx = _build_context(request, msg, kind, form, formset, back, pk, [])
                 ctx["summary"] = _summary(kind, form.cleaned_data, lines)
                 ctx["carry"] = [
                     (name, value)
@@ -569,11 +578,11 @@ def message_give(request, club_slug, pk, kind):
 
     # Build context for final render
     batch = _batch_get(request, pk) if request.method == "POST" else []
-    ctx = _build_context(msg, kind, form, formset, back, pk, batch)
+    ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
     return render_modal_or_page(request, *fill, ctx)
 
 
-def _build_context(msg, kind, form, formset, back, pk, batch):
+def _build_context(request, msg, kind, form, formset, back, pk, batch):
     """Build context dictionary for grant forms."""
     ctx = {
         "msg": msg,
@@ -585,34 +594,6 @@ def _build_context(msg, kind, form, formset, back, pk, batch):
         "give_url": reverse(f"accounts:message_give_{kind}", args=[msg.club.slug, msg.pk]),
         "batch": batch,
     }
-    # Build summary if we have batch data
-    if batch:
-        lines_for_summary = []
-        for grant in batch:
-            if grant["kind"] == "coins":
-                lines_for_summary.append(Line(coins=grant["coins"]))
-            else:
-                # For items, we need to fetch items for display
-                item_tuples = grant.get("item_tuples", [])
-                for item_pk, qty in item_tuples:
-                    line = Line()
-                    line.item_id = item_pk
-                    line.quantity = qty
-                    lines_for_summary.append(line)
-        # Use first grant's data for summary
-        first = batch[0]
-        character = club_queryset(request, Character).get(pk=first["character_pk"])
-        date_val = first["date"]
-        if isinstance(date_val, str):
-            date_val = date.fromisoformat(date_val)
-        ctx["summary"] = _summary(kind, {
-            "character": character,
-            "coins": sum(g["coins"] for g in batch if g["kind"] == "coins"),
-            "note": first["note"],
-            "date": date_val,
-            "mark_handled": any(g.get("mark_handled") for g in batch),
-        }, lines_for_summary)
-        ctx["carry"] = []
     return ctx
 
 
