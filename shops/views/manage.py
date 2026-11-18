@@ -8,7 +8,8 @@ from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 from shops.forms.manage import ShopForm, StockAddForm, StockEditForm, StreetSettingsForm
 from shops.models import Shop, ShopStock
-from shops.services import open_shops, ordered_shops, percent_price
+from shops.services import open_shops, ordered_shops, percent_price, set_street_order
+from shops.views.browse import STREET_ROW, street_lots, street_stalls
 
 
 def _back(club_slug, shop):
@@ -37,6 +38,30 @@ def street_settings(request, club_slug):
         messages.success(request, "Street settings saved.")
         return redirect("shops:manage_list", club_slug=club_slug)
     return render(request, "shops/manage/list.html", _list_context(request, form))
+
+
+@club_admin_required
+def street_editor(request, club_slug):
+    """Drag-and-drop grid to set the club's shop street order visually."""
+    if request.method == "POST":
+        set_street_order(request.club, request.POST.getlist("shop_order"))
+        messages.success(request, "Street order saved.")
+        return redirect("shops:street_editor", club_slug=club_slug)
+    shops = ordered_shops(club_queryset(request, Shop))
+    stalls = street_stalls(request.club)
+    lots = street_lots(
+        shops,
+        stalls,
+        min_gap=request.club.street_min_gap,
+        max_gap=request.club.street_max_gap,
+        stall_gap=request.club.street_stall_gap,
+        per_row=STREET_ROW,
+    )
+    return render(
+        request,
+        "shops/manage/street_editor.html",
+        {"lots": lots, "shops": shops, "stalls": stalls},
+    )
 
 
 @club_admin_required

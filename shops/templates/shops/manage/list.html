@@ -2,7 +2,10 @@
 {% block title %}Manage shops{% endblock %}
 {% block content %}
 {% url 'shops:manage_create' club.slug as create_url %}
-{% include "components/page_header.html" with title="Manage shops" action_url=create_url action_label="New shop" action_icon="plus-lg" %}
+{% url 'shops:street_editor' club.slug as street_editor_url %}
+{% with [{"url": street_editor_url, "label": "Street editor"}] as secondary_actions %}
+{% include "components/page_header.html" with title="Manage shops" action_url=create_url action_label="New shop" action_icon="plus-lg" secondary=secondary_actions %}
+{% endwith %}
 {% url 'shops:street_settings' club.slug as street_url %}
 {% include "components/card_open.html" with title="Street settings" subtitle="How many empty buildings sit between shops, and before player stalls." %}
 <form method="post" action="{{ street_url }}" class="wm-form wm-street-settings-form">

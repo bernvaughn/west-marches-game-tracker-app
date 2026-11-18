@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Lower
 
@@ -53,6 +54,26 @@ def open_shops(club, today):
 def is_open(shop, today):
     """True when the shop is in a rotation open on `today`. Agrees with `open_shops`."""
     return open_shops(shop.club, today).filter(pk=shop.pk).exists()
+
+
+def set_street_order(club, ordered_shop_ids):
+    """Reindex street_position for club's shops in the given order.
+
+    Only shops that belong to club are written, so another club's shops
+    can never be reordered through this call. Shops missing from the list
+    keep their current position.
+    """
+    shops = {str(shop.pk): shop for shop in club.shops.all()}
+    with transaction.atomic():
+        position = 0
+        for shop_id in ordered_shop_ids:
+            shop = shops.get(str(shop_id))
+            if shop is None:
+                continue
+            if shop.street_position != position:
+                shop.street_position = position
+                shop.save(update_fields=["street_position"])
+            position += 1
 
 
 class ShopError(Exception):
