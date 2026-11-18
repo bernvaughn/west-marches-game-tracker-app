@@ -33,7 +33,13 @@ New template combining all sections:
 ### 3. `player_characters/urls_characters.py` (modify)
 Add URL pattern:
 ```python
-path("<int:pk>/print-session-pack/", character_print.print_session_pack, name="print_session_pack"),
+(
+    path(
+        "<int:pk>/print-session-pack/",
+        character_print.print_session_pack,
+        name="print_session_pack",
+    ),
+)
 ```
 
 ### 4. `templates/accounts/_dashboard_header.html` (modify)

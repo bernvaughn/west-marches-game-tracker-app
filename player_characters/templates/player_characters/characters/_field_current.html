@@ -1,0 +1,12 @@
+{% comment %}
+_field_current: one edit-form input with its saved value beside it.
+Context: field (BoundField, required), current (string, required), wide (boolean, optional).
+Example: {% include "player_characters/characters/_field_current.html" with field=form.strength current=current.strength %}
+{% endcomment %}
+{% if current %}
+<div class="wm-field-pair{% if wide %} wm-field-pair--wide{% endif %}">
+  <div class="wm-field-pair-input">{{ field.as_field_group }}</div>
+  <p class="wm-field-current"><span class="wm-field-current-label">Current</span>
+    <span class="wm-field-current-value" title="{{ current }}">{{ current }}</span></p>
+</div>
+{% else %}{{ field.as_field_group }}{% endif %}

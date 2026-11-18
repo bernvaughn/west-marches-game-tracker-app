@@ -9,8 +9,12 @@ from accounts.permissions import (
 from accounts.permissions import (
     is_game_master as _is_game_master,
 )
-from accounts.scoping import club_get_object_or_404 as _club_get_object_or_404
-from accounts.scoping import club_queryset as _club_queryset
+from accounts.scoping import (
+    club_get_object_or_404 as _club_get_object_or_404,
+)
+from accounts.scoping import (
+    club_queryset as _club_queryset,
+)
 from downtime import services as downtime_services
 from player_characters.inventory import coin_summary, inventory_rows
 from player_characters.junk import junk_rows, junk_value
@@ -105,4 +109,5 @@ class ClubContextMixin:
 
 class ViewMixin(ClubScopedMixin, CharacterContextMixin, PermissionMixin, ClubContextMixin):
     """Combined mixin with all common view functionality."""
+
     pass

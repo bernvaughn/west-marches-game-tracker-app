@@ -19,6 +19,11 @@ urlpatterns = [
     ),
     path("manage/", manage.shop_list, name="manage_list"),
     path("manage/street/", manage.street_settings, name="street_settings"),
+    path(
+        "manage/street-editor/",
+        manage.street_editor,
+        name="street_editor",
+    ),
     path("manage/new/", manage.shop_create, name="manage_create"),
     path("manage/<int:shop_id>/", manage.shop_edit, name="manage_edit"),
     path("manage/<int:shop_id>/stock/new/", manage.stock_add, name="stock_add"),

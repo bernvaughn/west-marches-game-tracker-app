@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import Q
 from django.db.models.functions import Lower
 
@@ -15,6 +16,15 @@ def percent_price(value_cp, percent):
 def sell_price(stock):
     percent = stock.sell_percent if stock.sell_percent is not None else stock.shop.sell_percent
     return percent_price(stock.item.value_cp, percent)
+
+
+def format_vs_base_text(vs_base_cp):
+    """Format the price difference vs base value as 'vs base: -X gp / +Y gp'."""
+    gp = vs_base_cp / 100
+    if gp == 0:
+        return "vs base: 0 gp"
+    sign = "+" if gp > 0 else "-"
+    return f"vs base: {sign}{abs(gp):g} gp"
 
 
 def buy_price(shop, item):
@@ -53,6 +63,26 @@ def open_shops(club, today):
 def is_open(shop, today):
     """True when the shop is in a rotation open on `today`. Agrees with `open_shops`."""
     return open_shops(shop.club, today).filter(pk=shop.pk).exists()
+
+
+def set_street_order(club, ordered_shop_ids):
+    """Reindex street_position for club's shops in the given order.
+
+    Only shops that belong to club are written, so another club's shops
+    can never be reordered through this call. Shops missing from the list
+    keep their current position.
+    """
+    shops = {str(shop.pk): shop for shop in club.shops.all()}
+    with transaction.atomic():
+        position = 0
+        for shop_id in ordered_shop_ids:
+            shop = shops.get(str(shop_id))
+            if shop is None:
+                continue
+            if shop.street_position != position:
+                shop.street_position = position
+                shop.save(update_fields=["street_position"])
+            position += 1
 
 
 class ShopError(Exception):

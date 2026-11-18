@@ -6,7 +6,7 @@
   </a>
   <ul class="dropdown-menu dropdown-menu-end">
     {% for shop in open_shops %}
-    <li><a class="dropdown-item{% if shop == club %} active{% endif %}" href="{% url 'shops:detail' club.slug shop.pk %}"{% if shop == club %} aria-current="page"{% endif %}>{{ shop.name }}</a></li>
+    <li><a class="dropdown-item{% if shop == current %} active{% endif %}" href="{% url 'shops:detail' club.slug shop.pk %}" hx-get="{% url 'shops:detail' club.slug shop.pk %}" hx-target="#main" hx-swap="innerHTML" hx-push-url="true"{% if shop == current %} aria-current="page"{% endif %}>{{ shop.name }}</a></li>
     {% endfor %}
   </ul>
 </div>

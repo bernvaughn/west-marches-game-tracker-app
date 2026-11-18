@@ -9,7 +9,7 @@
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">
-      {% if has_junk %}
+      {% if provider_context.has_junk %}
       <li class="list-group-item px-3 py-2">
         <button
           type="button"
@@ -21,11 +21,11 @@
         >
           {% include "components/icon.html" with name="bag-dash" class="text-primary" %}
           <span>Sell Junk</span>
-          {% if junk_count %}<span class="badge text-bg-primary ms-auto">{{ junk_count }}</span>{% endif %}
+          {% if provider_context.junk_count %}<span class="badge text-bg-primary ms-auto">{{ provider_context.junk_count }}</span>{% endif %}
         </button>
       </li>
       {% endif %}
-      {% if has_potions %}
+      {% if provider_context.has_potions %}
       <li class="list-group-item px-3 py-2">
         <button
           type="button"
@@ -40,7 +40,7 @@
         </button>
       </li>
       {% endif %}
-      {% if not has_junk and not has_potions %}
+      {% if not provider_context.has_junk and not provider_context.has_potions %}
       <li class="list-group-item text-center py-4 text-muted small">
         No quick actions available.
       </li>

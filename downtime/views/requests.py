@@ -52,13 +52,15 @@ def request_new(request, club_slug):
         form = PointRequestForm(request.POST, characters_qs=chars)
         if form.is_valid():
             d = form.cleaned_data
-            req = DowntimePointRequest.objects.create(
-                club=request.club,
-                requested_by=request.membership,
-                points=d["points"],
-                note=d["note"],
-            )
-            req.characters.set(d["characters"])
+            with transaction.atomic():
+                for char in d["characters"]:
+                    req = DowntimePointRequest.objects.create(
+                        club=request.club,
+                        requested_by=request.membership,
+                        points=d["points"],
+                        note=d["note"],
+                    )
+                    req.characters.add(char)
             messages.success(request, "Point request sent.")
             return redirect("downtime:requests", club_slug=club_slug)
     else:

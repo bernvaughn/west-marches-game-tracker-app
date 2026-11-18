@@ -453,6 +453,7 @@ From using the build after round 7 (U65–U68) and new ideas from the owner.
 - The Notes, Details and old free-text Stats fields are removed, and their text is dropped. The app hasn't launched, so there is nothing to keep.
 - The sheet (U37) shows the new fields in sheet-style boxes: a header with name, level, class, species, pronouns and player; an abilities box with each score and its modifier; a box with AC, passive Perception and XP; and a description box.
 - The edit character page looks like the sheet, with the same boxes holding the inputs.
+- The edit form shows the saved value of every field beside its input, so a change is clear before saving. Each ability score shows its modifier, and a blank field shows an em dash.
 - The character directory (U41, U51) shows class and species to everyone.
 
 **U70 Character slips for drawing tables.** As a game master or club admin, I want to pick the characters at a session and print slips to cut out and draw, so we can make parties at random. *(player_characters)*
@@ -731,6 +732,12 @@ Story numbers continue from U95. U96 replaces the public-only note in U95.
 **S2 Shop rotations.** As a club admin, I want shop rotations with start and end dates, where a shop can appear in more than one rotation, so that I can set rotations up before they go live. *(shops)*
 - A rotation only sets when its shops open and close.
 - A shop's inventory is an ongoing list that carries over between rotations, and stock quantities are kept per shop, not per rotation.
+
+**S12 Shop street position editor.** As a club admin, I want a drag-and-drop grid showing each lot on my club's street (club shops, player stalls, and filler buildings), so that I can set the shops' street positions visually instead of editing numbers on a form. *(shops)*
+- Only club shops are reorderable; player stalls are shown as context and cannot be dragged.
+- Dragging a shop onto another shop reorders the shop sequence.
+- Saving writes street_position to each of the club's shops in the new order, starting at 0, and redirects back with a success message.
+- Player stalls and shops of other clubs are not changed by saving.
 
 ## Carried over from the first draft
 

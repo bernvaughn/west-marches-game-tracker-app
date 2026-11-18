@@ -51,10 +51,7 @@ class LedgerService(BaseService, ClubScopedService):
 
     def coin_balance(self, character):
         """Return total coin balance for a character."""
-        total = (
-            LedgerLine.objects.filter(entry__character=character)
-            .aggregate(t=Sum("coins"))["t"]
-        )
+        total = LedgerLine.objects.filter(entry__character=character).aggregate(t=Sum("coins"))["t"]
         return total or 0
 
     def item_quantities(self, character):

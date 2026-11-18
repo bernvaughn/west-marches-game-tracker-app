@@ -11,38 +11,38 @@
       <h2 class="wm-sheet-box-title" id="form-details">Details</h2>
       <div class="wm-sheet-header-fields">
         {% if form.owner %}{{ form.owner.as_field_group }}{% endif %}
-        {{ form.name.as_field_group }}
-        {{ form.level.as_field_group }}
-        {{ form.char_class.as_field_group }}
-        {{ form.species.as_field_group }}
-        {{ form.pronouns.as_field_group }}
-        {{ form.alignment.as_field_group }}
+        {% include "player_characters/characters/_field_current.html" with field=form.name current=current.name %}
+        {% include "player_characters/characters/_field_current.html" with field=form.level current=current.level %}
+        {% include "player_characters/characters/_field_current.html" with field=form.char_class current=current.char_class %}
+        {% include "player_characters/characters/_field_current.html" with field=form.species current=current.species %}
+        {% include "player_characters/characters/_field_current.html" with field=form.pronouns current=current.pronouns %}
+        {% include "player_characters/characters/_field_current.html" with field=form.alignment current=current.alignment %}
       </div>
     </section>
     <div class="wm-sheet-grid mt-3">
       <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-abilities">
         <h2 class="wm-sheet-box-title" id="form-abilities">Abilities</h2>
         <div class="wm-sheet-abilities-form">
-          {{ form.strength.as_field_group }}
-          {{ form.dexterity.as_field_group }}
-          {{ form.constitution.as_field_group }}
-          {{ form.intelligence.as_field_group }}
-          {{ form.wisdom.as_field_group }}
-          {{ form.charisma.as_field_group }}
+          {% include "player_characters/characters/_field_current.html" with field=form.strength current=current.strength %}
+          {% include "player_characters/characters/_field_current.html" with field=form.dexterity current=current.dexterity %}
+          {% include "player_characters/characters/_field_current.html" with field=form.constitution current=current.constitution %}
+          {% include "player_characters/characters/_field_current.html" with field=form.intelligence current=current.intelligence %}
+          {% include "player_characters/characters/_field_current.html" with field=form.wisdom current=current.wisdom %}
+          {% include "player_characters/characters/_field_current.html" with field=form.charisma current=current.charisma %}
         </div>
       </section>
       <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-combat">
         <h2 class="wm-sheet-box-title" id="form-combat">Combat</h2>
         <div class="wm-sheet-abilities-form">
-          {{ form.armor_class.as_field_group }}
-          {{ form.max_hp.as_field_group }}
-          {{ form.perception_bonus.as_field_group }}
-          {{ form.xp.as_field_group }}
+          {% include "player_characters/characters/_field_current.html" with field=form.armor_class current=current.armor_class %}
+          {% include "player_characters/characters/_field_current.html" with field=form.max_hp current=current.max_hp %}
+          {% include "player_characters/characters/_field_current.html" with field=form.perception_bonus current=current.perception_bonus %}
+          {% include "player_characters/characters/_field_current.html" with field=form.xp current=current.xp %}
         </div>
       </section>
       <section class="wm-sheet-box wm-sheet-full" aria-labelledby="form-description">
         <h2 class="wm-sheet-box-title" id="form-description">Description</h2>
-        {{ form.description.as_field_group }}
+        {% include "player_characters/characters/_field_current.html" with field=form.description current=current.description wide=True %}
       </section>
     </div>
     <div class="wm-form-actions">

@@ -38,20 +38,22 @@ class MockRequest:
 
 
 @pytest.mark.django_db
-def test_consumables_provider_should_show_when_quantity_gt_1(
-    player, club, character, item
-):
+def test_consumables_provider_should_show_when_quantity_gt_1(player, club, character, item):
     """Provider should show when character has quantity > 1 of an item."""
     provider = ConsumablesDashboardProvider()
 
     # Give character 2 of the item
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=2)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=2)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = Membership.objects.get(user=player, club=club)
@@ -60,9 +62,7 @@ def test_consumables_provider_should_show_when_quantity_gt_1(
 
 
 @pytest.mark.django_db
-def test_consumables_provider_should_show_when_trait_consumable(
-    player, club, character, item
-):
+def test_consumables_provider_should_show_when_trait_consumable(player, club, character, item):
     """Provider should show when item has 'consumable' trait."""
     provider = ConsumablesDashboardProvider()
 
@@ -71,13 +71,17 @@ def test_consumables_provider_should_show_when_trait_consumable(
     item.save(update_fields=["traits"])
 
     # Give character 1 of the item
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=1)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=1)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = Membership.objects.get(user=player, club=club)
@@ -97,13 +101,17 @@ def test_consumables_provider_should_show_when_trait_consumable_case_insensitive
     item.save(update_fields=["traits"])
 
     # Give character 1 of the item
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=1)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=1)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = Membership.objects.get(user=player, club=club)
@@ -112,9 +120,7 @@ def test_consumables_provider_should_show_when_trait_consumable_case_insensitive
 
 
 @pytest.mark.django_db
-def test_consumables_provider_should_not_show_when_no_items(
-    player, club, character
-):
+def test_consumables_provider_should_not_show_when_no_items(player, club, character):
     """Provider should NOT show when character has no items."""
     provider = ConsumablesDashboardProvider()
 
@@ -132,13 +138,17 @@ def test_consumables_provider_should_not_show_when_single_non_consumable(
     provider = ConsumablesDashboardProvider()
 
     # Give character 1 of the item (no consumable trait)
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=1)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=1)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = Membership.objects.get(user=player, club=club)
@@ -147,20 +157,22 @@ def test_consumables_provider_should_not_show_when_single_non_consumable(
 
 
 @pytest.mark.django_db
-def test_consumables_provider_get_context_includes_items(
-    player, club, character, item
-):
+def test_consumables_provider_get_context_includes_items(player, club, character, item):
     """Provider context includes consumable items with correct data."""
     provider = ConsumablesDashboardProvider()
 
     # Give character 3 of the item
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=3)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=3)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = Membership.objects.get(user=player, club=club)
@@ -179,9 +191,7 @@ def test_consumables_provider_get_context_includes_items(
 
 
 @pytest.mark.django_db
-def test_consumables_provider_get_context_excludes_non_consumables(
-    player, club, character, item
-):
+def test_consumables_provider_get_context_excludes_non_consumables(player, club, character, item):
     """Provider context excludes non-consumable items."""
     provider = ConsumablesDashboardProvider()
 
@@ -194,16 +204,20 @@ def test_consumables_provider_get_context_excludes_non_consumables(
     )
 
     # Give character 1 of a regular item and 2 of a consumable
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[
-            Line(item=item, quantity=1),
-            Line(item=second_item, quantity=2),
-        ],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[
+                    Line(item=item, quantity=1),
+                    Line(item=second_item, quantity=2),
+                ],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     request = MockRequest(club, player)
     membership = Membership.objects.get(user=player, club=club)
@@ -241,18 +255,20 @@ def test_consumables_provider_is_consumable_method():
 
 
 @pytest.mark.django_db
-def test_consumable_consume_partial_view_returns_modal(
-    player, club, character, item
-):
+def test_consumable_consume_partial_view_returns_modal(player, club, character, item):
     """Test the consumable_consume_partial view returns modal HTML."""
     # Give character 2 of the item
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=2)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=2)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     # Make item consumable via trait
     item.traits = "consumable"
@@ -273,18 +289,20 @@ def test_consumable_consume_partial_view_returns_modal(
 
 
 @pytest.mark.django_db
-def test_consumable_consume_partial_view_404_for_non_consumable(
-    player, club, character, item
-):
+def test_consumable_consume_partial_view_404_for_non_consumable(player, club, character, item):
     """Test the consumable_consume_partial view returns 404 for non-consumable."""
     # Give character 1 of a non-consumable item
-    record_many([dict(
-        character=character,
-        kind="award",
-        lines=[Line(item=item, quantity=1)],
-        note="Test",
-        actor=player,
-    )])
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=1)],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
 
     client = Client()
     client.force_login(player)
@@ -296,9 +314,7 @@ def test_consumable_consume_partial_view_404_for_non_consumable(
 
 
 @pytest.mark.django_db
-def test_consumable_consume_partial_view_404_for_no_item(
-    player, club, character, item
-):
+def test_consumable_consume_partial_view_404_for_no_item(player, club, character, item):
     """Test the consumable_consume_partial view returns 404 when character has none."""
     client = Client()
     client.force_login(player)

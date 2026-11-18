@@ -175,7 +175,6 @@ EXCLUDED = {
     "favicon": "An icon file, not a page.",
     "logout": "POST only.",
     "starting_equipment:templates": "Placeholder view for starting equipment (implemented in SE3).",
-
     "mcp": "A JSON-RPC endpoint, not a page.",
     "oauth2_provider:oauth-server-metadata": "A JSON metadata document.",
     "oauth2_provider:oauth-resource-metadata": "A JSON metadata document.",
@@ -200,6 +199,9 @@ EXCLUDED = {
     "shops:stock_fragment": "An htmx partial with no layout; `shops-detail-*` shows it.",
     "map:request_approve": "POST only.",
     "map:request_decline": "POST only.",
+    "map:request_bulk_approve": (
+        "HTMX modal endpoint requiring `?requests=` IDs; opened from `map-requests`."
+    ),
     "quests:turn_in": "POST only; turn-in is an inline form on `quests-detail`.",
     "quests:delete": "POST only.",
     "downtime:spend": "POST only.",
@@ -302,7 +304,6 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("characters:player_consume", "aria.pk", "owned_item.pk"),
         ),
-        P("characters-transfer", "alice", _c("characters:transfer", "aria.pk")),
         P("characters-print-items", "alice", _c("characters:print_items", "aria.pk")),
         P("characters-print-session-pack", "alice", _c("characters:print_session_pack", "aria.pk")),
         # downtime
@@ -320,8 +321,7 @@ def _build_pages() -> list[Page]:
         P(
             "items-loot-cards-print",
             "gm",
-            lambda d: reverse("items:loot_cards_print", args=[d.slug])
-            + f"?qty_{d.item.pk}=1",
+            lambda d: reverse("items:loot_cards_print", args=[d.slug]) + f"?qty_{d.item.pk}=1",
         ),
         # downtime agenda
         P("downtime-agenda", "gm", _c("downtime:agenda")),
@@ -411,9 +411,8 @@ def _build_pages() -> list[Page]:
             "anon",
             lambda d: reverse("password_reset_confirm", args=["x", "bad"]),
         ),
-        # characters. Alice has characters, so `mine` and `transfer_start` redirect for her.
+        # characters. Alice has characters, so `mine` redirects for her.
         P("characters-mine-empty", "gm_only", _c("characters:mine")),
-        P("characters-transfer-start-empty", "gm_only", _c("characters:transfer_start")),
         P("characters-slips-print", "alice", _c("characters:slips_print")),
         P(
             "characters-slips-print-aria",
@@ -608,6 +607,7 @@ def _build_pages() -> list[Page]:
         P("accounts-index-club-admin", "club_admin", _c("accounts:index")),
         P("accounts-message-inbox-club-admin", "club_admin", _c("accounts:message_inbox")),
         P("shops-manage-list-club-admin", "club_admin", _c("shops:manage_list")),
+        P("shops-street-editor", "club_admin", _c("shops:street_editor")),
         P("quests-manage-club-admin", "club_admin", _c("quests:manage")),
         P("downtime-agenda-club-admin", "club_admin", _c("downtime:agenda")),
     ]

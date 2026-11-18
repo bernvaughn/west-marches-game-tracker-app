@@ -1,8 +1,10 @@
+import json
+
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Case, IntegerField, When
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -254,3 +256,92 @@ def approve(request, club_slug, pk):
 @require_POST
 def decline(request, club_slug, pk):
     return _decide(request, club_slug, pk, MapRequest.Status.DECLINED)
+
+
+# Bulk kinds that can be approved together in one modal. VISIT requests keep
+# their individual approve button and are excluded from the bulk action.
+BULK_KINDS = (
+    MapRequest.Kind.DISCOVERED,
+    MapRequest.Kind.EXPLORED,
+    MapRequest.Kind.FOUND,
+)
+
+
+@admin_or_gm_required
+def bulk_approve(request, club_slug):
+    """GET: render the bulk-approve modal grouped by credit kind.
+    POST: approve every selected REQUESTED request in one transaction.
+    """
+    ids = (
+        request.GET.getlist("requests")
+        if request.method == "GET"
+        else request.POST.getlist("requests")
+    )
+    qs = (
+        club_queryset(request, MapRequest)
+        .filter(pk__in=ids, status=MapRequest.Status.REQUESTED, kind__in=BULK_KINDS)
+        .select_related("map", "location__tile", "tile", "requested_by__user")
+        .prefetch_related("characters")
+        .order_by("kind", "created")
+    )
+    requests_list = []
+    for req in qs:
+        picked = list(req.characters.all())
+        req.location_label = _location_label(req.location, picked, True)
+        src = req.tile or (req.location.tile if req.location else None)
+        req.tile_q = req.q if req.q is not None else (src.q if src else None)
+        req.tile_r = req.r if req.q is not None else (src.r if src else None)
+        requests_list.append(req)
+    groups = {}
+    for req in requests_list:
+        groups.setdefault(req.kind, []).append(req)
+
+    if request.method == "POST":
+        approved = 0
+        with transaction.atomic():
+            for req in requests_list:
+                if not req.location:
+                    continue
+                chars = list(req.characters.all())
+                claimed = MapRequest.objects.filter(
+                    pk=req.pk, status=MapRequest.Status.REQUESTED
+                ).update(
+                    status=MapRequest.Status.APPROVED,
+                    decided_by=request.membership,
+                    decided_at=timezone.now(),
+                )
+                if not claimed:
+                    continue
+                if req.kind == MapRequest.Kind.FOUND:
+                    services.add_found_marks(
+                        req.location, chars, req.date, created_by=request.membership
+                    )
+                else:
+                    services.add_to_credit(req.location, req.kind, chars, req.date)
+                approved += 1
+        message = f"Approved {approved} request(s)."
+        skipped = len(ids) - approved
+        if skipped:
+            message += (
+                f" {skipped} request(s) were skipped "
+                "(already decided, visits, or missing a location)."
+            )
+        response = HttpResponse(status=204)
+        response["HX-Trigger"] = json.dumps(
+            {
+                "appModalClose": True,
+                "toast": {"message": message, "type": "success"},
+                "refreshQueue": True,
+            }
+        )
+        return response
+
+    return render(
+        request,
+        "map/requests/bulk_approve_modal.html",
+        {
+            "club": request.club,
+            "groups": groups,
+            "request_ids": ids,
+        },
+    )

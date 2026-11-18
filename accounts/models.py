@@ -139,9 +139,7 @@ class Message(models.Model):
 
 
 class PasswordHistory(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="password_history"
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="password_history")
     password_hash = models.CharField(max_length=128)
     created = models.DateTimeField(auto_now_add=True)
 

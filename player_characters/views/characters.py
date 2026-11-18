@@ -21,7 +21,7 @@ from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
 from ..models import Character
 from ..player_shop import listed_quantity
-from ..sheet import ability_rows, passive_perception_label
+from ..sheet import ability_rows, edit_current_values, passive_perception_label
 
 
 @method_decorator(club_member_required, name="dispatch")
@@ -166,7 +166,12 @@ class EditView(ClubScopedMixin, ClubContextMixin, View):
         return render(
             request,
             "player_characters/characters/form.html",
-            {"form": form, "title": f"Edit {character.name}", "character": character},
+            {
+                "form": form,
+                "title": f"Edit {character.name}",
+                "character": character,
+                "current": edit_current_values(form),
+            },
         )
 
     def post(self, request, club_slug, pk):
@@ -181,7 +186,12 @@ class EditView(ClubScopedMixin, ClubContextMixin, View):
         return render(
             request,
             "player_characters/characters/form.html",
-            {"form": form, "title": f"Edit {character.name}", "character": character},
+            {
+                "form": form,
+                "title": f"Edit {character.name}",
+                "character": character,
+                "current": edit_current_values(form),
+            },
         )
 
 

@@ -1,41 +1,49 @@
-## Hand-off: S2 Trade Dashboard Widget (Plan Stage Complete)
+# Hand-off: Extract Map Credit Logic to Service
 
-### What was done
-1. **Explored the codebase** to understand the existing dashboard provider system, trade models, and trade status display logic
-2. **Created implementation plan** (`plan.md`) detailing:
-   - Files to modify: `accounts/views/dashboard.py` (TradesProvider), `templates/accounts/_dashboard_trades.html`
-   - URL endpoint already exists: `/dashboard/<slug>/partial/trades/`
-   - Provider already registered in `accounts/apps.py` with order=2
-3. **Set acceptance criteria** with proof stages (plan → code → verify)
+## Task
+Move the complex map credit logic from `MapDashboardProvider._get_uncredited_data()` in `accounts/dashboard_providers.py` to a dedicated service function `get_uncredited_tiles()` in `map/services.py`.
 
-### Key findings
-- **TradesProvider already exists** in `accounts/views/dashboard.py` with basic functionality but needs enhancement
-- **Template exists** at `templates/accounts/_dashboard_trades.html` but uses simple `trade_items` list instead of detailed trade data
-- **Trade status wording** is in `player_characters/trade_status_line.py` - `trade_status_line()` function
-- **Trade URLs**: `trades:detail`, `trades:edit_side`, `trades:accept`, `trades:decline`, `trades:cancel`
-- **HTMX polling**: Existing `trades:poll` endpoint at `/trades/poll/` polls every 5s for navbar; dashboard widget needs 10s poll to its own partial endpoint
+## What Was Done (Plan Stage)
+1. **Explored the codebase** - Read the relevant files:
+   - `accounts/dashboard_providers.py` - Contains `MapDashboardProvider` with `_get_uncredited_data()` method
+   - `map/services.py` - Existing map services (where new function will be added)
+   - `map/models.py` - Map-related models (TileVisit, HexMap, Location, LocationCredit, FoundMark)
+   - `accounts/tests/test_dashboard_map_provider.py` - Existing tests for the provider
 
-### What the next agent (code stage) should do
-1. **Modify `TradesProvider.get_context()`** in `accounts/views/dashboard.py`:
-   - Import `trade_status_line` from `player_characters.trade_status_line`
-   - Build detailed trade data with status text, action button URL/label per trade state
-   - Return `open_trades_data` list with dicts containing: trade, other_character, side, status_display, action_url, action_label
+2. **Created implementation plan** - Saved to `plan.md`
 
-2. **Rewrite `templates/accounts/_dashboard_trades.html`**:
-   - Iterate over `provider_context.open_trades_data`
-   - Show status badge using U78 wording
-   - Show "Act Now" button with correct link per state machine
-   - Wrap in container with `hx-get="{% url 'accounts:dashboard_partial' club.slug 'trades' %}" hx-trigger="every 10s" hx-swap="outerHTML"`
+3. **Set acceptance criteria** - 11 items covering:
+   - New service function in `map/services.py` returning structured data (dataclass)
+   - Updated `MapDashboardProvider` to use the service
+   - Tests for the new service function
 
-3. **Update `TradesProvider.should_show()`** to return True only if user has open trades
+## Key Decisions
+- Use a **dataclass** `UncreditedTilesResult` for type-safe return value
+- The service function will be `get_uncredited_tiles(club, character)` 
+- It returns: maps_data (list of dicts with map and uncredited_count), total_uncredited, first_map (HexMap), first_map_uncredited_tiles (set of (q,r))
+- This matches the exact data structure the provider needs for template context
 
-### Open questions / decisions
-- The `trade_status_line` function needs `viewer_side` parameter ("sender", "receiver", or None) - need to pass user's side
-- For REQUESTED status: receiver sees "Accept" → `trades:edit_side`; sender sees "Cancel" → `trades:detail` (or cancel POST)
-- For ACCEPTED status: if viewer not approved → "Change" → `trades:edit_side`; if viewer approved but other not → "Approve" → `trades:detail` (approve POST); if both approved → trade completes automatically
+## What the Next Agent (Code Stage) Should Do First
+1. **Add the service function to `map/services.py`**:
+   - Import required models (TileVisit, HexMap, Location, LocationCredit, FoundMark)
+   - Create `UncreditedTilesResult` dataclass
+   - Implement `get_uncredited_tiles(club, character)` with the logic from `_get_uncredited_data()`
+   - Handle all edge cases: no visits, no locations, full credit, partial credit
 
-### Files to reference
-- `accounts/views/dashboard.py` - TradesProvider class
-- `templates/accounts/_dashboard_trades.html` - template to rewrite
-- `player_characters/trade_status_line.py` - status wording function
-- `player_characters/urls_trades.py` - trade URL patterns
+2. **Update `accounts/dashboard_providers.py`**:
+   - Import `get_uncredited_tiles` from `map.services`
+   - Remove `_get_uncredited_data()` method from `MapDashboardProvider`
+   - Update `get_context()` and `should_show()` to call the service
+
+3. **Create tests in `map/tests/test_map_services.py`**:
+   - Port existing provider test cases to directly test the service
+   - Ensure all existing provider tests still pass
+
+## Files to Modify
+- `map/services.py` - Add new function
+- `accounts/dashboard_providers.py` - Update MapDashboardProvider
+- `map/tests/test_map_services.py` - New test file (create)
+
+## Dependencies
+- Upstream task "Unified Dashboard Provider System" (01a1e68f-ddc8-79f7-9df1-6ef168482fef) is done
+- No other blockers

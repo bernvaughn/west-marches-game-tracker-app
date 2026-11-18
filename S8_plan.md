@@ -175,7 +175,9 @@ Let me design the forms:
 class BulkAwardItemLineForm(forms.Form):
     item = forms.ModelChoiceField(queryset=None, required=False)
     quantity = forms.IntegerField(min_value=1, required=False)
-    value_override = forms.IntegerField(required=False, min_value=0, label="Value (cp)", help_text="Override item value in cp")
+    value_override = forms.IntegerField(
+        required=False, min_value=0, label="Value (cp)", help_text="Override item value in cp"
+    )
 
     def __init__(self, *args, items, **kwargs):
         super().__init__(*args, **kwargs)

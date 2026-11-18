@@ -19,19 +19,27 @@ def message_detail(request, club_slug, pk):
 
     # Sender can view their own message (read-only)
     if message.sender_id == membership.id:
-        return render(request, "accounts/message_detail.html", {
-            "club": club,
-            "message": message,
-            "read_only": True,
-        })
+        return render(
+            request,
+            "accounts/message_detail.html",
+            {
+                "club": club,
+                "message": message,
+                "read_only": True,
+            },
+        )
 
     # Admin can view any message with action buttons
     if is_club_admin(request.user, club) or is_game_master(request.user, club):
-        return render(request, "accounts/message_detail.html", {
-            "club": club,
-            "message": message,
-            "read_only": False,
-        })
+        return render(
+            request,
+            "accounts/message_detail.html",
+            {
+                "club": club,
+                "message": message,
+                "read_only": False,
+            },
+        )
 
     # Others cannot view
     raise Http404("Message not found.")
@@ -52,11 +60,15 @@ def message_new(request, club_slug):
     else:
         form = MessageForm(club=club, sender=membership)
 
-    return render(request, "accounts/message_new.html", {
-        "club": club,
-        "form": form,
-        "character": character,
-    })
+    return render(
+        request,
+        "accounts/message_new.html",
+        {
+            "club": club,
+            "form": form,
+            "character": character,
+        },
+    )
 
 
 @club_member_required
@@ -74,7 +86,11 @@ def message_inbox(request, club_slug):
         .order_by("-created")
     )
 
-    return render(request, "accounts/message_inbox.html", {
-        "club": club,
-        "messages": messages,
-    })
+    return render(
+        request,
+        "accounts/message_inbox.html",
+        {
+            "club": club,
+            "messages": messages,
+        },
+    )

@@ -55,3 +55,36 @@
 .wm-quest-turnin-missing td { background: var(--wm-surface-muted, transparent); }
 .wm-quest-turnin .wm-table-scroll { align-self: stretch; width: 100%; }
 .wm-quest-turnin .wm-data-table { width: 100%; }
+
+.wm-quest-rewards {
+  margin-top: var(--wm-space-3);
+  padding-top: var(--wm-space-3);
+  border-top: 1px solid var(--wm-border);
+}
+.wm-quest-rewards h3 {
+  margin: 0 0 var(--wm-space-2);
+  color: var(--wm-text-muted);
+  font-weight: 600;
+}
+.wm-reward-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wm-space-2);
+}
+.wm-reward-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wm-space-1);
+  padding: var(--wm-space-1) var(--wm-space-2);
+  background: var(--wm-surface);
+  border: 1px solid var(--wm-border);
+  border-radius: var(--wm-radius-sm);
+  font-size: var(--wm-text-sm);
+}
+
+@media print {
+  .wm-reward-list { display: none; }
+}

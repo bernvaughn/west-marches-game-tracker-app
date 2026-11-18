@@ -49,6 +49,7 @@ DATABASES = {
     }
 }
 
+
 # Disable migrations for faster test setup
 class DisableMigrations:
     def __contains__(self, item):
@@ -56,6 +57,7 @@ class DisableMigrations:
 
     def __getitem__(self, item):
         return None
+
 
 MIGRATION_MODULES = DisableMigrations()
 
@@ -74,10 +76,13 @@ CACHES = {
 
 # Faster template loading
 TEMPLATE_LOADERS = [
-    ("django.template.loaders.cached.Loader", [
-        "django.template.loaders.filesystem.Loader",
-        "django.template.loaders.app_directories.Loader",
-    ]),
+    (
+        "django.template.loaders.cached.Loader",
+        [
+            "django.template.loaders.filesystem.Loader",
+            "django.template.loaders.app_directories.Loader",
+        ],
+    ),
 ]
 
 # Disable debug toolbar if present

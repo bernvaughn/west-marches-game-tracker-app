@@ -37,6 +37,27 @@ def test_player_requests_for_own_character(login, club, player, character):
     assert list(req.characters.all()) == [character]
 
 
+def test_player_requests_for_multiple_characters(login, club, player, character):
+    owner = Membership.objects.get(user=player, club=club)
+    c2 = Character.objects.create(club=club, owner=owner, name="Pip")
+    c3 = Character.objects.create(club=club, owner=owner, name="Tym")
+
+    resp = _post(login(player), club, [character, c2, c3], points=3, note="Session 3")
+    assert resp.status_code == 302
+
+    reqs = DowntimePointRequest.objects.filter(club=club, requested_by__user=player)
+    assert reqs.count() == 3
+    for req in reqs:
+        assert req.status == "pending"
+        assert req.points == 3 and req.note == "Session 3"
+        assert req.characters.count() == 1
+    assert {list(req.characters.all())[0].pk for req in reqs} == {
+        character.pk,
+        c2.pk,
+        c3.pk,
+    }
+
+
 def test_note_required(login, club, player, character):
     resp = _post(login(player), club, [character], note="")
     assert resp.status_code == 200

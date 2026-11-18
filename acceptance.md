@@ -1,40 +1,15 @@
-## code
-- [ ] Delete player_characters/trade_forms.py
-- [ ] Delete player_characters/trade_services.py
-- [ ] Delete player_characters/trade_status_line.py
-- [ ] Delete player_characters/urls_trades.py
-- [ ] Delete player_characters/views/trades.py
-- [ ] Delete player_characters/views/trade_detail.py
-- [ ] Delete player_characters/views/trade_sides.py
-- [ ] Delete player_characters/views/trade_poll.py
-- [ ] Delete player_characters/views/trade_status.py
-- [ ] Delete player_characters/templates/player_characters/trades/ directory
-- [ ] Delete templates/accounts/_dashboard_trades.html
-- [ ] Delete templates/partials/trade_poll.html
-- [ ] Delete player_characters/tests/trades/ directory
-- [ ] Remove trades URL include from config/urls.py
-- [ ] Remove trades navigation entries from player_characters/apps.py
-- [ ] Remove Trade/OPEN imports and trade logic from player_characters/views/characters.py
-- [ ] Remove Trade/OPEN imports and trade logic from player_characters/views/character_print.py
-- [ ] Remove Trade/OPEN imports and trade logic from player_characters/selector_context.py
-- [ ] Remove "Move items" button and trades references from characters/detail.html
-- [ ] Remove trades column and "Propose trade" link from characters/directory.html
-- [ ] Remove trades badge from characters/_selector.html
-- [ ] Remove trades option from print_session_pack.html
-- [ ] Remove trades checkbox from _print_session_pack_modal.html
-- [ ] Remove trade_poll include from side_menu.html
-- [ ] Remove TradesDashboardProvider from accounts/apps.py
-- [ ] Remove open_trades_needing_action from accounts/apps.py
-- [ ] Remove open_trades_needing_action from accounts/approval_providers.py
-- [ ] Remove TradesDashboardProvider from accounts/dashboard_providers.py
-- [ ] Remove trade references from accounts/views/dashboard.py
-- [ ] Remove trade references from scripts/screenshot_pages.py
-
 ## verify
-- [ ] Trade pages (/c/<club>/trades/) return 404
-- [ ] No "Move items" button on character sheet toolbar
-- [ ] No "Trades" link in top bar or side menu
-- [ ] No "Propose trade" link in character directory
-- [ ] Player shops still work: "Sell my junk in my shop" toggle unchanged
-- [ ] All existing tests pass (excluding deleted trade tests)
-- [ ] No console errors
+- [ ] Checkboxes appear per request on map requests page (GM view only)
+- [ ] "Approve selected" button appears when one or more checkboxes are checked
+- [ ] Clicking "Approve selected" opens a modal with tabs for Discovery, Exploration, Found
+- [ ] Each tab lists the picked characters from selected requests of that kind
+- [ ] Single "Approve all" confirm button in modal applies approvals to all selected requests
+- [ ] Approved requests show status "Approved" with decided_by and decided_at set
+- [ ] Discovery requests create LocationCredit (DISCOVERED) for listed characters
+- [ ] Exploration requests create LocationCredit (EXPLORED) for listed characters
+- [ ] Found requests create FoundMark for listed characters
+- [ ] Visit requests are handled appropriately (record TileVisit) or excluded from bulk approve
+- [ ] Modal closes and queue refreshes after successful bulk approval
+- [ ] Error handling: already-decided requests are skipped with feedback
+- [ ] Permission: only GMs/admins can see checkboxes and bulk approve
+- [ ] Non-GM users (players) see read-only queue without checkboxes or bulk actions

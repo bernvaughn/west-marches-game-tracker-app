@@ -15,15 +15,13 @@ if not SECRET_KEY:
         SECRET_KEY = "dev-only-insecure-key-change-me"
     else:
         raise RuntimeError(
-            "DJANGO_SECRET_KEY environment variable is required "
-            "in production (non-DEBUG mode)"
+            "DJANGO_SECRET_KEY environment variable is required in production (non-DEBUG mode)"
         )
 
 # Validate that the dev default secret key is not used in production
 if not DEBUG and SECRET_KEY == "dev-only-insecure-key-change-me":
     raise RuntimeError(
-        "The default insecure SECRET_KEY cannot be used in production. "
-        "Set DJANGO_SECRET_KEY."
+        "The default insecure SECRET_KEY cannot be used in production. Set DJANGO_SECRET_KEY."
     )
 ALLOWED_HOSTS = [
     h.strip()
@@ -32,9 +30,7 @@ ALLOWED_HOSTS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    o.strip()
-    for o in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
-    if o.strip()
+    o.strip() for o in os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()
 ]
 
 INSTALLED_APPS = [
@@ -186,35 +182,47 @@ RATELIMIT_OAUTH_TOKEN_ATTEMPTS = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_ATTEM
 RATELIMIT_OAUTH_TOKEN_WINDOW = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_WINDOW", "60"))  # seconds
 RATELIMIT_MCP_ATTEMPTS = int(os.environ.get("RATELIMIT_MCP_ATTEMPTS", "60"))
 RATELIMIT_MCP_WINDOW = int(os.environ.get("RATELIMIT_MCP_WINDOW", "60"))  # seconds
+# Personal Access Token expiration (configurable via environment variable)
+AGENT_TOKEN_EXPIRY_DAYS = int(os.environ.get("AGENT_TOKEN_EXPIRY_DAYS", "365"))
 
 # HTTPS / SSL
-SECURE_SSL_REDIRECT = os.environ.get(
-    "DJANGO_SECURE_SSL_REDIRECT", "1"
-) not in ("0", "false", "False", "")
+SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "1") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # HSTS
-SECURE_HSTS_SECONDS = int(
-    os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000")
-)
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_SECURE_HSTS_SECONDS", "31536000"))
 SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", "1"
 ) not in ("0", "false", "False", "")
-SECURE_HSTS_PRELOAD = os.environ.get(
-    "DJANGO_SECURE_HSTS_PRELOAD", "1"
-) not in ("0", "false", "False", "")
+SECURE_HSTS_PRELOAD = os.environ.get("DJANGO_SECURE_HSTS_PRELOAD", "1") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
 
 # Content Security
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
 # Secure Cookies
-SESSION_COOKIE_SECURE = os.environ.get(
-    "DJANGO_SESSION_COOKIE_SECURE", "1"
-) not in ("0", "false", "False", "")
-CSRF_COOKIE_SECURE = os.environ.get(
-    "DJANGO_CSRF_COOKIE_SECURE", "1"
-) not in ("0", "false", "False", "")
+SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "1") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
+CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "1") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

@@ -15,7 +15,7 @@ from player_characters.selection import selected_character
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import Shop, ShopStock
-from shops.services import ShopError, is_open, sell_price
+from shops.services import ShopError, format_vs_base_text, is_open, sell_price
 from shops.views.browse import add_recent_shop
 
 
@@ -27,6 +27,9 @@ def buy(request, club_slug, shop_id, stock_id):
         raise Http404
     character = selected_character(request)
     unit_price = sell_price(stock)
+    base_value = stock.item.value_cp
+    sell_percent = stock.sell_percent if stock.sell_percent is not None else stock.shop.sell_percent
+    vs_base = unit_price - base_value
     error = None
     if stock.quantity == 0:
         error = "Already sold: someone bought the last one."
@@ -85,6 +88,9 @@ def buy(request, club_slug, shop_id, stock_id):
             "shop": shop,
             "stock": stock,
             "price": unit_price,
+            "base_value": base_value,
+            "sell_percent": sell_percent,
+            "vs_base_text": format_vs_base_text(vs_base),
             "form": form,
             "error": error,
             "character": character,
