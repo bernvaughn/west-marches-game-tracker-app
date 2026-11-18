@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from accounts.permissions import game_master_required
 from accounts.scoping import club_queryset
 
-from ..models import AgentConnection
+from ..models import AgentConnection, TokenAuditLog
 from ..tokens import create_token
 
 
@@ -31,6 +31,7 @@ def connection_list(request, club_slug):
             connection, secret = create_token(
                 request.user, request.club, form.cleaned_data["label"]
             )
+            # CREATE audit entry is logged in create_token()
             context.update(new_secret=secret, new_connection=connection)
             form = ConnectionForm()
     else:
@@ -46,5 +47,12 @@ def connection_revoke(request, club_slug, pk):
     if connection.revoked_at is None:
         connection.revoked_at = timezone.now()
         connection.save(update_fields=["revoked_at"])
+        # Log the revoke action
+        TokenAuditLog.objects.create(
+            action=TokenAuditLog.Action.REVOKE,
+            connection=connection,
+            user=request.user,
+            club=request.club,
+        )
     messages.success(request, f"Revoked connection “{connection.label}”.")
     return redirect("agent_access:connections", club_slug=club_slug)

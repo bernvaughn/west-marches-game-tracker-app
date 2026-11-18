@@ -32,11 +32,56 @@ class AgentConnection(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     objects = ClubScopedManager()
 
     def __str__(self):
         return self.label or f"Connection {self.pk}"
+
+    @property
+    def is_expired(self):
+        """Check if the token has expired."""
+        from django.utils import timezone
+
+        if self.expires_at is None:
+            return False
+        return timezone.now() >= self.expires_at
+
+
+class TokenAuditLog(models.Model):
+    """Audit log for token lifecycle events: create, use, revoke, expire."""
+
+    class Action(models.TextChoices):
+        CREATE = "create", "Create"
+        USE = "use", "Use"
+        REVOKE = "revoke", "Revoke"
+        EXPIRE = "expire", "Expire"
+
+    action = models.CharField(max_length=10, choices=Action.choices)
+    connection = models.ForeignKey(
+        AgentConnection, on_delete=models.CASCADE, related_name="audit_logs"
+    )
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="token_audit_logs"
+    )
+    club = models.ForeignKey(
+        "accounts.Club", on_delete=models.CASCADE, related_name="token_audit_logs"
+    )
+    timestamp = models.DateTimeField(auto_now_add=True)
+    metadata = models.JSONField(blank=True, default=dict)
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["action"]),
+            models.Index(fields=["user"]),
+            models.Index(fields=["club"]),
+            models.Index(fields=["timestamp"]),
+        ]
+
+    def __str__(self):
+        return f"{self.action} - {self.user} @ {self.club} at {self.timestamp}"
 
 
 class ProposedBatch(models.Model):

@@ -182,6 +182,8 @@ RATELIMIT_OAUTH_TOKEN_ATTEMPTS = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_ATTEM
 RATELIMIT_OAUTH_TOKEN_WINDOW = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_WINDOW", "60"))  # seconds
 RATELIMIT_MCP_ATTEMPTS = int(os.environ.get("RATELIMIT_MCP_ATTEMPTS", "60"))
 RATELIMIT_MCP_WINDOW = int(os.environ.get("RATELIMIT_MCP_WINDOW", "60"))  # seconds
+# Personal Access Token expiration (configurable via environment variable)
+AGENT_TOKEN_EXPIRY_DAYS = int(os.environ.get("AGENT_TOKEN_EXPIRY_DAYS", "365"))
 
 # HTTPS / SSL
 SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "1") not in (
