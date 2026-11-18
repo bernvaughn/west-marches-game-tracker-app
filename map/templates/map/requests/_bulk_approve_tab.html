@@ -1,0 +1,30 @@
+<table class="table table-sm table-striped align-middle">
+<thead>
+<tr>
+<th>Location</th>
+<th class="wm-col-optional">Position</th>
+<th>Characters</th>
+<th class="wm-col-optional">Requested by</th>
+<th class="wm-col-optional wm-date">Date</th>
+</tr>
+</thead>
+<tbody>
+{% for req in requests %}
+<tr>
+<td>{{ req.location_label }}</td>
+<td class="wm-col-optional">{% if req.tile_q is not None %}({{ req.tile_q }}, {{ req.tile_r }}){% else %}-{% endif %}</td>
+<td>
+  {% for c in req.characters.all %}
+    {% include "components/character_chip.html" with name=c.name %}
+  {% endfor %}
+</td>
+<td class="wm-col-optional">{{ req.requested_by.user.display_name }}</td>
+<td class="wm-col-optional wm-date">{{ req.date|default:"" }}</td>
+</tr>
+{% empty %}
+<tr>
+<td colspan="5" class="text-muted">None.</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>

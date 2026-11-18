@@ -199,6 +199,9 @@ EXCLUDED = {
     "shops:stock_fragment": "An htmx partial with no layout; `shops-detail-*` shows it.",
     "map:request_approve": "POST only.",
     "map:request_decline": "POST only.",
+    "map:request_bulk_approve": (
+        "HTMX modal endpoint requiring `?requests=` IDs; opened from `map-requests`."
+    ),
     "quests:turn_in": "POST only; turn-in is an inline form on `quests-detail`.",
     "quests:delete": "POST only.",
     "downtime:spend": "POST only.",
