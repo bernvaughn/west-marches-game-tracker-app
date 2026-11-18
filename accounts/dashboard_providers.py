@@ -3,13 +3,14 @@
 from abc import ABC
 from typing import Protocol
 
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import Truncator
 
 from accounts.models import Message
+from accounts.scoping import club_queryset
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from items.magic_types import MagicType
@@ -18,11 +19,15 @@ from ledger.models import LedgerEntry
 from ledger.services import available_items
 from map.models import HexMap
 from map.services import get_uncredited_tiles
-from player_characters.junk import junk_rows
+from player_characters.inventory import coin_summary
+from player_characters.junk import junk_rows, junk_value
+from player_characters.models import Trade
 from player_characters.player_shop import listed_rows
 from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
 from shops.services import open_shops
+
+OPEN = (Trade.Status.REQUESTED, Trade.Status.ACCEPTED)
 
 
 class DashboardProvider(Protocol):
@@ -54,6 +59,56 @@ class BaseDashboardProvider(ABC):
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         """Whether to render this provider for the current user. Default: always show."""
+        return True
+
+
+class HeaderDashboardProvider(BaseDashboardProvider):
+    """Dashboard header stats: coins, downtime, junk count/value, trades, messages."""
+
+    key = "header"
+    order = 0
+    template = "accounts/_dashboard_header.html"
+
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        coin_sum = coin_summary(character)
+        downtime_balance = downtime_services.balance(character)
+        junk = junk_rows(character)
+        junk_val = junk_value(character, junk)
+
+        trades_qs = club_queryset(request, Trade).filter(status__in=OPEN)
+        my_trades = trades_qs.filter(
+            Q(sender__owner=membership) | Q(receiver__owner=membership)
+        ).select_related("sender__owner__user", "receiver__owner__user")
+
+        open_trades_data = []
+        for t in my_trades:
+            if t.sender.owner_id == membership.id:
+                other = t.receiver
+                side = "sender"
+            else:
+                other = t.sender
+                side = "receiver"
+            open_trades_data.append({
+                "trade": t,
+                "other_character": other,
+                "side": side,
+                "status_display": t.get_status_display(),
+            })
+
+        unread_count = Message.objects.for_club(club).filter(
+            status=Message.Status.OPEN
+        ).exclude(sender=membership).count()
+
+        return {
+            "coin_summary": coin_sum,
+            "downtime_balance": downtime_balance,
+            "junk_count": len(junk),
+            "junk_value": junk_val,
+            "open_trades": open_trades_data,
+            "unread_count": unread_count,
+        }
+
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         return True
 
 
