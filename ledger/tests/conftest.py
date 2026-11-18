@@ -14,7 +14,8 @@ def second_item(club):
 @pytest.fixture
 def funded(character):
     """A character with 1000 coins."""
-    from ledger.services import record, Line
+    from ledger.services import Line, record
+
     record(character, "award", [Line(coins=1000)])
     return character
 

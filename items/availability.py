@@ -1,14 +1,12 @@
 """Where to buy (U75): open club shops and open player stalls that offer an item."""
 
-from collections import defaultdict
 from dataclasses import dataclass, field
 
-from django.db.models import Q, Sum
+from django.db.models import Sum
 from django.urls import reverse
 
 from ledger.models import LedgerLine
-from ledger.services import OPEN_TRADE_STATUSES
-from player_characters.models import JunkMark, TradeLine
+from player_characters.models import JunkMark
 from shops.models import ShopStock
 from shops.services import open_shops, sell_price, shop_sort_key
 
@@ -51,7 +49,7 @@ def _stall_quantities(club, item=None):
     """{(character_id, item_id): quantity} listed by open stalls.
 
     Bulk form of player_characters.player_shop.listed_rows:
-    min(junk mark, owned, owned - held in open trades), kept when positive. A fixed
+    min(junk mark, owned), kept when positive. A fixed
     number of queries however many characters there are.
     """
     marks = JunkMark.objects.filter(
@@ -70,23 +68,11 @@ def _stall_quantities(club, item=None):
         .values("entry__character_id", "item_id")
         .annotate(t=Sum("quantity"))
     }
-    held = defaultdict(int)
-    open_lines = TradeLine.objects.filter(
-        trade__status__in=OPEN_TRADE_STATUSES, item_id__in=item_ids
-    ).filter(
-        Q(from_sender=True, trade__sender_id__in=char_ids)
-        | Q(from_sender=False, trade__receiver_id__in=char_ids)
-    )
-    for line in open_lines.values(
-        "item_id", "from_sender", "trade__sender_id", "trade__receiver_id", "quantity"
-    ):
-        cid = line["trade__sender_id"] if line["from_sender"] else line["trade__receiver_id"]
-        held[(cid, line["item_id"])] += line["quantity"]
     result, chars = {}, {}
     for m in marks:
         key = (m.character_id, m.item_id)
         have = owned.get(key, 0)
-        quantity = min(m.quantity, max(have, 0), have - held.get(key, 0))
+        quantity = min(m.quantity, max(have, 0))
         if quantity > 0:
             result[key] = quantity
             chars[m.character_id] = m.character
