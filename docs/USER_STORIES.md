@@ -782,6 +782,7 @@ Stories for club admins and game masters to manage starting equipment templates 
 **U110 Set Active Template.** As a club admin, I want to set one template as active per club, so there's a single source of truth for starting equipment. *(starting_equipment)*
 - Exactly one template per club is active; activating a template clears the active flag on the club's other templates.
 
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
