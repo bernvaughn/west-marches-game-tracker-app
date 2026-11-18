@@ -78,6 +78,43 @@
 .wm-chalk-job:only-child { grid-column: 1 / -1; }
 .wm-chalk-job form { margin: 0 0 .5rem; }
 
+/* Filter chips on the Downtime chalkboard (D6). */
+.wm-downtime-filters { gap: .6rem; }
+.wm-filter-group { display: flex; flex-direction: column; gap: .35rem; }
+.wm-filter-group > span {
+  display: block;
+  margin-bottom: .15rem;
+  font-size: var(--wm-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--wm-text-muted);
+}
+.wm-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .65rem;
+  border: 1px solid var(--wm-border);
+  border-radius: 999px;
+  font-size: var(--wm-text-sm);
+  color: var(--wm-text);
+  background: var(--wm-surface);
+  cursor: pointer;
+  line-height: 1;
+  user-select: none;
+}
+.wm-filter-chip input { display: none; }
+.wm-filter-chip--active {
+  background: var(--wm-accent);
+  border-color: var(--wm-accent);
+  color: var(--wm-on-accent);
+}
+.wm-filter-chip:focus-within {
+  outline: var(--wm-focus-outline);
+  outline-offset: 2px;
+}
+
 /* Spend result modal on the chalkboard (B-47). The body marker re-themes the open modal; other modals stay white. */
 #app-modal .modal-content:has(.wm-chalk-modal), #app-modal .modal-content:has(.wm-chalk-modal) > form {
   background: var(--wm-slate); color: var(--wm-chalk); font-family: var(--wm-font-heading);
