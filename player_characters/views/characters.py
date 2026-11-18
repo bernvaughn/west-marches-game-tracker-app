@@ -16,6 +16,8 @@ from accounts.mixins import (
 from accounts.permissions import admin_or_gm_required, club_admin_required, club_member_required
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests
+from starting_equipment.models import StartingEquipmentTemplate
+from starting_equipment.services import apply_starting_equipment
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
@@ -100,8 +102,16 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
             if not can_pick:
                 character.owner = self.membership
             character.save()
+            template = StartingEquipmentTemplate.objects.filter(
+                club=self.club, is_active=True
+            ).first()
+            if template:
+                apply_starting_equipment(character, template, request.user)
             messages.success(request, f"Created {character.name}.")
-            return redirect("characters:detail", club_slug=self.club.slug, pk=character.pk)
+            url = reverse(
+                "characters:detail", kwargs={"club_slug": self.club.slug, "pk": character.pk}
+            )
+            return redirect(f"{url}?starting_equipment=1")
         return render(
             request,
             "player_characters/characters/form.html",
