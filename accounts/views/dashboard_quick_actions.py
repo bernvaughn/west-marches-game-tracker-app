@@ -6,10 +6,10 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
 
+from accounts.dashboard_providers import get_healing_potion_stock
 from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from items.magic_types import MagicType
 from ledger.coins import format_coins
 from player_characters.junk import junk_rows
 from player_characters.selection import selected_character
@@ -18,7 +18,7 @@ from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import ShopStock
 from shops.selling import sell_many
-from shops.services import is_open, open_shops, percent_price
+from shops.services import is_open, open_shops, percent_price, sell_price
 
 
 @club_member_required
@@ -146,17 +146,9 @@ def quick_action_buy_potions(request, club_slug):
         raise Http404("No character selected.")
 
     today = timezone.localdate()
-    open_shop_qs = open_shops(club, today)
 
     # Get all healing potions from open shops with stock > 0
-    stock_qs = (
-        ShopStock.objects.filter(
-            shop__in=open_shop_qs,
-            item__magic_type=MagicType.POTION,
-        )
-        .select_related("shop", "item")
-        .order_by("shop__street_position", "shop__name", "item__name")
-    )
+    stock_qs = get_healing_potion_stock(club, today)
 
     error = None
     selected_stock_id = None
@@ -165,8 +157,6 @@ def quick_action_buy_potions(request, club_slug):
     for stock in stock_qs:
         if not is_open(stock.shop, today) or stock.item.retired:
             continue
-        from shops.services import sell_price
-
         price = sell_price(stock)
         available = stock.quantity if stock.quantity is not None else 999
         if available <= 0:
@@ -201,11 +191,10 @@ def quick_action_buy_potions(request, club_slug):
     if request.method == "POST":
         selected_stock_id = request.POST.get("stock_id")
         if selected_stock_id:
+            shop_pks = stock_qs.values_list("shop", flat=True)
             selected_stock = club_get_object_or_404(
-                request, ShopStock, pk=selected_stock_id, shop__in=open_shop_qs
+                request, ShopStock, pk=selected_stock_id, shop__in=shop_pks
             )
-            from shops.services import sell_price
-
             price = sell_price(selected_stock)
             available = selected_stock.quantity if selected_stock.quantity is not None else 999
             form = BuyForm(request.POST, max_quantity=available)
@@ -227,13 +216,12 @@ def quick_action_buy_potions(request, club_slug):
         # GET - check for stock_id in query params or use first
         selected_stock_id = request.GET.get("stock_id", selected_stock_id)
         if selected_stock_id:
+            shop_pks = stock_qs.values_list("shop", flat=True)
             selected_stock = club_get_object_or_404(
-                request, ShopStock, pk=selected_stock_id, shop__in=open_shop_qs
+                request, ShopStock, pk=selected_stock_id, shop__in=shop_pks
             )
         else:
             selected_stock = stock_data[0]["stock"]
-        from shops.services import sell_price
-
         price = sell_price(selected_stock)
         available = selected_stock.quantity if selected_stock.quantity is not None else 999
         form = BuyForm(max_quantity=available)

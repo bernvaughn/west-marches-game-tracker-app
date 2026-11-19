@@ -4,12 +4,9 @@ from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
 
-from accounts.dashboard_providers import get_provider, get_providers
+from accounts.dashboard_providers import build_header_stats, get_provider, get_providers
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
-from downtime import services as downtime_services
-from player_characters.inventory import coin_summary
-from player_characters.junk import junk_rows, junk_value
 from player_characters.models import Character
 from player_characters.selection import selected_character
 
@@ -118,11 +115,8 @@ def character_preview(request, club_slug, pk):
     if character.owner_id != membership.id:
         raise Http404("Not your character.")
 
-    # Build preview data
-    coin_sum = coin_summary(character)
-    downtime_balance = downtime_services.balance(character)
-    junk = junk_rows(character)
-    junk_val = junk_value(character, junk)
+    # Build preview data using shared helper
+    stats = build_header_stats(character, request.club, membership)
 
     return JsonResponse(
         {
@@ -130,10 +124,10 @@ def character_preview(request, club_slug, pk):
             "level": character.level,
             "char_class": character.char_class,
             "species": character.species,
-            "coins_available": coin_sum.available,
-            "junk_count": len(junk),
-            "junk_value": junk_val,
-            "downtime_balance": downtime_balance,
+            "coins_available": stats["coin_summary"].available,
+            "junk_count": stats["junk_count"],
+            "junk_value": stats["junk_value"],
+            "downtime_balance": stats["downtime_balance"],
         }
     )
 
