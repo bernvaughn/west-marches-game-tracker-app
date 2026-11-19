@@ -191,10 +191,10 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
     window.showTestToast = function(type) {
       if (!window.wmShowToast) return;
       const messages = {
-        success: 'Trade completed successfully.',
-        warning: 'Trade declined.',
-        danger: 'Trade cancelled.',
-        info: 'Trade accepted. Choose what you give.'
+        success: 'Action completed successfully',
+        warning: 'Request declined',
+        danger: 'Operation cancelled',
+        info: 'Choice confirmed. Choose what to do next.'
       };
       window.wmShowToast(messages[type] || messages.success, type);
     };
