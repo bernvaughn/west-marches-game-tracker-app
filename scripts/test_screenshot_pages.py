@@ -93,7 +93,7 @@ def test_modal_actions_have_selectors():
 
 def test_extra_fixtures_idempotent(db):
     from downtime.models import DowntimePointRequest, DowntimeResult
-    from player_characters.models import JunkMark, Trade
+    from player_characters.models import JunkMark
 
     call_command("seed_demo", verbosity=0)
     assert not User.objects.filter(email__in=["gm-only@example.com", "clubadmin@example.com"])
@@ -104,7 +104,6 @@ def test_extra_fixtures_idempotent(db):
         JunkMark.objects.count(),
         DowntimePointRequest.objects.count(),
         DowntimeResult.objects.count(),
-        Trade.objects.count(),
     )
     first = counts()
     extra_fixtures()

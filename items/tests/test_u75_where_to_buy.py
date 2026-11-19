@@ -12,7 +12,7 @@ from items.availability import _stall_quantities, available_item_ids, where_to_b
 from items.models import Item
 from ledger.services import Line, record
 from ledger.templatetags.coins import coins
-from player_characters.models import Character, JunkMark, Trade, TradeLine
+from player_characters.models import Character, JunkMark
 from player_characters.player_shop import listed_rows
 from shops.models import Rotation, Shop, ShopStock
 
@@ -122,20 +122,16 @@ def test_your_stall(login, club, player, item):
     assert b"your stall" in r.content
 
 
-def test_closed_stall_and_held_junk_excluded(club, player, other_player, item):
-    other = Character.objects.create(
+def test_closed_stall_and_open_stall_included(club, player, other_player, item):
+    Character.objects.create(
         club=club, owner=Membership.objects.get(user=player, club=club), name="Pl"
     )
     make_stall(club, other_player, "Shut", item, open_=False)
     assert item.pk not in available_item_ids(club, TODAY)
     ch = make_stall(club, other_player, "Held", item)
     assert item.pk in available_item_ids(club, TODAY)
-    trade = Trade.objects.create(
-        club=club, sender=ch, receiver=other, status=Trade.Status.REQUESTED
-    )
-    TradeLine.objects.create(trade=trade, item=item, quantity=1, from_sender=True)
     quantities, _ = _stall_quantities(club)
-    assert (ch.pk, item.pk) not in quantities
+    assert (ch.pk, item.pk) in quantities
 
 
 def test_empty_state(login, club, player, item):

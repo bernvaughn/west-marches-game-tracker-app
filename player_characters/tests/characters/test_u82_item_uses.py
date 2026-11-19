@@ -131,11 +131,10 @@ def test_over_quantity_refused(club, login, player, owned, item):
     assert LedgerEntry.objects.filter(kind="consumed").count() == 0
 
 
-def test_items_in_open_trade_not_available(club, login, player, owned, item, make_open_trade):
-    make_open_trade(sender=owned, items={item: 4})
+def test_items_available_for_consume(club, login, player, owned, item):
     c = login(player)
-    assert c.post(consume_url(club, owned, item), {"quantity": "2"}).status_code == 200
-    assert LedgerEntry.objects.filter(kind="consumed").count() == 0
+    assert c.post(consume_url(club, owned, item), {"quantity": "2"}).status_code == 302
+    assert LedgerEntry.objects.filter(kind="consumed").count() == 1
     assert c.post(consume_url(club, owned, item), {"quantity": "1"}).status_code == 302
 
 
@@ -161,7 +160,7 @@ def test_recent_changes_rules(character, other_character, player, game_master):
     _entry(character, "consumed", 1, player)
     _entry(character, "adjustment", 0, game_master)
     _entry(character, "consumed", 40)
-    _entry(character, "trade", 1)
+    _entry(character, "purchase", 1)
     _entry(other_character, "consumed", 1)
     got = recent_changes(character)
     assert [e.kind for e in got] == ["adjustment", "consumed"]

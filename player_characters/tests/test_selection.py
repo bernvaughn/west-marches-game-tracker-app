@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from accounts import approvals
 from accounts.models import Membership
-from player_characters.models import Character, SelectedCharacter, Trade
+from player_characters.models import Character, SelectedCharacter
 from player_characters.selection import selected_character
 
 pytestmark = pytest.mark.django_db
@@ -223,23 +223,6 @@ def test_character_preview_nonexistent_404(login, club, player):
     url = reverse("characters:preview", args=[club.slug, 9999])
     response = client.get(url)
     assert response.status_code == 404
-
-
-@pytest.mark.story("S3")
-def test_character_preview_no_open_trades_after_removal(login, club, player, aria, borin):
-    # Trades removed: open_trades not in preview data
-    Trade.objects.create(
-        club=club,
-        sender=aria,
-        receiver=borin,
-        status=Trade.Status.REQUESTED,
-    )
-    client = login(player)
-    url = reverse("characters:preview", args=[club.slug, aria.pk])
-    response = client.get(url)
-    assert response.status_code == 200
-    data = response.json()
-    assert "open_trades" not in data
 
 
 @pytest.mark.story("S3")

@@ -109,11 +109,8 @@ def test_bulk_award_coins_and_items_mixed(
 
 
 @pytest.mark.story("S8")
-def test_bulk_award_atomic_failure(
-    login, game_master, club, funded, second_character, item, make_open_trade
-):
+def test_bulk_award_atomic_failure(login, game_master, club, funded, second_character, item):
     """If one character fails, none should be awarded."""
-    make_open_trade(items={item: 5})
     c = login(game_master)
     data = bulk_payload(
         [funded, second_character],

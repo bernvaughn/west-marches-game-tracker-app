@@ -1,56 +1,24 @@
-# Implementation Plan: Inbox Integration for Starting Requests
+# Implementation Plan: Remove Open Trades from Dashboard Header Provider
 
 ## Overview
-This task implements the inbox integration for magic item starting equipment requests (Child 4 of the "Magic Item Starting Equipment Requests" epic). The work enables club admins/GMs to view, filter, and act on starting equipment requests through the club inbox.
+This task (C4) removes open_trades logic from the dashboard header provider and its tests. The Trade/TradeLine models were already removed in C1 (commit 4a559c3). The dashboard_providers.py was already cleaned of trade logic in round 1 (commit 7c964bb). This task only needs to update the test files to remove open_trades assertions.
 
-## Current State (Already Implemented)
-All required functionality has been implemented and tested:
+## Current State
+- `accounts/dashboard_providers.py`: Already clean — no Trade import, no OPEN constant, no open_trades logic in HeaderDashboardProvider.get_context()
+- `accounts/tests/test_dashboard_header.py`: On main, has Trade import and open_trades assertions; on this branch (HEAD), already cleaned
+- `accounts/tests/test_dashboard_context_standardization.py`: On main, has test_header_provider_includes_trades_data_flat_context; on this branch (HEAD), already cleaned
 
-### 1. Message Kind (`STARTING_REQUEST`)
-- Added to `Message.Kind` in `accounts/models.py`
-- Migration `0002_startingequipmentrequest_message` in `starting_equipment/migrations/`
+## Plan
+1. **Verify dashboard_providers.py is clean** — Confirm no Trade, OPEN, or open_trades references remain
+2. **Update test_dashboard_header.py** — Remove Trade/Character import, remove "open_trades" assertion from test_provider_get_context_returns_expected_keys, delete test_provider_context_open_trades
+3. **Update test_dashboard_context_standardization.py** — Delete test_header_provider_includes_trades_data_flat_context
+4. **Run tests** — Verify all 12 accounts dashboard tests pass
 
-### 2. Inbox Kind Filter
-- `KIND_FILTERS` in `accounts/views/inbox.py` includes `("starting_request", "Starting requests")`
-- `_kind_of()` function handles the filter parameter
-- Filter persists with status filter in pagination
+## Acceptance Criteria Mapping
+- Plan: Implementation plan written and accepted
+- Code: Three edit items above
+- Verify: Accounts dashboard tests pass with no Trade/OPEN/open_trades references in dashboard_providers.py
 
-### 3. Grant/Decline Action Buttons
-- In `accounts/templates/accounts/inbox/inbox.html`:
-  - Shows "Grant starting equipment" (check-lg icon, btn-outline-success) for approve
-  - Shows "Decline" (x-lg icon, btn-outline-danger) for decline
-  - Buttons only visible to club admins and GMs
-  - Links to `starting_equipment:request_decide_confirm` with decision parameter
-
-### 4. URL Routing
-- Decision confirm and decide URLs in `starting_equipment/urls_requests.py`:
-  - `request_decide_confirm` (GET) - renders confirm modal
-  - `request_decide` (POST) - processes approve/decline
-- Inbox template uses `starting_equipment` app namespace URLs
-
-### 5. Tests
-- `accounts/tests/test_inbox.py`: 5 tests for starting request inbox integration
-- `starting_equipment/tests/test_requests.py`: 31 tests for request views
-- All 54 tests pass
-
-## Remaining Work (Minor UI Improvement)
-One minor improvement: Add a kind pill/badge for "Starting request" messages in the inbox message column (similar to the existing "Stock request" badge).
-
-## Files Involved
-- `accounts/models.py` - Message.Kind.STARTING_REQUEST (done)
-- `accounts/views/inbox.py` - KIND_FILTERS, _kind_of() (done)
-- `accounts/templates/accounts/inbox/inbox.html` - kind filter pills, action buttons, kind badge (done except badge)
-- `starting_equipment/urls_requests.py` - decide URLs (done)
-- `starting_equipment/views/requests.py` - request_decide_confirm, request_decide (done)
-- `accounts/tests/test_inbox.py` - inbox integration tests (done)
-- `starting_equipment/tests/test_requests.py` - request view tests (done)
-
-## Acceptance Criteria
-All criteria are met and tested:
-- [ ] Inbox shows "Starting requests" kind filter pill
-- [ ] Filtering by kind=starting_request works correctly
-- [ ] Admin/GM see Grant/Decline buttons on starting-request messages
-- [ ] Regular members cannot see inbox or decision buttons
-- [ ] Grant action approves request, grants item via ledger, marks message HANDLED
-- [ ] Decline action sets DECLINED + decision_note, marks message HANDLED
-- [ ] All related tests pass
+## Notes
+- The work is already complete on this branch (commit 66d9da6). This plan documents the completed changes.
+- Peer task C2 (ledger services) must land first for full test suite to pass, but accounts dashboard tests are self-contained and pass now.

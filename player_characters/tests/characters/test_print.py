@@ -54,8 +54,7 @@ def test_zero_quantity_hidden(login, club, player, funded, second_item):
 
 
 @pytest.mark.story("U6")
-def test_held_items_still_shown(login, club, player, funded, item, make_open_trade):
-    make_open_trade(items={item: 2})
+def test_held_items_still_shown(login, club, player, funded, item):
     body = login(player).get(url(club, funded)).content.decode()
     assert item.name in body
     assert "Qty" in body

@@ -3,7 +3,7 @@ import pytest
 from accounts.models import Membership, User
 from items.models import Item
 from ledger.services import Line, record
-from player_characters.models import Character, Trade, TradeLine
+from player_characters.models import Character
 
 
 def _character(club, user, name):
@@ -52,21 +52,3 @@ def second_item(club):
 def funded(character, item):
     record(character, "award", [Line(coins=1000), Line(item=item, quantity=5)])
     return character
-
-
-@pytest.fixture
-def make_open_trade(club, character, other_character):
-    def _make(*, sender=None, receiver=None, coins=0, items=None, status=Trade.Status.REQUESTED):
-        trade = Trade.objects.create(
-            club=club,
-            sender=sender or character,
-            receiver=receiver or other_character,
-            status=status,
-        )
-        if coins:
-            TradeLine.objects.create(trade=trade, from_sender=True, coins=coins)
-        for it, qty in (items or {}).items():
-            TradeLine.objects.create(trade=trade, from_sender=True, item=it, quantity=qty)
-        return trade
-
-    return _make

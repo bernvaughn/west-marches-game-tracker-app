@@ -15,16 +15,14 @@ def test_no_holds_no_line_or_column(club, login, player, sheet):
 
 
 @pytest.mark.story("U56")
-def test_no_trade_links_after_removal(club, login, player, sheet, make_open_trade):
-    make_open_trade(coins=100)
+def test_no_trade_links_after_removal(club, login, player, sheet):
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
     assert "In open trades" not in html
     assert "/trades/" not in html
 
 
 @pytest.mark.story("U56")
-def test_no_hold_column_after_removal(club, login, player, sheet, item, make_open_trade):
-    make_open_trade(items={item: 1})
+def test_no_hold_column_after_removal(club, login, player, sheet, item):
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
     assert '<th class="num wm-col-optional">In open trades</th>' not in html
 

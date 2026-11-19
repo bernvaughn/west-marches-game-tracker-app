@@ -29,8 +29,7 @@ def test_coins_split(club, login, player, sheet):
 
 
 @pytest.mark.story("U8")
-def test_no_holds_after_trade_removal(club, login, player, sheet, make_open_trade):
-    make_open_trade(coins=100)
+def test_no_holds_after_trade_removal(club, login, player, sheet):
     html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
     assert "In open trades" not in html
     assert "Available" in html

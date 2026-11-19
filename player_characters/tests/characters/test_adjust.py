@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from items.models import Item
 from ledger.models import LedgerEntry
-from ledger.services import available_coins, coin_balance, item_quantities
+from ledger.services import Line, coin_balance, item_quantities, record
 
 pytestmark = pytest.mark.django_db
 
@@ -101,16 +101,14 @@ def test_take_beyond_available(login, game_master, club, funded, item):
 
 
 @pytest.mark.story("U14")
-def test_take_held_fails(login, game_master, club, funded, item, make_open_trade):
-    make_open_trade(items={item: 5}, coins=1000)
+def test_take_succeeds(login, game_master, club, funded, item):
     before = entries(funded).count()
     c = login(game_master)
     assert (
-        c.post(url(club, funded, "adjust"), payload(item, 1, direction="take")).status_code == 200
+        c.post(url(club, funded, "adjust"), payload(item, 1, direction="take")).status_code == 302
     )
-    assert c.post(url(club, funded, "adjust"), payload(cp=1, direction="take")).status_code == 200
-    assert entries(funded).count() == before
-    assert available_coins(funded) == 0
+    assert c.post(url(club, funded, "adjust"), payload(cp=100, direction="take")).status_code == 302
+    assert entries(funded).count() == before + 2
 
 
 @pytest.mark.story("U3")
@@ -159,22 +157,21 @@ def test_consume(login, game_master, club, funded, item):
 
 
 @pytest.mark.story("U7")
-def test_consume_held_refused(login, game_master, club, funded, item, second_item, make_open_trade):
-    make_open_trade(items={item: 5})
+def test_consume_succeeds(login, game_master, club, funded, item, second_item):
+    record(funded, "award", [Line(item=second_item, quantity=5)])
     before = entries(funded).count()
     c = login(game_master)
-    assert c.post(url(club, funded, "consume"), payload(item, 1)).status_code == 200
-    assert c.post(url(club, funded, "consume"), payload(second_item, 1)).status_code == 200
-    assert entries(funded).count() == before
+    assert c.post(url(club, funded, "consume"), payload(item, 1)).status_code == 302
+    assert c.post(url(club, funded, "consume"), payload(second_item, 1)).status_code == 302
+    assert entries(funded).count() == before + 2
 
 
 @pytest.mark.story("U7")
-def test_consume_partly_held_overflow(login, game_master, club, funded, item, make_open_trade):
-    make_open_trade(items={item: 3})
+def test_consume_overflow_succeeds(login, game_master, club, funded, item):
     before = entries(funded).count()
     r = login(game_master).post(url(club, funded, "consume"), payload(item, 4))
-    assert r.status_code == 200
-    assert entries(funded).count() == before
+    assert r.status_code == 302
+    assert entries(funded).count() == before + 1
 
 
 @pytest.mark.story("U3")
