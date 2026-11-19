@@ -1,7 +1,0 @@
-{
-  "answers": {
-    "least_necessary": {"text": "Reading through extensive task history to understand prior attempts"},
-    "most_expensive": {"text": "Exploring git history to verify current state of dashboard_providers.py and test files"},
-    "redundant": {"text": "Verifying tests pass when they already passed on this branch"}
-  }
-}
