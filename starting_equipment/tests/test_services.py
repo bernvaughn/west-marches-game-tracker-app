@@ -145,7 +145,12 @@ class TestApplyStartingEquipment:
         declined_request,
         game_master_user,
     ):
-        """Only approved magic item requests are granted (pending/declined ignored)."""
+        """Magic item requests are NOT granted by the service.
+
+        Approved requests are granted immediately by request_decide (approve),
+        so apply_starting_equipment must not re-grant them (avoids double grant).
+        Only class and background lines are granted here.
+        """
         from starting_equipment.services import apply_starting_equipment
 
         entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
@@ -154,13 +159,12 @@ class TestApplyStartingEquipment:
         lines = entry.lines.select_related("item")
         item_lines = [line for line in lines if line.item is not None]
 
-        # Should have class item, background item, AND approved magic item
-        # NOT pending or declined magic items
-        assert len(item_lines) == 3
+        # Only class item + background item; no magic items (approved or otherwise)
+        assert len(item_lines) == 2
         item_names = {line.item.name for line in item_lines}
         assert "Longsword" in item_names
         assert "Holy Symbol" in item_names
-        assert "Potion of Healing" in item_names
+        assert "Potion of Healing" not in item_names
         assert "Scroll of Fireball" not in item_names
 
     def test_empty_template_returns_none(
@@ -191,7 +195,9 @@ class TestApplyStartingEquipment:
         from starting_equipment.models import StartingEquipmentRequest
         from starting_equipment.services import apply_starting_equipment
 
-        # Create an approved request for this specific character
+        # Create an approved request for this specific character.
+        # NOTE: approved requests are granted immediately by request_decide (approve),
+        # so apply_starting_equipment does NOT include them here.
         StartingEquipmentRequest.objects.create(
             club=character_level_5.club,
             character=character_level_5,
@@ -210,8 +216,13 @@ class TestApplyStartingEquipment:
         item_lines = [line for line in lines if line.item is not None]
         coin_lines = [line for line in lines if line.coins != 0]
 
-        # Items: Longsword (class) + Holy Symbol (bg) + Potion of Healing (approved request)
-        assert len(item_lines) == 3
+        # Items: Longsword (class) + Holy Symbol (bg) only.
+        # Approved magic items are granted by request_decide, not re-granted here.
+        assert len(item_lines) == 2
+        item_names = {line.item.name for line in item_lines}
+        assert "Longsword" in item_names
+        assert "Holy Symbol" in item_names
+        assert "Potion of Healing" not in item_names
 
         # Coins: class (1000) + background (500) + level (5000) = 6500
         total_coins = sum(line.coins for line in coin_lines)
@@ -401,7 +412,7 @@ class TestApplyStartingEquipment:
         # Should only get class + background coins, no level coins
         assert total_coins == 1500
 
-    def test_multiple_approved_requests_all_granted(
+    def test_multiple_approved_requests_not_regranted(
         self,
         character_with_class_bg,
         template,
@@ -413,7 +424,11 @@ class TestApplyStartingEquipment:
         magic_item_2,
         game_master_user,
     ):
-        """Multiple approved magic item requests are all granted."""
+        """Multiple approved magic item requests are NOT re-granted by the service.
+
+        They were already granted immediately by request_decide (approve).
+        The service only grants class and background lines.
+        """
         from starting_equipment.services import apply_starting_equipment
 
         # Create a second magic option
@@ -421,7 +436,7 @@ class TestApplyStartingEquipment:
             template=template, item=magic_item_2, max_per_character=1
         )
 
-        # Create two approved requests
+        # Create two approved requests (already granted by request_decide)
         StartingEquipmentRequest.objects.create(
             club=character_with_class_bg.club,
             character=character_with_class_bg,
@@ -443,18 +458,13 @@ class TestApplyStartingEquipment:
         lines = entry.lines.select_related("item")
         item_lines = [line for line in lines if line.item is not None]
 
-        # Class + background + 2 magic items = 4 items
-        assert len(item_lines) == 4
+        # Only class + background items; magic items NOT re-granted here
+        assert len(item_lines) == 2
         item_names = {line.item.name for line in item_lines}
         assert "Longsword" in item_names
         assert "Holy Symbol" in item_names
-        assert "Potion of Healing" in item_names
-        assert "Scroll of Fireball" in item_names
-
-        # Check quantities
-        for item_line in item_lines:
-            if item_line.item.name == "Scroll of Fireball":
-                assert item_line.quantity == 2
+        assert "Potion of Healing" not in item_names
+        assert "Scroll of Fireball" not in item_names
 
     def test_inactive_template_still_works(
         self, character_with_class_bg, inactive_template, class_entry, class_line, game_master_user
