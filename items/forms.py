@@ -84,8 +84,12 @@ class SlotForm(forms.ModelForm):
         model = ContainerSlot
         fields = ["chance_pct", "unknown", "position"]
         widgets = {
-            "chance_pct": forms.NumberInput(attrs={"min": 1, "max": 100, "class": "form-control form-control-sm"}),
-            "position": forms.NumberInput(attrs={"min": 0, "class": "form-control form-control-sm"}),
+            "chance_pct": forms.NumberInput(
+                attrs={"min": 1, "max": 100, "class": "form-control form-control-sm"}
+            ),
+            "position": forms.NumberInput(
+                attrs={"min": 0, "class": "form-control form-control-sm"}
+            ),
             "unknown": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
 
@@ -129,7 +133,11 @@ class SlotOptionForm(forms.ModelForm):
         self.club = club
         self.container = container
         if club is not None:
-            self.fields["item"].queryset = Item.objects.filter(club=club).exclude(pk=container.pk if container else None).order_by("name")
+            self.fields["item"].queryset = (
+                Item.objects.filter(club=club)
+                .exclude(pk=container.pk if container else None)
+                .order_by("name")
+            )
         self.fields["item"].label = "Item"
         self.fields["qty_min"].label = "Qty min"
         self.fields["qty_max"].label = "Qty max"
@@ -177,23 +185,32 @@ class BaseSlotFormSet(BaseInlineFormSet):
             form_kwargs={"club": self.club, "container": self.container},
         )
 
+    def _should_delete_form(self, form):
+        """Check if form should be deleted, handling forms without cleaned_data."""
+        if not hasattr(form, "cleaned_data"):
+            return False
+        return super()._should_delete_form(form)
+
     def clean(self):
         super().clean()
         # Every kept slot needs at least one kept option
+        # Note: nested option formsets are validated in the view before calling is_valid()
         for form in self.forms:
             if self.can_delete and self._should_delete_form(form):
                 continue
-            if not form.cleaned_data:
+            # Check if form has been validated (has cleaned_data attr and it's not empty)
+            if not hasattr(form, "cleaned_data") or not form.cleaned_data:
                 continue
             opts = getattr(form, "options", None)
             if opts is None:
                 continue
-            # Check if opts forms have been validated (have cleaned_data attr)
-            kept = [
-                f
-                for f in opts.forms
-                if hasattr(f, "cleaned_data") and f.cleaned_data and not opts._should_delete_form(f)
-            ]
+            # Check if opts forms have been validated (have cleaned_data attr and it's not empty)
+            kept = []
+            for f in opts.forms:
+                if opts.can_delete and opts._should_delete_form(f):
+                    continue
+                if hasattr(f, "cleaned_data") and f.cleaned_data:
+                    kept.append(f)
             if not kept:
                 raise forms.ValidationError("Every slot must have at least one option.")
 
@@ -208,6 +225,12 @@ class BaseOptionFormSet(BaseInlineFormSet):
     def _construct_form(self, i, **kwargs):
         kwargs.update(self.form_kwargs)
         return super()._construct_form(i, **kwargs)
+
+    def _should_delete_form(self, form):
+        """Check if form should be deleted, handling forms without cleaned_data."""
+        if not hasattr(form, "cleaned_data"):
+            return False
+        return super()._should_delete_form(form)
 
 
 SlotFormSet = inlineformset_factory(

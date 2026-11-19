@@ -1,12 +1,10 @@
 """Tests for the container admin UI (Slice A)."""
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.urls import reverse
 
-from items.containers import validate_container_config
-from items.models import ContainerSlot, ContainerSlotOption, Item
-from items.tests.factories import add_slot, make_container, make_diplomats_pack
+from items.models import Item
+from items.tests.factories import add_slot, make_container
 
 pytestmark = [pytest.mark.story("A"), pytest.mark.django_db]
 
@@ -85,7 +83,7 @@ def test_create_modal_does_not_show_container_toggle(login, club_admin, club):
 
 def test_option_picker_lists_only_club_items(login, club_admin, club, other_club):
     c = login(club_admin)
-    foreign = Item.objects.create(club=other_club, name="Foreign Item", value_cp=1)
+    Item.objects.create(club=other_club, name="Foreign Item", value_cp=1)
     local = Item.objects.create(club=club, name="Local Item", value_cp=1)
     container = make_container(club, "Container")
     add_slot(container, [(local, 1, 1, 1)], position=0)
@@ -174,7 +172,9 @@ def test_reject_chance_out_of_range(login, club_admin, club):
                 "slots-0-position": "0",
                 "slots-0-opts-TOTAL_FORMS": "1",
                 "slots-0-opts-INITIAL_FORMS": "0",
-                "slots-0-opts-0-item": str(Item.objects.create(club=club, name="Item", value_cp=1).pk),
+                "slots-0-opts-0-item": str(
+                    Item.objects.create(club=club, name="Item", value_cp=1).pk
+                ),
                 "slots-0-opts-0-qty_min": "1",
                 "slots-0-opts-0-qty_max": "1",
                 "slots-0-opts-0-weight": "1",
@@ -595,6 +595,7 @@ def test_save_diplomats_pack_layout(login, club_admin, club):
 
     # Verify loot_preview masks unknown
     from items.containers import loot_preview
+
     rows = loot_preview(container, viewer_can_see_unknown=False)
     assert rows[4].masked is True
     assert rows[4].label == "???"
@@ -679,7 +680,7 @@ def test_add_slot_button(login, club_admin, club):
     r = c.post(url("edit", club, container.pk), post)
     assert r.status_code == 200
     # Should have 2 slot forms now
-    assert b'slots-1-chance_pct' in r.content
+    assert b"slots-1-chance_pct" in r.content
     # Nothing saved to DB
     container.refresh_from_db()
     assert container.slots.count() == 0
@@ -689,7 +690,7 @@ def test_add_option_button(login, club_admin, club):
     c = login(club_admin)
     container = make_container(club, "Container")
     item1 = Item.objects.create(club=club, name="Item 1", value_cp=1)
-    item2 = Item.objects.create(club=club, name="Item 2", value_cp=1)
+    Item.objects.create(club=club, name="Item 2", value_cp=1)
     slot = add_slot(container, [(item1, 1, 1, 1)], position=0)
 
     post = form(
@@ -715,7 +716,7 @@ def test_add_option_button(login, club_admin, club):
     r = c.post(url("edit", club, container.pk), post)
     assert r.status_code == 200
     # Should have 2 option forms now
-    assert b'slots-0-opts-1-item' in r.content
+    assert b"slots-0-opts-1-item" in r.content
     # Nothing saved to DB
     slot.refresh_from_db()
     assert slot.options.count() == 1
@@ -787,7 +788,6 @@ def test_toggle_off_container_no_longer_counts_as_container(login, club_admin, c
 
     # Validate should not run (would fail with empty slots if it did)
     # But since is_container is False, validate_container_config is not called
-    from items.containers import validate_container_config
     # This should not raise because we don't call it for non-containers
     # But if we did call it, it would fail - so we just verify the flag is off
     assert not container.is_container

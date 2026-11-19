@@ -1,10 +1,9 @@
-import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -12,7 +11,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import render_modal_or_page
 from accounts.mixins import ClubContextMixin, ClubScopedMixin, PermissionMixin
 from accounts.permissions import admin_or_gm_required, club_admin_required, club_member_required
 from ledger.coins import CP_PER_GP, CP_PER_PP, CP_PER_SP
@@ -21,9 +20,9 @@ from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards,
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
 from .containers import validate_container_config
-from .forms import ItemForm, OptionFormSet, SlotFormSet
+from .forms import ItemForm, SlotFormSet
 from .magic_types import NONE_LABEL, MagicType
-from .models import ContainerSlot, Item
+from .models import Item
 from .rarity import Rarity
 from .references import reference_items
 from .services import delete_or_retire
@@ -180,18 +179,24 @@ def _item_form_view(request, instance, with_container):
     if request.method == "POST":
         is_container = request.POST.get("is_container") == "on"
         if is_container and slot_formset is not None:
-            # First validate nested option formsets (they don't depend on slot cleaned_data)
+            # First validate nested option formsets manually
             opts_valid_all = True
             for slot_form in slot_formset.forms:
                 if slot_formset.can_delete and slot_formset._should_delete_form(slot_form):
                     continue
                 opts = getattr(slot_form, "options", None)
                 if opts is not None:
-                    if not opts.is_valid():
-                        opts_valid_all = False
+                    # Manually validate each option form
+                    for opt_form in opts.forms:
+                        if opts.can_delete and opts._should_delete_form(opt_form):
+                            continue
+                        if not opt_form.is_valid():
+                            opts_valid_all = False
+                            break
+                    if not opts_valid_all:
                         break
-            
-            # Then validate slot formset (its clean method checks option forms' cleaned_data)
+
+            # Then validate slot formset (its clean method uses validated option forms)
             slot_valid = slot_formset.is_valid() and opts_valid_all
         else:
             slot_valid = True
@@ -231,12 +236,16 @@ def _item_form_view(request, instance, with_container):
                     club=request.club,
                     container=item,
                 )
-                return render(request, "items/form.html", {
-                    "form": form,
-                    "item": item,
-                    "slot_formset": slot_formset,
-                    "container_errors": container_errors,
-                })
+                return render(
+                    request,
+                    "items/form.html",
+                    {
+                        "form": form,
+                        "item": item,
+                        "slot_formset": slot_formset,
+                        "container_errors": container_errors,
+                    },
+                )
         else:
             # Toggle off - don't process formsets, existing slots stay inert
             pass
@@ -244,12 +253,16 @@ def _item_form_view(request, instance, with_container):
         messages.success(request, f"Saved {item.name}.")
         return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
 
-    return render(request, "items/form.html", {
-        "form": form,
-        "item": instance,
-        "slot_formset": slot_formset,
-        "container_errors": container_errors,
-    })
+    return render(
+        request,
+        "items/form.html",
+        {
+            "form": form,
+            "item": instance,
+            "slot_formset": slot_formset,
+            "container_errors": container_errors,
+        },
+    )
 
 
 def _handle_add_slot(request, instance, form, slot_formset):
@@ -266,11 +279,15 @@ def _handle_add_slot(request, instance, form, slot_formset):
         club=request.club,
         container=instance,
     )
-    return render(request, "items/form.html", {
-        "form": form,
-        "item": instance,
-        "slot_formset": slot_formset,
-    })
+    return render(
+        request,
+        "items/form.html",
+        {
+            "form": form,
+            "item": instance,
+            "slot_formset": slot_formset,
+        },
+    )
 
 
 def _handle_add_option(request, instance, form, slot_formset):
@@ -278,11 +295,15 @@ def _handle_add_option(request, instance, form, slot_formset):
     # The button value is the slot index
     slot_index = request.POST.get("add_option")
     if slot_index is None:
-        return render(request, "items/form.html", {
-            "form": form,
-            "item": instance,
-            "slot_formset": slot_formset,
-        })
+        return render(
+            request,
+            "items/form.html",
+            {
+                "form": form,
+                "item": instance,
+                "slot_formset": slot_formset,
+            },
+        )
 
     post = request.POST.copy()
     prefix = f"slots-{slot_index}-opts"
@@ -297,11 +318,15 @@ def _handle_add_option(request, instance, form, slot_formset):
         club=request.club,
         container=instance,
     )
-    return render(request, "items/form.html", {
-        "form": form,
-        "item": instance,
-        "slot_formset": slot_formset,
-    })
+    return render(
+        request,
+        "items/form.html",
+        {
+            "form": form,
+            "item": instance,
+            "slot_formset": slot_formset,
+        },
+    )
 
 
 def _safe_next(request):
@@ -362,7 +387,7 @@ class CreateView(ClubScopedMixin, View):
         )
 
     def post(self, request, club_slug):
-        next_url = _safe_next(request)
+        _safe_next(request)
         return _create_form_view(request, Item(club=request.club))
 
 
