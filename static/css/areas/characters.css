@@ -138,6 +138,8 @@
 .wm-field-current { margin: var(--wm-space-2) 0 0; font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
 .wm-field-current-label { display: block; font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; }
 .wm-field-current-value { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; color: var(--wm-text); font-variant-numeric: tabular-nums; }
+/* Long text (the description) wraps to three lines rather than one cut-off line. */
+.wm-field-pair--wide .wm-field-current-value { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; white-space: normal; overflow-wrap: anywhere; }
 @media (max-width: 39.999rem) {
   .wm-field-pair, .wm-field-pair--wide { grid-template-columns: minmax(0, 1fr); }
   .wm-field-current { margin-top: 0; }

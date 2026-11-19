@@ -118,3 +118,60 @@ def test_toggle_script_exists(client):
     content = script.read_text()
     assert "id_char_class_freetext" in content
     assert 'select.value === "Other"' in content
+
+
+def test_toggle_script_is_valid_javascript():
+    from pathlib import Path
+
+    script = Path(__file__).resolve().parents[3] / "static" / "js" / "character_form.js"
+    # A stray "]);" closing the pairs array stopped the whole script running.
+    assert "]);\n  for" not in script.read_text()
+
+
+def selected_value(soup, name):
+    option = soup.select_one(f'select[name="{name}"] option[selected]')
+    return option.get("value") if option else None
+
+
+def test_freetext_inputs_do_not_print_the_current_dict(club, login, player, character):
+    character.char_class = "Ranger"
+    character.save()
+    html = login(player).get(edit_url(club, character.pk)).content.decode()
+    soup = BeautifulSoup(html, "html.parser")
+    assert "{&#x27;name&#x27;:" not in html
+    assert "{'name':" not in html
+    for field in ("char_class", "species", "background", "pronouns"):
+        freetext = soup.select_one(f'input[name="{field}_freetext"]')
+        assert freetext.find_parent(class_="wm-field-pair") is None
+
+
+def test_saved_alignment_with_other_casing_is_preselected(club, login, player, character):
+    character.alignment = "Neutral good"
+    character.save()
+    soup = BeautifulSoup(
+        login(player).get(edit_url(club, character.pk)).content.decode(), "html.parser"
+    )
+    assert selected_value(soup, "alignment") == "Neutral Good"
+
+
+def test_unknown_saved_alignment_is_kept_as_an_option(club, login, player, character):
+    character.alignment = "Unaligned"
+    character.save()
+    soup = BeautifulSoup(
+        login(player).get(edit_url(club, character.pk)).content.decode(), "html.parser"
+    )
+    assert selected_value(soup, "alignment") == "Unaligned"
+
+
+def test_custom_saved_value_preselects_other_with_freetext(club, login, player, character):
+    character.char_class = "Artificer"
+    character.save()
+    soup = BeautifulSoup(
+        login(player).get(edit_url(club, character.pk)).content.decode(), "html.parser"
+    )
+    assert selected_value(soup, "char_class") == OTHER
+    assert soup.select_one('input[name="char_class_freetext"]').get("value") == "Artificer"
+    # The "Current" value still shows the saved text, not "Other".
+    titles = [span.get("title") for span in soup.select(".wm-field-current-value")]
+    assert "Artificer" in titles
+    assert OTHER not in titles

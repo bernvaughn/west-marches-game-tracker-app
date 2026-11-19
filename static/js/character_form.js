@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ["id_species", "id_species_freetext"],
     ["id_background", "id_background_freetext"],
     ["id_pronouns", "id_pronouns_freetext"],
-  ]);
+  ];
   for (const [selectId, freetextId] of pairs) {
     const select = document.getElementById(selectId);
     const freetext = document.getElementById(freetextId);

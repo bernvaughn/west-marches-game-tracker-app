@@ -11,12 +11,12 @@ ABILITY_FIELDS = {name for name, _abbr, _label in ABILITIES}
 def edit_current_values(form):
     """Display text for the saved value of each field on the character edit form.
 
-    The values come from form.initial, which holds the record as saved. A
-    failed is_valid() has already copied the submitted values onto
-    form.instance, so the instance is never safe to read here.
+    The values come from form.saved_values (or form.initial), which hold the
+    record as saved. A failed is_valid() has already copied the submitted
+    values onto form.instance, so the instance is never safe to read here.
     """
     values = {}
-    for name, value in form.initial.items():
+    for name, value in getattr(form, "saved_values", form.initial).items():
         if name not in form.fields:
             continue
         if name in ABILITY_FIELDS:
