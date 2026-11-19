@@ -58,6 +58,7 @@ def quick_action_sell_junk(request, club_slug):
                 if is_htmx(request):
                     response = HttpResponse(status=204)
                     response["HX-Redirect"] = dashboard_url
+                    response["HX-Trigger"] = "junkChanged"
                     return response
                 return redirect(dashboard_url)
     elif request.GET.get("recalc"):
