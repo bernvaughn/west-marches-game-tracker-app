@@ -1,3 +1,4 @@
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -29,6 +30,13 @@ class Command(BaseCommand):
                 agent_demo,
             ):
                 module.seed(club)
+
+            call_command(
+                "seed_starting_equipment",
+                "--club",
+                club.slug,
+                stdout=self.stdout,
+            )
         out = self.stdout.write
         out(f"Demo club ready at /c/{club.slug}/")
         out("Demo logins:")
