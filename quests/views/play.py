@@ -1,11 +1,14 @@
+import json
+
 from django.contrib import messages
 from django.db.models import Count
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.htmx import is_htmx
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
 from ledger.services import InsufficientItems, available_items
@@ -166,6 +169,16 @@ def turn_in(request, club_slug, pk):
     if character is None:
         messages.error(request, "You have no character in this club.")
         return detail_url
+
+    # Build reward summary for toast
+    reward_parts = []
+    for rw in quest.rewards.select_related("item"):
+        if rw.coins > 0:
+            reward_parts.append(f"{rw.coins} gp")
+        if rw.item_id and rw.quantity > 0:
+            reward_parts.append(f"{rw.quantity} {rw.item.name}")
+    reward_summary = ", ".join(reward_parts) if reward_parts else "no reward"
+
     try:
         services.turn_in(quest, character, request.user)
     except InsufficientItems:
@@ -176,5 +189,18 @@ def turn_in(request, club_slug, pk):
     except services.QuestError as e:
         messages.error(request, str(e))
     else:
+        # Success!
+        toast_message = f"✦ {character.name} completed {quest.name}! Reward: {reward_summary}"
+
+        if is_htmx(request):
+            # HTMX request: return 204 with HX-Redirect and HX-Trigger
+            response = HttpResponse(status=204)
+            response["HX-Redirect"] = reverse("quests:index", args=[club_slug])
+            response["HX-Trigger"] = json.dumps(
+                {"toast": {"message": toast_message, "type": "success"}, "questCompleted": True}
+            )
+            return response
+
+        # Non-htmx: current behavior
         messages.success(request, f"{character} completed {quest.name}.")
     return detail_url

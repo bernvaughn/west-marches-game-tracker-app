@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Quests{% endblock %}
 {% block content %}
 {% url 'quests:manage' club.slug as manage_url %}
 {% if is_admin %}{% include "components/page_header.html" with title="Quests" subtitle="Bring the items on a notice to claim its reward." action_url=manage_url action_label="Manage quests" %}{% else %}{% include "components/page_header.html" with title="Quests" subtitle="Bring the items on a notice to claim its reward." %}{% endif %}
-<div class="wm-board">
+<div class="wm-board" hx-get="{% url 'quests:index' club.slug %}" hx-trigger="questCompleted from:body" hx-target=".wm-board" hx-swap="outerHTML">
   {% if board %}
   <ul class="wm-board-grid">
     {% for quest in board %}
@@ -26,4 +27,5 @@
   </ul>
 </details>
 {% endif %}
+<script src="{% static 'js/quests.js' %}" defer></script>
 {% endblock %}
