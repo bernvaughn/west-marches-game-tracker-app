@@ -1,0 +1,40 @@
+{% comment %}Session desk: GM/admin action center on club home.
+   Context: session_desk (dict with keys: waiting, after, dashboard_url)
+   Pair with: accounts/session_desk.py::build_session_desk
+{% endcomment %}
+<div class="wm-session-desk wm-card" id="session-desk">
+  {% if session_desk.waiting %}
+  <section class="wm-session-desk__waiting">
+    <h3>Waiting for you</h3>
+    <ul class="wm-session-desk__list">
+      {% for item in session_desk.waiting %}
+      <li class="wm-session-desk__item">
+        <a href="{{ item.url }}" class="wm-session-desk__link">
+          {{ item.label }}
+          <span class="wm-badge wm-badge--count">{{ item.count }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="wm-session-desk__after">
+    <h3>After the session</h3>
+    <ul class="wm-session-desk__list">
+      {% for label, url in session_desk.after %}
+      <li class="wm-session-desk__item">
+        <a href="{{ url }}" class="wm-session-desk__link">{{ label }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  {% if session_desk.dashboard_url %}
+  <section class="wm-session-desk__dashboard">
+    <a href="{{ session_desk.dashboard_url }}" class="wm-session-desk__dashboard-link">
+      My character dashboard
+    </a>
+  </section>
+  {% endif %}
+</div>

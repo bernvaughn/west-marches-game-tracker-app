@@ -10,6 +10,7 @@ from ..context_processors import clubs as clubs_context
 from ..models import Membership
 from ..permissions import club_member_required, is_club_admin, is_game_master
 from ..ratelimit import RateLimitMixin, get_client_ip
+from ..session_desk import build_session_desk
 
 
 class RateLimitedLoginView(RateLimitMixin, LoginView):
@@ -84,4 +85,5 @@ def club_home(request, club_slug):
     # Players go to dashboard, GMs/admins see navigation cards
     if not is_game_master(request.user, club) and not is_club_admin(request.user, club):
         return redirect("accounts:player_dashboard", club_slug=club.slug)
-    return render(request, "club_home.html")
+    session_desk = build_session_desk(request)
+    return render(request, "club_home.html", {"session_desk": session_desk})
