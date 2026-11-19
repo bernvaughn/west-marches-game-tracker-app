@@ -185,3 +185,67 @@ def test_bulk_award_empty_amounts(login, game_master, club, character):
     )
     assert r.status_code == 200
     assert "at least one" in r.content.decode()
+
+
+@pytest.mark.story("S8")
+def test_bulk_award_bad_coins_returns_400(login, game_master, club, character):
+    """Non-integer per-character coins produce a form error and a 400, not a 500."""
+    c = login(game_master)
+    r = c.post(
+        bulk_award_url(club),
+        {
+            "note": "x",
+            "date": "2025-01-15",
+            "characters": [str(character.pk)],
+            f"coins_{character.pk}": "not-a-number",
+        },
+    )
+    assert r.status_code == 400
+    assert "Invalid coins amount" in r.content.decode()
+    assert not entries(character).exists()
+
+
+@pytest.mark.story("S8")
+def test_bulk_award_bad_quantity_returns_400(login, game_master, club, character, item):
+    """Non-integer per-character quantity produces a form error and a 400, not a 500."""
+    c = login(game_master)
+    r = c.post(
+        bulk_award_url(club),
+        {
+            "note": "x",
+            "date": "2025-01-15",
+            "characters": [str(character.pk)],
+            f"items_{character.pk}-TOTAL_FORMS": "3",
+            f"items_{character.pk}-INITIAL_FORMS": "0",
+            f"items_{character.pk}-MIN_NUM_FORMS": "0",
+            f"items_{character.pk}-MAX_NUM_FORMS": "3",
+            f"items_{character.pk}-0-item_id": str(item.pk),
+            f"items_{character.pk}-0-quantity": "not-a-number",
+        },
+    )
+    assert r.status_code == 400
+    assert "Invalid quantity" in r.content.decode()
+    assert not entries(character).exists()
+
+
+@pytest.mark.story("S8")
+def test_bulk_award_quantity_min_one_rejected(login, game_master, club, character, item):
+    """Quantity below 1 is rejected by the formset path, not silently swallowed."""
+    c = login(game_master)
+    r = c.post(
+        bulk_award_url(club),
+        {
+            "note": "x",
+            "date": "2025-01-15",
+            "characters": [str(character.pk)],
+            f"items_{character.pk}-TOTAL_FORMS": "3",
+            f"items_{character.pk}-INITIAL_FORMS": "0",
+            f"items_{character.pk}-MIN_NUM_FORMS": "0",
+            f"items_{character.pk}-MAX_NUM_FORMS": "3",
+            f"items_{character.pk}-0-item_id": str(item.pk),
+            f"items_{character.pk}-0-quantity": "0",
+        },
+    )
+    assert r.status_code == 200
+    assert "quantity" in r.content.decode().lower()
+    assert not entries(character).exists()

@@ -101,6 +101,38 @@ def consume(request, club_slug, pk):
     )
 
 
+def _is_int(value):
+    """Return True if value can be parsed as an int."""
+    try:
+        int(value)
+        return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _render_bulk_award(request, form, club, items, status=200):
+    """Re-render the bulk-award form, keeping checkboxes and posted values."""
+    character_data = []
+    for character in Character.objects.for_club(club).order_by("name", "id"):
+        character_data.append(
+            {
+                "character": character,
+                "checked": str(character.pk) in request.POST.getlist("characters"),
+            }
+        )
+    return render(
+        request,
+        "player_characters/characters/bulk_award.html",
+        {
+            "form": form,
+            "character_data": character_data,
+            "items": items,
+            "club": club,
+        },
+        status=status,
+    )
+
+
 @admin_or_gm_required
 def bulk_award(request, club_slug):
     """Award coins and items to multiple characters at once."""
@@ -115,32 +147,60 @@ def bulk_award(request, club_slug):
         shared_note = form.cleaned_data["note"]
         shared_date = form.cleaned_data["date"]
 
-        # Build specs for record_many
+        # Build specs for record_many. Per-character input is validated before
+        # use: unparseable coins or quantities return a form error and a 400
+        # instead of a 500.
         specs = []
         for character in characters:
-            # Get per-character coins from POST
+            # Get per-character coins from POST.
             coins_key = f"coins_{character.pk}"
-            coins = int(request.POST.get(coins_key, 0) or 0)
+            coins_raw = request.POST.get(coins_key, "")
+            if not coins_raw:
+                coins = 0
+            elif _is_int(coins_raw):
+                coins = int(coins_raw)
+            else:
+                form.add_error(None, f"Invalid coins amount for {character.name}.")
+                return _render_bulk_award(request, form, club, items, status=400)
 
-            # Get per-character items from POST
             lines = []
             if coins:
                 lines.append(Line(coins=coins))
 
-            # Process item formset for this character
+            # Get per-character items from POST, validated through the existing
+            # formset path (club-scoped item, quantity >= 1, each item once).
             prefix = f"items_{character.pk}"
-            total_forms = int(request.POST.get(f"{prefix}-TOTAL_FORMS", 0) or 0)
-            for i in range(total_forms):
-                item_id_key = f"{prefix}-{i}-item_id"
-                qty_key = f"{prefix}-{i}-quantity"
-                item_id = request.POST.get(item_id_key)
-                qty = request.POST.get(qty_key)
-                if item_id and qty:
-                    try:
-                        item = items.get(pk=int(item_id))
-                        lines.append(Line(item=item, quantity=int(qty)))
-                    except (Item.DoesNotExist, ValueError):
-                        pass
+            if f"{prefix}-TOTAL_FORMS" in request.POST:
+                try:
+                    total_forms = int(request.POST.get(f"{prefix}-TOTAL_FORMS", 0) or 0)
+                except (TypeError, ValueError):
+                    total_forms = 0
+                for i in range(total_forms):
+                    qty_key = f"{prefix}-{i}-quantity"
+                    qty = request.POST.get(qty_key, "")
+                    if qty and not _is_int(qty):
+                        form.add_error(None, f"Invalid quantity for {character.name}.")
+                        return _render_bulk_award(request, form, club, items, status=400)
+
+                # The template posts the chosen item as a hidden ...-item_id
+                # field; map it onto the ...-item field the formset validates.
+                formset_data = request.POST.copy()
+                for i in range(total_forms):
+                    item_id = formset_data.get(f"{prefix}-{i}-item_id", "")
+                    if item_id:
+                        formset_data[f"{prefix}-{i}-item"] = item_id
+                item_formset = item_line_formset(items, data=formset_data, prefix=prefix)
+                if not item_formset.is_valid():
+                    formset_messages = list(item_formset.non_form_errors())
+                    for formset_form in item_formset.forms:
+                        formset_messages.extend(
+                            error
+                            for field_errors in formset_form.errors.values()
+                            for error in field_errors
+                        )
+                    form.add_error(None, f"{character.name}: " + "; ".join(formset_messages))
+                    return _render_bulk_award(request, form, club, items, status=200)
+                lines.extend(formset_lines(item_formset, 1))
 
             if lines:
                 specs.append(
@@ -158,42 +218,21 @@ def bulk_award(request, club_slug):
             form.add_error(
                 None, "Enter at least one coin or item amount for at least one character."
             )
-        else:
-            try:
-                with transaction.atomic():
-                    entries = record_many(specs)
-            except LedgerError as exc:
-                form.add_error(None, str(exc))
-            else:
-                count = len(entries)
-                msg = f"Awarded loot to {count} character{'s' if count != 1 else ''}."
-                messages.success(request, msg)
-                # Redirect to club ledger filtered to the new entries
-                ledger_url = reverse("ledger:index", args=[club_slug])
-                char_pks = ",".join(str(c.pk) for c in characters)
-                filter_qs = f"?character={char_pks}&date_from={shared_date}"
-                filter_qs += f"&date_to={shared_date}&kind=award"
-                return redirect(f"{ledger_url}{filter_qs}")
+            return _render_bulk_award(request, form, club, items, status=200)
+        try:
+            with transaction.atomic():
+                entries = record_many(specs)
+        except LedgerError as exc:
+            form.add_error(None, str(exc))
+            return _render_bulk_award(request, form, club, items, status=200)
+        count = len(entries)
+        msg = f"Awarded loot to {count} character{'s' if count != 1 else ''}."
+        messages.success(request, msg)
+        # Redirect to club ledger filtered to the new entries
+        ledger_url = reverse("ledger:index", args=[club_slug])
+        char_pks = ",".join(str(c.pk) for c in characters)
+        filter_qs = f"?character={char_pks}&date_from={shared_date}"
+        filter_qs += f"&date_to={shared_date}&kind=award"
+        return redirect(f"{ledger_url}{filter_qs}")
 
-    # For GET or invalid POST, prepare character data for template
-    character_data = []
-    for character in Character.objects.for_club(club).order_by("name", "id"):
-        character_data.append(
-            {
-                "character": character,
-                "checked": str(character.pk) in request.POST.getlist("characters")
-                if post
-                else False,
-            }
-        )
-
-    return render(
-        request,
-        "player_characters/characters/bulk_award.html",
-        {
-            "form": form,
-            "character_data": character_data,
-            "items": items,
-            "club": club,
-        },
-    )
+    return _render_bulk_award(request, form, club, items)
