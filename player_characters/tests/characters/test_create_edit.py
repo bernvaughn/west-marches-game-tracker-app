@@ -44,6 +44,22 @@ def test_site_admin_must_pick_owner(club, login, site_admin):
 
 
 @pytest.mark.story("U2")
+def test_create_defaults_abilities_to_ten(club, login, player):
+    r = login(player).post(u("characters:create", club), {"name": "New"})
+    assert r.status_code == 302
+    c = Character.objects.get(name="New")
+    for field in (
+        "strength",
+        "dexterity",
+        "constitution",
+        "intelligence",
+        "wisdom",
+        "charisma",
+    ):
+        assert getattr(c, field) == 10
+
+
+@pytest.mark.story("U2")
 def test_owner_choices_exclude_other_club(club, login, club_admin, foreign_member, other_club):
     foreign = Membership.objects.get(club=other_club, user=foreign_member).pk
     r = login(club_admin).post(u("characters:create", club), {"name": "New", "owner": foreign})

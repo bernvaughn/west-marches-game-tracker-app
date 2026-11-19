@@ -70,6 +70,11 @@ def test_validation(club, login, player, funded, bad):
 
 @pytest.mark.story("U69")
 def test_blank_is_allowed(club, login, player, funded):
+    # New characters default to 10, but a character can still be left blank:
+    # submitting an edit with ability fields left blank keeps them blank.
+    funded.strength = None
+    funded.perception_bonus = None
+    funded.save()
     r = login(player).post(u("characters:edit", club, funded.pk), {"name": "Plain"})
     assert r.status_code == 302
     funded.refresh_from_db()
