@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect, render
@@ -9,6 +10,7 @@ from ..forms.people import WhitelistForm
 from ..models import Membership, WhitelistEntry
 from ..passwords import get_or_create_member
 from ..permissions import can_see_email, club_admin_required, club_member_required
+from ..ratelimit import rate_limit
 from ..scoping import club_queryset
 
 
@@ -32,6 +34,12 @@ def _whitelist_page(request, form, **extra):
 
 
 @club_admin_required
+@rate_limit(
+    prefix="whitelist",
+    limit=settings.RATELIMIT_PASSWORD_ATTEMPTS,
+    window=settings.RATELIMIT_PASSWORD_WINDOW,
+    key_func=lambda req, club_slug: str(req.user.id),
+)
 def whitelist(request, club_slug):
     if request.method != "POST":
         return _whitelist_page(request, WhitelistForm())
