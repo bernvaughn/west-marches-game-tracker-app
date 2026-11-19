@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load accounts_tags coins %}
+{% load accounts_tags coins static %}
 {% block content %}
 {% include "components/page_header.html" with title="Dashboard" subtitle="Quick actions for " %}
 {% include "accounts/_dashboard_header.html" with character=character coin_summary=coin_summary downtime_balance=downtime_balance junk_count=junk_count junk_value=junk_value %}
@@ -12,7 +12,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-// Dashboard-specific JS could go here
-</script>
+<script src="{% static 'js/dashboard.js' %}" defer></script>
 {% endblock %}

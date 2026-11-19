@@ -1,0 +1,31 @@
+{% comment %}Junk to sell card{% endcomment %}
+<div
+  id="dashboard-card-junk_summary"
+  data-refresh-url="{% url 'accounts:dashboard_partial' club.slug 'junk_summary' %}"
+  class="wm-dashboard-section card wm-card-raised h-100"
+>
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="bag-dash" %}
+      Junk to sell
+    </h3>
+    <span class="badge text-bg-warning badge-pill">{{ provider_context.junk_value }}</span>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="bag-dash" class="text-warning" %}
+          <div>
+            <span class="fw-medium">{{ provider_context.junk_rows|length }} item{{ provider_context.junk_rows|pluralize }} marked as junk</span>
+            <br>
+            <small class="text-muted">Total value: {{ provider_context.junk_value }}</small>
+          </div>
+        </div>
+        <a href="{{ provider_context.sell_url }}" class="btn btn-sm btn-outline-primary">
+          {% include "components/icon.html" with name="cash-coin" %} Sell junk
+        </a>
+      </li>
+    </ul>
+  </div>
+</div>

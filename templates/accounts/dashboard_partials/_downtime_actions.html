@@ -1,0 +1,37 @@
+{% comment %}Downtime actions available card{% endcomment %}
+<div
+  id="dashboard-card-downtime_available"
+  data-refresh-url="{% url 'accounts:dashboard_partial' club.slug 'downtime_available' %}"
+  class="wm-dashboard-section card wm-card-raised h-100"
+>
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="clock" %}
+      Downtime actions available
+    </h3>
+    <span class="badge text-bg-info badge-pill">{{ provider_context.downtime_balance }} point{{ provider_context.downtime_balance|pluralize }}</span>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for action in provider_context.actions %}
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="clock" class="text-muted" %}
+          <div>
+            <span class="fw-medium">{{ action.action.name }}</span>
+            <br>
+            <small class="text-muted">{{ action.cost }} point{{ action.cost|pluralize }} · {{ action.reward_type }}</small>
+          </div>
+        </div>
+        <a href="{{ action.spend_url }}" class="btn btn-sm btn-outline-secondary">
+          {% include "components/icon.html" with name="play" %} Take job
+        </a>
+      </li>
+      {% empty %}
+      <li class="list-group-item text-center py-4 text-muted small">
+        No affordable downtime actions.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
