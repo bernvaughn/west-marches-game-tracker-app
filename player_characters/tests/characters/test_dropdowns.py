@@ -26,7 +26,12 @@ def option_values(soup, name):
 
 
 def _club_option_names(club, model):
-    return list(model.objects.for_club(club).filter(is_active=True).order_by("sort_order", "name").values_list("name", flat=True))
+    return list(
+        model.objects.for_club(club)
+        .filter(is_active=True)
+        .order_by("sort_order", "name")
+        .values_list("name", flat=True)
+    )
 
 
 @pytest.mark.parametrize(
@@ -86,7 +91,11 @@ def test_other_saves_the_freetext_value(club, login, player, field):
     character = Character.objects.get(name="Custom")
     assert getattr(character, field) == "My custom value"
     # FK should be null
-    fk_field = field.replace("char_class", "class_option").replace("species", "species_option").replace("background", "background_option")
+    fk_field = (
+        field.replace("char_class", "class_option")
+        .replace("species", "species_option")
+        .replace("background", "background_option")
+    )
     assert getattr(character, f"{fk_field}_id") is None
 
 
@@ -303,15 +312,27 @@ def test_admin_reordered_list_order(club, login, club_admin, char_class, species
     class_values = option_values(soup, "char_class")
     species_values = option_values(soup, "species")
     # First non-blank should be the one with lowest sort_order
-    active_classes = list(CharacterClass.objects.for_club(club).filter(is_active=True).order_by("sort_order", "name").values_list("name", flat=True))
-    active_species = list(Species.objects.for_club(club).filter(is_active=True).order_by("sort_order", "name").values_list("name", flat=True))
+    active_classes = list(
+        CharacterClass.objects.for_club(club)
+        .filter(is_active=True)
+        .order_by("sort_order", "name")
+        .values_list("name", flat=True)
+    )
+    active_species = list(
+        Species.objects.for_club(club)
+        .filter(is_active=True)
+        .order_by("sort_order", "name")
+        .values_list("name", flat=True)
+    )
     assert class_values == [""] + active_classes + [OTHER]
     assert species_values == [""] + active_species + [OTHER]
 
 
 def test_another_club_records_never_shown(club, other_club, login, club_admin):
     # Create a class in the other club
-    other_class = CharacterClass.objects.create(club=other_club, name="OtherClubClass", sort_order=5)
+    other_class = CharacterClass.objects.create(
+        club=other_club, name="OtherClubClass", sort_order=5
+    )
     html = login(club_admin).get(create_url(club)).content.decode()
     soup = BeautifulSoup(html, "html.parser")
     values = option_values(soup, "char_class")
