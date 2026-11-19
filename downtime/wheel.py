@@ -69,9 +69,11 @@ def wheel_payload(result):
         )
         start = end
     chosen = ids.index(result.entry_id)
+    n = len(slices)
     s = slices[chosen]
     return {
         "chosen": chosen,
         "final_rotation": round((-(s["start"] + s["end"]) / 2) % 360, 3),
         "slices": slices,
+        "near_miss": {"prev": (chosen - 1) % n, "next": (chosen + 1) % n},
     }

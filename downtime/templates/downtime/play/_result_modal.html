@@ -7,6 +7,13 @@
 </div>
 {% endblock %}
 {% block footer %}
+<button type="button" class="btn wm-chalk-button wm-spin-again"
+  hx-get="{% url 'downtime:replay' request.club.slug result.pk %}"
+  hx-target="#app-modal .modal-content"
+  {% if balance == 0 %}disabled{% endif %}
+  aria-label="Spin again">Spin again</button>
+<button type="button" class="btn wm-chalk-button wm-sound-toggle" data-sound-toggle
+  aria-label="Toggle sound" title="Sound">🔇</button>
 <a class="btn wm-chalk-button" href="{% url 'downtime:play' request.club.slug %}">Back to Downtime</a>
 <button type="button" class="btn wm-chalk-button" data-bs-dismiss="modal">Close</button>
 {% endblock %}
