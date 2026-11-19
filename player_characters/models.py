@@ -76,6 +76,7 @@ class Character(models.Model):
     xp = models.PositiveIntegerField("XP", null=True, blank=True)
     description = models.TextField(blank=True)
     shop_open = models.BooleanField(default=False)
+    starting_equipment_claimed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     last_printed_at = models.DateTimeField(null=True, blank=True)
     starting_equipment_claimed = models.BooleanField(default=False)
