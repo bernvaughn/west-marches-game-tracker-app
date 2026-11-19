@@ -223,7 +223,12 @@ def delete_option(request, club, kind, pk):
             "confirm_url": reverse("character_options:delete", args=[club.slug, kind, pk]),
             "list_url": reverse("character_options:list", args=[club.slug, kind]),
         }
-        return render(request, "character_options/delete.html", ctx)
+        return render_modal_or_page(
+            request,
+            "character_options/_delete_modal.html",
+            "character_options/delete.html",
+            ctx,
+        )
 
     # POST - re-check blockers
     blocker = delete_blockers(kind, option)
