@@ -21,6 +21,12 @@ COPIES = ("type", "item")
 def print_items(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     require_inventory_access(request.user, character)
+
+    # Handle POST: update last_printed_at when user clicks Print
+    if request.method == "POST":
+        character.last_printed_at = timezone.now()
+        character.save(update_fields=["last_printed_at"])
+
     copies = request.GET.get("copies", "type")
     if copies not in COPIES:
         return HttpResponseBadRequest("Unknown copies.")
@@ -92,6 +98,11 @@ def print_session_pack(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     require_inventory_access(request.user, character)
 
+    # Handle POST: update last_printed_at when user clicks Print
+    if request.method == "POST":
+        character.last_printed_at = timezone.now()
+        character.save(update_fields=["last_printed_at"])
+
     # Parse query parameters for print options
     include_sheet = request.GET.get("sheet", "1") == "1"
     include_items = request.GET.get("items", "1") == "1"
@@ -130,6 +141,9 @@ def print_session_pack(request, club_slug, pk):
 
     show_map = include_map
 
+    # Check if request is from htmx (modal flow)
+    from_htmx = request.headers.get("HX-Request") == "true"
+
     return render(
         request,
         "player_characters/characters/print_session_pack.html",
@@ -152,5 +166,6 @@ def print_session_pack(request, club_slug, pk):
             "ready_quests": ready_quests,
             "show_map": show_map,
             "printed_on": timezone.localdate(),
+            "from_htmx": from_htmx,
         },
     )

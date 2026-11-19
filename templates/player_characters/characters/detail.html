@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% load coins downtime_points accounts_tags %}
+{% block title %}{{ character.name }}{% endblock %}
+{% block content %}
+{% url 'characters:index' club.slug as index_url %}
+{% if characters_url == index_url %}{% include "components/back_link.html" with url=characters_url label="Back to characters" %}{% else %}{% include "components/back_link.html" with url=characters_url label="Back to character directory" %}{% endif %}
+{% if can_view %}
+<div class="wm-toolbar no-print" role="toolbar" aria-label="Sheet actions">
+  {% if can_edit %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}
+  {% if can_adjust %}
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:adjust' club.slug character.pk %}" data-wm-tooltip title="Add or remove coins and items, for example loot from a session or a correction.">Adjust</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:consume' club.slug character.pk %}" data-wm-tooltip title="Mark items as lost or used up, based on what happened during the session.">Consume</a>
+  {% endif %}
+  {% if can_handover %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:handover' club.slug character.pk %}" data-wm-tooltip title="Give this character to another player.">Hand over</a>{% endif %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">History</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print an adventurer's pass: name, pronouns, player, species, class, level, AC, passive Perception, Max HP and ability scores.">Print slip</a>
+  <form hx-post="{% url 'characters:detail' club.slug character.pk %}" hx-target="body" hx-on::after-request="window.print()" class="d-inline">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-sm btn-primary" data-wm-tooltip title="Print this character sheet in black and white.">{% include "components/icon.html" with name="printer" %} Print sheet</button>
+  </form>
+</div>
+{% endif %}
+<article class="wm-sheet wm-sheet--page">
+  <header class="wm-sheet-header">
+    <h1>{{ character.name }}</h1>
+    <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %}{% if character.char_class %} &middot; {{ character.char_class }}{% endif %}{% if character.species %} &middot; {{ character.species }}{% endif %}{% if character.background %} &middot; {{ character.background }}{% endif %}{% if character.pronouns %} &middot; {{ character.pronouns }}{% endif %}{% if character.alignment %} &middot; {{ character.alignment }}{% endif %}</p>
+    <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
+  </header>
+  {% flash_messages %}
+  {% if can_view %}
+  <div class="wm-sheet-grid wm-sheet-layout">
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-coins" aria-labelledby="sheet-coins">
+      <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
+      <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
+      {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
+      {% if show_starting_animation %}
+        {% include "player_characters/characters/_starting_coins_animation.html" with starting_coins=coins.owned %}
+      {% endif %}
+    </section>
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-abilities">
+      <h2 class="wm-sheet-box-title" id="sheet-abilities">Abilities</h2>
+      <ul class="wm-sheet-abilities">
+        {% for a in abilities %}
+        <li class="wm-sheet-ability"><span class="wm-sheet-ability-abbr" title="{{ a.label }}">{{ a.abbr }}</span><span class="wm-sheet-ability-score">{{ a.score }}</span><span class="wm-sheet-ability-mod">{{ a.modifier }}</span></li>
+        {% endfor %}
+      </ul>
+    </section>
+    <section class="wm-sheet-box wm-sheet-half" aria-labelledby="sheet-combat">
+      <h2 class="wm-sheet-box-title" id="sheet-combat">Combat</h2>
+      <dl class="wm-sheet-stats">
+        <dt>AC</dt><dd>{% if character.armor_class is not None %}{{ character.armor_class }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Max HP</dt><dd>{% if character.max_hp is not None %}{{ character.max_hp }}{% else %}&mdash;{% endif %}</dd>
+        <dt>Passive Perception</dt><dd>{{ passive_perception }}</dd>
+        <dt>XP</dt><dd>{% if character.xp is not None %}{{ character.xp }}{% else %}&mdash;{% endif %}</dd>
+        {% if can_view %}{% downtime_balance character as dt_points %}{% downtime_play_url club as dt_play_url %}
+        <dt>Downtime points</dt><dd>{{ dt_points }}
+          <div class="wm-sheet-point-actions">
+          {% if dt_play_url %}<a class="btn btn-sm btn-outline-secondary no-print" href="{{ dt_play_url }}" data-wm-tooltip title="Spend downtime points on a downtime action.">Spend</a>{% endif %}
+          {% if can_adjust %}<a class="btn btn-sm btn-outline-secondary no-print" href="{% url 'downtime:points_award' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Give or take downtime points for this character.">Award points</a>{% endif %}
+          {% if can_request_points %}<a class="btn btn-sm btn-outline-secondary no-print" href="{% url 'downtime:request_new' club.slug %}?character={{ character.pk }}" data-wm-tooltip title="Ask your game master for downtime points.">Request points</a>{% endif %}
+          </div>
+          {% if can_request_points %}<span class="wm-sheet-help no-print small text-muted d-block">Earned downtime during a session? Ask your game master for the points.</span>{% endif %}</dd>
+        {% endif %}
+      </dl>
+    </section>
+    <section class="wm-sheet-box wm-sheet-half" aria-labelledby="sheet-description">
+      <h2 class="wm-sheet-box-title" id="sheet-description">Description</h2>
+      {% if character.description %}{{ character.description|linebreaks }}
+      {% else %}<p class="wm-sheet-note">No description yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}</p>{% endif %}
+    </section>
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-items">
+      <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
+      {% if can_view %}
+      <div class="no-print wm-sheet-shop">
+        {% url 'characters:shop_toggle' club.slug character.pk as toggle_url %}
+        <form method="post" action="{{ toggle_url }}" hx-post="{{ toggle_url }}" hx-trigger="change" class="d-flex flex-wrap align-items-center gap-2">
+          {% csrf_token %}
+          <div class="form-check form-switch" data-wm-tooltip title="List your junk in your own stall on the street for other players to buy.">
+            <input class="form-check-input" type="checkbox" role="switch" name="shop_open" id="shop-open"{% if character.shop_open %} checked{% endif %}>
+            <label class="form-check-label" for="shop-open">Sell my junk in my shop</label>
+          </div>
+          <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Save</button></noscript>
+        </form>
+        {% if character.shop_open %}<p class="wm-sheet-note">Listed in your shop: <a href="{% url 'shops:player_shop' club.slug character.pk %}">{{ shop_listed }} item{{ shop_listed|pluralize }}</a></p>{% endif %}
+        {% if junk %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'shops:sell_junk_pick' club.slug %}" hx-get="{% url 'shops:sell_junk_pick' club.slug %}" hx-target="#app-modal .modal-content" hx-swap="innerHTML" data-app-modal data-wm-tooltip title="Sell your marked junk items to an open shop" aria-label="Sell junk">{% include "components/icon.html" with name="bag" %} Sell junk</a>{% endif %}
+      </div>
+      {% endif %}
+      {% if rows %}
+      <div class="wm-table-scroll wm-sheet-inventory"><table class="table table-sm wm-data-table wm-sheet-table">
+        <thead><tr><th>Item</th><th class="num">Owned</th><th class="num">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{% include "items/_item_name.html" with item=r.item info=True %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}
+            {% for pk, qty in junk.items %}{% if pk == r.item.pk %} {% include "components/badge.html" with text="Junk" %} &times;{{ qty }}{% endif %}{% endfor %}
+            {% for pk, quests in quest_needs.items %}{% if pk == r.item.pk %}<div class="wm-sheet-note">Needed for quest: {% for q in quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}{% endfor %}</td>
+          <td class="num">{{ r.owned }}</td>
+          <td class="num">{{ r.available }}</td>
+          <td class="no-print wm-row-actions-cell">
+            {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
+            {% url 'characters:print_item' club.slug character.pk r.item.pk as print_url %}
+            <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ r.item.name }}">
+              {% if is_owner and r.available > 0 %}{% url 'characters:player_consume' club.slug character.pk r.item.pk as consume_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ consume_url }}" hx-get="{{ consume_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark items as lost or used up, based on what happened during the session." aria-label="Consume">{% include "components/icon.html" with name="dash-circle" %}</a>{% endif %}
+              <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Set aside items to sell later, in shops or your own stall." aria-label="Mark as junk">{% include "components/icon.html" with name="tag" %}</a>
+              <div class="btn-group btn-group-sm" role="group">
+                <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print this one item's card, as a full page or in one spot of a card sheet." aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><h6 class="dropdown-header">One card per item type</h6></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full&copies=type">Full page</a></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&copies=type">Grid spot</a></li>
+                  {% if r.owned > 1 %}
+                  <li><h6 class="dropdown-header">One card per item</h6></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=full&copies=item">Full page</a></li>
+                  <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&copies=item">Grid spot</a></li>
+                  {% endif %}
+                </ul>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+      <p class="wm-sheet-note">No items.</p>
+      {% endif %}
+    </section>
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-starting-requests">
+      <h2 class="wm-sheet-box-title" id="sheet-starting-requests">Magic starting item requests</h2>
+      {% if starting_requests %}
+      <div class="wm-table-scroll"><table class="table table-sm wm-data-table wm-sheet-table">
+        <thead><tr><th>Item</th><th class="num">Qty</th><th>Note</th><th>Status</th><th class="no-print">Decided</th></tr></thead>
+        <tbody>
+        {% for req in starting_requests %}
+        <tr>
+          <td>{% include "items/_item_name.html" with item=req.item info=True %}</td>
+          <td class="num">{{ req.quantity }}</td>
+          <td>{% if req.note %}{{ req.note }}{% else %}<span class="wm-sheet-note">—</span>{% endif %}</td>
+          <td>
+            {% if req.status == "pending" %}
+              {% include "components/badge.html" with text="Pending" status="info" %}
+            {% elif req.status == "approved" %}
+              {% include "components/badge.html" with text="Approved" status="success" %}
+            {% elif req.status == "declined" %}
+              {% include "components/badge.html" with text="Declined" status="danger" %}
+            {% else %}
+              {% include "components/badge.html" with text=req.get_status_display status="neutral" %}
+            {% endif %}
+          </td>
+          <td class="no-print">
+            {% if req.decided_by %}
+              {{ req.decided_by.display_name }}<br>
+              {{ req.decided_at|date:"M d, Y H:i" }}
+            {% else %}
+              <span class="wm-sheet-note">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      {% else %}
+      <p class="wm-sheet-note">No magic starting item requests.</p>
+      {% endif %}
+    </section>
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-ledger-box" aria-labelledby="sheet-ledger">
+      <h2 class="wm-sheet-box-title" id="sheet-ledger">Recent ledger entries</h2>
+      <ul class="wm-sheet-ledger">
+      {% for e in recent_entries %}
+        <li><span class="wm-sheet-date">{{ e.date|date }}</span> {{ e.get_kind_display }}:
+          {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </li>
+      {% empty %}
+        <li class="wm-sheet-note">No entries yet.</li>
+      {% endfor %}
+      </ul>
+      <a class="no-print" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">Full ledger</a>
+    </section>
+  </div>
+  {% else %}
+  <p class="wm-sheet-note">Only the owner, game masters and club admins see this sheet.</p>
+  {% endif %}
+</article>
+{% endblock %}

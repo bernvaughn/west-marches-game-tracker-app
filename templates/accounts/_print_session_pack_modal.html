@@ -1,34 +1,104 @@
 {% comment %}Print Session Pack Options Modal{% endcomment %}
+{% load coins %}
 <div class="modal-header">
   <h5 class="modal-title">{% include "components/icon.html" with name="printer" %} Print Session Pack</h5>
   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 </div>
-<form hx-get="{% url 'characters:print_session_pack' club.slug character.pk %}" hx-target="_blank" hx-trigger="submit">
+
+<form
+  hx-post="{% url 'characters:print_session_pack' club.slug character.pk %}"
+  hx-target="body"
+  hx-on::after-request="window.print()"
+>
   <div class="modal-body">
     <p class="text-muted small mb-3">Choose what to include in your session pack:</p>
-    
+
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" name="sheet" id="opt-sheet" value="1" checked>
       <label class="form-check-label" for="opt-sheet"><strong>Character Sheet</strong> &mdash; Abilities, combat stats, inventory table, description</label>
     </div>
-    
+
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" name="items" id="opt-items" value="1" checked>
       <label class="form-check-label" for="opt-items"><strong>Item Cards (all, grid)</strong> &mdash; 9 cards per sheet, one per item type</label>
     </div>
-    
+
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" name="quests" id="opt-quests" value="1" checked>
       <label class="form-check-label" for="opt-quests"><strong>Ready Quests</strong> &mdash; Quests you can turn in right now</label>
     </div>
-    
+
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" name="map" id="opt-map" value="1">
       <label class="form-check-label" for="opt-map"><strong>Map</strong> &mdash; Current map view with locations (not yet implemented)</label>
     </div>
+
+    {% if diff %}
+    <hr class="my-3">
+    <h6 class="mb-2">{% include "components/icon.html" with name="clock-history" %} Changes since last print</h6>
+    {% if diff.first_print %}
+    <p class="text-muted small mb-0">First print — showing all history</p>
+    {% else %}
+    <div class="wm-print-diff">
+      {% if diff.coins != 0 %}
+      <div class="mb-2">
+        <strong>Coins:</strong>
+        <span class="ms-2 {% if diff.coins > 0 %}text-success{% else %}text-danger{% endif %}">
+          {% if diff.coins > 0 %}+{% endif %}{{ diff.coins|coins }}
+        </span>
+      </div>
+      {% endif %}
+      {% if diff.items %}
+      <div class="mb-2">
+        <strong>Items:</strong>
+        <ul class="mb-0 mt-1 small">
+          {% for name, qty in diff.items %}
+          <li class="{% if qty > 0 %}text-success{% else %}text-danger{% endif %}">
+            {% if qty > 0 %}+{% endif %}{{ qty }} {{ name }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if diff.quests %}
+      <div class="mb-2">
+        <strong>Quests:</strong>
+        <ul class="mb-0 mt-1 small">
+          {% for quest in diff.quests %}
+          <li class="text-primary">Completed &lsquo;{{ quest }}&rsquo;</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if diff.downtime %}
+      <div class="mb-2">
+        <strong>Downtime:</strong>
+        <ul class="mb-0 mt-1 small">
+          {% for dt in diff.downtime %}
+          <li class="text-info">
+            {{ dt.action }}
+            {% if dt.coins or dt.items %}({% endif %}
+            {% if dt.coins %}{% if dt.coins > 0 %}+{% endif %}{{ dt.coins|coins }}{% endif %}
+            {% if dt.coins and dt.items %}, {% endif %}
+            {% for item_name, item_qty in dt.items %}
+            {% if item_qty > 0 %}+{% endif %}{{ item_qty }} {{ item_name }}
+            {% if not forloop.last %}, {% endif %}
+            {% endfor %}
+            {% if dt.coins or dt.items %}){% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+      {% if diff.coins == 0 and not diff.items and not diff.quests and not diff.downtime %}
+      <p class="text-muted small mb-0">No changes since last print.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
   </div>
   <div class="modal-footer">
     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-    <button type="submit" class="btn btn-primary" onclick="this.form.target='_blank';">{% include "components/icon.html" with name="printer" %} Open Print Preview</button>
+    <button type="submit" class="btn btn-primary">{% include "components/icon.html" with name="printer" %} Print</button>
   </div>
 </form>

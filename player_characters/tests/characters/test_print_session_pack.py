@@ -1,7 +1,13 @@
-"""Tests for the print_session_pack view."""
+"""Tests for the print_session_pack view and modal."""
+
+from datetime import timedelta
 
 import pytest
 from django.urls import reverse
+from django.utils import timezone
+
+from accounts.views.dashboard import _compute_print_diff
+from ledger.services import Line, record
 
 pytestmark = pytest.mark.django_db
 
@@ -122,3 +128,240 @@ def test_modal_cross_club_404(login, club, other_club, player, foreign_member, f
     """Cross-club modal access returns 404."""
     assert login(player).get(modal_url(club, foreign_character)).status_code == 404
     assert login(player).get(modal_url(other_club, foreign_character)).status_code == 404
+
+
+# =============================================================================
+# Tests for _compute_print_diff
+# =============================================================================
+# Use `character` fixture (clean slate) instead of `funded` to avoid fixture's initial entries
+# Use `record` with explicit dates to test date filtering
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_first_print_returns_all_history(character, item, second_item, player):
+    """When never printed, diff includes all ledger entries."""
+    record(
+        character,
+        "award",
+        [Line(item=item, quantity=2), Line(coins=500)],
+        note="Initial loot",
+        actor=player,
+    )
+    record(
+        character,
+        "purchase",
+        [Line(item=second_item, quantity=1), Line(coins=-200)],
+        note="Bought potion",
+        actor=player,
+    )
+    # last_printed_at is None (never printed)
+    diff = _compute_print_diff(character)
+    assert diff["first_print"] is True
+    assert diff["coins"] == 300  # 500 - 200
+    assert (item.name, 2) in diff["items"]
+    assert (second_item.name, 1) in diff["items"]
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_after_print_returns_only_new_changes(character, item, second_item, player):
+    """After printing, diff only shows entries since last_printed_at."""
+    two_days_ago = timezone.localdate() - timedelta(days=2)
+    yesterday = timezone.localdate() - timedelta(days=1)
+    today = timezone.localdate()
+    # Initial entry two days ago
+    record(
+        character,
+        "award",
+        [Line(item=item, quantity=2), Line(coins=500)],
+        note="Initial loot",
+        actor=player,
+        date=two_days_ago,
+    )
+    # Simulate a print yesterday
+    character.last_printed_at = timezone.make_aware(
+        timezone.datetime.combine(yesterday, timezone.datetime.min.time())
+    )
+    character.save(update_fields=["last_printed_at"])
+
+    # New entries today (after print)
+    record(
+        character,
+        "purchase",
+        [Line(item=second_item, quantity=1), Line(coins=-200)],
+        note="Bought potion",
+        actor=player,
+        date=today,
+    )
+    record(character, "award", [Line(coins=1000)], note="Found coins", actor=player, date=today)
+    diff = _compute_print_diff(character)
+    assert diff["first_print"] is False
+    assert diff["coins"] == 800  # -200 + 1000
+    assert (second_item.name, 1) in diff["items"]
+    assert (item.name, 2) not in diff["items"]  # Old entry not included
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_quest_entries_not_double_counted(character, item, player):
+    """Quest turn-in and reward entries appear under Quests, not Coins/Items."""
+    two_days_ago = timezone.localdate() - timedelta(days=2)
+    yesterday = timezone.localdate() - timedelta(days=1)
+    today = timezone.localdate()
+    # Setup: give character items two days ago, then "print" yesterday
+    record(
+        character,
+        "award",
+        [Line(item=item, quantity=3)],
+        note="Found pelts",
+        actor=player,
+        date=two_days_ago,
+    )
+    character.last_printed_at = timezone.make_aware(
+        timezone.datetime.combine(yesterday, timezone.datetime.min.time())
+    )
+    character.save(update_fields=["last_printed_at"])
+
+    # Now do quest turn-in and reward today
+    record(
+        character,
+        "quest_turn_in",
+        [Line(item=item, quantity=-3)],
+        note="Turned in for quest Pelts for the Tanner",
+        actor=player,
+        date=today,
+    )
+    record(
+        character,
+        "quest_reward",
+        [Line(item=item, quantity=1), Line(coins=1000)],
+        note="Reward for quest Pelts for the Tanner",
+        actor=player,
+        date=today,
+    )
+    diff = _compute_print_diff(character)
+    # Quest entries should not contribute to coins/items totals
+    assert diff["coins"] == 0
+    assert diff["items"] == []
+    # But should appear in quests
+    assert "Pelts for the Tanner" in diff["quests"]
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_downtime_entries_not_double_counted(character, item, player):
+    """Downtime award entries appear under Downtime, not Coins/Items."""
+    record(
+        character,
+        "award",
+        [Line(item=item, quantity=2), Line(coins=500)],
+        note="Downtime: Work at a bakery - Baker's thanks",
+        actor=player,
+    )
+    diff = _compute_print_diff(character)
+    # Downtime entries should not contribute to coins/items totals
+    assert diff["coins"] == 0
+    assert diff["items"] == []
+    # But should appear in downtime
+    assert len(diff["downtime"]) == 1
+    dt = diff["downtime"][0]
+    assert dt["action"] == "Work at a bakery - Baker's thanks"
+    assert dt["coins"] == 500
+    assert (item.name, 2) in dt["items"]
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_net_items_aggregates_quantities(character, item, player):
+    """Multiple entries for same item are netted."""
+    record(character, "award", [Line(item=item, quantity=3)], note="Found 3", actor=player)
+    record(character, "consumed", [Line(item=item, quantity=-1)], note="Used 1", actor=player)
+    diff = _compute_print_diff(character)
+    assert diff["items"] == [(item.name, 2)]
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_zero_net_items_omitted(character, item, player):
+    """Items with zero net quantity are omitted."""
+    record(character, "award", [Line(item=item, quantity=2)], note="Found 2", actor=player)
+    record(character, "consumed", [Line(item=item, quantity=-2)], note="Used 2", actor=player)
+    diff = _compute_print_diff(character)
+    assert diff["items"] == []
+
+
+@pytest.mark.story("S10")
+def test_compute_diff_no_entries_returns_empty(character):
+    """Character with no ledger entries returns empty diff."""
+    diff = _compute_print_diff(character)
+    assert diff["first_print"] is True
+    assert diff["coins"] == 0
+    assert diff["items"] == []
+    assert diff["quests"] == []
+    assert diff["downtime"] == []
+
+
+# =============================================================================
+# Tests for POST updating last_printed_at
+# =============================================================================
+
+
+@pytest.mark.story("S10")
+def test_print_session_pack_post_updates_last_printed_at(login, club, player, funded):
+    """POST to print_session_pack updates last_printed_at."""
+    assert funded.last_printed_at is None
+    url = reverse("characters:print_session_pack", args=[club.slug, funded.pk])
+    r = login(player).post(url, {"sheet": "1", "items": "1", "quests": "1"})
+    assert r.status_code == 200
+    funded.refresh_from_db()
+    assert funded.last_printed_at is not None
+
+
+@pytest.mark.story("S10")
+def test_print_items_post_updates_last_printed_at(login, club, player, funded):
+    """POST to print_items updates last_printed_at."""
+    assert funded.last_printed_at is None
+    url = reverse("characters:print_items", args=[club.slug, funded.pk])
+    r = login(player).post(url + "?copies=type")
+    assert r.status_code == 200
+    funded.refresh_from_db()
+    assert funded.last_printed_at is not None
+
+
+@pytest.mark.story("S10")
+def test_detail_view_post_updates_last_printed_at(login, club, player, funded):
+    """POST to character detail (Print sheet) updates last_printed_at."""
+    assert funded.last_printed_at is None
+    url = reverse("characters:detail", args=[club.slug, funded.pk])
+    r = login(player).post(url)
+    assert r.status_code == 200
+    funded.refresh_from_db()
+    assert funded.last_printed_at is not None
+
+
+@pytest.mark.story("S10")
+def test_modal_renders_diff_section(login, club, player, funded, item):
+    """Modal includes Changes since last print section with diff data."""
+    record(
+        funded,
+        "award",
+        [Line(item=item, quantity=2), Line(coins=500)],
+        note="Initial loot",
+        actor=player,
+    )
+    url = reverse("accounts:print_session_pack_modal", args=[club.slug, funded.pk])
+    r = login(player).get(url)
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "Changes since last print" in body
+    assert "First print" in body
+    # First print only shows the message, not detailed breakdown
+    assert "First print — showing all history" in body
+
+
+@pytest.mark.story("S10")
+def test_modal_shows_no_changes_when_empty(login, club, player, character):
+    """Modal shows 'No changes since last print' when diff is empty."""
+    # Use clean character fixture, not funded
+    character.last_printed_at = timezone.now()
+    character.save(update_fields=["last_printed_at"])
+    url = reverse("accounts:print_session_pack_modal", args=[club.slug, character.pk])
+    r = login(player).get(url)
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "No changes since last print" in body
