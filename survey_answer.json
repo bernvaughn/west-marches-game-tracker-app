@@ -1,7 +1,0 @@
-{
-  "answers": {
-    "least_necessary": {"text": "Updating test shortcut counts in test_u60_top_bar.py and test_u61_top_bar.py after removing the Trades navigation entry."},
-    "most_expensive": {"text": "Coordinating with the peer Planner session working on the same overlapping navigation cleanup to avoid duplicate work."},
-    "redundant": {"text": "Answering duplicate DM notifications from the peer session about overlapping task scope."}
-  }
-}
