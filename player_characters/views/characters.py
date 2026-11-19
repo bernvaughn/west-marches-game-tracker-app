@@ -102,7 +102,11 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
                 club=self.club, is_active=True
             ).first()
             if template:
-                apply_starting_equipment(character, template, request.user)
+                entry = apply_starting_equipment(character, template, request.user)
+                # Only mark as claimed if equipment was actually granted
+                if entry is not None:
+                    character.starting_equipment_claimed = True
+                    character.save(update_fields=["starting_equipment_claimed"])
             messages.success(request, f"Created {character.name}.")
             url = reverse(
                 "characters:detail", kwargs={"club_slug": self.club.slug, "pk": character.pk}
