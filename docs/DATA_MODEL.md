@@ -15,9 +15,6 @@ erDiagram
     CHARACTER ||--o{ LEDGER_ENTRY : "has history"
     LEDGER_ENTRY ||--|{ LEDGER_LINE : contains
     ITEM ||--o{ LEDGER_LINE : "appears in"
-    CHARACTER ||--o{ TRADE : sends
-    CHARACTER ||--o{ TRADE : receives
-    TRADE ||--o{ TRADE_LINE : offers
     SHOP ||--o{ SHOP_STOCK : stocks
     ITEM ||--o{ SHOP_STOCK : "stocked as"
     ROTATION }o--o{ SHOP : opens
@@ -51,7 +48,7 @@ Reading it: a person (user) joins clubs through memberships, and a membership ow
 - **Every record belongs to a club.** Every lookup is limited to the current club, which is what keeps clubs from seeing each other's data (U12).
 - **Coins are whole numbers of copper.** They are shown as copper, silver, gold, and platinum, with no platinum under 10,000 gp (U32).
 - **The ledger is the history and the source of truth.** A character's inventory and coin total are the sum of their ledger lines. The app may keep running totals for speed, but the ledger wins if they disagree. Ledger entries are never edited or deleted; a mistake is fixed with a new entry.
-- **Holds are not a separate record.** Items and coins that appear on a trade or trade request that is still open count as held. What a character can use is what they own minus what is held, which is how the lock on selling, transferring, turning in, and consuming works (U16).
+- **Holds are not a separate record.** The code returns held_coins=0 and held_items={}, so nothing is held; everything owned is available. The lock on selling, transferring, turning in, and consuming still applies (U16).
 - **Dates on manual changes default to today** and can be changed (U14).
 
 ## By app
@@ -75,12 +72,10 @@ A player's email is shown only to club admins (U17).
 - **Character**: belongs to a club and is owned by a membership. Name and an optional level from 1 (U52, not tied to XP). The sheet (U2, U69) adds optional class, species, alignment, pronouns, a description, the six ability scores (1 to 30, with the modifier worked out as (score - 10) // 2), armor class (0 to 40), a Perception bonus (may be negative; passive Perception is 10 plus the bonus, blank shows a dash), and XP. Handing a character to another player changes the owner (U18).
 - **Inventory entry**: a character, an item, and a quantity. Visible only to the owner, game masters, and club admins (U19).
 - **Junk mark**: a character, an item, and a quantity the player set aside to sell (U47). One per character and item. The quantity is capped at the number owned when read, so it needs no cleanup when items leave. It never touches the ledger.
-- **Trade**: a sending character, a receiving character, a status (requested, accepted, completed, declined, cancelled), the sender's note, one approval for each side (U16), and which side last changed its lines until someone approves (U78).
-- **Trade line**: one side of a trade offering either an item and quantity, or an amount of coins.
 
 ### ledger
 
-- **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Notes whether it was recorded through an agent batch. Records what kind of event it was: award, purchase, sale, trade, transfer, quest turn-in, quest reward, consumed, or manual adjustment.
+- **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Notes whether it was recorded through an agent batch. Records what kind of event it was: award, purchase, sale, quest turn-in, quest reward, consumed, or manual adjustment.
 - **Ledger line**: part of an entry. Either an item with a signed quantity, or a signed amount of coins. A purchase is one entry with a coin line and an item line.
 
 ### shops
