@@ -14,6 +14,7 @@ from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from items.magic_types import MagicType
 from items.models import Item
+from ledger.coins import format_coins
 from ledger.models import LedgerEntry
 from ledger.services import available_items
 from map.models import HexMap
@@ -523,6 +524,159 @@ class PlayerShopDashboardProvider(BaseDashboardProvider):
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         return character.shop_open
+
+
+# =============================================================================
+# New contextual action card providers (Story: Enhanced Dashboard)
+# =============================================================================
+
+
+class QuestsReadyProvider(BaseDashboardProvider):
+    """Quests ready to turn in card (quests_ready)."""
+
+    key = "quests_ready"
+    order = 10
+    template = "accounts/dashboard_partials/_quests_ready.html"
+
+    def _ready_quests(self, club, character, today):
+        quests_qs = (
+            Quest.objects.for_club(club)
+            .prefetch_related("requirements__item", "rewards__item")
+            .annotate(done=Count("completions"))
+        )
+        have = available_items(character)
+        my_completions = {
+            row["quest"]: row["n"]
+            for row in QuestCompletion.objects.filter(character=character)
+            .values("quest")
+            .annotate(n=Count("id"))
+        }
+        ready = []
+        for q in quests_qs:
+            if not q.is_live_on(today):
+                continue
+            if q.max_completions is not None and q.done >= q.max_completions:
+                continue
+            if (
+                q.max_per_character is not None
+                and my_completions.get(q.pk, 0) >= q.max_per_character
+            ):
+                continue
+            reqs = list(q.requirements.all())
+            if reqs and all(have.get(r.item_id, 0) >= r.quantity for r in reqs):
+                ready.append(q)
+        return ready
+
+    @staticmethod
+    def _reward_summary(quest):
+        total_coins = 0
+        item_parts = []
+        for r in quest.rewards.all():
+            if r.coins:
+                total_coins += r.coins
+            if r.item_id:
+                item_parts.append(f"{r.quantity} × {r.item.name}")
+        parts = []
+        if total_coins:
+            parts.append(format_coins(total_coins))
+        parts.extend(item_parts)
+        return " + ".join(parts) if parts else "—"
+
+    def get_context(self, request, club, character, membership):
+        today = timezone.localdate()
+        ready_quests = self._ready_quests(club, character, today)
+        quests = []
+        for q in ready_quests:
+            quests.append(
+                {
+                    "quest": q,
+                    "reward_summary": self._reward_summary(q),
+                    "url": reverse("quests:detail", args=[club.slug, q.pk]),
+                }
+            )
+        return {"ready_quests": quests}
+
+    def should_show(self, request, club, character, membership):
+        today = timezone.localdate()
+        return len(self._ready_quests(club, character, today)) > 0
+
+
+class JunkSummaryProvider(BaseDashboardProvider):
+    """Junk to sell card (junk_summary)."""
+
+    key = "junk_summary"
+    order = 20
+    template = "accounts/dashboard_partials/_junk_summary.html"
+
+    def get_context(self, request, club, character, membership):
+        rows = junk_rows(character)
+        return {
+            "junk_rows": rows,
+            "junk_value": format_coins(junk_value(character, rows)),
+            "sell_url": reverse("accounts:quick_action_sell_junk", args=[club.slug]),
+        }
+
+    def should_show(self, request, club, character, membership):
+        return len(junk_rows(character)) > 0
+
+
+class DowntimeAvailableProvider(BaseDashboardProvider):
+    """Downtime actions available card (downtime_available)."""
+
+    key = "downtime_available"
+    order = 30
+    template = "accounts/dashboard_partials/_downtime_actions.html"
+
+    def get_context(self, request, club, character, membership):
+        today = timezone.localdate()
+        balance = downtime_services.balance(character)
+
+        live_actions = (
+            DowntimeAction.objects.for_club(club)
+            .live_on(today)
+            .filter(entries__isnull=False)
+            .distinct()
+            .prefetch_related("entries__items__item")
+        )
+
+        actions = []
+        for action in live_actions:
+            if action.cost > balance:
+                continue
+            has_coins = any(e.coins > 0 for e in action.entries.all())
+            has_items = any(len(e.items.all()) > 0 for e in action.entries.all())
+            if has_coins and has_items:
+                reward_type = "both"
+            elif has_coins:
+                reward_type = "coins"
+            else:
+                reward_type = "items"
+            actions.append(
+                {
+                    "action": action,
+                    "cost": action.cost,
+                    "reward_type": reward_type,
+                    "spend_url": reverse(
+                        "accounts:dashboard_downtime_spend", args=[club.slug, action.pk]
+                    ),
+                }
+            )
+
+        return {"downtime_balance": balance, "actions": actions}
+
+    def should_show(self, request, club, character, membership):
+        today = timezone.localdate()
+        balance = downtime_services.balance(character)
+        if balance < 1:
+            return False
+        return (
+            DowntimeAction.objects.for_club(club)
+            .live_on(today)
+            .filter(entries__isnull=False)
+            .distinct()
+            .filter(cost__lte=balance)
+            .exists()
+        )
 
 
 # =============================================================================

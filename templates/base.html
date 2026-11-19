@@ -53,6 +53,7 @@
 <main id="main" tabindex="-1" hx-history-elt class="wm-main {% block main_class %}{% endblock %}">{% flash_slot %}{% block content %}{% endblock %}{% endflash_slot %}</main>
 {% block site_footer %}{% include "partials/site_footer.html" %}{% endblock %}
 {% include "components/command_palette.html" %}
+{% block extra_scripts %}{% endblock %}
 <div class="modal fade" id="app-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable modal-fullscreen-sm-down"><div class="modal-content"></div></div></div>
 </body>
 </html>

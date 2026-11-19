@@ -1,0 +1,37 @@
+{% comment %}Quests ready to turn in card{% endcomment %}
+<div
+  id="dashboard-card-quests_ready"
+  data-refresh-url="{% url 'accounts:dashboard_partial' club.slug 'quests_ready' %}"
+  class="wm-dashboard-section card wm-card-raised h-100"
+>
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="scroll" %}
+      Quests ready to turn in
+    </h3>
+    <span class="badge text-bg-success badge-pill">{{ provider_context.ready_quests|length }}</span>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for q in provider_context.ready_quests %}
+      <li class="list-group-item d-flex align-items-center justify-content-between px-3 py-2">
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+          {% include "components/icon.html" with name="check-circle" class="text-success" %}
+          <div>
+            <span class="fw-medium">{{ q.quest.name }}</span>
+            <br>
+            <small class="text-muted">{{ q.reward_summary }}</small>
+          </div>
+        </div>
+        <a href="{{ q.url }}" class="btn btn-sm btn-success">
+          {% include "components/icon.html" with name="check-circle" %} Turn in
+        </a>
+      </li>
+      {% empty %}
+      <li class="list-group-item text-center py-4 text-muted small">
+        No quests ready to turn in.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
