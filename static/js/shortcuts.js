@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Global shortcuts (work everywhere)
     "KeyG": { meta: true, action: "commandPalette" },  // Cmd/Ctrl+G or Cmd/Ctrl+K
     "KeyK": { meta: true, action: "commandPalette" },
-    "Slash": { meta: false, input: true, action: "commandPalette" },  // / when not in input
+    "Slash": { meta: false, input: false, action: "commandPalette" },  // / when not in input
     
     // Navigation shortcuts (when not in input field)
     "KeyH": { meta: false, input: false, action: "nav", url: "/club/", label: "Home" },
