@@ -42,16 +42,16 @@ def test_official_dropdown_is_alphabetized_with_other(
     soup = BeautifulSoup(html, "html.parser")
     values = option_values(soup, field)
     official = [value for value, _label in choices]
-    assert values == official + [OTHER]
+    assert values == [""] + official + [OTHER]
     assert official == sorted(official)
-    assert len(values) == expected_count + 1
+    assert len(values) == expected_count + 2
 
 
 def test_pronouns_dropdown_order(club, login, club_admin):
     html = login(club_admin).get(create_url(club)).content.decode()
     soup = BeautifulSoup(html, "html.parser")
     values = option_values(soup, "pronouns")
-    assert values == [value for value, _label in PRONOUNS_CHOICES] + [OTHER]
+    assert values == [""] + [value for value, _label in PRONOUNS_CHOICES] + [OTHER]
 
 
 def test_alignment_dropdown_has_nine_alignments_no_other(club, login, club_admin):
@@ -59,10 +59,10 @@ def test_alignment_dropdown_has_nine_alignments_no_other(club, login, club_admin
     soup = BeautifulSoup(html, "html.parser")
     values = option_values(soup, "alignment")
     official = [value for value, _label in ALIGNMENT_CHOICES]
-    assert values == official
+    assert values == [""] + official
     assert OTHER not in values
     assert official == sorted(official)
-    assert len(values) == 9
+    assert len(values) == 10
 
 
 def test_freetext_inputs_render_on_the_form(club, login, club_admin):
@@ -175,3 +175,35 @@ def test_custom_saved_value_preselects_other_with_freetext(club, login, player, 
     titles = [span.get("title") for span in soup.select(".wm-field-current-value")]
     assert "Artificer" in titles
     assert OTHER not in titles
+
+
+def test_blank_saved_dropdowns_select_the_blank_option(club, login, player, character):
+    character.background = ""
+    character.alignment = ""
+    character.save()
+    client = login(player)
+    soup = BeautifulSoup(client.get(edit_url(club, character.pk)).content.decode(), "html.parser")
+    assert selected_value(soup, "background") == ""
+    assert selected_value(soup, "alignment") == ""
+    # Posting the form as rendered keeps the blank fields blank.
+    data = {}
+    for el in soup.select("form.wm-character-form input[name], form.wm-character-form textarea"):
+        if el.get("name") != "csrfmiddlewaretoken":
+            data[el["name"]] = el.get("value") or el.get_text()
+    for select in soup.select("form.wm-character-form select"):
+        option = select.select_one("option[selected]") or select.select_one("option")
+        data[select["name"]] = option.get("value")
+    r = client.post(edit_url(club, character.pk), data)
+    assert r.status_code == 302
+    character.refresh_from_db()
+    assert character.background == ""
+    assert character.alignment == ""
+
+
+def test_create_page_dropdowns_default_to_blank(club, login, player):
+    soup = BeautifulSoup(login(player).get(create_url(club)).content.decode(), "html.parser")
+    for name in ("char_class", "species", "background", "pronouns", "alignment"):
+        select = soup.select_one(f'select[name="{name}"]')
+        first = select.select_one("option")
+        assert first.get("value") == ""
+        assert selected_value(soup, name) in (None, "")
