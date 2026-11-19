@@ -162,6 +162,12 @@ def test_roll_as_result_is_json_serialisable(diplomats_pack):
     assert isinstance(payload, str)
     data = json.loads(payload)
     assert len(data) == 5  # one row per slot
+    keys = {"slot_id", "position", "hit", "option_id", "item_id", "qty"}
+    assert all(set(row) == keys for row in data)
+    for row, outcome in zip(data, roll.slots, strict=True):
+        assert row["option_id"] == outcome.option_id
+        if row["hit"]:
+            assert row["option_id"] is not None
 
 
 # ---------------------------------------------------------------------------

@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
             name='ContainerOpening',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('result', models.JSONField(default=dict)),
+                ('result', models.JSONField(default=list)),
                 ('created', models.DateTimeField(auto_now_add=True)),
                 ('character', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='player_characters.character')),
                 ('container', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='openings', to='items.item')),

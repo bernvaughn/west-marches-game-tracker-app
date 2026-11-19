@@ -102,7 +102,7 @@ class ContainerOpening(AppendOnlyModel):
     entry = models.OneToOneField(LedgerEntry, on_delete=models.PROTECT, related_name="opening")
     container = models.ForeignKey(Item, on_delete=models.PROTECT, related_name="openings")
     character = models.ForeignKey("player_characters.Character", on_delete=models.PROTECT)
-    result = models.JSONField(default=dict)
+    result = models.JSONField(default=list)
     created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

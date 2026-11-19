@@ -43,6 +43,7 @@ class Roll:
                 "slot_id": o.slot_id,
                 "position": o.position,
                 "hit": o.hit,
+                "option_id": o.option_id,
                 "item_id": o.item_id,
                 "qty": o.qty if o.hit else 0,
             }
@@ -78,7 +79,7 @@ class PreviewRow:
 def roll_container(container, rng=None) -> Roll:
     """Roll every slot of ``container`` and return a :class:`Roll`.
 
-    Defaults to :class:`secrets.SystemRandom`. Draws from ``rng` only when
+    Defaults to :class:`secrets.SystemRandom`. Draws from ``rng`` only when
     needed (chance below 100, several options, quantity range), so a scripted
     rng stays predictable. Issues no write queries and performs no saves.
     """
