@@ -53,6 +53,10 @@ def test_blank_pills_left_out(login, club, player, character):
 def test_ability_blocks(login, club, player, character):
     character.strength = 14
     character.dexterity = 8
+    character.constitution = None
+    character.intelligence = None
+    character.wisdom = None
+    character.charisma = None
     character.save()
     body = login(player).get(printurl(club, character)).content.decode()
     assert body.count('class="wm-slip-ability"') == 6

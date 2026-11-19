@@ -81,7 +81,12 @@ def test_ability_current_shows_modifier(club, login, player, character, score, l
 
 @pytest.mark.story("U69")
 def test_blank_field_shows_a_dash(club, login, player, character):
-    # character fixture has only a name; every other field is blank.
+    # New characters default to 10, but an explicitly blank character still shows a dash.
+    character.level = None
+    character.strength = None
+    character.dexterity = None
+    character.description = ""
+    character.save()
     soup = BeautifulSoup(
         login(player).get(edit_url(club, character.pk)).content.decode(), "html.parser"
     )
@@ -110,6 +115,24 @@ def test_create_page_has_no_current_column(club, login, club_admin):
         .content.decode()
     )
     assert "wm-field-current" not in html
+
+
+@pytest.mark.story("U69")
+def test_create_form_shows_default_ten(club, login, club_admin):
+    html = (
+        login(club_admin)
+        .get(reverse("characters:create", kwargs={"club_slug": club.slug}))
+        .content.decode()
+    )
+    for field in (
+        "strength",
+        "dexterity",
+        "constitution",
+        "intelligence",
+        "wisdom",
+        "charisma",
+    ):
+        assert f'name="{field}" value="10"' in html
 
 
 @pytest.mark.story("U69")

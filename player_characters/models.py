@@ -18,6 +18,7 @@ def _ability_field():
     return models.PositiveSmallIntegerField(
         null=True,
         blank=True,
+        default=10,
         validators=[MinValueValidator(1), MaxValueValidator(30)],
         help_text="Optional. Whole number from 1 to 30.",
     )

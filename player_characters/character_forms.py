@@ -48,6 +48,10 @@ class CharacterForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.club = club
         self.choose_owner = choose_owner
+        if not self.instance.pk:
+            # New characters start every ability at 10, matching the model defaults.
+            for name, _abbr, _label in ABILITIES:
+                self.fields[name].initial = Character._meta.get_field(name).default
         if choose_owner:
             self.fields["owner"] = _OwnerChoice(queryset=_club_members(club))
             self.order_fields(["owner", *self.Meta.fields])
