@@ -554,6 +554,7 @@ def _build_pages() -> list[Page]:
         P("downtime-request-new", "alice", _c("downtime:request_new")),
         P("downtime-points-award", "gm_only", _c("downtime:points_award")),
         P("downtime-result", "alice", _c("downtime:result", "result.pk")),
+        P("downtime-replay", "alice", _c("downtime:replay", "result.pk")),
         P("downtime-action-edit", "gm", _c("downtime:action_edit", "bakery.pk")),
         P("downtime-agenda-add", "gm", _c("downtime:agenda_add")),
         P("downtime-agenda-action-edit", "gm", _c("downtime:agenda_action_edit", "bakery.pk")),
