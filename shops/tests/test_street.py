@@ -9,6 +9,12 @@ from django.urls import reverse
 
 from shops.models import Rotation, Shop
 
+
+def normalize_html(html):
+    """Normalize HTML for comparison by removing CSRF tokens."""
+    return re.sub(r'<input[^>]*name="csrfmiddlewaretoken"[^>]*>', "", html)
+
+
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U49")]
 
 BUILDINGS = Path(__file__).resolve().parent.parent / "static" / "shops" / "buildings"
@@ -67,7 +73,7 @@ def test_same_html_every_load(login, player, club):
     client = login(player)
     first = client.get(street_url(club)).content.decode()
     second = client.get(street_url(club)).content.decode()
-    assert street(first) == street(second)
+    assert normalize_html(street(first)) == normalize_html(street(second))
 
 
 def test_every_building_has_an_svg_and_no_strays():

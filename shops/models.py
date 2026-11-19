@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models.functions import Lower
 
@@ -104,3 +106,36 @@ class Rotation(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class FavoriteShop(models.Model):
+    """Character's favorite shop or player stall.
+
+    Uses GenericForeignKey to support both Shop (club shops) and Character (player stalls).
+    """
+
+    club_path = "character__club"
+
+    character = models.ForeignKey(
+        "player_characters.Character",
+        on_delete=models.CASCADE,
+        related_name="favorites",
+    )
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey("content_type", "object_id")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["character", "content_type", "object_id"],
+                name="unique_favorite_per_character_shop",
+            )
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.character} -> {self.content_object}"

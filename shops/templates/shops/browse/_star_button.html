@@ -1,0 +1,30 @@
+{% load static %}
+{% if lot.shop %}
+  <form action="{% url 'shops:favorite_toggle' club.slug lot.shop.pk %}" method="post"
+        hx-post="{% url 'shops:favorite_toggle' club.slug lot.shop.pk %}"
+        hx-swap="outerHTML"
+        hx-target="closest .wm-favorite-form"
+        class="wm-favorite-form">
+    {% csrf_token %}
+    <button type="submit"
+            class="wm-favorite-btn{% if is_favorite %} active{% endif %}"
+            aria-label="{% if is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
+            aria-pressed="{% if is_favorite %}true{% else %}false{% endif %}">
+      {% if is_favorite %}★{% else %}☆{% endif %}
+    </button>
+  </form>
+{% elif lot.stall %}
+  <form action="{% url 'shops:stall_favorite_toggle' club.slug lot.stall.pk %}" method="post"
+        hx-post="{% url 'shops:stall_favorite_toggle' club.slug lot.stall.pk %}"
+        hx-swap="outerHTML"
+        hx-target="closest .wm-favorite-form"
+        class="wm-favorite-form">
+    {% csrf_token %}
+    <button type="submit"
+            class="wm-favorite-btn{% if is_favorite %} active{% endif %}"
+            aria-label="{% if is_favorite %}Remove from favorites{% else %}Add to favorites{% endif %}"
+            aria-pressed="{% if is_favorite %}true{% else %}false{% endif %}">
+      {% if is_favorite %}★{% else %}☆{% endif %}
+    </button>
+  </form>
+{% endif %}

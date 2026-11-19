@@ -11,6 +11,8 @@
        href="{% url 'shops:index' club.slug %}?tab=all">All Shops</a>
     <a class="wm-shop-tab{% if active_tab == 'my_shops' %} active{% endif %}"
        href="{% url 'shops:index' club.slug %}?tab=my_shops">My Shops</a>
+    <a class="wm-shop-tab{% if active_tab == 'favorites' %} active{% endif %}"
+       href="{% url 'shops:index' club.slug %}?tab=favorites">Favorites</a>
   </nav>
 {% endif %}
 

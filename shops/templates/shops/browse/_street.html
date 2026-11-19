@@ -1,16 +1,5 @@
 <ul class="wm-street" aria-label="Shops">
-{% for lot in lots %}{% if lot.shop %}{% with shop=lot.shop %}
-  <li class="wm-street-lot wm-shop-card--{{ shop.color }}">
-    <a class="wm-street-link" href="{% url 'shops:detail' club.slug shop.id %}">
-      {% include "shops/_building.html" with key=shop.building %}
-      <span class="wm-street-sign">
-        {% if shop.symbol %}<span class="wm-street-symbol" aria-hidden="true">{{ shop.symbol }}</span>{% endif %}
-        <span class="wm-street-name">{{ shop.name }}</span>
-        {% if shop.pk in recent_shop_ids %}
-          <span class="wm-badge wm-badge--warning wm-recent-badge" aria-label="Recent">★ Recent</span>
-        {% endif %}
-      </span>
-    </a>
-  </li>
-{% endwith %}{% elif lot.stall %}{% include "shops/browse/_street_stall.html" with stall=lot.stall %}{% else %}{% include "shops/browse/_street_filler.html" with key=lot.shape %}{% endif %}{% endfor %}
+{% for lot in lots %}
+  {% include "shops/browse/_street_lot.html" with lot=lot recent_shop_ids=recent_shop_ids favorite_shop_ids=favorite_shop_ids favorite_stall_ids=favorite_stall_ids club=club character=character %}
+{% endfor %}
 </ul>

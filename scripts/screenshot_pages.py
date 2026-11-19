@@ -221,6 +221,8 @@ EXCLUDED = {
     "shops:rotation_delete": "POST only.",
     "shops:sell_item": "GET redirects to the shop; `shops-sell-modal` captures the confirm modal.",
     "shops:stock_fragment": "An htmx partial with no layout; `shops-detail-*` shows it.",
+    "shops:favorite_toggle": "POST only; htmx endpoint for favorite toggle.",
+    "shops:stall_favorite_toggle": "POST only; htmx endpoint for stall favorite toggle.",
     "map:request_approve": "POST only.",
     "map:request_decline": "POST only.",
     "map:request_bulk_approve": (
