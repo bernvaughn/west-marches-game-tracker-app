@@ -74,10 +74,10 @@ class TokenAuditLog(models.Model):
     class Meta:
         ordering = ["-timestamp"]
         indexes = [
-            models.Index(fields=["action"]),
-            models.Index(fields=["user"]),
-            models.Index(fields=["club"]),
-            models.Index(fields=["timestamp"]),
+            models.Index(fields=["action"], name="tokenauditlog_action_idx"),
+            models.Index(fields=["user"], name="tokenauditlog_user_idx"),
+            models.Index(fields=["club"], name="tokenauditlog_club_idx"),
+            models.Index(fields=["timestamp"], name="tokenauditlog_timestamp_idx"),
         ]
 
     def __str__(self):
