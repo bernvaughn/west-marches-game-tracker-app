@@ -2,10 +2,11 @@ from pathlib import Path
 
 import pytest
 from django.conf import settings
-from django.urls import reverse
+from django.urls import resolve, reverse
 
 from downtime import services
 from downtime.models import DowntimeEntry
+from downtime.views.play import ReplayView
 from downtime.wheel import wheel_payload
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("D3")]
@@ -96,3 +97,34 @@ def test_modal_spin_waits_until_shown():
     """A transition on a display:none modal never runs; the browser check proves the spin."""
     js = (Path(settings.BASE_DIR) / "static/js/downtime_wheel.js").read_text()
     assert "shown.bs.modal" in js
+
+
+def test_replay_url_resolves_to_view(club, result):
+    match = resolve(url("replay", club, result.pk))
+    assert match.func.view_class == ReplayView
+
+
+def test_replay_renders_spin_modal(login, club, player, result):
+    body = (
+        login(player).get(url("replay", club, result.pk), HTTP_HX_REQUEST="true").content.decode()
+    )
+    assert "<html" not in body
+    assert "data-downtime-wheel" in body
+    assert result.entry.label in body
+    assert "modal-header" in body
+
+
+def test_replay_returns_full_page_without_js(login, club, player, result):
+    body = login(player).get(url("replay", club, result.pk)).content.decode()
+    assert "<html" in body
+    assert "data-downtime-wheel" not in body
+    assert result.entry.label in body
+
+
+def test_replay_cross_club_404(login, club, other_club, player, result):
+    from accounts.models import Membership, User
+
+    u = User.objects.create_user("z@example.com", password="pw", display_name="Z")
+    Membership.objects.create(user=u, club=other_club)
+    r = login(u).get(url("replay", club, result.pk), HTTP_HX_REQUEST="true")
+    assert r.status_code == 404

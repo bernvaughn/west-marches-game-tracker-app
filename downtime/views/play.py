@@ -192,8 +192,20 @@ class ResultView(ClubScopedMixin, PermissionMixin, View):
         return _result_response(request, res)
 
 
+@method_decorator(club_member_required, name="dispatch")
+class ReplayView(ClubScopedMixin, PermissionMixin, View):
+    """Re-render the result modal with spin=True so the wheel re-runs the same result."""
+
+    def get(self, request, club_slug, pk):
+        res = self.get_club_object_or_404(DowntimeResult, pk=pk)
+        if not self.can_view_inventory(request.user, res.character):
+            raise Http404
+        return _result_response(request, res, spin=True)
+
+
 play_urls = [
     path("", PlayView.as_view(), name="play"),
     path("spend/<int:pk>/", SpendView.as_view(), name="spend"),
     path("result/<int:pk>/", ResultView.as_view(), name="result"),
+    path("result/<int:pk>/replay/", ReplayView.as_view(), name="replay"),
 ]

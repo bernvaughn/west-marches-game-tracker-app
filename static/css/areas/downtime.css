@@ -1,5 +1,5 @@
 /* Downtime wheel (D3) */
-.wm-wheel { max-width: 320px; margin: 0 auto 1rem; }
+.wm-wheel { max-width: 320px; margin: 0 auto 1rem; position: relative; }
 .wm-wheel svg { width: 100%; height: auto; display: block; }
 .wm-wheel-disc { transform-origin: 0 0; transform-box: view-box; }
 .wm-wheel-label { fill: #fff; font-size: 6px; pointer-events: none; }
@@ -7,9 +7,24 @@
 .wm-wheel-legend li { display: flex; gap: .4rem; align-items: center; }
 .wm-wheel-swatch { width: .9rem; height: .9rem; border-radius: 2px; flex: none; }
 .wm-wheel-result[hidden] { display: none; }
+/* Particle canvas overlay sitting on top of the wheel svg. */
+.wm-wheel-particles { position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 1; pointer-events: none; z-index: 1; display: block; }
+/* Near-miss slices pulse with a glow once the wheel stops. */
+.wm-wheel-slice-near-miss { animation: wm-near-miss-pulse 500ms ease-in-out both; }
+@keyframes wm-near-miss-pulse {
+  0% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+  100% { filter: brightness(1); }
+}
 @media (prefers-reduced-motion: reduce) {
   .wm-wheel-disc { transition: none !important; }
+  .wm-wheel-slice-near-miss { animation: none !important; }
+  .wm-wheel-particles { display: none !important; }
 }
+/* Replay and sound controls in the result modal footer. */
+.wm-spin-again { position: relative; }
+.wm-spin-again:disabled { opacity: .6; cursor: not-allowed; filter: grayscale(.6); }
+.wm-sound-toggle { width: 2.6rem; height: 2.6rem; display: inline-flex; align-items: center; justify-content: center; font-size: 1.25rem; line-height: 1; padding: 0; }
 
 /* Downtime chalkboard (D6) */
 .wm-chalkboard {
