@@ -3,19 +3,25 @@
 from collections.abc import Callable
 from functools import wraps
 
+from django.conf import settings
 from django.core.cache import cache
 from django.http import HttpRequest, HttpResponse
 
 
 def get_client_ip(request: HttpRequest) -> str:
-    """Extract the client IP address from the request."""
-    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-    if x_forwarded_for:
-        # Take the first IP in the chain (client IP)
-        ip = x_forwarded_for.split(",")[0].strip()
-    else:
-        ip = request.META.get("REMOTE_ADDR", "unknown")
-    return ip
+    """Extract the client IP address from the request.
+
+    Returns REMOTE_ADDR by default: it is the IP of the immediate peer and
+    cannot be spoofed by the sender. X-Forwarded-For is only used when
+    RATELIMIT_TRUST_XFF is enabled, i.e. the app sits behind a single trusted
+    proxy that replaces the header with the real client IP.
+    """
+    if getattr(settings, "RATELIMIT_TRUST_XFF", False):
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            # Take the first IP in the chain (client IP)
+            return x_forwarded_for.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "unknown")
 
 
 def get_rate_limit_key(
