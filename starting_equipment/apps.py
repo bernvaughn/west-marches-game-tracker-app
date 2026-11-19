@@ -6,8 +6,7 @@ class StartingEquipmentConfig(AppConfig):
 
     def ready(self):
         from accounts import navigation
-        from accounts.apps import is_admin, not_admin
+        from accounts.apps import is_admin
 
         reg = navigation.register
-        reg("club", "Starting Equipment", "starting_equipment:templates", not_admin, 115)
         reg("admin", "Starting Equipment Templates", "starting_equipment:templates", is_admin, 45)
