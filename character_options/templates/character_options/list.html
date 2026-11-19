@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+
+{% block title %}{{ kind_obj.plural }} - {{ club.name }}{% endblock %}
+
+{% block content %}
+{% url "character_options:list" club.slug "species" as species_url %}
+{% url "character_options:list" club.slug "classes" as classes_url %}
+{% url "character_options:list" club.slug "backgrounds" as backgrounds_url %}
+{% url "character_options:create" club.slug kind as create_url %}
+
+{% include "components/page_header.html" with
+    title=kind_obj.plural
+    subtitle=club.name
+    action_url=create_url
+    action_label="Add"
+    action_icon="plus-lg"
+%}
+
+<nav class="mb-3" aria-label="Option kind">
+  <a class="btn btn-sm {% if kind == 'species' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ species_url }}">Species</a>
+  <a class="btn btn-sm {% if kind == 'classes' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ classes_url }}">Classes</a>
+  <a class="btn btn-sm {% if kind == 'backgrounds' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ backgrounds_url }}">Backgrounds</a>
+</nav>
+
+<div id="options-list"
+     hx-get="{{ request.get_full_path }}"
+     hx-trigger="optionsChanged from:body"
+     hx-select="#options-list"
+     hx-swap="outerHTML"
+     hx-disinherit="*">
+  {% include "character_options/_options_list.html" %}
+</div>
+{% endblock %}

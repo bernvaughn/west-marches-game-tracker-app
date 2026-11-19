@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+
+{% block title %}Delete {{ option }}? - {{ club.name }}{% endblock %}
+
+{% block content %}
+{% include "components/page_header.html" with
+    title="Delete {{ option }}?"
+    subtitle=club.name
+    back_url=list_url
+    back_label=kind_obj.plural
+%}
+
+<div class="card">
+  <div class="card-body">
+    <p>{{ option }} is a {{ kind_obj.singular|lower }} in {{ club.name }}.</p>
+    {% if blocker %}
+    <div class="alert alert-danger">
+      {{ blocker }}
+    </div>
+    <p>You cannot delete this record. <a href="{{ list_url }}">Return to list</a>.</p>
+    {% else %}
+    <p class="fw-bold">This cannot be undone.</p>
+    <form method="post" action="{{ confirm_url }}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a class="btn btn-outline-secondary" href="{{ list_url }}">Cancel</a>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

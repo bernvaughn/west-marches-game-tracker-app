@@ -1,0 +1,11 @@
+{% extends "components/_confirm_modal.html" %}
+{% block title %}Delete {{ option }}?{% endblock %}
+{% block summary %}
+<p>{{ option }} is a {{ kind_obj.singular|lower }} in {{ club.name }}.</p>
+{% if blocker %}
+<p class="text-danger fw-bold">{{ blocker }}</p>
+{% else %}
+<p>This cannot be undone.</p>
+{% endif %}
+{% endblock %}
+{% block confirm_label %}Delete{% endblock %}
