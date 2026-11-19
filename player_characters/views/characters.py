@@ -135,6 +135,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
     def _render_detail(self, request, club_slug, pk):
         character = self.get_club_object_or_404(Character, pk=pk)
         can_view = self.can_view_inventory(request.user, character)
+        is_owner = owns_character(request.user, character)
         admin = self.is_club_admin(request.user, self.club)
         gm = self.is_game_master(request.user, self.club)
         template = (
@@ -159,6 +160,12 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "can_request_starting_equipment": owns_character(request.user, character)
             or admin
             or gm,
+            "can_claim_starting_equipment": bool(
+                (is_owner or admin or gm)
+                and not character.starting_equipment_claimed
+                and template is not None
+                and (character.char_class or character.background)
+            ),
             "has_magic_options": template is not None and template.magic_options.exists(),
             "active_template": template,
         }
