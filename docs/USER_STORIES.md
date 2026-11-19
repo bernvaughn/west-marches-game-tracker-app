@@ -82,7 +82,7 @@ From the first run of a local build. M8, M12, M15 and M16 in the map section als
 **U22 Act as a character.** As a player, I want to pick one of my characters to act as from a dropdown in the top bar, so shops, buying and selling, moving items, quests, and requests use that character without me choosing it on every page. *(player_characters, accounts, shops, quests, map)*
 - The dropdown appears only if I have more than one character in the current club. With one character, that character is always selected. With none, the top bar says so and pages that need a character tell me I don't have one.
 - My selection is remembered per club across pages and sign-ins, and switching clubs switches to my selection for that club.
-- Pages that act as one of my characters always use the selected one, with no character field of their own: buying, selling, proposing and answering trades, quest turn-ins, and messages to the admins (U13). To act as another character, I switch it in the top bar (round 2, U25).
+- Pages that act as one of my characters always use the selected one, with no character field of their own: buying, selling, quest turn-ins, and messages to the admins (U13). To act as another character, I switch it in the top bar (round 2, U25).
 - Where a page involves a second character of mine, the selected character is the "from" side and I pick the other.
 - Pages where I can pick several characters keep their picker and start with the selected character: the map (M8) and map requests (M12).
 - If my selected character is handed to someone else (U16), my selection falls back to another of my characters.
@@ -101,7 +101,7 @@ From the first run of a local build. M8, M12, M15 and M16 in the map section als
 From using the build after the first-look stories landed.
 
 **U25 One character everywhere.** As a player, I want every page that acts as one of my characters to use the character in the top bar, with no character choice of its own, so I never act as the wrong character by mistake. *(shops, player_characters, quests, accounts)*
-- This replaces the per-page character field that U22 first kept. It covers selling to a shop, buying, trades, quest turn-ins, and messages to the admins.
+- This replaces the per-page character field that U22 first kept. It covers selling to a shop, buying, quest turn-ins, and messages to the admins.
 - Each of these pages names the character it is acting as, near the top or on the action button, for example "Sell as Aria Windrunner".
 - Pages where I can pick several characters keep their picker, starting with the selected character: the map (M8) and map requests (M12).
 - Game master and club admin pages that act on other people's characters (awards, adjustments, visits, credit, found marks) keep their character pickers. The top bar never limits them.
@@ -113,7 +113,7 @@ From using the build after the first-look stories landed.
 
 **U27 Grouped navigation.** As anyone in a club, I want the navigation under the top bar grouped into a few menus, with the pages players use most kept as plain links, so I can find things without scanning a long row of links. *(site-wide)*
 - Plain links: Character, Shops, and Quests. Character opens the selected character's sheet. A basic "Character directory" is in the More menu, and the full list is "All characters" in the Game master menu (U39).
-- "More" menu for everyone: Map, Trades, Ledger, and Message the admins.
+- "More" menu for everyone: Map, Ledger, and Message the admins.
 - "Game master" menu, for game masters and club admins: awards and adjustments, map editing, map requests, agent batches, proposed items, and agent connections.
 - "Club admin" menu, for club admins only: members, inbox, item catalogue, shops and stock, rotations, and the XP table.
 - A menu shows only the links the person may use, and a menu with no links is hidden.
@@ -270,9 +270,9 @@ From using the build after round 3 (U36–U41, M18) landed.
 - Screen readers and keyboards get the same links in a plain list. Closed shops are not drawn.
 
 **U48 Club ledger.** As a game master or club admin, I want one ledger for the whole club, with filters, so I can see what happened across all characters without going through each character's history. *(ledger)*
-- The Ledger page, for game masters and club admins, shows every ledger entry in the club, newest first, with date, character, player, what changed (coins and items), kind (award, adjustment, buy, sell, trade, quest, transfer, and so on), note and who recorded it.
+- The Ledger page, for game masters and club admins, shows every ledger entry in the club, newest first, with date, character, player, what changed (coins and items), kind (award, purchase, sale, player shop, quest turn-in, quest reward, consumed, adjustment, reversal), note and who recorded it.
 - Filters for character, player, kind, item, who recorded it, and a date range. Filters combine and stay in the page address, so a filtered view can be shared or bookmarked. The list is paged.
-- Each entry links to the character's sheet and to the entry's source where there is one (trade, quest, batch, message).
+- Each entry links to the character's sheet and to the entry's source where there is one (quest, batch, message).
 - A character's own history page stays for players (C5). Its back link returns to where the person came from: the club ledger, or the character sheet.
 - Players do not see the club ledger. Their Ledger link opens their selected character's history.
 
@@ -381,7 +381,7 @@ Ideas from the owner while round 6 was being built.
 
 **U64 Player shops.** As a player, I want my character to sell its junk from its own shop on the street, so other players can buy what I don't need while I'm away. *(player_characters, shops, ledger)*
 - A player shop belongs to a character. On the character sheet, the owner, a game master or a club admin can switch "Sell my junk in my shop" on or off. It starts off.
-- When it is on, the shop lists every item the character has marked as junk (U45), at the junk quantity. Items, or parts of a quantity, that are in an open trade or otherwise held (U54) are left out, and come back on their own once released, for example when a trade falls through. So a player can list an item and offer it in a trade at the same time.
+- When it is on, the shop lists every item the character has marked as junk (U45), at the junk quantity.
 - A character's shop shows on the street (U47) only while its switch is on and at least one item is listed.
 - Another character buys an item at its base value (U8), and the whole price goes to the seller. The sale is instant: coins and the item move straight away, with no approval, and both characters' ledgers show it. The seller's junk mark drops by the quantity sold. The usual buy confirm (U31) and "can't afford" rules apply.
 - A player can open their own characters' shops to see what is listed, but can't buy from them.
@@ -510,7 +510,7 @@ From using the build after round 8 (U67–U77, D1–D4). Kept as built: the spin
 **U78 Character sheet layout and centred pages.** As anyone, I want pages to use wide screens well, so nothing is squished or scrolls sideways. *(player_characters, site-wide)*
 - On the character sheet at desktop width, Combat and Description sit side by side in one row, and Inventory goes below them at full width, with no sideways scroll bar.
 - On wide screens, page content is centred, with even space on both sides, instead of sitting against the left edge. This applies to every page.
-- The character directory's columns are, in order: name, species, class, level, trades, player.
+- The character directory's columns are, in order: name, species, class, level, player.
 
 **U79 Nicer character slips.** As a game master, I want the character slips (U68) to look as good as they work, so drawing tables feels like part of the game. *(player_characters)*
 - Less white space and bigger text: the character's name is large, and the other details are easy to read from arm's length. Still 12 per page in 2 columns and 6 rows.
@@ -555,7 +555,7 @@ From using the build after round 8 (U67–U77, D1–D4). Kept as built: the spin
 
 **U82 A UI consistency pass.** As anyone using the app, I want every screen and workflow to look and behave consistently, so the app feels finished. *(site-wide)*
 - A separate initiative, like the design overhaul (U33), that goes through every screen and workflow for players, game masters and club admins, at desktop and phone widths: layouts, page widths and centring, spacing, buttons, tables, modals, empty states, tooltips and wording.
-- It starts with an audit, with screenshots, of every page and the main workflows (buying, selling, junk, trades, quest turn-ins, downtime, inbox, awards, agenda), and lists the problems found, ranked.
+- It starts with an audit, with screenshots, of every page and the main workflows (buying, selling, junk, quest turn-ins, downtime, inbox, awards, agenda), and lists the problems found, ranked.
 - It fixes them in small pieces, each with before and after screenshots, and keeps the console-error sweep clean.
 - It doesn't add features or change how things work, only how they look and read.
 
@@ -644,13 +644,13 @@ Story numbers continue from U93. U94 replaces the public-only note in U93.
 ### Items
 
 **U95 Item details in a modal.** As anyone, I want to open an item's details from a small "i" icon beside its name, wherever the name appears, so I can check what an item does without leaving the page. *(items, site-wide)*
-- The icon sits beside the item name in the shared item-name partial, so it appears in shops and stock, Your inventory, the character sheet, trades, quests, downtime rewards, the ledger, consume, junk and sell confirms, the catalogue and the print pickers. The name itself is not a link.
+- The icon sits beside the item name in the shared item-name partial, so it appears in shops and stock, Your inventory, the character sheet, quests, downtime rewards, the ledger, consume, junk and sell confirms, the catalogue and the print pickers. The name itself is not a link.
 - The modal shows the item's icon, name, rarity, magic item type (U91), value, description, traits and details, and for game masters and club admins the GM-only details (U96). It opens in the shared modal, and the item page is its plain fallback without JavaScript.
 - The icon has a label such as "Details for Healing potion", is reachable by keyboard, and opening it does not trigger the row's other actions (for example selecting or buying).
 
 **U96 GM-only item details.** As a game master or club admin, I want a private section on an item for secrets, such as a curse, so players only see what their characters know. *(items, agent_access)*
 - An optional "GM-only details" text field on each catalogue item, edited on the item form.
-- Only game masters and club admins see it: on the item page, in the item modal (U95), the edit form and the catalogue. Players never see it anywhere, including the modal, printed item cards and loot cards, shop and inventory pages, trades and responses to players.
+- Only game masters and club admins see it: on the item page, in the item modal (U95), the edit form and the catalogue. Players never see it anywhere, including the modal, printed item cards and loot cards, shop and inventory pages, and responses to players.
 - A game master's agent can read and propose the field like other item fields (A5). Everything else about an item is visible to players.
 
 ## Round 12: Starting Equipment Player Stories
@@ -924,7 +924,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 
 ## Database and feature notes
 
-- **Trade/Transfer models remain in database** for ledger history. The `Trade`, `TradeLine`, and `JunkMark` models as well as `LedgerEntry.Kind.TRANSFER` and `Kind.TRADE` are preserved for historical records.
+- **Trade/Transfer models removed from database.** The `Trade` and `TradeLine` models were dropped (player_characters migration 0010) and `LedgerEntry.Kind.TRADE`/`TRANSFER` were dropped (ledger migration 0004). `JunkMark` remains. Old ledger notes stay as text.
 - **Player shops (U64/U65) remain unchanged** and continue to provide the safe player-to-player economy via fixed-price buying and selling.
 
 ## Still open
