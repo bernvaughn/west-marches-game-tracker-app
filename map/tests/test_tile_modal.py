@@ -82,11 +82,7 @@ def test_print_links_stay_plain(login, club, hex_map, game_master, placeholder_w
     resp = login(game_master).get(url("print", club, hex_map.pk))
     assert resp.status_code == 200
     html = resp.content.decode()
-    # The trades poll component (included in base.html) has an hx-get for polling,
-    # but it's not a print link - it's a background polling element.
-    # Check that no *print links* have hx-get (they should be plain <a href>)
-    # We can check by ensuring hx-get only appears in the trade-poll div (id=trade-poll)
-    assert 'hx-get="/c/' not in html or 'id="trade-poll" hx-get="/c/' in html
+    assert 'hx-get="/c/' not in html
 
 
 @pytest.mark.story("M17")
