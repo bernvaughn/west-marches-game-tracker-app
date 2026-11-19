@@ -10,6 +10,9 @@
         {% if shop.pk in recent_shop_ids %}
           <span class="wm-badge wm-badge--warning wm-recent-badge" aria-label="Recent">★ Recent</span>
         {% endif %}
+        {% if shop.closing_soon_on %}
+          <span class="wm-closing-ribbon" title="Leaves the street on {{ shop.closing_soon_on|date:"j M Y" }}">Closing soon</span>
+        {% endif %}
         <span class="wm-favorite-wrapper">
           {% include "shops/browse/_star_button.html" with lot=lot is_favorite=lot.is_favorite club=club character=character %}
         </span>

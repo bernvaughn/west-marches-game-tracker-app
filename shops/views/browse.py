@@ -19,7 +19,10 @@ from player_characters.player_shop import has_listing
 from player_characters.selection import selected_character
 from shops.models import FavoriteShop, Shop, ShopStock
 from shops.services import (
+    closing_soon_on,
     is_open,
+    leave_dates,
+    leaves_street_on,
     open_shops,
     ordered_shops,
     percent_price,
@@ -169,6 +172,13 @@ class IndexView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
 
         shops = list(shops_qs)
 
+        # Compute closing_soon_on for each shop (one batch query)
+        today = timezone.localdate()
+        leave_map = leave_dates(shops, today)
+        for shop in shops:
+            leaves = leave_map.get(shop.pk)
+            shop.closing_soon_on = closing_soon_on(leaves, today)
+
         stalls = street_stalls(self.club)
         # Filter stalls for favorites tab
         if active_tab == "favorites":
@@ -243,6 +253,10 @@ class ShopDetailView(
         is_admin = self.is_club_admin(request.user, self.club)
         shop, open_now = _load_shop(self, shop_id, is_admin)
         context = {"shop": shop, "is_open": open_now, "rows": _visible_rows(shop)}
+        if open_now:
+            today = timezone.localdate()
+            leaves = leaves_street_on(shop, today)
+            context["closing_soon_on"] = closing_soon_on(leaves, today)
         character = self.get_selected_character()
         context.update(_inventory_context(character, shop))
         return render_modal_or_page(

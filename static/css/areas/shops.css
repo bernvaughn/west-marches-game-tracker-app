@@ -75,6 +75,32 @@
   font-size: var(--wm-text-xs); padding: 1px var(--wm-space-2); white-space: nowrap;
 }
 
+/* ---- Closing soon (Story) ---- */
+.wm-closing-ribbon {
+  position: absolute;
+  top: var(--wm-space-1);
+  right: var(--wm-space-1);
+  z-index: 2;
+  font-size: var(--wm-text-xs);
+  padding: 2px var(--wm-space-2);
+  background: var(--wm-warning-bg);
+  color: var(--wm-warning);
+  border: 1px solid var(--wm-warning);
+  border-radius: var(--wm-radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.wm-shop-closing-soon {
+  margin: 0 0 var(--wm-space-3);
+  font-size: var(--wm-text-sm);
+  color: var(--wm-warning);
+  background: var(--wm-warning-bg);
+  border: 1px solid var(--wm-warning);
+  border-radius: var(--wm-radius-sm);
+  padding: var(--wm-space-2) var(--wm-space-3);
+}
+
 /* U84 S4: shop customer pages */
 .wm-shop-closed { text-align: left; margin: 0 0 var(--wm-space-3); }
 .wm-sell-form { justify-content: flex-end; }
