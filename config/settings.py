@@ -182,6 +182,16 @@ RATELIMIT_OAUTH_TOKEN_ATTEMPTS = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_ATTEM
 RATELIMIT_OAUTH_TOKEN_WINDOW = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_WINDOW", "60"))  # seconds
 RATELIMIT_MCP_ATTEMPTS = int(os.environ.get("RATELIMIT_MCP_ATTEMPTS", "60"))
 RATELIMIT_MCP_WINDOW = int(os.environ.get("RATELIMIT_MCP_WINDOW", "60"))  # seconds
+# Trust X-Forwarded-For for rate-limit client IPs.
+# X-Forwarded-For is sent by the client and can be spoofed, so keying rate
+# limits on it lets a sender evade per-IP limits. Only enable this behind a
+# single trusted proxy that replaces the header with the real client IP.
+RATELIMIT_TRUST_XFF = os.environ.get("RATELIMIT_TRUST_XFF", "0") not in (
+    "0",
+    "false",
+    "False",
+    "",
+)
 # Personal Access Token expiration (configurable via environment variable)
 AGENT_TOKEN_EXPIRY_DAYS = int(os.environ.get("AGENT_TOKEN_EXPIRY_DAYS", "365"))
 
