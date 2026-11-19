@@ -79,7 +79,7 @@ From the first run of a local build. M8, M12, M15 and M16 in the map section als
 - The theme is Bootswatch Journal (MIT license), chosen for its serif, storybook feel. Its files are served from the app itself so pages do not depend on a third-party site.
 - Journal is roomier than admin themes, so dense pages (inventories, ledgers, shop stock, approval lists) use Bootstrap's compact table and form sizes to keep them tight.
 
-**U22 Act as a character.** As a player, I want to pick one of my characters to act as from a dropdown in the top bar, so shops, buying and selling, trades, moving items, quests, and requests use that character without me choosing it on every page. *(player_characters, accounts, shops, quests, map)*
+**U22 Act as a character.** As a player, I want to pick one of my characters to act as from a dropdown in the top bar, so shops, buying and selling, moving items, quests, and requests use that character without me choosing it on every page. *(player_characters, accounts, shops, quests, map)*
 - The dropdown appears only if I have more than one character in the current club. With one character, that character is always selected. With none, the top bar says so and pages that need a character tell me I don't have one.
 - My selection is remembered per club across pages and sign-ins, and switching clubs switches to my selection for that club.
 - Pages that act as one of my characters always use the selected one, with no character field of their own: buying, selling, proposing and answering trades, quest turn-ins, and messages to the admins (U13). To act as another character, I switch it in the top bar (round 2, U25).
@@ -129,13 +129,13 @@ From using the build after the first-look stories landed.
 **U29 Colour-coded coins.** As anyone, I want each coin denomination shown in its own colour everywhere amounts appear, so I can read amounts at a glance. *(site-wide)*
 - Copper is copper-brown, silver is grey, gold is gold, and platinum is a pale blue-white. Each colour has enough contrast to read on the theme background.
 - The denomination label (cp, sp, gp, pp) always stays next to the number, so colour is never the only cue.
-- The colours apply to balances, prices, values, sell offers, the ledger, trades, quest rewards, agent batches, and coin inputs. Printouts can stay black and white.
+- The colours apply to balances, prices, values, sell offers, the ledger, quest rewards, agent batches, and coin inputs. Printouts can stay black and white.
 
 **U30 Gold first.** As a player, I want amounts shown in gold up to 9,999 gp, and mostly in platinum above that, because that is how my table talks about money. *(site-wide)*
 - Under 10,000 gp in total, no platinum is shown, for example "9,999 gp 5 sp".
 - From 10,000 gp up, the whole amount uses the normal split, for example "1,000 pp" for 10,000 gp and "1,234 pp 5 gp 6 sp" for 12,345 gp 6 sp.
 - The rates do not change (1 pp = 10 gp), amounts stay stored in copper (U8), and copper and silver show as usual.
-- The rule applies to every amount the app shows: balances, item values, shop prices, sell offers, the ledger, trades, quest rewards, and agent batches.
+- The rule applies to every amount the app shows: balances, item values, shop prices, sell offers, the ledger, quest rewards, and agent batches.
 
 **U31 Buy with a confirm modal.** As a player, I want the Buy button to open a confirm modal instead of a new page, so buying is quick. *(shops)*
 - The modal shows the item, the price, the quantity, the character buying (U25), and that character's coins before and after.
@@ -276,11 +276,6 @@ From using the build after round 3 (U36–U41, M18) landed.
 - A character's own history page stays for players (C5). Its back link returns to where the person came from: the club ledger, or the character sheet.
 - Players do not see the club ledger. Their Ledger link opens their selected character's history.
 
-**U49 Trades in the character directory.** As a player, I want the character directory to show which characters my selected character has trades with, and their status, so I can find and follow up on trades. *(player_characters)*
-- Each directory row shows any open trade between my selected character and that character, with its status (requested, accepted) and a link to the trade.
-- Each row also has a "Propose trade" link that starts a trade with that character. My own characters have no trade link.
-- Completed, declined and cancelled trades are not shown in the directory; they stay on the Trades page.
-
 **U50 Character level.** As a player, game master or club admin, I want to record a character's level, so everyone can see roughly how experienced a character is. *(player_characters)*
 - Each character has an optional level, a whole number from 1 up. It is not tied to XP (M11, M13) or anything else in the app.
 - The character's owner, game masters and club admins can set it on the character's edit form.
@@ -307,11 +302,6 @@ From using the build after round 4 (U42–U51) landed. Kept as built: the keeper
 - The card shows whether the character can turn in now. The "Turn in" button sits at the bottom of the card and is disabled, with the reason, when it can't (missing items, quest full, or the character's limit reached).
 - With no selected character, the card says so.
 - Quest notices on the board and the quest page show item icons (U42) next to item names.
-
-**U54 Clearer held coins.** As a player, I want the "held" coins line explained in plain words, so I know why some of my coins aren't available. *(player_characters, shops)*
-- "Held" means coins and items offered in an open trade that hasn't completed. Rename it everywhere to "In open trades", for example "In open trades: 1 gp · Available: 49 gp", and link it to the Trades page.
-- The line, and the item table's held column, are hidden unless the character has coins or items in an open trade right now. A line reading "0 cp" is never shown.
-- This applies to the character sheet, the shop "Your inventory" card, and the buy and sell modals.
 
 **U55 Leave the shop.** As a player, I want a "Leave" button on the shop page, next to "Sell to <keeper name>", so I can walk back to the street. *(shops)*
 - "Leave" goes back to the shop street (U47). It is a secondary button, so Sell stays the main action.
@@ -408,13 +398,6 @@ Ideas from the owner while round 6 was being built.
 - A player shop's page has no shopkeeper silhouette and no keeper name. Its banner shows the character's name and the stall look, then the table of listed items with Buy buttons, and the buyer's Your inventory card (U44) below.
 - A player looking at their own character's shop sees "This is your shop", no Buy buttons, and a link to the character sheet to change what is listed.
 
-**U66 Propose trade looks like a character sheet.** As a player, I want the Propose trade page to look like my character sheet, so picking what to offer feels familiar and fits on one screen. *(player_characters)*
-- The flow does not change: I fill in only my side (what I offer), and the other character fills in theirs afterwards.
-- A header box, like the sheet's, names my character and the character I'm trading with (picked from a dropdown, or preselected from the character directory, U49).
-- A coins box, like the sheet's, shows my coins and what is available, with the coin inputs for my offer beside them.
-- An inventory table, like the sheet's, lists my items with owned and available counts and a small quantity input per row for what I offer. Items with nothing available are shown greyed out.
-- The note sits in its own small box, and the Propose button sits below the boxes. At desktop width the boxes sit in a two-column grid, as on the sheet; on a phone they stack.
-
 ## Round 8: stories from the seventh look and new features (2026-11-13)
 
 From using the build after round 7 (U63–U66) and new ideas from the owner.
@@ -501,26 +484,13 @@ From using the build after round 7 (U63–U66) and new ideas from the owner.
 - It arrives in the admins' inbox labelled "Stock request", and the inbox can be filtered by it. Admins can mark it handled or closed. It has no Give buttons, since nothing is granted. It counts in the approvals indicator (U24).
 - Club admins only, like the rest of the inbox (U13).
 
-### Shops and trades
+### Shops
 
 **U75 Shop tidy-ups.** As anyone using shops, I want the shop pages and admin list to be easier to read. *(shops)*
 - On the street, each sign sits below its building at every width, for club shops and player stalls alike. This changes U52's wide-screen layout.
 - The Manage shops list shows street position, shopkeeper name, sell percentage and buy percentage as columns, so shops can be compared.
 - The "Your inventory" card shows item icons (U42), and its Sell buttons are outline buttons, lighter than the red Buy buttons.
 - A shop with no shop description shows no description button (as today), and the demo shops all have descriptions so the button can be tried.
-
-**U76 Clearer trades.** As a player, I want trade buttons that say exactly what they do and a status that says who the trade is waiting on, so I always know what to do next. *(player_characters)*
-- Buttons: "Accept trade request and propose items" (opens Edit my side), "Decline this trade request", "Cancel this trade", "Change what you give" (Edit my side), and "Approve the trade as shown above".
-- A status line, naming the other player, for each stage:
-  - Requested, seen by the receiver: "<player> wants to trade with <character>. Accept to choose what you give, or decline."
-  - Requested, seen by the sender: "Waiting for <player> to accept."
-  - Accepted, nobody has approved: "Both sides can change what they give. Approve when the trade looks right."
-  - I approved: "You have approved. Waiting for <player> to approve as well."
-  - The other side approved: "<player> has approved. Approve to complete the trade."
-  - Completed, declined or cancelled: says so, with the date.
-- Changing the items or coins on either side clears both approvals, and the status says so, for example "Bob changed their side. Both of you need to approve again."
-- The Edit my side page gets the character-sheet look of Propose trade (U66).
-- On Propose trade, "Note" shows once, and the available coins show once.
 
 ### Site-wide
 
@@ -911,7 +881,7 @@ Design principles:
 
 **A7 Map updates from notes (coming soon).** As a game master, I want my agent to propose visits, discovered or explored credit, and encounters from my session notes, reviewed and confirmed the same way (M7, M12, M14). This is planned for soon after the first version, not part of it. *(agent_access, map)*
 
-Not included: players' agents, spending a player's coins, trades, and anything outside the connecting GM's club.
+Not included: players' agents, spending a player's coins, and anything outside the connecting GM's club.
 
 ## Later
 
