@@ -23,11 +23,14 @@
     };
     const icon = icons[type] || icons.info;
 
+    // Static parts (icon, close button) are safe HTML. The user-controlled
+    // message is assigned with textContent so it is never parsed as HTML.
     toast.innerHTML = `
       <svg class="wm-toast-icon" aria-hidden="true"><use href="#${icon}"></use></svg>
-      <span class="wm-toast-message">${message}</span>
+      <span class="wm-toast-message"></span>
       <button type="button" class="wm-toast-close" aria-label="Dismiss">&times;</button>
     `;
+    toast.querySelector(".wm-toast-message").textContent = message;
 
     container.appendChild(toast);
 
