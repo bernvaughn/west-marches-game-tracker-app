@@ -76,6 +76,7 @@ class Character(models.Model):
     description = models.TextField(blank=True)
     shop_open = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
+    last_printed_at = models.DateTimeField(null=True, blank=True)
 
     objects = ClubScopedManager()
 

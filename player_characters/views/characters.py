@@ -4,6 +4,7 @@ from django.db.models import Prefetch
 from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 
@@ -117,6 +118,21 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
 @method_decorator(club_member_required, name="dispatch")
 class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubContextMixin, View):
     def get(self, request, club_slug, pk):
+        return self._render_detail(request, club_slug, pk)
+
+    def post(self, request, club_slug, pk):
+        # Handle POST from "Print sheet" button: update last_printed_at
+        character = self.get_club_object_or_404(Character, pk=pk)
+        can_view = self.can_view_inventory(request.user, character)
+        if not can_view:
+            from django.http import HttpResponseForbidden
+
+            return HttpResponseForbidden()
+        character.last_printed_at = timezone.now()
+        character.save(update_fields=["last_printed_at"])
+        return self._render_detail(request, club_slug, pk)
+
+    def _render_detail(self, request, club_slug, pk):
         character = self.get_club_object_or_404(Character, pk=pk)
         can_view = self.can_view_inventory(request.user, character)
         admin = self.is_club_admin(request.user, self.club)
