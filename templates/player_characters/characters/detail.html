@@ -31,6 +31,13 @@
   {% flash_messages %}
   {% if can_view %}
   <div class="wm-sheet-grid wm-sheet-layout">
+    {% if can_claim_starting_equipment %}
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-notice" aria-labelledby="sheet-notice-starting-equipment" role="alert">
+      <h2 class="wm-sheet-box-title" id="sheet-notice-starting-equipment">Starting equipment available</h2>
+      <p class="wm-sheet-notice-text">This character has starting equipment ready to claim based on their class and background.</p>
+      <button class="btn btn-lg btn-primary no-print" type="button" hx-post="{% url 'starting_equipment:claim' club.slug character.pk %}" hx-target="#app-modal .modal-content" hx-swap="innerHTML" data-app-modal aria-label="Claim starting equipment">{% include "components/icon.html" with name="box" label="Claim starting equipment" %} Claim starting equipment</button>
+    </section>
+    {% endif %}
     <section class="wm-sheet-box wm-sheet-full wm-sheet-coins" aria-labelledby="sheet-coins">
       <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
       <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>
