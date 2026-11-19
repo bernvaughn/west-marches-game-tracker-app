@@ -1,0 +1,35 @@
+{% load static %}
+{% if lot.shop %}
+  {% with shop=lot.shop %}
+  <li class="wm-street-lot wm-shop-card--{{ shop.color }}">
+    <a class="wm-street-link" href="{% url 'shops:detail' club.slug shop.id %}">
+      {% include "shops/_building.html" with key=shop.building %}
+      <span class="wm-street-sign">
+        {% if shop.symbol %}<span class="wm-street-symbol" aria-hidden="true">{{ shop.symbol }}</span>{% endif %}
+        <span class="wm-street-name">{{ shop.name }}</span>
+        {% if shop.pk in recent_shop_ids %}
+          <span class="wm-badge wm-badge--warning wm-recent-badge" aria-label="Recent">★ Recent</span>
+        {% endif %}
+        <span class="wm-favorite-wrapper">
+          {% include "shops/browse/_star_button.html" with lot=lot is_favorite=lot.is_favorite club=club character=character %}
+        </span>
+      </span>
+    </a>
+  </li>
+  {% endwith %}
+{% elif lot.stall %}
+  {% with stall=lot.stall %}
+  <li class="wm-street-lot wm-street-lot--stall">
+    <a class="wm-street-link" href="{% url 'shops:player_shop' club.slug stall.pk %}">
+      {% include "shops/_building.html" with key="player_stall" %}
+      <span class="wm-street-sign"><span class="wm-street-name">{{ stall.name }}'s stall</span>
+        <span class="wm-favorite-wrapper">
+          {% include "shops/browse/_star_button.html" with lot=lot is_favorite=lot.is_favorite club=club character=character %}
+        </span>
+      </span>
+    </a>
+  </li>
+  {% endwith %}
+{% else %}
+  {% include "shops/browse/_street_filler.html" with key=lot.shape %}
+{% endif %}

@@ -8,6 +8,12 @@ from django.urls import reverse
 from shops.models import Rotation, Shop
 from shops.views.browse import street_lots
 
+
+def normalize_html(html):
+    """Normalize HTML for comparison by removing CSRF tokens."""
+    return re.sub(r'<input[^>]*name="csrfmiddlewaretoken"[^>]*>', "", html)
+
+
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U54")]
 
 CSS = Path(__file__).resolve().parents[2] / "static" / "css" / "areas" / "shops.css"
@@ -85,7 +91,7 @@ def test_deterministic(login, player, club):
 
     first = street(page(login, player, club))
     assert first.count("<li") == 16
-    assert street(page(login, player, club)) == first
+    assert normalize_html(street(page(login, player, club))) == normalize_html(first)
 
 
 def test_css_columns():

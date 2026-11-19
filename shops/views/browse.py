@@ -1,5 +1,6 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.functions import Lower
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -16,7 +17,7 @@ from accounts.permissions import club_member_required
 from player_characters.models import Character
 from player_characters.player_shop import has_listing
 from player_characters.selection import selected_character
-from shops.models import Shop, ShopStock
+from shops.models import FavoriteShop, Shop, ShopStock
 from shops.services import (
     is_open,
     open_shops,
@@ -103,6 +104,18 @@ def street_lots(shops, stalls=(), *, min_gap=0, max_gap=2, stall_gap=1, per_row=
     ]
 
 
+def add_favorite_flags(lots, favorite_shop_ids, favorite_stall_ids):
+    """Add is_favorite flag to each lot based on favorite IDs."""
+    for lot in lots:
+        if lot.get("shop"):
+            lot["is_favorite"] = lot["shop"].pk in favorite_shop_ids
+        elif lot.get("stall"):
+            lot["is_favorite"] = lot["stall"].pk in favorite_stall_ids
+        else:
+            lot["is_favorite"] = False
+    return lots
+
+
 def street_stalls(club):
     """Open player shops in this club with something listed, by name then id."""
     characters = (
@@ -118,23 +131,52 @@ class IndexView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
 
         # Get recent shop IDs from session storage
         recent_shop_ids = []
+        favorite_shop_ids = set()
+        favorite_stall_ids = set()
         if character:
             session_key = f"wm_recent_shops_{character.pk}"
             recent_shop_ids = request.session.get(session_key, [])
+            # Get favorite shop IDs for current character
+            shop_ct = ContentType.objects.get_for_model(Shop)
+            stall_ct = ContentType.objects.get_for_model(Character)
+            favorite_shop_ids = set(
+                FavoriteShop.objects.for_club(self.club)
+                .filter(character=character, content_type=shop_ct)
+                .values_list("object_id", flat=True)
+            )
+            favorite_stall_ids = set(
+                FavoriteShop.objects.for_club(self.club)
+                .filter(character=character, content_type=stall_ct)
+                .values_list("object_id", flat=True)
+            )
 
         # Determine active tab
         active_tab = request.GET.get("tab", "all")
 
-        shops = list(ordered_shops(open_shops(self.club, timezone.localdate())))
+        shops_qs = ordered_shops(open_shops(self.club, timezone.localdate()))
 
         # Filter shops for "My Shops" tab
         if active_tab == "my_shops":
             if recent_shop_ids:
-                shops = [s for s in shops if s.pk in recent_shop_ids]
+                shops_qs = shops_qs.filter(pk__in=recent_shop_ids)
             else:
-                shops = []
+                shops_qs = shops_qs.none()
+        elif active_tab == "favorites":
+            if favorite_shop_ids:
+                shops_qs = shops_qs.filter(pk__in=favorite_shop_ids)
+            else:
+                shops_qs = shops_qs.none()
+
+        shops = list(shops_qs)
 
         stalls = street_stalls(self.club)
+        # Filter stalls for favorites tab
+        if active_tab == "favorites":
+            if favorite_stall_ids:
+                stalls = [s for s in stalls if s.pk in favorite_stall_ids]
+            else:
+                stalls = []
+
         lots = street_lots(
             shops,
             stalls,
@@ -142,6 +184,8 @@ class IndexView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
             max_gap=self.club.street_max_gap,
             stall_gap=self.club.street_stall_gap,
         )
+        # Add favorite flags to lots
+        lots = add_favorite_flags(lots, favorite_shop_ids, favorite_stall_ids)
         return render(
             request,
             "shops/browse/index.html",
@@ -150,6 +194,8 @@ class IndexView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
                 "stalls": stalls,
                 "lots": lots,
                 "recent_shop_ids": recent_shop_ids,
+                "favorite_shop_ids": favorite_shop_ids,
+                "favorite_stall_ids": favorite_stall_ids,
                 "active_tab": active_tab,
                 "character": character,
             },
@@ -212,3 +258,58 @@ class StockFragmentView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View
         return render(
             request, "shops/browse/_stock.html", {"shop": shop, "rows": _visible_rows(shop)}
         )
+
+
+@method_decorator(club_member_required, name="dispatch")
+class FavoriteToggleView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
+    """Toggle favorite for a shop or player stall via htmx POST."""
+
+    def post(self, request, club_slug, shop_id=None, character_id=None):
+        character = self.get_selected_character()
+        if not character:
+            return HttpResponse(status=403)
+
+        # Determine if this is a club shop or player stall
+        if shop_id is not None:
+            # Club shop
+            shop = self.get_club_object_or_404(Shop, pk=shop_id)
+            content_object = shop
+            object_type = "shop"
+        elif character_id is not None:
+            # Player stall
+            stall = self.get_club_object_or_404(Character, pk=character_id)
+            if not stall.shop_open or not has_listing(stall):
+                raise Http404
+            content_object = stall
+            object_type = "stall"
+        else:
+            raise Http404
+
+        # Toggle favorite
+        ct = ContentType.objects.get_for_model(content_object)
+        favorite, created = FavoriteShop.objects.get_or_create(
+            character=character,
+            content_type=ct,
+            object_id=content_object.pk,
+        )
+        if not created:
+            favorite.delete()
+            is_favorite = False
+            message = "Removed from favorites"
+        else:
+            is_favorite = True
+            message = "Added to favorites"
+
+        # Return updated star button partial
+        context = {
+            "is_favorite": is_favorite,
+            "lot": {
+                "shop": content_object if object_type == "shop" else None,
+                "stall": content_object if object_type == "stall" else None,
+            },
+            "club": self.club,
+            "character": character,
+        }
+        response = render(request, "shops/browse/_star_button.html", context)
+        response["HX-Trigger"] = f'{{"toast": {{"message": "{message}", "type": "success"}}}}'
+        return response

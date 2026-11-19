@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 import pytest
@@ -9,6 +10,12 @@ from items.models import Item
 from player_characters.models import Character, JunkMark
 from shops.models import Rotation, Shop
 from shops.views.browse import street_lots, street_stalls
+
+
+def normalize_html(html):
+    """Normalize HTML for comparison by removing CSRF tokens."""
+    return re.sub(r'<input[^>]*name="csrfmiddlewaretoken"[^>]*>', "", html)
+
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U67")]
 
@@ -190,7 +197,7 @@ def test_street_same_on_every_load(login, club, player, item):
             html.index('<ul class="wm-street"') : html.index("</ul>", html.index("wm-street"))
         ]
 
-    assert strip(first) == strip(second)
+    assert normalize_html(strip(first)) == normalize_html(strip(second))
 
 
 def test_street_uses_club_settings(login, club, player, item):

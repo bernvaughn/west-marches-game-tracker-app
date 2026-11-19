@@ -1,5 +1,5 @@
 from django.contrib import admin
 
-from .models import Rotation, Shop, ShopStock
+from .models import FavoriteShop, Rotation, Shop, ShopStock
 
-admin.site.register([Shop, ShopStock, Rotation])
+admin.site.register([Shop, ShopStock, Rotation, FavoriteShop])
