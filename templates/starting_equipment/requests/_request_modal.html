@@ -4,59 +4,50 @@
 {% block title %}Request Magic Starting Item{% endblock %}
 
 {% block body %}
-<form
-    hx-post="{% url 'starting_equipment:request_new' club.slug character.pk %}"
-    hx-target="#app-modal .modal-content"
-    hx-swap="innerHTML"
->
-    {% csrf_token %}
-    <input type="hidden" name="club_slug" value="{{ club.slug }}">
-    <input type="hidden" name="character_pk" value="{{ character.pk }}">
+<div class="mb-3">
+    <label for="id_item" class="form-label">Magic Item</label>
+    <select class="form-select" id="id_item" name="item" required>
+        <option value="" disabled selected>Select a magic item...</option>
+        {% for option in magic_options %}
+        <option value="{{ option.item.pk }}" data-max="{{ option.max_per_character }}">
+            {{ option.item.name }} {% if option.item.rarity %}({{ option.item.get_rarity_display }}){% endif %} — max {{ option.max_per_character }}
+        </option>
+        {% endfor %}
+    </select>
+    <div class="form-text">Choose from the active template's available magic items.</div>
+</div>
 
-    <div class="mb-3">
-        <label for="id_item" class="form-label">Magic Item</label>
-        <select class="form-select" id="id_item" name="item" required>
-            <option value="" disabled selected>Select a magic item...</option>
-            {% for option in magic_options %}
-            <option value="{{ option.item.pk }}" data-max="{{ option.max_per_character }}">
-                {{ option.item.name }} {% if option.item.rarity %}({{ option.item.get_rarity_display }}){% endif %} — max {{ option.max_per_character }}
-            </option>
-            {% endfor %}
-        </select>
-        <div class="form-text">Choose from the active template's available magic items.</div>
-    </div>
+<div class="mb-3">
+    <label for="id_quantity" class="form-label">Quantity</label>
+    <input
+        type="number"
+        class="form-control"
+        id="id_quantity"
+        name="quantity"
+        value="1"
+        min="1"
+        max="1"
+        required
+    >
+    <div class="form-text" id="quantity-help">Maximum per character: 1</div>
+</div>
 
-    <div class="mb-3">
-        <label for="id_quantity" class="form-label">Quantity</label>
-        <input
-            type="number"
-            class="form-control"
-            id="id_quantity"
-            name="quantity"
-            value="1"
-            min="1"
-            max="1"
-            required
-        >
-        <div class="form-text" id="quantity-help">Maximum per character: 1</div>
-    </div>
+<div class="mb-3">
+    <label for="id_note" class="form-label">Note (optional)</label>
+    <textarea
+        class="form-control"
+        id="id_note"
+        name="note"
+        rows="3"
+        placeholder="Why do you need this item as starting equipment?"
+    ></textarea>
+</div>
 
-    <div class="mb-3">
-        <label for="id_note" class="form-label">Note (optional)</label>
-        <textarea
-            class="form-control"
-            id="id_note"
-            name="note"
-            rows="3"
-            placeholder="Why do you need this item as starting equipment?"
-        ></textarea>
-    </div>
-
-    {% if template %}
-    <div class="form-text text-muted small">
-        Based on template: {{ template.name }}
-    </div>
-    {% endif %}
+{% if template %}
+<div class="form-text text-muted small">
+    Based on template: {{ template.name }}
+</div>
+{% endif %}
 {% endblock %}
 
 {% block footer %}
@@ -65,7 +56,18 @@
 {% endblock %}
 
 {% block content %}
-{{ block.super }}
+<form
+    method="post"
+    action="{% url 'starting_equipment:request_new' club.slug character.pk %}"
+    hx-post="{% url 'starting_equipment:request_new' club.slug character.pk %}"
+    hx-target="#app-modal .modal-content"
+    hx-swap="innerHTML"
+>
+    {% csrf_token %}
+    <input type="hidden" name="club_slug" value="{{ club.slug }}">
+    <input type="hidden" name="character_pk" value="{{ character.pk }}">
+    {{ block.super }}
+</form>
 <script>
 (function () {
     const itemSelect = document.getElementById('id_item');
