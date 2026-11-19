@@ -46,7 +46,8 @@ CLIPPED_JS = """() => {
   const out = [];
   for (const el of document.querySelectorAll('body *')) {
     if (el.closest('svg') || el.closest('.navbar')) continue;
-    if (el.classList.contains('wm-skip-link')) continue;
+    // Screen-reader-only text is clipped to 1px on purpose.
+    if (el.classList.contains('wm-skip-link') || el.classList.contains('visually-hidden')) continue;
     const st = getComputedStyle(el);
     if (el.scrollWidth > el.clientWidth + 1 && el.clientWidth > 0 &&
         /(auto|scroll|hidden|clip)/.test(st.overflowX)) {

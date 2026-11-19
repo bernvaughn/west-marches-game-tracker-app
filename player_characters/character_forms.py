@@ -25,10 +25,19 @@ def _club_members(club):
     )
 
 
-# Dropdown choices: the officially published options, alphabetized, then "Other".
-# "Other" is appended last so the official options stay alphabetized.
+# A leading blank option means "not set". Without it, a blank saved value
+# preselects the first option and saving silently stores that option.
+BLANK_CHOICE = ("", "\u2014")
+
+
+def _dropdown(choices):
+    return [BLANK_CHOICE, *choices]
+
+
+# Dropdown choices: blank, the officially published options, alphabetized, then
+# "Other". "Other" is appended last so the official options stay alphabetized.
 def _dropdown_with_other(choices):
-    return list(choices) + [(OTHER, OTHER)]
+    return [*_dropdown(choices), (OTHER, OTHER)]
 
 
 class CharacterForm(forms.ModelForm):
@@ -58,7 +67,7 @@ class CharacterForm(forms.ModelForm):
     alignment = forms.CharField(
         label="Alignment",
         required=False,
-        widget=forms.Select(choices=ALIGNMENT_CHOICES),
+        widget=forms.Select(choices=_dropdown(ALIGNMENT_CHOICES)),
     )
     # Freetext inputs revealed when "Other" is chosen. Not model fields: they
     # feed back into the matching dropdown field via clean().
@@ -105,6 +114,38 @@ class CharacterForm(forms.ModelForm):
         if choose_owner:
             self.fields["owner"] = _OwnerChoice(queryset=_club_members(club))
             self.order_fields(["owner", *self.Meta.fields])
+        # The record as saved, before the dropdowns are matched below. The edit
+        # page shows these as the "Current" values.
+        self.saved_values = dict(self.initial)
+        self._match_saved_dropdowns()
+
+    def _match_saved_dropdowns(self):
+        """Preselect the right option for a saved value that is not an exact choice.
+
+        Without this, a select whose value matches no option shows its first
+        option, and saving the form silently overwrites the saved value.
+        """
+        for field in ("char_class", "species", "background", "pronouns", "alignment"):
+            saved = (self.initial.get(field) or "").strip()
+            if not saved:
+                continue
+            choices = self.fields[field].widget.choices
+            match = next(
+                (
+                    value
+                    for value, _label in choices
+                    if value and value.casefold() == saved.casefold()
+                ),
+                None,
+            )
+            if match is not None:
+                self.initial[field] = match
+            elif field == "alignment":
+                # Alignment has no "Other": keep the saved value as its own option.
+                self.fields[field].widget.choices = [*choices, (saved, saved)]
+            else:
+                self.initial[field] = OTHER
+                self.initial[f"{field}_freetext"] = saved
 
     def clean(self):
         cleaned_data = super().clean()

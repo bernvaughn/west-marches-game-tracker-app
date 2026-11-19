@@ -22,7 +22,7 @@ SHEETS = {
     "Aria Windrunner": {
         "char_class": "Ranger",
         "species": "Elf",
-        "alignment": "Neutral good",
+        "alignment": "Neutral Good",
         "pronouns": "she/her",
         "strength": 10,
         "dexterity": 18,
@@ -39,7 +39,7 @@ SHEETS = {
     "Wren Thistledown": {
         "char_class": "Rogue",
         "species": "Halfling",
-        "alignment": "Chaotic neutral",
+        "alignment": "Chaotic Neutral",
         "pronouns": "they/them",
         "dexterity": 17,
         "charisma": 14,
@@ -51,7 +51,7 @@ SHEETS = {
     "Borin Stonefist": {
         "char_class": "Fighter",
         "species": "Dwarf",
-        "alignment": "Lawful good",
+        "alignment": "Lawful Good",
         "pronouns": "he/him",
         "strength": 17,
         "dexterity": 8,
