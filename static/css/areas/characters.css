@@ -128,7 +128,7 @@
 .wm-sheet-stats dd { margin: 0; font-weight: 600; }
 @media (min-width: 48rem) { .wm-sheet-abilities { grid-template-columns: repeat(6, 1fr); } }
 .wm-sheet-ledger-box { margin-top: var(--wm-space-4); }
-.wm-sheet-header-fields, .wm-sheet-abilities-form { display: grid; gap: var(--wm-space-2); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); margin-top: var(--wm-space-2); }
+.wm-sheet-header-fields, .wm-sheet-abilities-form { display: grid; gap: var(--wm-space-2); grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); margin-top: var(--wm-space-2); }
 .wm-sheet-abilities-form input[type=number] { max-width: 8rem; }
 .wm-character-form textarea { width: 100%; }
 /* U69: each edit input shows its saved value beside it. */
