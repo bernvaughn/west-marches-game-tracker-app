@@ -1,15 +1,38 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Message admins{% endblock %}
 {% block main_class %}wm-main--narrow{% endblock %}
+{% block extra_scripts %}
+  <script src="{% static 'js/inbox_templates.js' %}" defer></script>
+{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Message the club admins" subtitle="Ask for a reward, a correction or a ruling." %}
 {% if is_member %}
 {% if form %}
 {% include "components/card_open.html" with title="New message" %}
 <p class="text-muted">Message as <strong>{{ character.name }}</strong></p>
-<form method="post" class="wm-form">
+<form method="post" class="wm-form" id="message-form">
   {% csrf_token %}
-  {{ form }}
+  <div id="template-buttons" class="mb-3" data-character-name="{{ character.name|default:'' }}">
+    <span class="fw-semibold small text-muted me-2">Quick templates:</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-template="loot"
+            data-template-text="I think {character} is missing: [items/coins] from the last session. Details: ">
+      Loot correction
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-template="map"
+            data-template-text="Please mark {character} as having visited/found: [location/tile]. Details: ">
+      Map credit
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-template="shop"
+            data-template-text="Could [shop] start carrying [item]? Details: ">
+      Shop stock request
+    </button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" data-template="other"
+            data-template-text="">
+      Other
+    </button>
+  </div>
+  {{ form.body }}
   <div class="wm-form-actions"><button class="btn btn-primary" type="submit">Send as {{ character.name }}</button></div>
 </form>
 {% include "components/card_close.html" %}

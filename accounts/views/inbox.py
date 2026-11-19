@@ -21,6 +21,7 @@ from player_characters.selection import selected_character
 from ..forms.grants import GRANT_FORMS, GRANT_TITLES, MapGrantForm
 from ..forms.inbox import (
     STATUS_ACTIONS,
+    TEMPLATE_TEXTS,
     BulkStatusForm,
     MessageForm,
     StatusForm,
@@ -66,14 +67,14 @@ def _batch_clear(request, msg_pk):
         request.session[BATCH_SESSION_KEY] = batch
 
 
-def _send(request, club_slug, *, kind, form_class, template, url_name, flash_text):
+def _send(request, club_slug, *, kind, form_class, template, url_name, flash_text, initial=None):
     membership = request.membership
     if membership is None:
         if request.method == "POST":
             raise PermissionDenied
         return render(request, template, {"form": None, "sent": []})
     character = selected_character(request)
-    form = form_class(request.POST or None) if character is not None else None
+    form = form_class(request.POST or None, initial=initial) if character is not None else None
     if request.method == "POST" and form is not None and form.is_valid():
         msg = form.save(commit=False)
         msg.character = character
@@ -97,6 +98,13 @@ def _send(request, club_slug, *, kind, form_class, template, url_name, flash_tex
 
 @club_member_required
 def message_new(request, club_slug):
+    initial = {}
+    character = selected_character(request)
+    template_key = request.GET.get("template")
+    if template_key and character is not None:
+        template_text = TEMPLATE_TEXTS.get(template_key)
+        if template_text is not None:
+            initial["body"] = template_text.replace("{character}", character.name)
     return _send(
         request,
         club_slug,
@@ -105,6 +113,7 @@ def message_new(request, club_slug):
         template="accounts/inbox/message_new.html",
         url_name="accounts:message_new",
         flash_text="Message sent to the club admins.",
+        initial=initial,
     )
 
 
