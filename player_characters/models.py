@@ -150,7 +150,6 @@ class Character(models.Model):
     starting_equipment_claimed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     last_printed_at = models.DateTimeField(null=True, blank=True)
-    starting_equipment_claimed = models.BooleanField(default=False)
 
     objects = ClubScopedManager()
 

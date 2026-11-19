@@ -1,11 +1,15 @@
 """Tests for the claim_starting_equipment view."""
 
-import json
-
 import pytest
+from django.contrib.messages import get_messages
 from django.urls import reverse
 
-from starting_equipment.models import StartingEquipmentTemplate
+from ledger.models import LedgerEntry
+from player_characters.models import Character
+from starting_equipment.models import (
+    StartingEquipmentClassEntry,
+    StartingEquipmentTemplate,
+)
 
 pytestmark = [pytest.mark.django_db]
 
@@ -17,6 +21,15 @@ def claim_url(club, character):
     )
 
 
+def create_url(club):
+    return reverse("characters:create", kwargs={"club_slug": club.slug})
+
+
+def flash_messages(response):
+    """Return the list of flash message strings queued on the response's request."""
+    return [str(m) for m in get_messages(response.wsgi_request)]
+
+
 class TestClaimPermissions:
     """Tests for claim view permissions."""
 
@@ -25,12 +38,15 @@ class TestClaimPermissions:
         client = login(player)
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+        assert "Starting equipment claimed." in flash_messages(response)
 
     def test_club_admin_can_claim(self, club, login, club_admin, character_with_class_bg, template):
         """Club admin can claim starting equipment for any character."""
         client = login(club_admin)
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
 
     def test_game_master_can_claim(
         self, club, login, game_master, character_with_class_bg, template
@@ -39,6 +55,7 @@ class TestClaimPermissions:
         client = login(game_master)
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
 
     def test_other_member_cannot_claim(
         self, club, login, other_player, character_with_class_bg, template
@@ -72,16 +89,16 @@ class TestClaimAlreadyClaimed:
         character_with_class_bg.refresh_from_db()
         assert character_with_class_bg.starting_equipment_claimed is True
 
-        # Second claim returns error
+        # Second claim returns error + refresh
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
-        assert response.status_code == 400
-        trigger = json.loads(response["HX-Trigger"])
-        assert trigger["claimError"] == "Already claimed"
+        assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+        assert "already been claimed" in " ".join(flash_messages(response))
 
     def test_claim_flag_set_even_if_no_equipment_granted(
         self, club, login, player, character_with_class_bg, empty_template
     ):
-        """Character is marked claimed even when template grants nothing."""
+        """Character is NOT marked claimed when template grants nothing; error shown."""
         # Deactivate the main template and activate the empty one
         template = StartingEquipmentTemplate.objects.get(club=club, name="Test Template")
         template.is_active = False
@@ -92,25 +109,60 @@ class TestClaimAlreadyClaimed:
         client = login(player)
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+        assert "No starting equipment matches" in " ".join(flash_messages(response))
 
         character_with_class_bg.refresh_from_db()
-        assert character_with_class_bg.starting_equipment_claimed is True
+        assert character_with_class_bg.starting_equipment_claimed is False
+
+
+class TestClaimNoMatch:
+    """Tests edge case: claim when template has no matching class/background."""
+
+    def test_claim_with_no_matching_entries_returns_error_and_stays_unclaimed(
+        self, club, login, player
+    ):
+        """
+        Claim with template that has no matching class/background
+        -> should return an error and NOT mark claimed (so the player can retry
+        once a matching entry exists).
+        """
+        # Create template with NO matching entries for our character
+        template = StartingEquipmentTemplate.objects.create(
+            club=club, name="Mismatched Template", is_active=True
+        )
+        # Add entry for Wizard (not Fighter)
+        StartingEquipmentClassEntry.objects.create(
+            template=template, char_class="Wizard", min_level=1, max_level=20, coins_cp=1000
+        )
+
+        # Create character with Fighter class (no matching template entry)
+        client = login(player)
+        response = client.post(
+            create_url(club),
+            {"name": "Mismatch Character", "char_class": "Fighter", "background": "Acolyte"},
+        )
+        assert response.status_code == 302
+
+        character = Character.objects.get(name="Mismatch Character")
+        character.refresh_from_db()
+        assert character.starting_equipment_claimed is False  # Not auto-applied
+
+        # POST claim -> error, nothing granted, not marked claimed
+        response = client.post(claim_url(club, character), HTTP_HX_REQUEST="true")
+        assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+        assert "No starting equipment matches" in " ".join(flash_messages(response))
+
+        character.refresh_from_db()
+        assert character.starting_equipment_claimed is False
+
+        # No ledger entry should be created (nothing to grant)
+        assert LedgerEntry.objects.filter(character=character).count() == 0
 
 
 class TestClaimSuccess:
     """Tests successful claim flow."""
-
-    def test_success_sets_htmx_triggers(
-        self, club, login, player, character_with_class_bg, template
-    ):
-        """Successful claim returns 204 with HTMX triggers."""
-        client = login(player)
-        response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
-
-        assert response.status_code == 204
-        trigger = json.loads(response["HX-Trigger"])
-        assert trigger["appModalClose"] is True
-        assert trigger["characterSheetRefresh"] is True
 
     def test_success_sets_claimed_flag(
         self, club, login, player, character_with_class_bg, template
@@ -126,8 +178,6 @@ class TestClaimSuccess:
         self, club, login, player, character_with_class_bg, template, class_entry, bg_entry
     ):
         """Successful claim grants equipment via ledger."""
-        from ledger.models import LedgerEntry
-
         client = login(player)
         client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
 
@@ -145,7 +195,7 @@ class TestClaimNoTemplate:
     def test_no_active_template_returns_error(
         self, club, login, player, character_with_class_bg, template
     ):
-        """No active template returns error response."""
+        """No active template returns error + refresh."""
         # Deactivate the template
         template.is_active = False
         template.save()
@@ -153,9 +203,9 @@ class TestClaimNoTemplate:
         client = login(player)
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
 
-        assert response.status_code == 400
-        trigger = json.loads(response["HX-Trigger"])
-        assert trigger["claimError"] == "No active starting equipment template"
+        assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+        assert "No active starting equipment template" in " ".join(flash_messages(response))
 
     def test_no_active_template_flag_not_set(
         self, club, login, player, character_with_class_bg, template

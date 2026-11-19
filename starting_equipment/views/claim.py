@@ -1,7 +1,5 @@
 """View for claiming starting equipment."""
 
-import json
-
 from django.contrib import messages as flash
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
@@ -37,14 +35,9 @@ def claim_starting_equipment(request, club_slug, character_pk):
     # Check if already claimed
     if character.starting_equipment_claimed:
         if is_htmx(request):
-            response = HttpResponse(status=400)
-            response["HX-Trigger"] = json.dumps(
-                {
-                    "appModalClose": True,
-                    "characterSheetRefresh": True,
-                    "claimError": "Already claimed",
-                }
-            )
+            flash.error(request, "Starting equipment has already been claimed for this character.")
+            response = HttpResponse(status=204)
+            response["HX-Refresh"] = "true"
             return response
         flash.error(request, "Starting equipment has already been claimed for this character.")
 
@@ -55,29 +48,38 @@ def claim_starting_equipment(request, club_slug, character_pk):
 
     if template is None:
         if is_htmx(request):
-            response = HttpResponse(status=400)
-            response["HX-Trigger"] = json.dumps(
-                {
-                    "appModalClose": True,
-                    "characterSheetRefresh": True,
-                    "claimError": "No active starting equipment template",
-                }
-            )
+            flash.error(request, "No active starting equipment template found for this club.")
+            response = HttpResponse(status=204)
+            response["HX-Refresh"] = "true"
             return response
         flash.error(request, "No active starting equipment template found for this club.")
 
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
 
     # Apply starting equipment
-    apply_starting_equipment(character, template, request.user)
+    entry = apply_starting_equipment(character, template, request.user)
 
-    # Mark as claimed (even if nothing was granted, to prevent retry loops)
+    # Nothing granted: no matching class/background entry (and no coins).
+    if entry is None:
+        if is_htmx(request):
+            flash.error(
+                request,
+                "No starting equipment matches this character's class/background.",
+            )
+            response = HttpResponse(status=204)
+            response["HX-Refresh"] = "true"
+            return response
+        flash.error(request, "No starting equipment matches this character's class/background.")
+        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+
+    # Mark as claimed
     character.starting_equipment_claimed = True
     character.save(update_fields=["starting_equipment_claimed"])
 
     if is_htmx(request):
+        flash.success(request, "Starting equipment claimed.")
         response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps({"appModalClose": True, "characterSheetRefresh": True})
+        response["HX-Refresh"] = "true"
         return response
 
     flash.success(request, "Starting equipment claimed.")

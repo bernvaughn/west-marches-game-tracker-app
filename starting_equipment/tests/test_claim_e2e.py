@@ -12,6 +12,7 @@ from starting_equipment.models import (
     StartingEquipmentClassEntry,
     StartingEquipmentClassLine,
     StartingEquipmentLevelCoins,
+    StartingEquipmentRequest,
     StartingEquipmentTemplate,
 )
 
@@ -167,10 +168,13 @@ class TestAutoApplyOnCreation:
 class TestClaimNoMatch:
     """Tests edge case: claim when template has no matching class/background."""
 
-    def test_claim_with_no_matching_entries_still_marks_claimed(self, club, login, player):
+    def test_claim_with_no_matching_entries_returns_error_and_stays_unclaimed(
+        self, club, login, player
+    ):
         """
         Claim with template that has no matching class/background
-        -> should still mark claimed=True to prevent retry loops.
+        -> should return an error and NOT mark claimed (so the player can retry
+        once a matching entry exists).
         """
         # Create template with NO matching entries for our character
         template = StartingEquipmentTemplate.objects.create(
@@ -193,12 +197,90 @@ class TestClaimNoMatch:
         character.refresh_from_db()
         assert character.starting_equipment_claimed is False  # Not auto-applied
 
-        # POST claim -> should still mark claimed=True even though nothing granted
+        # POST claim -> error, nothing granted, not marked claimed
         response = client.post(claim_url(club, character), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
 
         character.refresh_from_db()
-        assert character.starting_equipment_claimed is True
+        assert character.starting_equipment_claimed is False
 
         # No ledger entry should be created (nothing to grant)
         assert LedgerEntry.objects.filter(character=character).count() == 0
+
+
+class TestNoDoubleGrant:
+    """Tests that approved magic requests are not double-granted on claim."""
+
+    def test_approve_then_claim_grants_item_once(
+        self,
+        club,
+        login,
+        player,
+        game_master,
+        character_with_class_bg,
+        template,
+        class_entry,
+        magic_option,
+    ):
+        """
+        Approve a magic request (grants item via ledger), then claim.
+        The item must appear exactly once in the ledger (no double grant).
+
+        The fixtures already provide a Fighter class entry (1000cp) and an
+        Acolyte background entry (500cp) on the template. We add a Longsword
+        line to the class entry so the claim grants an item plus coins.
+        """
+        from items.models import Item
+        from starting_equipment.models import StartingEquipmentClassLine
+
+        # Add a Longsword line to the existing fixture class entry
+        longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
+        StartingEquipmentClassLine.objects.create(
+            class_entry=class_entry, item=longsword, quantity=1, is_choice=False
+        )
+        magic_item = magic_option.item
+
+        # 1. Create a PENDING magic request
+        req = StartingEquipmentRequest.objects.create(
+            club=club,
+            character=character_with_class_bg,
+            item=magic_item,
+            quantity=1,
+            status=StartingEquipmentRequest.Status.PENDING,
+        )
+
+        # 2. GM approves it -> request_decide grants the item via ledger
+        decide_url = reverse(
+            "starting_equipment:request_decide",
+            kwargs={"club_slug": club.slug, "pk": req.pk, "decision": "approve"},
+        )
+        client = login(game_master)
+        response = client.post(decide_url, HTTP_HX_REQUEST="true")
+        assert response.status_code == 204
+
+        # Verify item was granted once by the approval
+        potion_count = 0
+        for e in LedgerEntry.objects.filter(character=character_with_class_bg):
+            for line in e.lines.select_related("item"):
+                if line.item == magic_item:
+                    potion_count += 1
+        assert potion_count == 1  # granted once by approval
+
+        # 3. Player claims starting equipment -> grants class item + coins, not the potion again
+        client = login(player)
+        response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
+        assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+
+        # 4. Verify potion still appears exactly once (no double grant)
+        potion_count = 0
+        longsword_count = 0
+        for e in LedgerEntry.objects.filter(character=character_with_class_bg):
+            for line in e.lines.select_related("item"):
+                if line.item == magic_item:
+                    potion_count += 1
+                if line.item == longsword:
+                    longsword_count += 1
+        assert potion_count == 1  # still exactly once (no double grant)
+        assert longsword_count == 1  # class item granted by the claim
