@@ -26,7 +26,11 @@
     </ul>
   </div>
   {% endif %}
-  <form method="post" action="{% url 'quests:turn_in' club.slug quest.pk %}">
+  <form method="post" 
+        action="{% url 'quests:turn_in' club.slug quest.pk %}"
+        hx-post="{% url 'quests:turn_in' club.slug quest.pk %}"
+        hx-target="body"
+        hx-swap="none">
     {% csrf_token %}
     {% if blocked_reason %}<p class="wm-sheet-note" id="turn-in-reason">{{ blocked_reason }}</p>{% endif %}
     <button class="btn btn-primary" type="submit"{% if blocked_reason %} disabled aria-describedby="turn-in-reason"{% endif %}>Turn in as {{ character.name }}</button>
