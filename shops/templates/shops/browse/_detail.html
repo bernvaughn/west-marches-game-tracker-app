@@ -1,6 +1,7 @@
 {% load shop_tags static %}
 {% include "components/page_header.html" with title=shop.name %}
 {% if not is_open %}<p class="wm-shop-closed">{% include "components/badge.html" with status="warning" text="Closed" %}</p>{% endif %}
+{% if closing_soon_on %}<p class="wm-shop-closing-soon" role="status">Leaves the street on {{ closing_soon_on|date:"M j, Y" }}</p>{% endif %}
 <div class="wm-shop-banner wm-shop-banner--{{ shop.color }}">
   <figure class="wm-shop-keeper-figure">
     {% if shop.keeper_description %}<button type="button" class="wm-shop-keeper-name wm-shop-keeper-toggle" aria-controls="keeper-about" aria-expanded="true">{{ shop.keeper_name|default:"Shopkeeper" }}</button>
