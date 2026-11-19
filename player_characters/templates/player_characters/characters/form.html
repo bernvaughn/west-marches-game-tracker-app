@@ -16,10 +16,16 @@
         {% include "player_characters/characters/_field_current.html" with field=form.level current=current.level %}
         {% include "player_characters/characters/_field_current.html" with field=form.char_class current=current.char_class %}
         {{ form.char_class_freetext.as_field_group }}
+        {% include "player_characters/characters/_other_flag.html" with field_name="char_class" %}
+        {% if "char_class" in form.custom_fields %}{% include "components/badge.html" with text="custom" status="warning" %}{% endif %}
         {% include "player_characters/characters/_field_current.html" with field=form.species current=current.species %}
         {{ form.species_freetext.as_field_group }}
+        {% include "player_characters/characters/_other_flag.html" with field_name="species" %}
+        {% if "species" in form.custom_fields %}{% include "components/badge.html" with text="custom" status="warning" %}{% endif %}
         {% include "player_characters/characters/_field_current.html" with field=form.background current=current.background %}
         {{ form.background_freetext.as_field_group }}
+        {% include "player_characters/characters/_other_flag.html" with field_name="background" %}
+        {% if "background" in form.custom_fields %}{% include "components/badge.html" with text="custom" status="warning" %}{% endif %}
         {% include "player_characters/characters/_field_current.html" with field=form.pronouns current=current.pronouns %}
         {{ form.pronouns_freetext.as_field_group }}
         {% include "player_characters/characters/_field_current.html" with field=form.alignment current=current.alignment %}
