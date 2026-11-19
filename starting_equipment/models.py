@@ -44,6 +44,13 @@ class StartingEquipmentClassEntry(models.Model):
         related_name="class_entries",
     )
     char_class = models.CharField(max_length=60)  # Matches Character.char_class, case-insensitive
+    class_option = models.ForeignKey(
+        "character_options.CharacterClass",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="starting_entries",
+    )
     min_level = models.PositiveSmallIntegerField(default=1)
     max_level = models.PositiveSmallIntegerField(default=20)
     coins_cp = models.PositiveIntegerField(default=0)  # Base coins for this class
@@ -110,6 +117,13 @@ class StartingEquipmentBackgroundEntry(models.Model):
         related_name="background_entries",
     )
     background = models.CharField(max_length=60)  # New field on Character: background
+    background_option = models.ForeignKey(
+        "character_options.Background",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="starting_entries",
+    )
     coins_cp = models.PositiveIntegerField(default=0)
 
     objects = ClubScopedManager()

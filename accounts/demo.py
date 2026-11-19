@@ -24,6 +24,9 @@ def seed():
     Membership.objects.get_or_create(
         user=gm, club=club, defaults={"is_club_admin": True, "is_game_master": True}
     )
+    from character_options.services import seed_default_options
+
+    seed_default_options(club)
     for email, name in (("alice@example.com", "Alice"), ("bob@example.com", "Bob")):
         Membership.objects.get_or_create(user=_user(email, name), club=club)
     alice = Membership.objects.get(user__email="alice@example.com", club=club)

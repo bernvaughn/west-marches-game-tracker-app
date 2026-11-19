@@ -2,6 +2,7 @@ import pytest
 from django.test import Client
 
 from accounts.models import Club, Membership, User
+from character_options.models import Background, CharacterClass, Species
 from items.models import Item
 from player_characters.models import Character
 
@@ -80,3 +81,18 @@ def login():
         return client
 
     return _login
+
+
+@pytest.fixture
+def species(club):
+    return Species.objects.create(club=club, name="Elf")
+
+
+@pytest.fixture
+def char_class(club):
+    return CharacterClass.objects.create(club=club, name="Fighter")
+
+
+@pytest.fixture
+def background(club):
+    return Background.objects.create(club=club, name="Soldier")
