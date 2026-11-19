@@ -4,7 +4,7 @@ import json
 
 from django.contrib import messages
 from django.http import Http404
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from django.utils import timezone
 
 from accounts.htmx import is_htmx, render_modal_or_page
@@ -13,8 +13,6 @@ from accounts.scoping import club_get_object_or_404
 from downtime import services
 from downtime.models import DowntimeAction
 from downtime.views.play import _back_to_play, _result_context
-from downtime.wheel import wheel_payload
-from ledger import services as ledger_services
 from player_characters.selection import selected_character
 
 
@@ -22,7 +20,8 @@ from player_characters.selection import selected_character
 def downtime_spend_partial(request, club_slug, action_pk):
     """
     HTMX partial endpoint for downtime spend from dashboard.
-    GET: Returns wheel modal for the action.
+    GET (htmx): Returns a confirm modal for the action.
+    GET (no htmx): Redirects to the Downtime page.
     POST: Spends points and returns result modal with toast and dashboard refresh trigger.
     """
     club = request.club
@@ -80,38 +79,24 @@ def downtime_spend_partial(request, club_slug, action_pk):
             return response
         return redirect("downtime:result", club_slug=club.slug, pk=result.pk)
 
-    # GET: Return the wheel modal
-    # Build wheel context for the action
+    # Non-HTMX GET: redirect to the downtime play page where the player can spend the point
+    if not is_htmx(request):
+        return redirect("downtime:play", club_slug=club.slug)
+
+    # HTMX GET: return a confirm modal. The POST above spins the wheel and spends the point.
     entries = list(action.entries.prefetch_related("items__item"))
     if not entries:
         raise Http404("Action has no rewards.")
-
-    # Create a dummy result for wheel payload
-    class DummyResult:
-        def __init__(self, action, entries):
-            self.action = action
-            self.entries = entries
-            self.character = character
-            self.entry_id = None
-
-        @property
-        def entry(self):
-            return None
-
-    dummy = DummyResult(action, entries)
-    wheel = wheel_payload(dummy)
-
+    rewards = [
+        {"entry": e, "percent": p, "items": list(e.items.all())}
+        for e, p in services.chances(entries)
+    ]
     ctx = {
+        "club": club,
         "action": action,
         "character": character,
         "balance": balance,
-        "coin_balance": ledger_services.coin_balance(character),
-        "wheel": wheel,
+        "rewards": rewards,
+        "spend_url": request.path,
     }
-
-    return render_modal_or_page(
-        request,
-        "downtime/play/_result_modal.html",
-        "downtime/play/result.html",
-        ctx,
-    )
+    return render(request, "accounts/_dashboard_downtime_confirm_modal.html", ctx)

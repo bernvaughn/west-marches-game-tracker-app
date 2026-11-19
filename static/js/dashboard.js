@@ -20,7 +20,7 @@
     if (!card) return;
     const url = card.dataset.refreshUrl;
     if (!url) return;
-    htmx.ajax("GET", url, { target: id, swap: "outerHTML" });
+    htmx.ajax("GET", url, { target: `#${id}`, swap: "outerHTML" });
   }
 
   Object.entries(EVENT_CARD).forEach(([eventName, key]) => {

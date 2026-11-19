@@ -1,0 +1,32 @@
+{% extends "components/modal_frame.html" %}
+{% load coins %}
+{% block title %}{{ action.name }}{% endblock %}
+{% block subtitle %}<p class="text-muted mb-0">Cost: <strong>{{ action.cost }}</strong> point{{ action.cost|pluralize }} · {{ character.name }} has {{ balance }} downtime point{{ balance|pluralize }}</p>{% endblock %}
+{% block body %}
+<div class="wm-chalk-modal">
+  {% if action.description %}<p>{{ action.description|linebreaksbr }}</p>{% endif %}
+  <h3 class="h6">Possible rewards</h3>
+  <div class="table-responsive">
+  <table class="wm-chalk-table wm-downtime-rewards">
+    <caption class="visually-hidden">Possible rewards for {{ action.name }}</caption>
+    <thead><tr><th scope="col">Outcome</th><th scope="col">Reward</th><th scope="col">Chance</th></tr></thead>
+    <tbody>
+    {% for r in rewards %}
+    <tr>
+      <td>{{ r.entry.label }}</td>
+      <td>{% if r.entry.coins %}{{ r.entry.coins|coins }}{% endif %}{% for ei in r.items %}{% if r.entry.coins or not forloop.first %}, {% endif %}{{ ei.quantity }} x {% include "items/_item_name.html" with item=ei.item %}{% endfor %}{% if not r.entry.coins and not r.items %}<span class="text-muted">Nothing</span>{% endif %}</td>
+      <td>{{ r.percent|floatformat:1 }}%</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}
+{% block footer %}
+<form method="post" action="{{ spend_url }}" hx-post="{{ spend_url }}" hx-target="#app-modal .modal-content" class="d-flex gap-2">
+  {% csrf_token %}
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+  <button type="submit" class="btn wm-chalk-button">Take the job</button>
+</form>
+{% endblock %}
