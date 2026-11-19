@@ -1,9 +1,9 @@
 """Dashboard provider system for extensible dashboard widgets."""
 
 from abc import ABC
-from typing import Protocol
+from typing import TYPE_CHECKING
 
-from django.db.models import Count
+from django.db.models import Count, QuerySet
 from django.http import HttpRequest
 from django.urls import reverse
 from django.utils import timezone
@@ -25,21 +25,63 @@ from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
 from shops.services import open_shops
 
+if TYPE_CHECKING:
+    from clubs.models import Club
 
-class DashboardProvider(Protocol):
-    """Protocol for a dashboard widget/section provider."""
+    from accounts.models import Membership
+    from player_characters.models import Character
 
-    key: str
-    order: int
-    template: str
 
-    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        """Return context for this provider's template."""
-        ...
-
-    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        """Whether to render this provider for the current user."""
+def is_consumable(item: Item, quantity: int) -> bool:
+    """Check if item is consumable based on quantity or traits."""
+    if quantity > 1:
         return True
+    if item.traits and "consumable" in item.traits.lower():
+        return True
+    return False
+
+
+def get_healing_potion_stock(club: "Club", today) -> QuerySet[ShopStock]:
+    """Return queryset of healing potion stocks from open shops with quantity > 0."""
+    open_shop_qs = open_shops(club, today)
+    if not open_shop_qs.exists():
+        return ShopStock.objects.none()
+    return (
+        ShopStock.objects.filter(
+            shop__in=open_shop_qs,
+            item__magic_type=MagicType.POTION,
+            quantity__gt=0,
+        )
+        .select_related("shop", "item")
+        .order_by("shop__street_position", "shop__name", "item__name")
+    )
+
+
+def build_header_stats(
+    character: "Character",
+    club: "Club",
+    membership: "Membership",
+) -> dict:
+    """Build header stats dict: coins, downtime, junk count/value, unread messages."""
+    coin_sum = coin_summary(character)
+    downtime_balance = downtime_services.balance(character)
+    junk = junk_rows(character)
+    junk_val = junk_value(character, junk)
+
+    unread_count = (
+        Message.objects.for_club(club)
+        .filter(status=Message.Status.OPEN)
+        .exclude(sender=membership)
+        .count()
+    )
+
+    return {
+        "coin_summary": coin_sum,
+        "downtime_balance": downtime_balance,
+        "junk_count": len(junk),
+        "junk_value": junk_val,
+        "unread_count": unread_count,
+    }
 
 
 class BaseDashboardProvider(ABC):
@@ -66,25 +108,7 @@ class HeaderDashboardProvider(BaseDashboardProvider):
     template = "accounts/_dashboard_header.html"
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        coin_sum = coin_summary(character)
-        downtime_balance = downtime_services.balance(character)
-        junk = junk_rows(character)
-        junk_val = junk_value(character, junk)
-
-        unread_count = (
-            Message.objects.for_club(club)
-            .filter(status=Message.Status.OPEN)
-            .exclude(sender=membership)
-            .count()
-        )
-
-        return {
-            "coin_summary": coin_sum,
-            "downtime_balance": downtime_balance,
-            "junk_count": len(junk),
-            "junk_value": junk_val,
-            "unread_count": unread_count,
-        }
+        return build_header_stats(character, club, membership)
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         return True
@@ -103,8 +127,9 @@ class QuickActionsProvider(BaseDashboardProvider):
     template = "accounts/_dashboard_quick_actions.html"
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        today = timezone.localdate()
         has_junk = len(junk_rows(character)) > 0
-        has_potions = self._has_healing_potions(club)
+        has_potions = get_healing_potion_stock(club, today).exists()
         return {
             "has_junk": has_junk,
             "has_potions": has_potions,
@@ -114,18 +139,6 @@ class QuickActionsProvider(BaseDashboardProvider):
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
         ctx = self.get_context(request, club, character, membership)
         return ctx["has_junk"] or ctx["has_potions"]
-
-    def _has_healing_potions(self, club) -> bool:
-        """Check if any open shop has healing potions in stock."""
-        today = timezone.localdate()
-        open_shop_qs = open_shops(club, today)
-        if not open_shop_qs.exists():
-            return False
-        return ShopStock.objects.filter(
-            shop__in=open_shop_qs,
-            item__magic_type=MagicType.POTION,
-            quantity__gt=0,
-        ).exists()
 
 
 class DowntimeDashboardProvider(BaseDashboardProvider):
@@ -182,12 +195,8 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
     template = "accounts/_dashboard_consumables.html"
 
     def _is_consumable(self, item: Item, quantity: int) -> bool:
-        """Check if item is consumable based on quantity or traits."""
-        if quantity > 1:
-            return True
-        if item.traits and "consumable" in item.traits.lower():
-            return True
-        return False
+        """Check if item is consumable. Delegates to module-level helper."""
+        return is_consumable(item, quantity)
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         have = available_items(character)
@@ -199,7 +208,7 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
             if qty <= 0:
                 continue
             item = Item.objects.filter(pk=item_id).first()
-            if item and self._is_consumable(item, qty):
+            if item and is_consumable(item, qty):
                 consumable_items.append(
                     {
                         "item": item,
@@ -220,7 +229,7 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
         for item_id, qty in have.items():
             if qty > 0:
                 item = Item.objects.filter(pk=item_id).first()
-                if item and self._is_consumable(item, qty):
+                if item and is_consumable(item, qty):
                     return True
         return False
 
@@ -520,19 +529,19 @@ class PlayerShopDashboardProvider(BaseDashboardProvider):
 # Registration System
 # =============================================================================
 
-_providers: dict[str, DashboardProvider] = {}
+_providers: dict[str, BaseDashboardProvider] = {}
 
 
-def register_provider(provider: DashboardProvider) -> None:
+def register_provider(provider: BaseDashboardProvider) -> None:
     """Register a dashboard provider."""
     _providers[provider.key] = provider
 
 
-def get_providers() -> list[DashboardProvider]:
+def get_providers() -> list[BaseDashboardProvider]:
     """Get all registered providers sorted by order."""
     return sorted(_providers.values(), key=lambda p: p.order)
 
 
-def get_provider(key: str) -> DashboardProvider | None:
+def get_provider(key: str) -> BaseDashboardProvider | None:
     """Get a specific provider by key."""
     return _providers.get(key)

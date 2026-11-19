@@ -4,6 +4,7 @@ from django.http import Http404
 from django.shortcuts import render
 from django.urls import reverse
 
+from accounts.dashboard_providers import is_consumable
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
@@ -28,9 +29,8 @@ def consumable_consume_partial(request, club_slug, item_pk):
     if available < 1:
         raise Http404("The character has none of this item available.")
 
-    # Check if item is actually consumable (quantity > 1 or has consumable trait)
-    is_consumable = available > 1 or (item.traits and "consumable" in item.traits.lower())
-    if not is_consumable:
+    # Check if item is actually consumable
+    if not is_consumable(item, available):
         raise Http404("This item is not a consumable.")
 
     # Build form for GET request
@@ -50,9 +50,3 @@ def consumable_consume_partial(request, club_slug, item_pk):
 
     # For non-HTML requests, return 405
     raise Http404("Invalid request method.")
-
-
-@club_member_required
-def dashboard_consumable_consume_partial(request, club_slug, item_pk):
-    """HTMX partial endpoint for dashboard consumable consume."""
-    return consumable_consume_partial(request, club_slug, item_pk)
