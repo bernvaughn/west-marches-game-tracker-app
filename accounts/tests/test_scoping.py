@@ -1,6 +1,8 @@
 import pytest
 from django.urls import reverse
 
+from accounts.models import Membership
+
 pytestmark = pytest.mark.story("FOUNDATION")
 
 ROUTES = [
@@ -42,6 +44,11 @@ def test_anonymous_redirected_to_login(client, club):
 def test_for_club_filters_child_models(club, other_club, player, character):
     from map.models import HexMap, Tile
 
+    other_owner = Membership.objects.create(user=player, club=other_club)
+    from player_characters.models import Character
+
+    Character.objects.create(club=other_club, owner=other_owner, name="Zed")
+    assert Character.objects.for_club(club).count() == 1
     HexMap.objects.create(club=club, name="M1")
     HexMap.objects.create(club=other_club, name="M2")
     assert Tile.objects.for_club(club).count() == 1

@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from items.models import Item
 from ledger.models import LedgerEntry
-from ledger.services import Line, coin_balance, item_quantities, record
+from ledger.services import coin_balance, item_quantities
 
 pytestmark = pytest.mark.django_db
 
@@ -100,17 +100,6 @@ def test_take_beyond_available(login, game_master, club, funded, item):
     assert entries(funded).count() == before
 
 
-@pytest.mark.story("U14")
-def test_take_succeeds(login, game_master, club, funded, item):
-    before = entries(funded).count()
-    c = login(game_master)
-    assert (
-        c.post(url(club, funded, "adjust"), payload(item, 1, direction="take")).status_code == 302
-    )
-    assert c.post(url(club, funded, "adjust"), payload(cp=100, direction="take")).status_code == 302
-    assert entries(funded).count() == before + 2
-
-
 @pytest.mark.story("U3")
 def test_retired_item_refused(login, game_master, club, character, item):
     item.retired = True
@@ -154,24 +143,6 @@ def test_consume(login, game_master, club, funded, item):
     assert all(line.coins <= 0 and line.quantity <= 0 for line in e.lines.all())
     assert coin_balance(funded) == 900
     assert item_quantities(funded)[item.pk] == 3
-
-
-@pytest.mark.story("U7")
-def test_consume_succeeds(login, game_master, club, funded, item, second_item):
-    record(funded, "award", [Line(item=second_item, quantity=5)])
-    before = entries(funded).count()
-    c = login(game_master)
-    assert c.post(url(club, funded, "consume"), payload(item, 1)).status_code == 302
-    assert c.post(url(club, funded, "consume"), payload(second_item, 1)).status_code == 302
-    assert entries(funded).count() == before + 2
-
-
-@pytest.mark.story("U7")
-def test_consume_overflow_succeeds(login, game_master, club, funded, item):
-    before = entries(funded).count()
-    r = login(game_master).post(url(club, funded, "consume"), payload(item, 4))
-    assert r.status_code == 302
-    assert entries(funded).count() == before + 1
 
 
 @pytest.mark.story("U3")

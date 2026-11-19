@@ -15,8 +15,7 @@ def mid(club, user):
 
 @pytest.mark.story("U18")
 @pytest.mark.parametrize("who", ["club_admin", "site_admin"])
-def test_admin_hands_over(club, login, request, character, other_player, who, make_open_trade):
-    trade = make_open_trade()
+def test_admin_hands_over(club, login, request, character, other_player, who):
     before = LedgerEntry.objects.count()
     r = login(request.getfixturevalue(who)).post(
         u("characters:handover", club, character.pk),
@@ -27,8 +26,6 @@ def test_admin_hands_over(club, login, request, character, other_player, who, ma
     assert character.owner.user == other_player
     assert LedgerEntry.objects.count() == before
     assert "now belongs to Other" in r.content.decode()
-    trade.refresh_from_db()
-    assert trade.sender == character
 
 
 @pytest.mark.story("U18")

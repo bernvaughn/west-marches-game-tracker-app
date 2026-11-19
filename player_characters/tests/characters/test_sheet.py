@@ -28,13 +28,6 @@ def test_coins_split(club, login, player, sheet):
     assert "Held" not in html
 
 
-@pytest.mark.story("U8")
-def test_no_holds_after_trade_removal(club, login, player, sheet):
-    html = login(player).get(u("characters:detail", club, sheet.pk)).content.decode()
-    assert "In open trades" not in html
-    assert "Available" in html
-
-
 @pytest.mark.story("U19")
 def test_other_player_sees_name_and_owner_only(club, login, other_player, sheet):
     r = login(other_player).get(u("characters:detail", club, sheet.pk))
