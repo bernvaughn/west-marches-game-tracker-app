@@ -2,6 +2,7 @@ from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import render
 
+from character_options.services import seed_default_options
 from map.xp import copy_default_xp_table
 
 from ..forms.clubs import ClubCreateForm
@@ -24,6 +25,7 @@ def club_new(request):
         with transaction.atomic():
             club = Club.objects.create(name=data["name"], slug=data["slug"])
             copy_default_xp_table(club)
+            seed_default_options(club)
             membership, temp = get_or_create_member(
                 club,
                 data["admin_email"],
