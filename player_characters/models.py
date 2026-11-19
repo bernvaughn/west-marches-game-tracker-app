@@ -14,6 +14,77 @@ ABILITIES = [
 ]
 
 
+OTHER = "Other"
+
+# Officially published D&D options for character sheet fields. Kept as plain
+# constants (no model `choices`) so "Other" plus freetext values can be saved.
+CLASS_CHOICES = [
+    ("Barbarian", "Barbarian"),
+    ("Bard", "Bard"),
+    ("Cleric", "Cleric"),
+    ("Druid", "Druid"),
+    ("Fighter", "Fighter"),
+    ("Monk", "Monk"),
+    ("Paladin", "Paladin"),
+    ("Ranger", "Ranger"),
+    ("Rogue", "Rogue"),
+    ("Sorcerer", "Sorcerer"),
+    ("Warlock", "Warlock"),
+    ("Wizard", "Wizard"),
+]
+
+SPECIES_CHOICES = [
+    ("Aasimar", "Aasimar"),
+    ("Dragonborn", "Dragonborn"),
+    ("Dwarf", "Dwarf"),
+    ("Elf", "Elf"),
+    ("Gnome", "Gnome"),
+    ("Half-Elf", "Half-Elf"),
+    ("Half-Orc", "Half-Orc"),
+    ("Halfling", "Halfling"),
+    ("Human", "Human"),
+    ("Orc", "Orc"),
+    ("Tiefling", "Tiefling"),
+]
+
+BACKGROUND_CHOICES = [
+    ("Acolyte", "Acolyte"),
+    ("Artisan", "Artisan"),
+    ("Charlatan", "Charlatan"),
+    ("Criminal", "Criminal"),
+    ("Entertainer", "Entertainer"),
+    ("Farmer", "Farmer"),
+    ("Guard", "Guard"),
+    ("Guide", "Guide"),
+    ("Hermit", "Hermit"),
+    ("Merchant", "Merchant"),
+    ("Noble", "Noble"),
+    ("Sage", "Sage"),
+    ("Sailor", "Sailor"),
+    ("Scribe", "Scribe"),
+    ("Soldier", "Soldier"),
+    ("Wayfarer", "Wayfarer"),
+]
+
+PRONOUNS_CHOICES = [
+    ("he/him", "he/him"),
+    ("she/her", "she/her"),
+    ("they/them", "they/them"),
+]
+
+ALIGNMENT_CHOICES = [
+    ("Chaotic Evil", "Chaotic Evil"),
+    ("Chaotic Good", "Chaotic Good"),
+    ("Chaotic Neutral", "Chaotic Neutral"),
+    ("Lawful Evil", "Lawful Evil"),
+    ("Lawful Good", "Lawful Good"),
+    ("Lawful Neutral", "Lawful Neutral"),
+    ("Neutral Evil", "Neutral Evil"),
+    ("Neutral Good", "Neutral Good"),
+    ("True Neutral", "True Neutral"),
+]
+
+
 def _ability_field():
     return models.PositiveSmallIntegerField(
         null=True,
