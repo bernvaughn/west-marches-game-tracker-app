@@ -179,7 +179,9 @@ class SpendView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
             messages.error(request, str(exc))
             return _back_to_play(request)
         if is_htmx(request):
-            return _result_response(request, result, spin=True)
+            response = _result_response(request, result, spin=True)
+            response["HX-Trigger"] = "downtimeSpent"
+            return response
         return redirect("downtime:result", club_slug=self.club.slug, pk=result.pk)
 
 
