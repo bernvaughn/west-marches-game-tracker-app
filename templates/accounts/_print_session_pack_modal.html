@@ -10,6 +10,7 @@
   hx-target="body"
   hx-on::after-request="window.print()"
 >
+  <input type="hidden" name="pack" value="1">
   <div class="modal-body">
     <p class="text-muted small mb-3">Choose what to include in your session pack:</p>
 
@@ -30,7 +31,7 @@
 
     <div class="form-check form-switch mb-2">
       <input class="form-check-input" type="checkbox" name="map" id="opt-map" value="1">
-      <label class="form-check-label" for="opt-map"><strong>Map</strong> &mdash; Current map view with locations (not yet implemented)</label>
+      <label class="form-check-label" for="opt-map"><strong>Map</strong> &mdash; Your view of each club map, with the legend</label>
     </div>
 
     {% if diff %}

@@ -365,3 +365,98 @@ def test_modal_shows_no_changes_when_empty(login, club, player, character):
     assert r.status_code == 200
     body = r.content.decode()
     assert "No changes since last print" in body
+
+
+# =============================================================================
+# Options sent by the dashboard modal (POST body)
+# =============================================================================
+
+
+@pytest.mark.story("S10")
+def test_modal_post_only_quests_hides_sheet_and_items(login, club, player, funded, item):
+    """Unchecked boxes are absent from the POST body and turn the option off."""
+    r = login(player).post(pack_url(club, funded), {"pack": "1", "quests": "1"})
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "wm-item-card" not in body
+    assert "wm-sheet-abilities" not in body
+    assert "No quests ready to turn in." in body
+
+
+@pytest.mark.story("S10")
+def test_modal_post_nothing_checked_prints_nothing(login, club, player, funded, item):
+    """With every box unchecked, no section prints."""
+    body = login(player).post(pack_url(club, funded), {"pack": "1"}).content.decode()
+    assert "wm-item-card" not in body
+    assert "wm-sheet-abilities" not in body
+    assert "No quests ready to turn in." not in body
+    assert "wm-map-print" not in body
+
+
+@pytest.mark.story("S10")
+def test_modal_form_sends_pack_marker(login, club, player, funded):
+    """The modal form carries the marker that makes the view read its POST body."""
+    body = login(player).get(modal_url(club, funded)).content.decode()
+    assert 'name="pack" value="1"' in body
+
+
+@pytest.mark.story("S10")
+def test_reprint_form_keeps_chosen_options(login, club, player, funded, item):
+    """The page's own Print button posts back the options it was opened with."""
+    body = login(player).get(pack_url(club, funded) + "?sheet=0&map=1").content.decode()
+    assert 'name="pack" value="1"' in body
+    assert 'name="sheet"' not in body
+    assert '<input type="hidden" name="items" value="1">' in body
+    assert '<input type="hidden" name="quests" value="1">' in body
+    assert '<input type="hidden" name="map" value="1">' in body
+
+
+@pytest.mark.story("S10")
+def test_post_without_marker_reads_query(login, club, player, funded, item):
+    """A POST without the marker reads the query string like a GET."""
+    body = login(player).post(pack_url(club, funded) + "?items=0").content.decode()
+    assert "wm-item-card" not in body
+    assert "wm-sheet-abilities" in body
+
+
+# =============================================================================
+# Map option
+# =============================================================================
+
+
+@pytest.mark.story("S10")
+def test_map_off_by_default(login, club, player, funded):
+    from map.models import HexMap
+
+    HexMap.objects.create(club=club, name="The Marches")
+    body = login(player).get(pack_url(club, funded)).content.decode()
+    assert "wm-map-print" not in body
+
+
+@pytest.mark.story("S10")
+def test_map_option_prints_character_view(login, club, player, funded):
+    """The map prints the character's view of each active club map."""
+    from map.models import HexMap, Location, Tile, TileVisit
+
+    hex_map = HexMap.objects.create(club=club, name="The Marches")
+    HexMap.objects.create(club=club, name="Old Map", archived=True)
+    seen = Tile.objects.create(map=hex_map, q=1, r=0, color="green")
+    hidden = Tile.objects.create(map=hex_map, q=-1, r=0, color="red")
+    Location.objects.create(tile=hidden, name="Secret Lair", symbol="X")
+    TileVisit.objects.create(map=hex_map, character=funded, q=seen.q, r=seen.r)
+
+    body = login(player).post(pack_url(club, funded), {"pack": "1", "map": "1"}).content.decode()
+    assert "wm-map-print" in body
+    assert "The Marches" in body
+    assert "Old Map" not in body
+    assert 'class="hexmap' in body
+    assert "Map legend" in body
+    assert "hex-visited" in body
+    assert "Secret Lair" not in body
+    assert "not yet implemented" not in body
+
+
+@pytest.mark.story("S10")
+def test_map_option_without_maps(login, club, player, funded):
+    body = login(player).get(pack_url(club, funded) + "?map=1").content.decode()
+    assert "No maps to print." in body
