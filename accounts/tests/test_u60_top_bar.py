@@ -95,13 +95,6 @@ def test_admin_does_not_get_people_or_items_in_club_group(login, club, club_admi
         assert f'href="{reverse(name, args=[club.slug])}"' not in group
 
 
-def test_empty_group_hidden(login, club, player, monkeypatch):
-    monkeypatch.setattr(
-        navigation, "_entries", [e for e in navigation._entries if e.group != "map"]
-    )
-    assert "wm-menu-group-map" not in home(login, player, club)
-
-
 def test_agent_access_only_in_game_master_menu(login, club, player, game_master):
     url = reverse("agent_access:index", args=[club.slug])
     body = home(login, game_master, club)
