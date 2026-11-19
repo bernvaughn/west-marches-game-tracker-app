@@ -1,15 +1,26 @@
-## verify
-- [ ] Checkboxes appear per request on map requests page (GM view only)
-- [ ] "Approve selected" button appears when one or more checkboxes are checked
-- [ ] Clicking "Approve selected" opens a modal with tabs for Discovery, Exploration, Found
-- [ ] Each tab lists the picked characters from selected requests of that kind
-- [ ] Single "Approve all" confirm button in modal applies approvals to all selected requests
-- [ ] Approved requests show status "Approved" with decided_by and decided_at set
-- [ ] Discovery requests create LocationCredit (DISCOVERED) for listed characters
-- [ ] Exploration requests create LocationCredit (EXPLORED) for listed characters
-- [ ] Found requests create FoundMark for listed characters
-- [ ] Visit requests are handled appropriately (record TileVisit) or excluded from bulk approve
-- [ ] Modal closes and queue refreshes after successful bulk approval
-- [ ] Error handling: already-decided requests are skipped with feedback
-- [ ] Permission: only GMs/admins can see checkboxes and bulk approve
-- [ ] Non-GM users (players) see read-only queue without checkboxes or bulk actions
+## Acceptance Criteria
+
+### Plan Stage
+- [ ] Implementation plan documented with files to change and verification steps
+
+### Code Stage
+- [ ] Alpine.js CSP build (v3.13.3) replaces standard build in `static/vendor/alpinejs/alpine.min.js`
+- [ ] `config/settings.py` - `'unsafe-eval'` removed from `script-src` CSP directive
+- [ ] `config/test_settings.py` - `'unsafe-eval'` removed from `script-src` CSP directive
+- [ ] All tests pass (2127 tests)
+- [ ] Linting passes (`ruff check`)
+- [ ] Formatting passes (`ruff format --check`)
+
+### Review Stage
+- [ ] Code review confirms CSP build doesn't use `eval()`/`Function()` constructor
+- [ ] CSP policy no longer includes `'unsafe-eval'`
+- [ ] Command palette (Cmd/Ctrl+K) works correctly
+- [ ] Alpine.js components initialize without CSP errors
+
+### Verify Stage
+- [ ] CI pipeline passes on PR
+- [ ] Manual verification: command palette opens and functions
+- [ ] No `EvalError: call to Function() blocked by CSP` errors in browser console
+
+### Done Stage
+- [ ] Merged to main branch
