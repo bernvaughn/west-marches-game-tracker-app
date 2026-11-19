@@ -30,7 +30,7 @@ def consumable_consume_partial(request, club_slug, item_pk):
         raise Http404("The character has none of this item available.")
 
     # Check if item is actually consumable
-    if not is_consumable(item, available):
+    if not is_consumable(item):
         raise Http404("This item is not a consumable.")
 
     # Build form for GET request

@@ -5,9 +5,7 @@
       {% include "components/icon.html" with name="envelope" %}
       Messages
     </h3>
-    {% if provider_context.unread_count > 0 %}
-    <span class="badge text-bg-danger badge-pill">{{ provider_context.unread_count }}</span>
-    {% endif %}
+
   </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush">

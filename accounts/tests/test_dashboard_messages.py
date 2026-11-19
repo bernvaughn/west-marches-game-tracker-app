@@ -4,6 +4,7 @@ import pytest
 from django.urls import reverse
 
 from accounts.models import Membership, Message
+from player_characters.models import Character
 
 
 def _mem(user, club):
@@ -191,6 +192,28 @@ def test_message_detail_404_for_nonexistent(club, player, login):
     c = login(player)
     resp = c.get(_url_message_detail(club, 99999))
     assert resp.status_code == 404
+
+
+@pytest.mark.story("S9")
+def test_messages_card_no_badge_when_only_other_player_has_open_messages(
+    club, player, character, other_player, login
+):
+    """Bob's Messages card shows no badge when only Alice has open messages."""
+    alice_mem = Membership.objects.get(user=player, club=club)
+    bob_mem = Membership.objects.get(user=other_player, club=club)
+    Character.objects.create(club=club, owner=bob_mem, name="Bob's character")
+
+    # Alice has two open messages to the admins
+    Message.objects.create(club=club, sender=alice_mem, character=character, body="Hello admins")
+    Message.objects.create(club=club, sender=alice_mem, character=character, body="Again")
+
+    c = login(other_player)  # Bob
+    resp = c.get(_url_dashboard(club))
+    assert resp.status_code == 200
+    content = resp.content.decode()
+    assert "Message Admins" in content
+    # No admin-queue badge on the player dashboard
+    assert "text-bg-danger" not in content
 
 
 @pytest.mark.story("S9")

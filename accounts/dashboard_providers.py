@@ -33,13 +33,17 @@ if TYPE_CHECKING:
     from player_characters.models import Character
 
 
-def is_consumable(item: Item, quantity: int) -> bool:
-    """Check if item is consumable based on quantity or traits."""
-    if quantity > 1:
+def is_consumable(item: Item) -> bool:
+    """Check if item is consumable.
+
+    An item is consumable when its magic type is Potion or Scroll, or when its
+    traits contain the word "consumable" (case-insensitive). Quantity never
+    decides.
+    """
+    if item.magic_type in (MagicType.POTION, MagicType.SCROLL):
         return True
-    if item.traits and "consumable" in item.traits.lower():
-        return True
-    return False
+    traits = item.traits or ""
+    return "consumable" in traits.lower()
 
 
 def get_healing_potion_stock(club: "Club", today) -> QuerySet[ShopStock]:
@@ -69,19 +73,11 @@ def build_header_stats(
     junk = junk_rows(character)
     junk_val = junk_value(character, junk)
 
-    unread_count = (
-        Message.objects.for_club(club)
-        .filter(status=Message.Status.OPEN)
-        .exclude(sender=membership)
-        .count()
-    )
-
     return {
         "coin_summary": coin_sum,
         "downtime_balance": downtime_balance,
         "junk_count": len(junk),
         "junk_value": junk_val,
-        "unread_count": unread_count,
     }
 
 
@@ -195,9 +191,9 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
     order = 8
     template = "accounts/_dashboard_consumables.html"
 
-    def _is_consumable(self, item: Item, quantity: int) -> bool:
+    def _is_consumable(self, item: Item) -> bool:
         """Check if item is consumable. Delegates to module-level helper."""
-        return is_consumable(item, quantity)
+        return is_consumable(item)
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         have = available_items(character)
@@ -209,7 +205,7 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
             if qty <= 0:
                 continue
             item = Item.objects.filter(pk=item_id).first()
-            if item and is_consumable(item, qty):
+            if item and is_consumable(item):
                 consumable_items.append(
                     {
                         "item": item,
@@ -230,7 +226,7 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
         for item_id, qty in have.items():
             if qty > 0:
                 item = Item.objects.filter(pk=item_id).first()
-                if item and is_consumable(item, qty):
+                if item and is_consumable(item):
                     return True
         return False
 
@@ -316,15 +312,6 @@ class MessagesDashboardProvider(BaseDashboardProvider):
     template = "accounts/_dashboard_messages.html"
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        from accounts.models import Message
-
-        unread_count = (
-            Message.objects.for_club(club)
-            .filter(status=Message.Status.OPEN)
-            .exclude(sender=membership)
-            .count()
-        )
-
         message_items = [
             {
                 "label": "Message Admins",
@@ -335,7 +322,6 @@ class MessagesDashboardProvider(BaseDashboardProvider):
         ]
 
         return {
-            "unread_count": unread_count,
             "message_items": message_items,
         }
 
