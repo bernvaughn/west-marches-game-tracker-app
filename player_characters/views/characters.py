@@ -137,6 +137,11 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
         can_view = self.can_view_inventory(request.user, character)
         admin = self.is_club_admin(request.user, self.club)
         gm = self.is_game_master(request.user, self.club)
+        template = (
+            StartingEquipmentTemplate.objects.filter(club=self.club, is_active=True)
+            .order_by("name")
+            .first()
+        )
         ctx = {
             "character": character,
             "characters_url": reverse(
@@ -151,6 +156,11 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "is_owner": owns_character(request.user, character),
             "can_handover": admin,
             "show_starting_animation": request.GET.get("starting_equipment") == "1",
+            "can_request_starting_equipment": owns_character(request.user, character)
+            or admin
+            or gm,
+            "has_magic_options": template is not None and template.magic_options.exists(),
+            "active_template": template,
         }
         if can_view:
             char_ctx = self.get_character_context(character)
