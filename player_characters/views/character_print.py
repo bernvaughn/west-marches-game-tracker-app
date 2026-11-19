@@ -4,6 +4,10 @@ from django.utils import timezone
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
+from map.hexgrid import DEFAULT_RADIUS
+from map.models import HexMap
+from map.render import build_cells
+from map.visibility import location_reveal, visible_positions
 from quests.services import missing_items, needed_by_open_quests
 
 from ..access import require_inventory_access
@@ -15,6 +19,34 @@ from ..sheet import ability_modifier, ability_rows, passive_perception
 
 LAYOUTS = ("full", "grid")
 COPIES = ("type", "item")
+
+# Session pack options and their defaults for a plain GET link.
+PACK_OPTIONS = {"sheet": "1", "items": "1", "quests": "1", "map": "0"}
+
+
+def pack_options(request):
+    """Read the session pack options.
+
+    A POST from the options form carries a "pack" marker. Its checkboxes are
+    absent when unchecked, so a missing option means off. Any other request
+    reads the query string and falls back to the defaults.
+    """
+    if request.method == "POST" and "pack" in request.POST:
+        return {key: request.POST.get(key) == "1" for key in PACK_OPTIONS}
+    return {key: request.GET.get(key, default) == "1" for key, default in PACK_OPTIONS.items()}
+
+
+def character_maps(request, character):
+    """The club's active maps, each as this character's players' view."""
+    maps = []
+    for hex_map in HexMap.objects.for_club(request.club).filter(archived=False):
+        visible = visible_positions(hex_map, [character])
+        reveal = location_reveal(hex_map, {"visible": visible, "picked": [character]})
+        cells = build_cells(
+            hex_map, 0, 0, DEFAULT_RADIUS, visible, club_slug=request.club.slug, reveal=reveal
+        )
+        maps.append({"hex_map": hex_map, **cells})
+    return maps
 
 
 @club_member_required
@@ -103,11 +135,11 @@ def print_session_pack(request, club_slug, pk):
         character.last_printed_at = timezone.now()
         character.save(update_fields=["last_printed_at"])
 
-    # Parse query parameters for print options
-    include_sheet = request.GET.get("sheet", "1") == "1"
-    include_items = request.GET.get("items", "1") == "1"
-    include_quests = request.GET.get("quests", "1") == "1"
-    include_map = request.GET.get("map", "0") == "1"
+    options = pack_options(request)
+    include_sheet = options["sheet"]
+    include_items = options["items"]
+    include_quests = options["quests"]
+    include_map = options["map"]
 
     # Character sheet data
     coins = coin_summary(character)
@@ -139,7 +171,7 @@ def print_session_pack(request, club_slug, pk):
                 if not missing_items(q, character):
                     ready_quests.append(q)
 
-    show_map = include_map
+    maps = character_maps(request, character) if include_map else []
 
     # Check if request is from htmx (modal flow)
     from_htmx = request.headers.get("HX-Request") == "true"
@@ -164,7 +196,7 @@ def print_session_pack(request, club_slug, pk):
             "too_many": over,
             "card_cap": CARD_CAP,
             "ready_quests": ready_quests,
-            "show_map": show_map,
+            "maps": maps,
             "printed_on": timezone.localdate(),
             "from_htmx": from_htmx,
         },

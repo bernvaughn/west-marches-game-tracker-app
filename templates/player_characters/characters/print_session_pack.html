@@ -15,7 +15,12 @@
 </div>
 
 {% if not from_htmx %}
-<form hx-post="{% url 'characters:print_session_pack' club.slug character.pk %}?sheet={{ include_sheet|yesno:'1,0' }}&items={{ include_items|yesno:'1,0' }}&quests={{ include_quests|yesno:'1,0' }}&map={{ include_map|yesno:'1,0' }}" hx-target="body" hx-on::after-request="window.print()" class="no-print">
+<form hx-post="{% url 'characters:print_session_pack' club.slug character.pk %}" hx-target="body" hx-on::after-request="window.print()" class="no-print">
+  <input type="hidden" name="pack" value="1">
+  {% if include_sheet %}<input type="hidden" name="sheet" value="1">{% endif %}
+  {% if include_items %}<input type="hidden" name="items" value="1">{% endif %}
+  {% if include_quests %}<input type="hidden" name="quests" value="1">{% endif %}
+  {% if include_map %}<input type="hidden" name="map" value="1">{% endif %}
   <div class="wm-toolbar" role="toolbar" aria-label="Print actions">
     <button type="submit" class="btn btn-sm btn-primary wm-print-btn">{% include "components/icon.html" with name="printer" %} Print</button>
   </div>
@@ -137,12 +142,18 @@
 {% endif %}
 {% endif %}
 
-{% if include_map and show_map %}
-<!-- Map Section (Placeholder) -->
-<section class="wm-map-print">
-  <h2>Map</h2>
-  <p class="wm-sheet-note">Map printing is not yet implemented in the session pack. Visit the map page to print.</p>
+{% if include_map %}
+<!-- Map Section: the character's players' view of each active club map -->
+<link rel="stylesheet" href="{% static 'map/map.css' %}">
+{% for m in maps %}
+<section class="wm-map-print" aria-label="Map: {{ m.hex_map.name }}">
+  <h2>{{ m.hex_map.name }}</h2>
+  {% include "map/_hexmap.html" with cells=m.cells viewbox=m.viewbox fit_screen=False tile_modal=False %}
+  <div class="mt-3 mb-3">{% include "map/_legend.html" %}</div>
 </section>
+{% empty %}
+<p class="wm-sheet-note">No maps to print.</p>
+{% endfor %}
 {% endif %}
 
 <footer class="wm-print-footer no-print mt-4 text-center text-muted small">
