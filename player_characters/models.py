@@ -3,6 +3,11 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from accounts.scoping import ClubScopedManager
+from character_options.defaults import (
+    DEFAULT_BACKGROUNDS,
+    DEFAULT_CLASSES,
+    DEFAULT_SPECIES,
+)
 
 ABILITIES = [
     ("strength", "STR", "Strength"),
@@ -18,53 +23,10 @@ OTHER = "Other"
 
 # Officially published D&D options for character sheet fields. Kept as plain
 # constants (no model `choices`) so "Other" plus freetext values can be saved.
-CLASS_CHOICES = [
-    ("Barbarian", "Barbarian"),
-    ("Bard", "Bard"),
-    ("Cleric", "Cleric"),
-    ("Druid", "Druid"),
-    ("Fighter", "Fighter"),
-    ("Monk", "Monk"),
-    ("Paladin", "Paladin"),
-    ("Ranger", "Ranger"),
-    ("Rogue", "Rogue"),
-    ("Sorcerer", "Sorcerer"),
-    ("Warlock", "Warlock"),
-    ("Wizard", "Wizard"),
-]
-
-SPECIES_CHOICES = [
-    ("Aasimar", "Aasimar"),
-    ("Dragonborn", "Dragonborn"),
-    ("Dwarf", "Dwarf"),
-    ("Elf", "Elf"),
-    ("Gnome", "Gnome"),
-    ("Half-Elf", "Half-Elf"),
-    ("Half-Orc", "Half-Orc"),
-    ("Halfling", "Halfling"),
-    ("Human", "Human"),
-    ("Orc", "Orc"),
-    ("Tiefling", "Tiefling"),
-]
-
-BACKGROUND_CHOICES = [
-    ("Acolyte", "Acolyte"),
-    ("Artisan", "Artisan"),
-    ("Charlatan", "Charlatan"),
-    ("Criminal", "Criminal"),
-    ("Entertainer", "Entertainer"),
-    ("Farmer", "Farmer"),
-    ("Guard", "Guard"),
-    ("Guide", "Guide"),
-    ("Hermit", "Hermit"),
-    ("Merchant", "Merchant"),
-    ("Noble", "Noble"),
-    ("Sage", "Sage"),
-    ("Sailor", "Sailor"),
-    ("Scribe", "Scribe"),
-    ("Soldier", "Soldier"),
-    ("Wayfarer", "Wayfarer"),
-]
+# Derived from character_options.defaults for backwards compatibility.
+CLASS_CHOICES = [(n, n) for n in DEFAULT_CLASSES]
+SPECIES_CHOICES = [(n, n) for n in DEFAULT_SPECIES]
+BACKGROUND_CHOICES = [(n, n) for n in DEFAULT_BACKGROUNDS]
 
 PRONOUNS_CHOICES = [
     ("he/him", "he/him"),
@@ -116,6 +78,27 @@ class Character(models.Model):
         blank=True,
         help_text="Character background (e.g., Acolyte, Soldier)",
     )
+    species_option = models.ForeignKey(
+        "character_options.Species",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="characters",
+    )
+    class_option = models.ForeignKey(
+        "character_options.CharacterClass",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="characters",
+    )
+    background_option = models.ForeignKey(
+        "character_options.Background",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="characters",
+    )
     alignment = models.CharField(max_length=60, blank=True)
     pronouns = models.CharField(max_length=60, blank=True)
     strength = _ability_field()
@@ -150,7 +133,6 @@ class Character(models.Model):
     starting_equipment_claimed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     last_printed_at = models.DateTimeField(null=True, blank=True)
-    starting_equipment_claimed = models.BooleanField(default=False)
 
     objects = ClubScopedManager()
 

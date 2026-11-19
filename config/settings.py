@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "oauth2_provider",
     "csp",
     "accounts",
+    "character_options",
     "player_characters",
     "items",
     "core",

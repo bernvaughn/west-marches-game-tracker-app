@@ -2,6 +2,7 @@ import pytest
 from django.test import Client
 
 from accounts.models import Club, Membership, User
+from character_options.models import Background, CharacterClass, Species
 from items.models import Item
 from items.tests.factories import make_container as _make_container
 from items.tests.factories import make_diplomats_pack
@@ -99,3 +100,18 @@ def diplomats_pack(db, club):
     """Diplomat's Pack fixture: fixed, ranged, 50%, weighted and unknown slots."""
 
     return make_diplomats_pack(club)
+
+
+@pytest.fixture
+def species(club):
+    return Species.objects.create(club=club, name="Elf")
+
+
+@pytest.fixture
+def char_class(club):
+    return CharacterClass.objects.create(club=club, name="Fighter")
+
+
+@pytest.fixture
+def background(club):
+    return Background.objects.create(club=club, name="Soldier")

@@ -6,7 +6,6 @@ from django.db.models import Q
 
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import record as ledger_record
-from starting_equipment.models import StartingEquipmentRequest
 
 if TYPE_CHECKING:
     from accounts.models import User
@@ -99,22 +98,9 @@ def apply_starting_equipment(
         if level_coins_entry:
             total_coins += level_coins_entry.coins_cp
 
-    # 4. Magic item requests - only approved ones
-    for request in character.starting_requests.filter(
-        status=StartingEquipmentRequest.Status.APPROVED,
-    ).select_related("item"):
-        # Check if item is in the template's magic options
-        magic_option = template.magic_options.filter(
-            item=request.item,
-        ).first()
-        if magic_option:
-            lines.append(
-                LedgerLine(
-                    item=request.item,
-                    quantity=request.quantity,
-                    coins=0,
-                )
-            )
+    # Note: approved magic item requests are already granted immediately by
+    # request_decide (approve). They are intentionally NOT re-granted here to
+    # avoid a double grant when the character later claims starting equipment.
 
     # If nothing to grant, return None
     if not lines and total_coins == 0:
