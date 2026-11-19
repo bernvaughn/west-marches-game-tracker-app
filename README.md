@@ -157,7 +157,7 @@ The records for every app are outlined in [docs/DATA_MODEL.md](docs/DATA_MODEL.m
 
 How the larger scope fits this architecture:
 
-- **Purchases and trades** stay single database transactions: check stock, holds, and balance, then write ledger rows. When two players click Buy on the last item together, the second gets an "already sold" message.
+- **Purchases and sales** stay single database transactions: check stock and balance, then write ledger rows. When two players click Buy on the last item together, the second gets an "already sold" message.
 - **Live updates** use htmx polling, as before: a fragment the page re-requests every 5 seconds, skipped while the browser tab is hidden. Poll only the pages where freshness matters (shop stock); the map and character sheets can load once and refresh on demand.
 - **Printing** (item cheat sheets, maps) uses ordinary web pages with a print stylesheet and the browser's own print dialog. Do not add server-side PDF generation; it needs more memory than this Droplet should spare.
 - **The map** can grow forever, but only tiles with something on them are stored, so storage and rendering depend on what exists, not on how far the map extends. Show only the part of the map in view.

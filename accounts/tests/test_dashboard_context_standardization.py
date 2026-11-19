@@ -5,9 +5,9 @@ and that the `dashboard_partial` endpoint wraps context correctly.
 
 Related to task 01a1e697-bf0b-76cb-8edb-f2a9b0530e14.
 
-Note: The "trades" provider was replaced by HeaderDashboardProvider (key="header")
-which is intentionally excluded from the provider grid loop and dashboard_partial
-endpoint. Trades data is rendered in the header via explicit include with flat keys.
+Note: HeaderDashboardProvider (key="header") is intentionally excluded from the
+provider grid loop and dashboard_partial endpoint. Header data is rendered in the
+header via explicit include with flat keys.
 """
 
 import pytest
@@ -167,8 +167,7 @@ def test_all_provider_templates_use_provider_context(club, player, character, lo
     import os
 
     template_dir = "templates/accounts"
-    # _dashboard_trades.html was deleted - trades moved to HeaderDashboardProvider
-    # which uses flat keys via explicit include in dashboard.html
+    # HeaderDashboardProvider uses flat keys via explicit include in dashboard.html
     template_names = [
         "_dashboard_quick_actions.html",
         "_dashboard_quests.html",
