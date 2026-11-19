@@ -245,7 +245,7 @@ X_FRAME_OPTIONS = "DENY"
 CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
         "default-src": ("'self'",),
-        "script-src": ("'self'",),
+        "script-src": ("'self'", "'unsafe-eval'"),
         "style-src": ("'self'", "'unsafe-inline'"),
         "img-src": ("'self'", "data:"),
         "font-src": ("'self'",),
