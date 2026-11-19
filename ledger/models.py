@@ -45,6 +45,7 @@ class LedgerEntry(AppendOnlyModel):
         CONSUMED = "consumed", "Consumed"
         ADJUSTMENT = "adjustment", "Adjustment"
         REVERSAL = "reversal", "Reversal"
+        OPENED = "opened", "Opened"
 
     club = models.ForeignKey(
         "accounts.Club", on_delete=models.PROTECT, related_name="ledger_entries"

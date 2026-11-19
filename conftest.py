@@ -4,6 +4,8 @@ from django.test import Client
 from accounts.models import Club, Membership, User
 from character_options.models import Background, CharacterClass, Species
 from items.models import Item
+from items.tests.factories import make_container as _make_container
+from items.tests.factories import make_diplomats_pack
 from player_characters.models import Character
 
 
@@ -81,6 +83,23 @@ def login():
         return client
 
     return _login
+
+
+@pytest.fixture
+def make_container(db):
+    """Create a container item in a club; delegates to the shared factory."""
+
+    def _make(club, name="Mystery Box", **kw):
+        return _make_container(club, name=name, **kw)
+
+    return _make
+
+
+@pytest.fixture
+def diplomats_pack(db, club):
+    """Diplomat's Pack fixture: fixed, ranged, 50%, weighted and unknown slots."""
+
+    return make_diplomats_pack(club)
 
 
 @pytest.fixture
