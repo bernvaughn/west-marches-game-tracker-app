@@ -2,6 +2,7 @@ import datetime
 
 import pytest
 from django.core.management import call_command
+from django.urls import reverse
 
 from accounts.demo import DEMO_LOGINS, DEMO_PASSWORD
 from accounts.models import Club, Membership, User
@@ -12,6 +13,7 @@ from map.models import HexMap, Location, Tile, TileVisit, XPLevel
 from player_characters.models import Character
 from quests.models import Quest, QuestRequirement, QuestReward
 from shops.models import Rotation, Shop, ShopStock
+from starting_equipment.models import StartingEquipmentTemplate
 
 pytestmark = [pytest.mark.story("FOUNDATION"), pytest.mark.django_db]
 
@@ -84,3 +86,49 @@ def test_demo_shop_silhouettes_idempotent():
     assert dict(Shop.objects.values_list("name", "silhouette")) == got
     call_command("seed_demo")
     assert dict(Shop.objects.values_list("name", "silhouette")) == got
+
+
+def test_seed_demo_creates_starting_equipment_template():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    template = StartingEquipmentTemplate.objects.get(club=club, name="2024 D&D Default")
+    assert template.is_active
+    assert template.class_entries.exists()
+    assert template.background_entries.exists()
+    assert template.level_coins.exists()
+
+
+def test_seed_demo_twice_does_not_duplicate_template():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    template = StartingEquipmentTemplate.objects.get(club=club, name="2024 D&D Default")
+    class_count = template.class_entries.count()
+    background_count = template.background_entries.count()
+    level_coins_count = template.level_coins.count()
+
+    call_command("seed_demo")
+
+    assert StartingEquipmentTemplate.objects.filter(club=club, name="2024 D&D Default").count() == 1
+    template.refresh_from_db()
+    assert template.class_entries.count() == class_count
+    assert template.background_entries.count() == background_count
+    assert template.level_coins.count() == level_coins_count
+
+
+def test_demo_character_shows_claim_button_for_owner(client):
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    alice = User.objects.get(email="alice@example.com")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    assert aria.char_class
+    assert not aria.starting_equipment_claimed
+
+    client.force_login(alice)
+    response = client.get(
+        reverse(
+            "characters:detail",
+            kwargs={"club_slug": club.slug, "pk": aria.pk},
+        )
+    )
+    assert response.status_code == 200
+    assert response.context["can_claim_starting_equipment"] is True
