@@ -1,20 +1,19 @@
 # Implementation Plan: S10 Batch Print for Session
 
 ## Overview
-Add a "Print Session Pack" feature that combines character sheet, item cards, ready quests, map, and open trades into a single printable document. The feature includes a button on the dashboard header and a print dialog with options.
+Add a "Print Session Pack" feature that combines character sheet, item cards, ready quests, and map into a single printable document. The feature includes a button on the dashboard header and a print dialog with options.
 
 ## Files to Create/Modify
 
 ### 1. `player_characters/views/character_print.py` (modify)
 Add new `print_session_pack` view function:
 - Accepts `club_slug`, `pk` (character), and query parameters for print options
-- Options: `sheet`, `items`, `quests`, `map`, `trades` (all default to true except map/trades)
+- Options: `sheet`, `items`, `quests`, `map` (all default to true except map)
 - Gathers data from existing sources:
   - Character sheet data (like `characters.detail` view)
   - Item cards grid (reuse `print_items` logic)
   - Ready quests (reuse `QuestsProvider` logic from dashboard)
   - Map data (reuse `map.views.print` logic if selected)
-  - Open trades (reuse `TradesProvider` logic)
 - Renders `print_session_pack.html` template
 
 ### 2. `templates/player_characters/characters/print_session_pack.html` (new)
@@ -26,7 +25,6 @@ New template combining all sections:
   - Item cards grid (reuse `characters/print.html` structure)
   - Ready quests (include `quests/_notice.html` for each)
   - Map (include `map/views/print.html` structure if enabled)
-  - Open trades (simple table if enabled)
 - Print dialog options form at top (no-print)
 - Uses existing `.wm-card-print` and print CSS classes
 
@@ -49,7 +47,7 @@ Add "Print Session Pack" button in header (top-right):
 - Uses existing modal pattern (`data-app-modal`, `hx-get`)
 
 ### 5. `templates/accounts/_dashboard_header.html` partial for print options modal (new)
-- Modal with checkboxes for: Character Sheet, Item Cards, Ready Quests, Map, Open Trades
+- Modal with checkboxes for: Character Sheet, Item Cards, Ready Quests, Map
 - Submit button goes to `print_session_pack` URL with query params
 
 ## Print CSS
@@ -68,7 +66,7 @@ Add "Print Session Pack" button in header (top-right):
 | Criterion | Implementation |
 |-----------|----------------|
 | "Print Session Pack" button on dashboard (top-right of header) | Added to `_dashboard_header.html` |
-| Print dialog options: ☑ Character Sheet, ☑ Item Cards (all, grid), ☑ Ready Quests, ☐ Map, ☐ Open Trades | Modal with checkboxes in `_dashboard_header.html` |
+| Print dialog options: ☑ Character Sheet, ☑ Item Cards (all, grid), ☑ Ready Quests, ☐ Map | Modal with checkboxes in `_dashboard_header.html` |
 | Generates combined print layout using existing print templates | `print_session_pack` view + `print_session_pack.html` template |
 | Print CSS hides nav, actions, modals; fits Letter/A4 | Uses existing `print.css` |
 | Ruff clean, unit + browser tests pass | Tests in `player_characters/tests/characters/test_print.py` |
