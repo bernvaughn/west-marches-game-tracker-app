@@ -2,6 +2,8 @@ import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.contrib import messages
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
@@ -18,9 +20,10 @@ from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards,
 
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
-from .forms import ItemForm
+from .containers import validate_container_config
+from .forms import ItemForm, OptionFormSet, SlotFormSet
 from .magic_types import NONE_LABEL, MagicType
-from .models import Item
+from .models import ContainerSlot, Item
 from .rarity import Rarity
 from .references import reference_items
 from .services import delete_or_retire
@@ -109,12 +112,196 @@ class DetailsModalView(ClubScopedMixin, PermissionMixin, View):
 
 
 def _form_view(request, instance):
+    return _item_form_view(request, instance, with_container=True)
+
+
+def _create_form_view(request, instance):
+    """Form view for create modal - no container config."""
+    return _item_form_view(request, instance, with_container=False)
+
+
+def _item_form_view(request, instance, with_container):
+    """Shared form view for create/edit with optional container config."""
     form = ItemForm(request.POST or None, instance=instance, club=request.club)
-    if request.method == "POST" and form.is_valid():
+
+    # Build container formsets only for edit view with existing item that IS a container
+    slot_formset = None
+    container_errors = None
+
+    if request.method == "POST":
+        # Handle add/remove row buttons
+        if "add_slot" in request.POST:
+            # Need slot_formset for re-rendering
+            if slot_formset is None and with_container and instance.pk:
+                slot_formset = SlotFormSet(
+                    None,
+                    instance=instance,
+                    prefix="slots",
+                    club=request.club,
+                    container=instance,
+                )
+            return _handle_add_slot(request, instance, form, slot_formset)
+        if "add_option" in request.POST:
+            if slot_formset is None and with_container and instance.pk:
+                slot_formset = SlotFormSet(
+                    None,
+                    instance=instance,
+                    prefix="slots",
+                    club=request.club,
+                    container=instance,
+                )
+            return _handle_add_option(request, instance, form, slot_formset)
+
+        # Handle actual save
+        is_container = request.POST.get("is_container") == "on"
+
+        # For container save or if item is already a container, build formset with POST data
+        if (is_container or instance.is_container) and with_container and instance.pk:
+            slot_formset = SlotFormSet(
+                request.POST,
+                instance=instance,
+                prefix="slots",
+                club=request.club,
+                container=instance,
+            )
+    else:
+        # GET request - show formset for admins on edit page (with_container=True)
+        # Create empty formset for non-containers so the toggle is visible
+        if with_container and instance.pk:
+            slot_formset = SlotFormSet(
+                None,
+                instance=instance,
+                prefix="slots",
+                club=request.club,
+                container=instance,
+            )
+
+    # Validate formset only if it exists and we're saving a container
+    if request.method == "POST":
+        is_container = request.POST.get("is_container") == "on"
+        if is_container and slot_formset is not None:
+            # First validate nested option formsets (they don't depend on slot cleaned_data)
+            opts_valid_all = True
+            for slot_form in slot_formset.forms:
+                if slot_formset.can_delete and slot_formset._should_delete_form(slot_form):
+                    continue
+                opts = getattr(slot_form, "options", None)
+                if opts is not None:
+                    if not opts.is_valid():
+                        opts_valid_all = False
+                        break
+            
+            # Then validate slot formset (its clean method checks option forms' cleaned_data)
+            slot_valid = slot_formset.is_valid() and opts_valid_all
+        else:
+            slot_valid = True
+    else:
+        slot_valid = True
+
+    if form.is_valid() and slot_valid:
         item = form.save()
+
+        if is_container and slot_formset is not None:
+            # Save container config inside atomic transaction
+            try:
+                with transaction.atomic():
+                    slot_formset.instance = item
+                    slot_formset.save()
+                    # Save nested option formsets
+                    for slot_form in slot_formset.forms:
+                        if slot_formset.can_delete and slot_formset._should_delete_form(slot_form):
+                            continue
+                        if not slot_form.cleaned_data:
+                            continue
+                        opts = getattr(slot_form, "options", None)
+                        if opts is not None:
+                            opts.instance = slot_form.instance
+                            opts.save()
+                    # Validate container config after save (reads DB)
+                    if is_container:
+                        validate_container_config(item)
+            except ValidationError as e:
+                # Rollback happened, rebuild formsets from POST
+                messages.error(request, "; ".join(e.messages))
+                container_errors = e.messages
+                slot_formset = SlotFormSet(
+                    request.POST,
+                    instance=item,
+                    prefix="slots",
+                    club=request.club,
+                    container=item,
+                )
+                return render(request, "items/form.html", {
+                    "form": form,
+                    "item": item,
+                    "slot_formset": slot_formset,
+                    "container_errors": container_errors,
+                })
+        else:
+            # Toggle off - don't process formsets, existing slots stay inert
+            pass
+
         messages.success(request, f"Saved {item.name}.")
         return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
-    return render(request, "items/form.html", {"form": form, "item": instance})
+
+    return render(request, "items/form.html", {
+        "form": form,
+        "item": instance,
+        "slot_formset": slot_formset,
+        "container_errors": container_errors,
+    })
+
+
+def _handle_add_slot(request, instance, form, slot_formset):
+    """Handle 'add slot' button - bump TOTAL_FORMS and re-render."""
+    post = request.POST.copy()
+    prefix = "slots"
+    total = int(post.get(f"{prefix}-TOTAL_FORMS", 0))
+    post[f"{prefix}-TOTAL_FORMS"] = total + 1
+    # Rebuild formset with incremented count
+    slot_formset = SlotFormSet(
+        post,
+        instance=instance,
+        prefix=prefix,
+        club=request.club,
+        container=instance,
+    )
+    return render(request, "items/form.html", {
+        "form": form,
+        "item": instance,
+        "slot_formset": slot_formset,
+    })
+
+
+def _handle_add_option(request, instance, form, slot_formset):
+    """Handle 'add option' button - bump TOTAL_FORMS for a specific slot."""
+    # The button value is the slot index
+    slot_index = request.POST.get("add_option")
+    if slot_index is None:
+        return render(request, "items/form.html", {
+            "form": form,
+            "item": instance,
+            "slot_formset": slot_formset,
+        })
+
+    post = request.POST.copy()
+    prefix = f"slots-{slot_index}-opts"
+    total = int(post.get(f"{prefix}-TOTAL_FORMS", 0))
+    post[f"{prefix}-TOTAL_FORMS"] = total + 1
+
+    # Rebuild all formsets from POST
+    slot_formset = SlotFormSet(
+        post,
+        instance=instance,
+        prefix="slots",
+        club=request.club,
+        container=instance,
+    )
+    return render(request, "items/form.html", {
+        "form": form,
+        "item": instance,
+        "slot_formset": slot_formset,
+    })
 
 
 def _safe_next(request):
@@ -176,25 +363,7 @@ class CreateView(ClubScopedMixin, View):
 
     def post(self, request, club_slug):
         next_url = _safe_next(request)
-        form = ItemForm(request.POST, club=request.club)
-        if form.is_valid():
-            item = form.save()
-            if is_htmx(request):
-                response = HttpResponse(status=204)
-                response["HX-Trigger"] = json.dumps(
-                    {"appModalClose": True, "itemCreated": {"id": item.pk, "name": item.name}}
-                )
-                return response
-            messages.success(request, f"Saved {item.name}.")
-            if next_url:
-                return redirect(_with_item(next_url, item.pk))
-            return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
-        return render_modal_or_page(
-            request,
-            "items/_form_modal.html",
-            "items/form.html",
-            {"form": form, "item": None, "next_url": next_url},
-        )
+        return _create_form_view(request, Item(club=request.club))
 
 
 @method_decorator(club_admin_required, name="dispatch")
