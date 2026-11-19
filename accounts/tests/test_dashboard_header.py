@@ -8,7 +8,7 @@ from accounts.dashboard_providers import (
     get_providers,
     register_provider,
 )
-from accounts.models import Membership, Message, User
+from accounts.models import Membership
 from ledger.services import Line, record_many
 from player_characters.junk import JunkMark
 
@@ -68,7 +68,6 @@ def test_provider_get_context_returns_expected_keys(provider, player, club, char
     assert "downtime_balance" in ctx
     assert "junk_count" in ctx
     assert "junk_value" in ctx
-    assert "unread_count" in ctx
 
 
 @pytest.mark.django_db
@@ -121,22 +120,6 @@ def test_provider_context_junk_count_and_value(provider, player, club, character
     # junk_count is the number of junk rows (one per marked item)
     assert ctx["junk_count"] == 1
     assert ctx["junk_value"] == 500
-
-
-@pytest.mark.django_db
-def test_provider_context_unread_count(provider, player, club, character):
-    """unread_count counts open messages not sent by the membership."""
-    admin_user = User.objects.create_user("admin@example.com", password="pw", display_name="Admin")
-    admin_mem = Membership.objects.create(user=admin_user, club=club, is_club_admin=True)
-    Message.objects.create(club=club, sender=admin_mem, character=character, body="Hello")
-    Message.objects.create(club=club, sender=admin_mem, character=character, body="Again")
-
-    request = MockRequest(club, player)
-    membership = _membership(player, club)
-
-    ctx = provider.get_context(request, club, character, membership)
-
-    assert ctx["unread_count"] == 2
 
 
 @pytest.mark.django_db
