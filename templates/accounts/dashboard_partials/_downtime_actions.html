@@ -23,7 +23,13 @@
             <small class="text-muted">{{ action.cost }} point{{ action.cost|pluralize }} · {{ action.reward_type }}</small>
           </div>
         </div>
-        <a href="{{ action.spend_url }}" class="btn btn-sm btn-outline-secondary">
+        <a
+          href="{% url 'downtime:play' club.slug %}"
+          class="btn btn-sm btn-outline-secondary"
+          hx-get="{{ action.spend_url }}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+        >
           {% include "components/icon.html" with name="play" %} Take job
         </a>
       </li>

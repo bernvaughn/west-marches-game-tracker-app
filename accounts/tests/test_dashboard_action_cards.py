@@ -323,3 +323,53 @@ def test_downtime_get_context_keys(provider_downtime, player, club, character, a
     assert (
         act["spend_url"] == f"/c/{club.slug}/accounts/dashboard/partial/downtime_spend/{action.pk}/"
     )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard downtime spend partial view
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_downtime_card_link_has_htmx_attributes(club, player, character, action, entries, login):
+    """Card link has hx-get, data-app-modal, hx-target and fallback href."""
+    downtime_services.award(character, 1, note="test", by=player)
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    spend_url = f"/c/{club.slug}/accounts/dashboard/partial/downtime_spend/{action.pk}/"
+    play_url = f"/c/{club.slug}/downtime/"
+    assert f'hx-get="{spend_url}"' in body
+    assert "data-app-modal" in body
+    assert 'hx-target="#app-modal .modal-content"' in body
+    assert f'href="{play_url}"' in body
+
+
+@pytest.mark.django_db
+def test_downtime_spend_partial_non_htmx_get_redirects(
+    club, player, character, action, entries, login
+):
+    """Non-HTMX GET on spend partial redirects to downtime play page."""
+    downtime_services.award(character, 1, note="test", by=player)
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/partial/downtime_spend/{action.pk}/")
+    assert resp.status_code == 302
+    assert resp.url == f"/c/{club.slug}/downtime/"
+
+
+@pytest.mark.django_db
+def test_downtime_spend_partial_htmx_get_returns_wheel_modal(
+    club, player, character, action, entries, login
+):
+    """HTMX GET on spend partial returns the wheel modal (200)."""
+    downtime_services.award(character, 1, note="test", by=player)
+    c = login(player)
+    resp = c.get(
+        f"/c/{club.slug}/accounts/dashboard/partial/downtime_spend/{action.pk}/",
+        HTTP_HX_REQUEST="true",
+    )
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    # Should contain wheel modal content
+    assert "wheel" in body.lower() or "spin" in body.lower()
