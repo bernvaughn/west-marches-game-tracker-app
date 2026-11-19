@@ -74,6 +74,7 @@ def downtime_spend_partial(request, club_slug, action_pk):
             response["HX-Trigger"] = json.dumps(
                 {
                     "toast": {"message": toast_msg, "type": "success"},
+                    "downtimeSpent": True,
                 }
             )
             return response
