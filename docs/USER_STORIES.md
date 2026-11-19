@@ -381,7 +381,7 @@ Ideas from the owner while round 6 was being built.
 
 **U64 Player shops.** As a player, I want my character to sell its junk from its own shop on the street, so other players can buy what I don't need while I'm away. *(player_characters, shops, ledger)*
 - A player shop belongs to a character. On the character sheet, the owner, a game master or a club admin can switch "Sell my junk in my shop" on or off. It starts off.
-- When it is on, the shop lists every item the character has marked as junk (U45), at the junk quantity. Items that are otherwise held are left out, and come back on their own once released.
+- When it is on, the shop lists every item the character has marked as junk (U45), at the junk quantity.
 - A character's shop shows on the street (U47) only while its switch is on and at least one item is listed.
 - Another character buys an item at its base value (U8), and the whole price goes to the seller. The sale is instant: coins and the item move straight away, with no approval, and both characters' ledgers show it. The seller's junk mark drops by the quantity sold. The usual buy confirm (U31) and "can't afford" rules apply.
 - A player can open their own characters' shops to see what is listed, but can't buy from them.
