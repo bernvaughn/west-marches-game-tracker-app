@@ -6,8 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Shortcut definitions
   const shortcuts = {
     // Global shortcuts (work everywhere)
-    "KeyG": { meta: true, action: "commandPalette" },  // Cmd/Ctrl+G or Cmd/Ctrl+K
-    "KeyK": { meta: true, action: "commandPalette" },
+    "KeyG": { meta: true, action: "commandPalette" },  // Cmd/Ctrl+G
     "Slash": { meta: false, input: false, action: "commandPalette" },  // / when not in input
     
     // Navigation shortcuts (when not in input field)
@@ -72,6 +71,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     if (!shortcut) return;
+    
+    // A shortcut that requires a modifier (Cmd/Ctrl) must not fire on the bare key.
+    // Without this, pressing plain "g" in an input field triggers the command
+    // palette and swallows the keystroke.
+    if (shortcut.meta && !(e.metaKey || e.ctrlKey)) {
+      return;
+    }
     
     // Check input restrictions
     if (shortcut.input !== undefined && shortcut.input !== inInput) {
