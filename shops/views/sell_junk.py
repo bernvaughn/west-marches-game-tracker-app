@@ -130,6 +130,7 @@ def sell_junk(request, club_slug, shop_id):
                     # A full reload shows the "Sold junk" message with the total.
                     response = HttpResponse(status=204)
                     response["HX-Redirect"] = shop_url
+                    response["HX-Trigger"] = "junkChanged"
                     return response
                 return redirect(shop_url)
     elif request.GET.get("recalc") and character is not None:
