@@ -141,7 +141,7 @@ def test_ribbon_shows_with_latest_of_1_and_3_days(login, player, club):
     # Notice on detail page should show the 3-day date
     detail_body = login(player).get(detail_url(club, shop)).content.decode()
     assert "Leaves the street on" in detail_body
-    assert (today + timedelta(days=3)).strftime("%b %-d, %Y") in detail_body.replace("'", "'")
+    assert (today + timedelta(days=3)).strftime("%-d %b %Y") in detail_body.replace("'", "'")
 
 
 def test_closed_shop_not_on_street_no_ribbon(login, player, club):
@@ -191,7 +191,7 @@ def test_detail_notice_shows_when_closes_in_2_days(login, player, club):
     body = login(player).get(detail_url(club, shop)).content.decode()
     assert "wm-shop-closing-soon" in body
     assert "Leaves the street on" in body
-    assert (today + timedelta(days=2)).strftime("%b %-d, %Y") in body.replace("'", "'")
+    assert (today + timedelta(days=2)).strftime("%-d %b %Y") in body.replace("'", "'")
 
 
 def test_detail_notice_hidden_when_closes_in_10_days(login, player, club):
@@ -224,7 +224,7 @@ def test_detail_notice_shows_latest_of_1_and_3_days(login, player, club):
     make_rotation(club, shop, today, today + timedelta(days=3), "JustInTime")
     body = login(player).get(detail_url(club, shop)).content.decode()
     assert "wm-shop-closing-soon" in body
-    assert (today + timedelta(days=3)).strftime("%b %-d, %Y") in body.replace("'", "'")
+    assert (today + timedelta(days=3)).strftime("%-d %b %Y") in body.replace("'", "'")
 
 
 def test_closed_shop_detail_no_notice_for_admin(login, club_admin, club):

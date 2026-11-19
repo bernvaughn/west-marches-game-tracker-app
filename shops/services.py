@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import timedelta
 
 from django.db import transaction
@@ -110,8 +111,6 @@ def leave_dates(shops, today=None):
         & (Q(rotation__close_date__isnull=True) | Q(rotation__close_date__gte=today))
     ).values_list("shop_id", "rotation__close_date")
     # Group by shop: any None -> None; else max close_date
-    from collections import defaultdict
-
     by_shop = defaultdict(list)
     for shop_id, close_date in rows:
         by_shop[shop_id].append(close_date)

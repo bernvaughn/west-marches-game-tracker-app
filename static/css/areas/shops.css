@@ -83,8 +83,9 @@
   z-index: 2;
   font-size: var(--wm-text-xs);
   padding: 2px var(--wm-space-2);
-  background: var(--wm-warning);
-  color: var(--wm-on-warning);
+  background: var(--wm-warning-bg);
+  color: var(--wm-warning);
+  border: 1px solid var(--wm-warning);
   border-radius: var(--wm-radius-sm);
   white-space: nowrap;
   pointer-events: none;
@@ -93,7 +94,7 @@
 .wm-shop-closing-soon {
   margin: 0 0 var(--wm-space-3);
   font-size: var(--wm-text-sm);
-  color: var(--wm-warning-deep);
+  color: var(--wm-warning);
   background: var(--wm-warning-bg);
   border: 1px solid var(--wm-warning);
   border-radius: var(--wm-radius-sm);
