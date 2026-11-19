@@ -2,9 +2,26 @@ from django import forms
 
 from ..models import Message
 
+# Quick templates for the "Message the admins" form (Message.Kind.MESSAGE only).
+# {character} is replaced with the sender's selected character name.
+TEMPLATE_CHOICES = [
+    ("loot", "Loot correction"),
+    ("map", "Map credit"),
+    ("shop", "Shop stock request"),
+    ("other", "Other"),
+]
+
+TEMPLATE_TEXTS = {
+    "loot": "I think {character} is missing: [items/coins] from the last session. Details: ",
+    "map": "Please mark {character} as having visited/found: [location/tile]. Details: ",
+    "shop": "Could [shop] start carrying [item]? Details: ",
+    "other": "",
+}
+
 
 class MessageForm(forms.ModelForm):
     body = forms.CharField(max_length=2000, widget=forms.Textarea(attrs={"rows": 4}))
+    template = forms.ChoiceField(choices=TEMPLATE_CHOICES, required=False)
 
     class Meta:
         model = Message

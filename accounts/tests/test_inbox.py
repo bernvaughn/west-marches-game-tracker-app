@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -5,6 +7,12 @@ from accounts.models import Membership, Message
 from ledger.models import LedgerEntry
 from player_characters.models import Character
 from starting_equipment.models import StartingEquipmentRequest
+
+
+def _textarea_body(page):
+    match = re.search(r'<textarea[^>]*name="body"[^>]*>(.*?)</textarea>', page, re.DOTALL)
+    return match.group(1).strip("\n") if match else ""
+
 
 SR = Message.Kind.STARTING_REQUEST
 
@@ -366,3 +374,48 @@ def test_starting_request_decline_sets_declined_and_marks_message_handled(
     assert msg.status == Message.Status.HANDLED
 
     assert not LedgerEntry.objects.filter(character=character, kind=LedgerEntry.Kind.AWARD).exists()
+
+
+@pytest.mark.story("U60")
+@pytest.mark.parametrize(
+    "template_key,expected",
+    [
+        ("loot", "I think Aria is missing: [items/coins] from the last session. Details: "),
+        ("map", "Please mark Aria as having visited/found: [location/tile]. Details: "),
+        ("shop", "Could [shop] start carrying [item]? Details: "),
+        ("other", ""),
+    ],
+)
+def test_message_template_prefills_body(club, player, character, login, template_key, expected):
+    """GET ?template= pre-fills the message body with {character} substituted."""
+    url = reverse("accounts:message_new", args=[club.slug])
+    page = login(player).get(url + "?template=" + template_key).content.decode()
+    assert _textarea_body(page) == expected
+
+
+@pytest.mark.story("U60")
+def test_message_template_invalid_param_leaves_body_empty(club, player, character, login):
+    """An unknown ?template= value does not pre-fill the body."""
+    url = reverse("accounts:message_new", args=[club.slug])
+    page = login(player).get(url + "?template=bogus").content.decode()
+    assert _textarea_body(page) == ""
+
+
+@pytest.mark.story("U60")
+def test_message_template_submitted_body_is_saved(club, player, character, login):
+    """Submitting a template-prefilled form saves the filled body."""
+    url = reverse("accounts:message_new", args=[club.slug])
+    c = login(player)
+    body = "I think Aria is missing: [items/coins] from the last session. Details: lost ring"
+    c.post(url + "?template=loot", {"body": body})
+    assert Message.objects.get().body == body
+
+
+@pytest.mark.story("U60")
+def test_message_form_has_template_choices():
+    from accounts.forms.inbox import TEMPLATE_CHOICES, MessageForm
+
+    form = MessageForm()
+    assert form.fields["template"].choices == TEMPLATE_CHOICES
+    assert form.fields["template"].required is False
+    assert "template" not in form.Meta.fields
