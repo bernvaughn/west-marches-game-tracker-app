@@ -3,7 +3,7 @@
 from collections import defaultdict
 
 from django.http import Http404, HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 
 from accounts.dashboard_providers import build_header_stats, get_provider, get_providers
@@ -55,10 +55,9 @@ def player_dashboard(request, club_slug):
     membership = request.membership
     character = selected_character(request)
 
-    # If user is GM or admin, redirect to club home (navigation cards)
-    if is_game_master(request.user, club) or is_club_admin(request.user, club):
-        from django.shortcuts import redirect
-
+    # If user is GM or admin with no selected character, redirect to club home
+    is_gm_or_admin = is_game_master(request.user, club) or is_club_admin(request.user, club)
+    if is_gm_or_admin and character is None:
         return redirect("club_home", club_slug=club.slug)
 
     # If no character selected, show character selector prompt
