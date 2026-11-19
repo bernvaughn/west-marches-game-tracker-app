@@ -1,12 +1,10 @@
-from django.db.models import Count
 from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils import timezone
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from ledger.services import available_items
-from quests.models import Quest, QuestCompletion
+from quests.services import missing_items, needed_by_open_quests
 
 from ..access import require_inventory_access
 from ..inventory import coin_summary, inventory_rows
@@ -90,7 +88,7 @@ def print_item(request, club_slug, pk, item_pk):
 @club_member_required
 def print_session_pack(request, club_slug, pk):
     """Combined print view for session pack: character sheet, item cards,
-    quests, map, trades."""
+    quests, map."""
     character = club_get_object_or_404(request, Character, pk=pk)
     require_inventory_access(request.user, character)
 
@@ -115,41 +113,21 @@ def print_session_pack(request, club_slug, pk):
     over = too_many(pairs, "type")
     item_sheets = [] if over else chunk(build_cards(pairs, "type"))
 
-    # Ready quests data (reusing QuestsProvider logic)
+    # Ready quests data (using quests.services)
     ready_quests = []
     if include_quests:
         today = timezone.localdate()
-        quests_qs = (
-            Quest.objects.for_club(request.club)
-            .prefetch_related("requirements__item", "rewards__item")
-            .annotate(done=Count("completions"))
-        )
+        open_quests_by_item = needed_by_open_quests(character, today)
+        # Deduplicate quests since a quest with multiple requirements appears under each item
+        seen = set()
+        for quests in open_quests_by_item.values():
+            for q in quests:
+                if q.pk in seen:
+                    continue
+                seen.add(q.pk)
+                if not missing_items(q, character):
+                    ready_quests.append(q)
 
-        have = available_items(character)
-        my_completions = {
-            row["quest"]: row["n"]
-            for row in QuestCompletion.objects.filter(character=character)
-            .values("quest")
-            .annotate(n=Count("id"))
-        }
-
-        for q in quests_qs:
-            if not q.is_live_on(today):
-                continue
-            if q.max_completions is not None and q.done >= q.max_completions:
-                continue
-            if (
-                q.max_per_character is not None
-                and my_completions.get(q.pk, 0) >= q.max_per_character
-            ):
-                continue
-            reqs = list(q.requirements.all())
-            if reqs and all(have.get(r.item_id, 0) >= r.quantity for r in reqs):
-                ready_quests.append(q)
-
-    # Map data (simplified - just indicate if map should be included)
-    # The actual map rendering would be complex, so we'll include a placeholder
-    # that can be expanded later
     show_map = include_map
 
     return render(

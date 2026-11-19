@@ -37,7 +37,7 @@ class CoinSummary:
 
 
 def inventory_rows(character):
-    """Owned items (retired included), ordered by item name, with trade holds."""
+    """Owned items (retired included), ordered by item name."""
     owned = {i: q for i, q in item_quantities(character).items() if q > 0}
     if not owned:
         return []
