@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 {% if character %}{% url 'characters:detail' club.slug character.pk as back %}{% else %}{% url 'characters:mine' club.slug as back %}{% endif %}
@@ -14,9 +15,13 @@
         {% include "player_characters/characters/_field_current.html" with field=form.name current=current.name %}
         {% include "player_characters/characters/_field_current.html" with field=form.level current=current.level %}
         {% include "player_characters/characters/_field_current.html" with field=form.char_class current=current.char_class %}
+        {% include "player_characters/characters/_field_current.html" with field=form.char_class_freetext %}
         {% include "player_characters/characters/_field_current.html" with field=form.species current=current.species %}
+        {% include "player_characters/characters/_field_current.html" with field=form.species_freetext %}
         {% include "player_characters/characters/_field_current.html" with field=form.background current=current.background %}
+        {% include "player_characters/characters/_field_current.html" with field=form.background_freetext %}
         {% include "player_characters/characters/_field_current.html" with field=form.pronouns current=current.pronouns %}
+        {% include "player_characters/characters/_field_current.html" with field=form.pronouns_freetext %}
         {% include "player_characters/characters/_field_current.html" with field=form.alignment current=current.alignment %}
       </div>
     </section>
@@ -53,3 +58,4 @@
   </article>
 </form>
 {% endblock %}
+{% block extra_scripts %}<script src="{% static 'js/character_form.js' %}" defer></script>{% endblock %}

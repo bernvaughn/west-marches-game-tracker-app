@@ -2,7 +2,16 @@ from django import forms
 
 from accounts.models import Membership
 
-from .models import ABILITIES, Character
+from .models import (
+    ABILITIES,
+    ALIGNMENT_CHOICES,
+    BACKGROUND_CHOICES,
+    CLASS_CHOICES,
+    OTHER,
+    PRONOUNS_CHOICES,
+    SPECIES_CHOICES,
+    Character,
+)
 
 
 class _OwnerChoice(forms.ModelChoiceField):
@@ -16,7 +25,48 @@ def _club_members(club):
     )
 
 
+# Dropdown choices: the officially published options, alphabetized, then "Other".
+# "Other" is appended last so the official options stay alphabetized.
+def _dropdown_with_other(choices):
+    return list(choices) + [(OTHER, OTHER)]
+
+
 class CharacterForm(forms.ModelForm):
+    # A Select widget with the officially published options, but a plain
+    # CharField: any value stays valid (the model is an unrestricted CharField),
+    # and "Other" plus freetext is the supported escape hatch for custom values.
+    char_class = forms.CharField(
+        label="Class",
+        required=False,
+        widget=forms.Select(choices=_dropdown_with_other(CLASS_CHOICES)),
+    )
+    species = forms.CharField(
+        label="Species",
+        required=False,
+        widget=forms.Select(choices=_dropdown_with_other(SPECIES_CHOICES)),
+    )
+    background = forms.CharField(
+        label="Background",
+        required=False,
+        widget=forms.Select(choices=_dropdown_with_other(BACKGROUND_CHOICES)),
+    )
+    pronouns = forms.CharField(
+        label="Pronouns",
+        required=False,
+        widget=forms.Select(choices=_dropdown_with_other(PRONOUNS_CHOICES)),
+    )
+    alignment = forms.CharField(
+        label="Alignment",
+        required=False,
+        widget=forms.Select(choices=ALIGNMENT_CHOICES),
+    )
+    # Freetext inputs revealed when "Other" is chosen. Not model fields: they
+    # feed back into the matching dropdown field via clean().
+    char_class_freetext = forms.CharField(label="Class (other)", required=False)
+    species_freetext = forms.CharField(label="Species (other)", required=False)
+    background_freetext = forms.CharField(label="Background (other)", required=False)
+    pronouns_freetext = forms.CharField(label="Pronouns (other)", required=False)
+
     class Meta:
         model = Character
         fields = [
@@ -55,6 +105,13 @@ class CharacterForm(forms.ModelForm):
         if choose_owner:
             self.fields["owner"] = _OwnerChoice(queryset=_club_members(club))
             self.order_fields(["owner", *self.Meta.fields])
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field in ("char_class", "species", "background", "pronouns"):
+            if cleaned_data.get(field) == OTHER:
+                cleaned_data[field] = cleaned_data.get(f"{field}_freetext") or ""
+        return cleaned_data
 
     def save(self, commit=True):
         self.instance.club = self.club
