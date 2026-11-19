@@ -1,0 +1,48 @@
+{% load coins accounts_tags %}
+{% if rows %}
+{% include "components/card_open.html" with title="Contents" %}
+<ul class="wm-loot-preview">
+    {% for row in rows %}
+    <li class="wm-loot-preview__row">
+        {% if row.masked %}
+            <span class="wm-loot-preview__masked" aria-label="Unknown item">???</span>
+            {% if row.chance_pct < 100 %}
+            {% include "components/badge.html" with status="info" text=row.chance_pct|stringformat:"d"|add:"% chance" %}
+            {% endif %}
+        {% elif row.options %}
+            <span class="wm-loot-preview__label">One of</span>
+            <ul class="wm-loot-preview__options">
+                {% for opt in row.options %}
+                <li class="wm-loot-preview__option">
+                    {% if opt.qty_min == opt.qty_max %}
+                        <span class="wm-loot-preview__qty">{{ opt.qty_min }}&#215;</span>
+                    {% else %}
+                        <span class="wm-loot-preview__qty">{{ opt.qty_min }}&#8211;{{ opt.qty_max }}&#215;</span>
+                    {% endif %}
+                    <span class="wm-loot-preview__name">{{ opt.label }}</span>
+                    <span class="wm-loot-preview__weight">({{ opt.weight_pct }}%)</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% if row.chance_pct < 100 %}
+            {% include "components/badge.html" with status="info" text=row.chance_pct|stringformat:"d"|add:"% chance" %}
+            {% endif %}
+        {% else %}
+            {% if row.qty_min == row.qty_max %}
+                <span class="wm-loot-preview__qty">{{ row.qty_min }}&#215;</span>
+            {% else %}
+                <span class="wm-loot-preview__qty">{{ row.qty_min }}&#8211;{{ row.qty_max }}&#215;</span>
+            {% endif %}
+            <span class="wm-loot-preview__name">{{ row.label }}</span>
+            {% if row.chance_pct < 100 %}
+            {% include "components/badge.html" with status="info" text=row.chance_pct|stringformat:"d"|add:"% chance" %}
+            {% endif %}
+            {% if row.unknown %}
+            {% include "components/badge.html" with status="neutral" text="Hidden from players" %}
+            {% endif %}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% include "components/card_close.html" %}
+{% endif %}
