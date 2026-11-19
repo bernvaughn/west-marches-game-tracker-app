@@ -1,5 +1,6 @@
 import pytest
-from django.test import Client
+from django.core.cache import cache
+from django.test import Client, override_settings
 from django.urls import reverse
 
 from accounts import passwords
@@ -116,3 +117,37 @@ def test_player_forbidden_on_whitelist(club, player, login):
     c = login(player)
     assert c.get(wl(club)).status_code == 403
     assert c.post(wl(club), {"email": "x@example.com"}).status_code == 403
+
+
+RATELIMIT_CACHE_SETTINGS = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "whitelist-rate-limit-tests",
+    }
+}
+
+
+@pytest.mark.story("U1")
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
+def test_whitelist_rate_limit_allows_under_limit(club, club_admin, login):
+    cache.clear()
+    client = login(club_admin)
+    resp = client.post(wl(club), {"email": "rate-under@example.com", "display_name": "Ratey"})
+    assert resp.status_code == 200
+    assert User.objects.get(email="rate-under@example.com")
+
+
+@pytest.mark.story("U1")
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
+def test_whitelist_rate_limit_rejects_over_limit(club, club_admin, login):
+    cache.clear()
+    client = login(club_admin)
+    for i in range(3):
+        resp = client.post(
+            wl(club), {"email": f"whitelist-rate-{i}@example.com", "display_name": f"Wh{i}"}
+        )
+        assert resp.status_code == 200
+    resp = client.post(wl(club), {"email": "rate-overflow@example.com", "display_name": "Overflow"})
+    assert resp.status_code == 429
+    assert resp["Retry-After"]
+    assert not User.objects.filter(email="rate-overflow@example.com").exists()
