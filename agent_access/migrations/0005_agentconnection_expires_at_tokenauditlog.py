@@ -1,5 +1,6 @@
 # Generated migration for token expiration and audit logging
 
+from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
 
@@ -9,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ("accounts", "0002_initial"),
         ("agent_access", "0004_proposeditem_gm_details"),
-        migrations.swappable_dependency("AUTH_USER_MODEL"),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
