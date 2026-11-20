@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins downtime_points accounts_tags static character_tags %}
+{% load coins downtime_points accounts_tags static character_tags units %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
 {% url 'characters:index' club.slug as index_url %}
@@ -112,8 +112,8 @@
             {% for pk, qty in junk.items %}{% if pk == r.item.pk %} {% include "components/badge.html" with text="Junk" %} &times;{{ qty }}{% endif %}{% endfor %}
             {% for pk, quests in quest_needs.items %}{% if pk == r.item.pk %}<div class="wm-sheet-note">Needed for quest: {% for q in quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}{% endfor %}
             {% if not is_owner %}{% for pk, note in notes.items %}{% if pk == r.item.pk and note.text %}<div class="wm-sheet-note">{{ note.text|linebreaksbr }}</div>{% endif %}{% endfor %}{% endif %}</td>
-          <td class="num">{{ r.owned }}</td>
-          <td class="num">{{ r.available }}</td>
+          <td class="num">{% if r.item.is_stacked %}{% if r.owned > 0 %}{{ r.item|with_units:r.owned }}{% else %}0{% endif %}{% else %}{{ r.owned }}{% endif %}</td>
+          <td class="num">{% if r.item.is_stacked %}{% if r.available > 0 %}{{ r.item|with_units:r.available }}{% else %}0{% endif %}{% else %}{{ r.available }}{% endif %}</td>
           <td class="no-print wm-row-actions-cell">
             {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
             {% url 'characters:print_item' club.slug character.pk r.item.pk as print_url %}
@@ -141,7 +141,7 @@
                   <li><h6 class="dropdown-header">One card per item type</h6></li>
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=full&copies=type">Full page</a></li>
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&copies=type">Grid spot</a></li>
-                  {% if r.owned > 1 %}
+                  {% if r.owned > 1 and not r.item.is_stacked %}
                   <li><h6 class="dropdown-header">One card per item</h6></li>
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=full&copies=item">Full page</a></li>
                   <li><a class="dropdown-item" href="{{ print_url }}?layout=grid&copies=item">Grid spot</a></li>
@@ -201,7 +201,7 @@
       <ul class="wm-sheet-ledger">
       {% for e in recent_entries %}
         <li><span class="wm-sheet-date">{{ e.date|date }}</span> {{ e.get_kind_display }}:
-          {% for line in e.lines.all %}{% if line.item %}{{ line.quantity|stringformat:"+d" }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
+          {% for line in e.lines.all %}{% if line.item %}{{ line|signed_units }} {% include "items/_item_name.html" with item=line.item %}{% endif %}{% if line.coins %}{% if line.coins > 0 %}+{% endif %}{{ line.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}
         </li>
       {% empty %}
         <li class="wm-sheet-note">No entries yet.</li>

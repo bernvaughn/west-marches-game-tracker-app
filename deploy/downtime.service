@@ -1,0 +1,29 @@
+# downtime.service — systemd unit for the Downtime Market gunicorn server
+# Install: sudo cp deploy/downtime.service /etc/systemd/system/downtime.service
+#          sudo systemctl daemon-reload
+#          sudo systemctl enable --now downtime
+
+[Unit]
+Description=Downtime Market gunicorn server
+After=network.target
+
+[Service]
+User=deploy
+Group=deploy
+WorkingDirectory=/srv/app
+EnvironmentFile=/etc/downtime.env
+ExecStart=/srv/app/.venv/bin/gunicorn config.wsgi:application --workers 2 --bind 127.0.0.1:8000 --timeout 30 --access-logfile -
+Restart=always
+RestartSec=2
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/lib/downtime
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

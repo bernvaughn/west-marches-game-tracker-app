@@ -63,7 +63,7 @@ def _visible_rows(shop):
         ShopStock.objects.filter(shop=shop, item__retired=False)
         .exclude(quantity=0)
         .select_related("item", "shop")
-        .order_by("item__name")
+        .order_by("item__name", "bundle_units")
     )
     rows = list(stocks)
     for stock in rows:
