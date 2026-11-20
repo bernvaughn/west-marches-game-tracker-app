@@ -184,6 +184,7 @@ def test_shortcut_ranks_in_order(login, club, player):
     assert b.count("data-wm-tooltip") >= 7
 
 
+@pytest.mark.story("U121")
 def test_dashboard_is_first_shortcut(login, club, player):
     b = bar(home(login, player, club))
     # Dashboard is rank 1, should appear first
@@ -195,6 +196,7 @@ def test_dashboard_is_first_shortcut(login, club, player):
     assert "data-wm-tooltip" in b
 
 
+@pytest.mark.story("U121")
 def test_dashboard_current_on_dashboard_page(login, club, player, character):
     body = (
         login(player)
@@ -206,6 +208,7 @@ def test_dashboard_current_on_dashboard_page(login, club, player, character):
     assert 'aria-current="page"' in dash_rank1
 
 
+@pytest.mark.story("U121")
 def test_dashboard_current_on_club_home_for_gm_admin(login, club, game_master, club_admin):
     # GMs and admins with no selected character see club_home instead of dashboard
     for user in (game_master, club_admin):
@@ -217,6 +220,7 @@ def test_dashboard_current_on_club_home_for_gm_admin(login, club, game_master, c
         assert 'aria-current="page"' in dash_rank1, f"Dashboard not current for {user}"
 
 
+@pytest.mark.story("U121")
 def test_dashboard_shows_for_gm_and_admin(login, club, game_master, club_admin):
     for user in (game_master, club_admin):
         body = home(login, user, club)
@@ -271,3 +275,19 @@ def test_icon_only_buttons_have_tooltips(login, player):
     html = site_home(login, player)
     assert 'title="Open menu" data-wm-tooltip' in html
     assert 'title="Close menu" data-wm-tooltip' in html
+
+
+@pytest.mark.story("U121")
+def test_character_picker_and_club_name_truncate_on_phone():
+    css = Path("static/css/components.css").read_text()
+    picker = css[css.index(".site-header .character-selector .character-name-text {") :]
+    picker = picker[: picker.index("}")]
+    for rule in ("overflow: hidden", "text-overflow: ellipsis", "white-space: nowrap"):
+        assert rule in picker
+    assert ".site-header .character-selector .dropdown-toggle { display: inline-flex" in css
+    phone = css[css.index("@media (max-width: 575.98px) {\n  .site-header") :]
+    phone = phone[: phone.index("\n}")]
+    # The club name stays on a phone (U32); it is cut short, not hidden.
+    assert ".club-switcher { display: none" not in phone
+    assert ".club-name { max-width:" in phone
+    assert ".character-selector .dropdown-toggle { max-width:" in phone

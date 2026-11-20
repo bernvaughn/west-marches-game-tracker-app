@@ -73,24 +73,13 @@ def entries_for(request):
     if club is None or user is None or not user.is_authenticated:
         return result
     match = getattr(request, "resolver_match", None)
-    if match:
-        # resolver_match.url_name is the local name; include namespace for comparison
-        ns = match.namespace
-        current = f"{ns}:{match.url_name}" if ns else match.url_name
-    else:
-        current = None
+    # Compare full names ("shops:index"), so entries in a namespace can match.
+    current = match.view_name if match else None
     shortcuts = []
     for entry in sorted(_entries, key=lambda e: (e.order, e.label)):
         if entry.check is not None and not entry.check(request):
             continue
-        # Check if current matches entry.url_name or any of the also_current patterns
-        # also_current entries can be short names ("club_home") or full names ("accounts:club_home")
-        active = entry.url_name == current
-        if not active:
-            for alt in entry.also_current:
-                if alt == current or (ns and alt == match.url_name):
-                    active = True
-                    break
+        active = current is not None and current in (entry.url_name, *entry.also_current)
         link = NavLink(
             entry.label,
             reverse(entry.url_name, args=[club.slug]),

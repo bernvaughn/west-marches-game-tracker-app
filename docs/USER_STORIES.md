@@ -878,7 +878,8 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - The Dashboard button sits first among the icon shortcuts, before Character, Shops, Quests, Downtime, and Map.
 - It shows for every signed-in club member, in the top bar and in the side menu's Character group.
 - It is marked as the current page when the player is on the dashboard, and also for game masters and club admins on the club home page (which they see instead of the dashboard when they have no selected character).
-- At wide widths it shows its icon and label; as the bar narrows the label drops first, and the icon leaves last (after Map, Downtime, Quests, Shops, Character).
+- At wide widths it shows its icon and label. As the bar narrows, the labels drop first. Then the icons leave from the right: Map, Downtime, Quests, Shops, Character. Below 400 px only the Dashboard icon shows. The Dashboard icon never leaves.
+- The character picker cuts a long character name short with an ellipsis. On a phone the club name is cut short, not hidden. The top bar never scrolls sideways, from 320 px to wide screens.
 - Every shortcut keeps its tooltip and aria-label.
 - This changes U32 (the club name, player name, character picker and approvals indicator must stay visible at 390 px) and U61 (the top bar is one row, never wraps).
 

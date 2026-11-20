@@ -221,5 +221,8 @@ def test_topbar_css_has_six_ranks():
     from pathlib import Path
 
     css = Path("static/css/components.css").read_text()
-    for i in range(1, 7):
-        assert f".wm-shortcut-rank-{i}" in css
+    # Ranks 2-6 each hide at a width; Dashboard (rank 1) always stays (U121).
+    for i in range(2, 7):
+        assert f".wm-shortcut-rank-{i} {{ display: none; }}" in css
+    assert ".wm-shortcut-rank-1 { display: none; }" not in css
+    assert ".wm-shortcut-rank-7" not in css
