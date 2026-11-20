@@ -1,9 +1,10 @@
+import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -11,7 +12,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import render_modal_or_page
+from accounts.htmx import is_htmx, render_modal_or_page
 from accounts.mixins import ClubContextMixin, ClubScopedMixin, PermissionMixin
 from accounts.permissions import (
     admin_or_gm_required,
@@ -127,12 +128,7 @@ class DetailsModalView(ClubScopedMixin, PermissionMixin, View):
 
 
 def _form_view(request, instance):
-    return _item_form_view(request, instance, with_container=True)
-
-
-def _create_form_view(request, instance):
-    """Form view for create modal - no container config."""
-    return _item_form_view(request, instance, with_container=False)
+    return _item_form_view(request, instance)
 
 
 def _slot_formset(request, instance, data=None):
@@ -173,10 +169,10 @@ def _save_container(item, slot_formset):
             option.save()
 
 
-def _item_form_view(request, instance, with_container):
-    """Shared form view for create/edit with optional container config."""
+def _item_form_view(request, instance):
+    """Edit form view with the container config formsets."""
     form = ItemForm(request.POST or None, instance=instance, club=request.club)
-    has_container_ui = with_container and instance.pk is not None
+    has_container_ui = instance.pk is not None
 
     if request.method != "POST":
         slot_formset = _slot_formset(request, instance) if has_container_ui else None
@@ -303,8 +299,26 @@ class CreateView(ClubScopedMixin, View):
         )
 
     def post(self, request, club_slug):
-        _safe_next(request)
-        return _create_form_view(request, Item(club=request.club))
+        next_url = _safe_next(request)
+        form = ItemForm(request.POST, club=request.club)
+        if form.is_valid():
+            item = form.save()
+            if is_htmx(request):
+                response = HttpResponse(status=204)
+                response["HX-Trigger"] = json.dumps(
+                    {"appModalClose": True, "itemCreated": {"id": item.pk, "name": item.name}}
+                )
+                return response
+            messages.success(request, f"Saved {item.name}.")
+            if next_url:
+                return redirect(_with_item(next_url, item.pk))
+            return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
+        return render_modal_or_page(
+            request,
+            "items/_form_modal.html",
+            "items/form.html",
+            {"form": form, "item": None, "next_url": next_url},
+        )
 
 
 @method_decorator(club_admin_required, name="dispatch")
