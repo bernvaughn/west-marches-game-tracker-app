@@ -159,3 +159,9 @@ def test_seed_new_club_return_value(club):
     assert set(result) == {"options", "starting_equipment", "general_store"}
     assert result["starting_equipment"].template_created is True
     assert result["general_store"].shop_created is True
+
+
+def test_seed_new_club_item_count_matches_docs(club):
+    """README.md and docs/DATA_MODEL.md say "about 175 items". Update them if this fails."""
+    seed_new_club(club)
+    assert 165 <= Item.objects.filter(club=club).count() <= 185
