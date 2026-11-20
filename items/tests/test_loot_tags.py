@@ -3,7 +3,7 @@
 import pytest
 from django.template import Context, Template
 
-from items.tests.factories import make_container, add_slot, _get_or_create_item
+from items.tests.factories import _get_or_create_item, add_slot, make_container
 
 
 @pytest.mark.django_db
@@ -14,14 +14,18 @@ class TestLootPreviewTag:
         """Tag returns [] for a plain item."""
         item = _get_or_create_item(club, "Plain Item", is_container=False)
         template = Template("{% load loot_tags %}{% loot_preview item as rows %}{{ rows|length }}")
-        context = Context({"request": type("Request", (), {"user": player, "club": club})(), "item": item})
+        context = Context(
+            {"request": type("Request", (), {"user": player, "club": club})(), "item": item}
+        )
         result = template.render(context)
         assert result == "0"
 
     def test_none_item_returns_empty_list(self, club, player):
         """Tag returns [] when item is None."""
         template = Template("{% load loot_tags %}{% loot_preview item as rows %}{{ rows|length }}")
-        context = Context({"request": type("Request", (), {"user": player, "club": club})(), "item": None})
+        context = Context(
+            {"request": type("Request", (), {"user": player, "club": club})(), "item": None}
+        )
         result = template.render(context)
         assert result == "0"
 
@@ -31,11 +35,15 @@ class TestLootPreviewTag:
         fine_clothes = _get_or_create_item(club, "Fine Clothes")
         add_slot(container, [(fine_clothes, 1, 1, 1)], chance_pct=100, unknown=False, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}")
-        context = Context({
-            "request": type("Request", (), {"user": game_master, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": game_master, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "Fine Clothes"
 
@@ -45,11 +53,15 @@ class TestLootPreviewTag:
         sealed_letter = _get_or_create_item(club, "Sealed Letter")
         add_slot(container, [(sealed_letter, 1, 1, 1)], chance_pct=100, unknown=True, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}")
-        context = Context({
-            "request": type("Request", (), {"user": player, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": player, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "???"
 
@@ -59,11 +71,15 @@ class TestLootPreviewTag:
         sealed_letter = _get_or_create_item(club, "Sealed Letter")
         add_slot(container, [(sealed_letter, 1, 1, 1)], chance_pct=100, unknown=True, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}")
-        context = Context({
-            "request": type("Request", (), {"user": club_admin, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": club_admin, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "Sealed Letter"
 
@@ -73,11 +89,16 @@ class TestLootPreviewTag:
         sealed_letter = _get_or_create_item(club, "Sealed Letter")
         add_slot(container, [(sealed_letter, 1, 1, 1)], chance_pct=100, unknown=True, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.item }}{{ rows.0.masked }}")
-        context = Context({
-            "request": type("Request", (), {"user": player, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}"
+            "{{ rows.0.item }}{{ rows.0.masked }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": player, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         # item should be None (renders as empty string), masked should be True
         assert "True" in result  # masked=True
@@ -88,11 +109,15 @@ class TestLootPreviewTag:
         sealed_letter = _get_or_create_item(club, "Sealed Letter")
         add_slot(container, [(sealed_letter, 1, 1, 1)], chance_pct=100, unknown=True, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}")
-        context = Context({
-            "request": type("Request", (), {"user": other_player, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": other_player, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "???"
 
@@ -102,11 +127,16 @@ class TestLootPreviewTag:
         potion = _get_or_create_item(club, "Potion")
         add_slot(container, [(potion, 2, 2, 1)], chance_pct=100, unknown=False, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.qty_min }}-{{ rows.0.qty_max }}")
-        context = Context({
-            "request": type("Request", (), {"user": game_master, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}"
+            "{{ rows.0.qty_min }}-{{ rows.0.qty_max }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": game_master, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "2-2"
 
@@ -116,11 +146,16 @@ class TestLootPreviewTag:
         gold = _get_or_create_item(club, "Gold")
         add_slot(container, [(gold, 1, 4, 1)], chance_pct=100, unknown=False, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.qty_min }}-{{ rows.0.qty_max }}")
-        context = Context({
-            "request": type("Request", (), {"user": game_master, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}"
+            "{{ rows.0.qty_min }}-{{ rows.0.qty_max }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": game_master, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "1-4"
 
@@ -130,11 +165,15 @@ class TestLootPreviewTag:
         gem = _get_or_create_item(club, "Gem")
         add_slot(container, [(gem, 1, 1, 1)], chance_pct=50, unknown=False, position=0)
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.chance_pct }}")
-        context = Context({
-            "request": type("Request", (), {"user": game_master, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.chance_pct }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": game_master, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert result == "50"
 
@@ -143,13 +182,26 @@ class TestLootPreviewTag:
         container = make_container(club, name="Container")
         sword = _get_or_create_item(club, "Sword")
         shield = _get_or_create_item(club, "Shield")
-        add_slot(container, [(sword, 1, 1, 1), (shield, 1, 1, 3)], chance_pct=100, unknown=False, position=0)
+        add_slot(
+            container,
+            [(sword, 1, 1, 1), (shield, 1, 1, 3)],
+            chance_pct=100,
+            unknown=False,
+            position=0,
+        )
 
-        template = Template("{% load loot_tags %}{% loot_preview container as rows %}{{ rows.0.label }}{{ rows.0.options.0.weight_pct }}{{ rows.0.options.1.weight_pct }}")
-        context = Context({
-            "request": type("Request", (), {"user": game_master, "club": club})(),
-            "container": container,
-        })
+        template = Template(
+            "{% load loot_tags %}{% loot_preview container as rows %}"
+            "{{ rows.0.label }}"
+            "{{ rows.0.options.0.weight_pct }}"
+            "{{ rows.0.options.1.weight_pct }}"
+        )
+        context = Context(
+            {
+                "request": type("Request", (), {"user": game_master, "club": club})(),
+                "container": container,
+            }
+        )
         result = template.render(context)
         assert "One of" in result
         assert "25" in result  # 1/4 * 100

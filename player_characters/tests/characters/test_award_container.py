@@ -3,45 +3,85 @@
 import pytest
 from django.urls import reverse
 
-from items.tests.factories import (
-    ItemFactory,
-    ContainerSlotFactory,
-    ContainerSlotOptionFactory,
-)
-from accounts.tests.factories import UserFactory, ClubFactory, CharacterFactory
+from items.models import ContainerOpening
+from items.tests.factories import _get_or_create_item, add_slot, make_container
+from ledger.services import available_items
+from player_characters.models import Character
+from accounts.models import Membership
+
+
+@pytest.fixture
+def container_award_chest(club):
+    """Container for award chest."""
+    container = make_container(club, name="Award Chest")
+    reward = _get_or_create_item(club, "Reward Item")
+    add_slot(container, [(reward, 1, 1, 1)], chance_pct=100, unknown=False)
+    return container
+
+
+@pytest.fixture
+def container_mystery_award(club):
+    """Container with unknown award."""
+    container = make_container(club, name="Mystery Award")
+    secret = _get_or_create_item(club, "Secret Reward")
+    add_slot(container, [(secret, 1, 1, 1)], chance_pct=100, unknown=True)
+    return container
+
+
+@pytest.fixture
+def container_bulk_award_chest(club):
+    """Container for bulk award."""
+    container = make_container(club, name="Bulk Award Chest")
+    sword = _get_or_create_item(club, "Bulk Sword")
+    add_slot(container, [(sword, 1, 1, 1)], chance_pct=100, unknown=False)
+    return container
+
+
+@pytest.fixture
+def container_party_chest(club):
+    """Container for party chest."""
+    container = make_container(club, name="Party Chest")
+    item = _get_or_create_item(club, "Party Item")
+    add_slot(container, [(item, 1, 1, 1)], chance_pct=100, unknown=False)
+    return container
+
+
+@pytest.fixture
+def container_adjust_chest(club):
+    """Container for adjust."""
+    container = make_container(club, name="Adjust Chest")
+    item = _get_or_create_item(club, "Adjust Item")
+    add_slot(container, [(item, 1, 1, 1)], chance_pct=100, unknown=False)
+    return container
 
 
 @pytest.mark.django_db
 class TestBulkAwardLootPreview:
     """Tests for loot preview in bulk award form."""
 
-    def test_bulk_award_page_has_preview_templates_for_gm(self, client, club, gm_user):
+    def test_bulk_award_page_has_preview_templates_for_gm(
+        self, client, club, game_master, container_award_chest
+    ):
         """Bulk award page has hidden preview templates for container items."""
-        container = ItemFactory(club=club, name="Award Chest", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Reward Item", qty_min=1, qty_max=1)
-
         # Non-container item
-        ItemFactory(club=club, name="Regular Item", is_container=False)
+        _get_or_create_item(club, name="Regular Item", is_container=False)
 
-        client.force_login(gm_user)
+        client.force_login(game_master)
         url = reverse("characters:bulk_award", args=[club.slug])
         response = client.get(url)
         assert response.status_code == 200
         content = response.content.decode()
         # Should have template elements for container previews
-        assert f'id="loot-preview-{container.pk}"' in content
+        assert f'id="loot-preview-{container_award_chest.pk}"' in content
         assert "Reward Item" in content
 
-    def test_bulk_award_preview_shows_unknown_for_player_not_applicable(self, client, club, gm_user):
+    def test_bulk_award_preview_shows_unknown_for_player_not_applicable(
+        self, client, club, game_master, container_mystery_award
+    ):
         """Bulk award is GM-only, so unknown masking not applicable."""
         # This test documents that bulk_award is admin_or_gm_required
         # so unknown items are always visible (viewer_can_see_unknown=True)
-        container = ItemFactory(club=club, name="Mystery Award", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=True)
-        ContainerSlotOptionFactory(slot=slot, item__name="Secret Reward", qty_min=1, qty_max=1)
-
-        client.force_login(gm_user)
+        client.force_login(game_master)
         url = reverse("characters:bulk_award", args=[club.slug])
         response = client.get(url)
         assert response.status_code == 200
@@ -54,14 +94,14 @@ class TestBulkAwardLootPreview:
 class TestAdjustLootPreview:
     """Tests for loot preview in adjust form (optional per plan)."""
 
-    def test_adjust_page_preview_optional(self, client, club, gm_user, character):
+    def test_adjust_page_preview_optional(self, client, club, game_master, character):
         """Adjust page could have preview - optional per plan."""
         # This is optional per the plan, just document the possibility
-        container = ItemFactory(club=club, name="Adjust Container", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Adjust Item", qty_min=1, qty_max=1)
+        container = make_container(club, name="Adjust Container")
+        item = _get_or_create_item(club, "Adjust Item")
+        add_slot(container, [(item, 1, 1, 1)], chance_pct=100, unknown=False)
 
-        client.force_login(gm_user)
+        client.force_login(game_master)
         url = reverse("characters:adjust", args=[club.slug, character.pk])
         response = client.get(url)
         assert response.status_code == 200
@@ -76,16 +116,11 @@ class TestAdjustLootPreview:
 class TestBulkAwardGrantContainer:
     """Tests that bulk award grants container unopened."""
 
-    def test_bulk_award_with_container_grants_unopened(self, client, club, gm_user, character):
+    def test_bulk_award_with_container_grants_unopened(
+        self, client, club, game_master, character, container_bulk_award_chest
+    ):
         """Bulk award with container item grants container unopened."""
-        from ledger.services import available_items
-        from items.models import ContainerOpening
-
-        container = ItemFactory(club=club, name="Bulk Award Chest", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Bulk Sword", qty_min=1, qty_max=1)
-
-        client.force_login(gm_user)
+        client.force_login(game_master)
         url = reverse("characters:bulk_award", args=[club.slug])
         data = {
             "characters": [character.pk],
@@ -96,8 +131,8 @@ class TestBulkAwardGrantContainer:
             f"items_{character.pk}-INITIAL_FORMS": "0",
             f"items_{character.pk}-MIN_NUM_FORMS": "0",
             f"items_{character.pk}-MAX_NUM_FORMS": "1",
-            f"items_{character.pk}-0-item": str(container.pk),
-            f"items_{character.pk}-0-item_id": str(container.pk),
+            f"items_{character.pk}-0-item": str(container_bulk_award_chest.pk),
+            f"items_{character.pk}-0-item_id": str(container_bulk_award_chest.pk),
             f"items_{character.pk}-0-quantity": "1",
             f"items_{character.pk}-0-value_override": "",
         }
@@ -106,28 +141,26 @@ class TestBulkAwardGrantContainer:
 
         # Check ledger: one line for container +1
         avail = available_items(character)
-        assert avail[container.pk] == 1
+        assert avail[container_bulk_award_chest.pk] == 1
 
         # No ContainerOpening created
         assert not ContainerOpening.objects.filter(character=character).exists()
 
         # Contents not in inventory
-        sword = ItemFactory(club=club, name="Bulk Sword")
+        sword = _get_or_create_item(club, name="Bulk Sword")
         assert avail.get(sword.pk, 0) == 0
 
-    def test_bulk_award_multiple_characters_with_container(self, client, club, gm_user):
+    def test_bulk_award_multiple_characters_with_container(
+        self, client, club, game_master, container_party_chest
+    ):
         """Bulk award to multiple characters with container."""
-        from ledger.services import available_items
-        from items.models import ContainerOpening
+        from accounts.models import Membership
 
-        container = ItemFactory(club=club, name="Party Chest", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Party Item", qty_min=1, qty_max=1)
+        owner = Membership.objects.get(user=game_master, club=club)
+        char1 = Character.objects.create(club=club, owner=owner, name="Char1")
+        char2 = Character.objects.create(club=club, owner=owner, name="Char2")
 
-        char1 = CharacterFactory(club=club, name="Char1")
-        char2 = CharacterFactory(club=club, name="Char2")
-
-        client.force_login(gm_user)
+        client.force_login(game_master)
         url = reverse("characters:bulk_award", args=[club.slug])
         data = {
             "characters": [char1.pk, char2.pk],
@@ -138,8 +171,8 @@ class TestBulkAwardGrantContainer:
             f"items_{char1.pk}-INITIAL_FORMS": "0",
             f"items_{char1.pk}-MIN_NUM_FORMS": "0",
             f"items_{char1.pk}-MAX_NUM_FORMS": "1",
-            f"items_{char1.pk}-0-item": str(container.pk),
-            f"items_{char1.pk}-0-item_id": str(container.pk),
+            f"items_{char1.pk}-0-item": str(container_party_chest.pk),
+            f"items_{char1.pk}-0-item_id": str(container_party_chest.pk),
             f"items_{char1.pk}-0-quantity": "1",
             f"items_{char1.pk}-0-value_override": "",
             f"coins_{char2.pk}": "0",
@@ -147,8 +180,8 @@ class TestBulkAwardGrantContainer:
             f"items_{char2.pk}-INITIAL_FORMS": "0",
             f"items_{char2.pk}-MIN_NUM_FORMS": "0",
             f"items_{char2.pk}-MAX_NUM_FORMS": "1",
-            f"items_{char2.pk}-0-item": str(container.pk),
-            f"items_{char2.pk}-0-item_id": str(container.pk),
+            f"items_{char2.pk}-0-item": str(container_party_chest.pk),
+            f"items_{char2.pk}-0-item_id": str(container_party_chest.pk),
             f"items_{char2.pk}-0-quantity": "1",
             f"items_{char2.pk}-0-value_override": "",
         }
@@ -158,8 +191,8 @@ class TestBulkAwardGrantContainer:
         # Check both characters got the container
         avail1 = available_items(char1)
         avail2 = available_items(char2)
-        assert avail1[container.pk] == 1
-        assert avail2[container.pk] == 1
+        assert avail1[container_party_chest.pk] == 1
+        assert avail2[container_party_chest.pk] == 1
 
         # No ContainerOpening created
         assert not ContainerOpening.objects.filter(character=char1).exists()
@@ -170,16 +203,11 @@ class TestBulkAwardGrantContainer:
 class TestAdjustGrantContainer:
     """Tests that adjust grants container unopened."""
 
-    def test_adjust_with_container_grants_unopened(self, client, club, gm_user, character):
+    def test_adjust_with_container_grants_unopened(
+        self, client, club, game_master, character, container_adjust_chest
+    ):
         """Adjust with container item grants container unopened."""
-        from ledger.services import available_items
-        from items.models import ContainerOpening
-
-        container = ItemFactory(club=club, name="Adjust Chest", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Adjust Item", qty_min=1, qty_max=1)
-
-        client.force_login(gm_user)
+        client.force_login(game_master)
         url = reverse("characters:adjust", args=[club.slug, character.pk])
         # The adjust form uses a formset, we need to submit properly
         data = {
@@ -191,7 +219,7 @@ class TestAdjustGrantContainer:
             "form-INITIAL_FORMS": "0",
             "form-MIN_NUM_FORMS": "0",
             "form-MAX_NUM_FORMS": "1000",
-            "form-0-item": str(container.pk),
+            "form-0-item": str(container_adjust_chest.pk),
             "form-0-quantity": "1",
         }
         response = client.post(url, data)
@@ -199,11 +227,11 @@ class TestAdjustGrantContainer:
 
         # Check ledger: one line for container +1
         avail = available_items(character)
-        assert avail[container.pk] == 1
+        assert avail[container_adjust_chest.pk] == 1
 
         # No ContainerOpening created
         assert not ContainerOpening.objects.filter(character=character).exists()
 
         # Contents not in inventory
-        item = ItemFactory(club=club, name="Adjust Item")
+        item = _get_or_create_item(club, name="Adjust Item")
         assert avail.get(item.pk, 0) == 0
