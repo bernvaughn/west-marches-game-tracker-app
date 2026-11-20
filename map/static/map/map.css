@@ -60,6 +60,11 @@
   .pan-links { grid-template-columns: repeat(6, auto); }
   .map-frame .wm-card-body { padding: var(--wm-space-2); }
 }
+/* Queue row checkboxes: stay easy to tap on phones (>= 24 px at 390 px). */
+@media (max-width: 575.98px) {
+  #queue-table .form-check-input { width: 1.5rem; height: 1.5rem; }
+}
+
 @media print {
   .site-header, .wm-toolbar, .map-controls, .map-picker, .pan-links, .print-link, .no-print, .view-switch, nav, form, button { display: none !important; }
   .hexmap svg { width: 100%; max-width: none; }
