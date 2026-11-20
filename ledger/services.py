@@ -189,7 +189,7 @@ class LedgerService(BaseService, ClubScopedService):
             ]
         )[0]
 
-    RECENT_KINDS = ("consumed", "adjustment", "award")
+    RECENT_KINDS = ("consumed", "adjustment", "award", "opened")
 
     def recent_changes(self, character, days=30, limit=20):
         """Consume and adjust entries (any actor) in the last `days`, newest first."""

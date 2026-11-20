@@ -211,6 +211,7 @@ EXCLUDED = {
     "oauth2_provider:dcr-register-management": "A JSON API.",
     "accounts:message_status": "POST only.",
     "accounts:message_bulk_status": "POST only.",
+    "characters:open_container": "POST only; opens a container from the character sheet via htmx.",
     "characters:select": "POST only.",
     "characters:shop_toggle": "POST only.",
     "characters:preview": "JSON endpoint for tooltip preview, not a page.",
