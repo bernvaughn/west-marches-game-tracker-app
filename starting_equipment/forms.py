@@ -134,6 +134,33 @@ class MagicOptionForm(ClubItemMixin, forms.ModelForm):
         fields = ["item", "max_per_character", "notes"]
 
 
+class StartingChoicesForm(forms.Form):
+    """One required radio field per starting equipment choice group."""
+
+    def __init__(self, groups, data=None):
+        super().__init__(data=data)
+        self._group_keys = []
+        for index, group in enumerate(groups):
+            field_name = f"g_{index}"
+            self._group_keys.append((field_name, group.key))
+            self.fields[field_name] = forms.ChoiceField(
+                label=group.label,
+                choices=[
+                    (option.line_id, f"{option.item.name} \u00d7{option.quantity}")
+                    for option in group.options
+                ],
+                widget=forms.RadioSelect,
+                required=True,
+                error_messages={"required": "Pick one option"},
+            )
+
+    def picks(self):
+        """Return {group key: chosen line id} from cleaned data, or {} if invalid."""
+        if not self.is_bound or not self.is_valid():
+            return {}
+        return {key: int(self.cleaned_data[name]) for name, key in self._group_keys}
+
+
 class TemplateForm(forms.ModelForm):
     """Form for creating and editing StartingEquipmentTemplate."""
 

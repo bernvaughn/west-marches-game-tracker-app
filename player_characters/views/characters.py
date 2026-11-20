@@ -18,7 +18,11 @@ from accounts.permissions import admin_or_gm_required, club_admin_required, club
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests
 from starting_equipment.models import StartingEquipmentTemplate
-from starting_equipment.services import apply_starting_equipment, explain_starting_equipment
+from starting_equipment.services import (
+    claim_starting_equipment,
+    explain_starting_equipment,
+    get_choice_groups,
+)
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
@@ -107,11 +111,16 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
             template = StartingEquipmentTemplate.objects.filter(
                 club=self.club, is_active=True
             ).first()
-            result = apply_starting_equipment(character, template, request.user)
-            # Only mark as claimed if equipment was actually granted
-            if result.entry is not None:
-                character.starting_equipment_claimed = True
-                character.save(update_fields=["starting_equipment_claimed"])
+            groups = get_choice_groups(character, template)
+            if groups:
+                # Choice groups exist: send the player to pick before granting gear.
+                messages.success(request, f"Created {character.name}.")
+                return redirect(
+                    "starting_equipment:choices",
+                    club_slug=self.club.slug,
+                    character_pk=character.pk,
+                )
+            result = claim_starting_equipment(character, template, request.user)
             messages.success(request, f"Created {character.name}.")
             for reason in result.reasons:
                 messages.warning(request, reason.message)
@@ -154,6 +163,19 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             .order_by("name")
             .first()
         )
+        choice_groups = get_choice_groups(character, template)
+        can_claim_starting_equipment = bool(
+            (is_owner or admin or gm)
+            and not character.starting_equipment_claimed
+            and template is not None
+            and (character.char_class or character.background)
+        )
+        starting_choices_url = None
+        if can_claim_starting_equipment and choice_groups:
+            starting_choices_url = reverse(
+                "starting_equipment:choices",
+                kwargs={"club_slug": self.club.slug, "character_pk": character.pk},
+            )
         ctx = {
             "character": character,
             "characters_url": reverse(
@@ -171,12 +193,8 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "can_request_starting_equipment": owns_character(request.user, character)
             or admin
             or gm,
-            "can_claim_starting_equipment": bool(
-                (is_owner or admin or gm)
-                and not character.starting_equipment_claimed
-                and template is not None
-                and (character.char_class or character.background)
-            ),
+            "can_claim_starting_equipment": can_claim_starting_equipment,
+            "starting_choices_url": starting_choices_url,
             "has_magic_options": template is not None and template.magic_options.exists(),
             "active_template": template,
         }

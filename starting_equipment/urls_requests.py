@@ -1,9 +1,14 @@
 from django.urls import path
 
-from starting_equipment.views import requests
+from starting_equipment.views import choices, requests
 from starting_equipment.views.claim import claim_starting_equipment
 
 urlpatterns = [
+    path(
+        "characters/<int:character_pk>/choices/",
+        choices.choices,
+        name="choices",
+    ),
     path(
         "characters/<int:character_pk>/claim/",
         claim_starting_equipment,

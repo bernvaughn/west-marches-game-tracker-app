@@ -198,6 +198,9 @@ EXCLUDED = {
     "starting_equipment:magic_option_edit": "Stub view, Entry Mgmt child task.",
     "starting_equipment:magic_option_delete": "Stub view, Entry Mgmt child task.",
     "starting_equipment:claim": "POST only; claim starting equipment for a character.",
+    "starting_equipment:choices": (
+        "GET picker page; needs an unclaimed character with choice groups (demo state varies)."
+    ),
     "starting_equipment:request_decide": "POST only; admin/GM approve or decline.",
     "starting_equipment:request_decide_confirm": "HTMX confirm modal; needs a starting request PK.",
     "starting_equipment:request_status": "HTMX partial for a request status row.",

@@ -3,6 +3,7 @@
 from django.contrib import messages as flash
 from django.http import Http404
 from django.shortcuts import redirect
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from accounts.htmx import hx_response, is_htmx
@@ -10,9 +11,25 @@ from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from player_characters.models import Character
 from starting_equipment.models import StartingEquipmentTemplate
-from starting_equipment.services import apply_starting_equipment
+from starting_equipment.services import (
+    AlreadyClaimed,
+    get_choice_groups,
+)
+from starting_equipment.services import (
+    claim_starting_equipment as claim_starting_equipment_service,
+)
 
 _NO_GRANT_FALLBACK = "The template has nothing to grant for this character."
+
+
+def _can_claim(request, character):
+    """True if the request's user may claim starting equipment for the character."""
+    membership = request.membership
+    if membership is None:
+        return False
+    return (
+        membership.is_club_admin or membership.is_game_master or character.owner_id == membership.id
+    )
 
 
 def _respond_without_grant(request, club_slug, character, reasons):
@@ -40,11 +57,7 @@ def claim_starting_equipment(request, club_slug, character_pk):
     character = club_get_object_or_404(request, Character, pk=character_pk)
 
     # Permission check: owner, admin, or GM
-    membership = request.membership
-    can_claim = (
-        membership.is_club_admin or membership.is_game_master or character.owner_id == membership.id
-    )
-    if not can_claim:
+    if not _can_claim(request, character):
         raise Http404
 
     # Check if already claimed
@@ -59,17 +72,31 @@ def claim_starting_equipment(request, club_slug, character_pk):
     # Get active template for club (may be None)
     template = StartingEquipmentTemplate.objects.filter(club=request.club, is_active=True).first()
 
-    # Apply starting equipment
-    result = apply_starting_equipment(character, template, request.user)
+    # Choice groups must be picked before anything is granted.
+    groups = get_choice_groups(character, template)
+    if groups:
+        choices_url = reverse(
+            "starting_equipment:choices",
+            kwargs={"club_slug": club_slug, "character_pk": character.pk},
+        )
+        if is_htmx(request):
+            return hx_response(redirect=choices_url)
+        return redirect(choices_url)
+
+    # No choice groups: grant via the locked service (one entry, no double grant).
+    try:
+        result = claim_starting_equipment_service(character, template, request.user)
+    except AlreadyClaimed:
+        flash.error(request, "Starting equipment has already been claimed for this character.")
+        if is_htmx(request):
+            return hx_response(refresh=True)
+        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+
     entry = result.entry
 
     # Nothing granted: flash the reasons and do not mark claimed.
     if entry is None:
         return _respond_without_grant(request, club_slug, character, result.reasons)
-
-    # Mark as claimed
-    character.starting_equipment_claimed = True
-    character.save(update_fields=["starting_equipment_claimed"])
 
     flash.success(request, "Starting equipment claimed.")
     # A granted entry can still carry reasons (for example a custom background).
