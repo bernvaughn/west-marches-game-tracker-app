@@ -40,18 +40,38 @@
     var coinsDisplay = root.querySelector("[" + COINS_DISPLAY_ATTR + "]");
     var replayButton = root.querySelector("[" + REPLAY_ATTR + "]");
 
-    var timers = [];
+    // Step timers drive the reveal. The advance timer only navigates to the
+    // sheet. Page clicks and a hidden tab cancel the advance timer only, so
+    // the reveal itself always completes. Each play has a run id; callbacks
+    // from an older run (timers, coin count-up) do nothing.
+    var stepTimers = [];
+    var advanceTimer = null;
+    var cancelCoins = null;
+    var runId = 0;
     var finished = false;
-    var armed = false;
+    // Set when the player clicks the page or hides the tab during a run:
+    // the reveal still completes, but it does not leave the page.
+    var stayOnPage = false;
 
-    function addTimer(fn, ms) {
-      var handle = setTimeout(fn, ms);
-      timers.push(handle);
+    function addStep(fn, ms) {
+      stepTimers.push(setTimeout(fn, ms));
     }
 
-    function clearTimers() {
-      timers.forEach(clearTimeout);
-      timers = [];
+    function clearSteps() {
+      stepTimers.forEach(clearTimeout);
+      stepTimers = [];
+      if (cancelCoins) {
+        cancelCoins();
+        cancelCoins = null;
+      }
+    }
+
+    function cancelAdvance() {
+      stayOnPage = true;
+      if (advanceTimer !== null) {
+        clearTimeout(advanceTimer);
+        advanceTimer = null;
+      }
     }
 
     function announce(text) {
@@ -74,103 +94,106 @@
       return parts.join(" ");
     }
 
-    function showItems() {
+    function setItemsRevealed(on) {
       items.forEach(function (item) {
-        item.classList.add(REVEALED_CLASS);
+        item.classList.toggle(REVEALED_CLASS, on);
       });
     }
 
-    function hideItems() {
-      items.forEach(function (item) {
-        item.classList.remove(REVEALED_CLASS);
-      });
+    function setCoinsHidden(on) {
+      if (coinsBlock) coinsBlock.hidden = on;
     }
 
-    function showCoins() {
-      if (coinsBlock) coinsBlock.hidden = false;
+    function setCoinsDisplay(cp) {
+      if (!coinsDisplay) return;
+      coinsDisplay.textContent =
+        typeof window.wmFormatCoins === "function"
+          ? window.wmFormatCoins(cp)
+          : cp + " cp";
     }
 
-    function hideCoins() {
-      if (coinsBlock) coinsBlock.hidden = true;
+    function setReplayHidden(on) {
+      if (replayButton) replayButton.hidden = on;
     }
 
-    function resetCoinsDisplay() {
-      if (coinsDisplay) coinsDisplay.textContent = "0 cp";
-    }
-
-    function showReplay() {
-      if (replayButton) replayButton.hidden = false;
-    }
-
-    function hideReplay() {
-      if (replayButton) replayButton.hidden = true;
-    }
-
-    function finish() {
+    // Show the final state: all items, final coins, announcement, Replay.
+    function finish(autoAdvance) {
       if (finished) return;
       finished = true;
-      armed = false;
-      clearTimers();
+      clearSteps();
       root.classList.remove(ARMED_CLASS);
-      showCoins();
+      setItemsRevealed(true);
+      setCoinsDisplay(coinsCp);
+      setCoinsHidden(false);
       announce(announcementText());
-      showReplay();
-      if (!mq.matches) {
-        addTimer(function () {
+      setReplayHidden(false);
+      if (autoAdvance && !stayOnPage && !mq.matches) {
+        advanceTimer = setTimeout(function () {
+          advanceTimer = null;
           location.assign(sheetUrl);
         }, AFTER_COINS_MS);
       }
     }
 
-    function playMotion() {
-      armed = true;
-      root.classList.add(ARMED_CLASS);
-      resetCoinsDisplay();
+    function resetForRun() {
+      clearSteps();
+      cancelAdvance();
+      runId += 1;
+      finished = false;
+      stayOnPage = false;
+      root.classList.remove(ARMED_CLASS);
+      setItemsRevealed(false);
+      setCoinsHidden(true);
+      setCoinsDisplay(0);
+      announce("");
+      setReplayHidden(true);
+      return runId;
+    }
 
+    function playMotion() {
+      var run = resetForRun();
+      root.classList.add(ARMED_CLASS);
       var index = 0;
+
+      function current() {
+        return run === runId && !finished;
+      }
+
+      function startCoins() {
+        setCoinsHidden(false);
+        if (
+          coinsCp === 0 ||
+          !coinsDisplay ||
+          typeof window.wmAnimateCoins !== "function"
+        ) {
+          finish(true);
+          return;
+        }
+        var cancel = window.wmAnimateCoins(root, coinsDisplay, coinsCp, function () {
+          if (current()) finish(true);
+        });
+        if (current() && typeof cancel === "function") cancelCoins = cancel;
+      }
+
       function showNext() {
-        if (finished) return;
+        if (!current()) return;
         if (index >= items.length) {
           startCoins();
           return;
         }
         items[index].classList.add(REVEALED_CLASS);
         index += 1;
-        addTimer(showNext, ITEM_GAP_MS);
+        addStep(showNext, ITEM_GAP_MS);
       }
       showNext();
-
-      function startCoins() {
-        if (finished) return;
-        showCoins();
-        if (
-          coinsCp === 0 ||
-          !coinsDisplay ||
-          typeof window.wmAnimateCoins !== "function"
-        ) {
-          finish();
-          return;
-        }
-        window.wmAnimateCoins(root, coinsDisplay, coinsCp, finish);
-      }
     }
 
     function playReduced() {
-      showItems();
-      showCoins();
-      finish();
+      resetForRun();
+      finish(false);
     }
 
-    function replay() {
-      clearTimers();
-      finished = false;
-      armed = false;
-      root.classList.remove(ARMED_CLASS);
-      hideItems();
-      resetCoinsDisplay();
-      hideCoins();
-      if (live) live.textContent = "";
-      hideReplay();
+    function play() {
       if (mq.matches) {
         playReduced();
       } else {
@@ -179,32 +202,29 @@
     }
 
     if (replayButton) {
-      replayButton.addEventListener("click", replay);
+      replayButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        play();
+      });
     }
 
-    root.addEventListener("click", clearTimers);
+    // A click on the page means the player is engaged: stay on this page.
+    root.addEventListener("click", function (event) {
+      if (replayButton && replayButton.contains(event.target)) return;
+      cancelAdvance();
+    });
 
     document.addEventListener("visibilitychange", function () {
-      if (document.hidden) clearTimers();
+      if (document.hidden) cancelAdvance();
     });
 
     mq.addEventListener("change", function (event) {
-      if (!event.matches || finished || !armed) return;
-      clearTimers();
-      armed = false;
-      root.classList.remove(ARMED_CLASS);
-      showItems();
-      showCoins();
-      announce(announcementText());
-      showReplay();
-      finished = true;
+      if (!event.matches) return;
+      cancelAdvance();
+      finish(false);
     });
 
-    if (mq.matches) {
-      playReduced();
-    } else {
-      playMotion();
-    }
+    play();
   }
 
   document.addEventListener("DOMContentLoaded", init);

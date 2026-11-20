@@ -7,6 +7,7 @@
    The count-up is also callable from other pages (for example the starting
    gear reveal):
      window.wmAnimateCoins(container, displayEl, targetCp, onDone)
+       -> returns cancel() when it animates; cancel stops frames and onDone.
      window.wmFormatCoins(cp)
    Only containers with #starting-coins-animation auto-start.
  */
@@ -56,7 +57,9 @@
 
     var DURATION = 2000;
     var startTime = null;
+    var cancelled = false;
     function step(timestamp) {
+      if (cancelled) return;
       if (!startTime) startTime = timestamp;
       var progress = Math.min((timestamp - startTime) / DURATION, 1);
       var currentCp = Math.floor(progress * targetCp);
@@ -69,6 +72,7 @@
       }
     }
     requestAnimationFrame(step);
+    return function cancel() { cancelled = true; };
   }
 
   window.wmAnimateCoins = animateCoins;
