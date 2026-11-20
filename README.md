@@ -26,6 +26,10 @@ Open http://127.0.0.1:8000/ and sign in with a demo login. The password for all 
 | `alice@example.com` | Player (Aria Windrunner) |
 | `bob@example.com` | Player (Borin Stonefist) |
 
+## New clubs
+
+The site admin "new club" form seeds XP table, character options, club admin (with a temporary password), the default item catalogue (~100 items), and an active "2024 D&D Default" starting equipment template. It does not seed characters, shops, quests, maps, downtime actions, or messages — the GM creates those. Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`. See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
+
 Run the checks with `uv run pytest` and `uv run ruff check`.
 
 The browser console guard is slow and needs Chromium, so `uv run pytest` skips it.
