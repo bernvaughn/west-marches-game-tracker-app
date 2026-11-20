@@ -101,15 +101,9 @@
                  id="id_items_{{ c.pk }}-{{ row_num }}-value_override" min="0" value=""
                  placeholder="Override value (optional)">
         </div>
+        <div class="col-12 wm-loot-slot" hidden></div>
       </div>
       {% endfor %}
-    </div>
-
-    <!-- Loot preview slot for this character's item rows -->
-    <div class="wm-loot-preview-slot" style="display: none;">
-      <hr class="my-2">
-      <h4 class="h6">Preview</h4>
-      <div class="wm-loot-slot"></div>
     </div>
   </div>
   {% endwith %}{% endfor %}
@@ -163,23 +157,18 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   function showLootPreview(inputElement, itemId) {
-    // Find the loot preview slot for this character's section
-    var charSection = inputElement.closest('.wm-char-section');
-    if (!charSection) return;
-    var lootSlot = charSection.querySelector('.wm-loot-slot');
-    var previewContainer = charSection.querySelector('.wm-loot-preview-slot');
-    if (!lootSlot || !previewContainer) return;
-
-    if (itemId) {
-      var template = document.getElementById('loot-preview-' + itemId);
-      if (template) {
-        lootSlot.innerHTML = template.innerHTML;
-        previewContainer.style.display = 'block';
-        return;
-      }
+    // Each item row has its own preview slot.
+    var row = inputElement.closest('.wm-item-row');
+    var lootSlot = row ? row.querySelector('.wm-loot-slot') : null;
+    if (!lootSlot) return;
+    var template = itemId ? document.getElementById('loot-preview-' + itemId) : null;
+    if (template) {
+      lootSlot.replaceChildren(template.content.cloneNode(true));
+      lootSlot.hidden = false;
+    } else {
+      lootSlot.replaceChildren();
+      lootSlot.hidden = true;
     }
-    lootSlot.innerHTML = '';
-    previewContainer.style.display = 'none';
   }
 });
 </script>
