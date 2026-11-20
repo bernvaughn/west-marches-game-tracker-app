@@ -62,7 +62,10 @@ def test_search_items_all(mcp, world, item):
     assert "Old Sword" not in names and "Foreign Magic" not in names
     assert {"Healing Potion", "Cloak", item.name} <= names
     for r in rows:
-        assert set(r) == {"id", "name", "description", "traits", "gm_details", "value_cp", "value"}
+        base_fields = {"id", "name", "description", "traits", "gm_details", "value_cp", "value"}
+        # New fields: is_container (always), loot (for containers)
+        assert base_fields.issubset(set(r))
+        assert "is_container" in r
         assert r["value"] == format_coins(r["value_cp"])
 
 

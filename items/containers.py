@@ -153,10 +153,16 @@ def loot_preview(container, viewer_can_see_unknown) -> list[PreviewRow]:
     Unknown slots are masked (``???``) unless the viewer can see them. Masked
     rows keep ``chance_pct`` and ``unknown=True`` but reveal no item, id or
     quantity.
+
+    If ``container`` has a ``prefetched_slots`` attribute (set by a Prefetch),
+    those slots are used instead of querying, avoiding N+1.
     """
 
     rows: list[PreviewRow] = []
-    slots = list(container.slots.prefetch_related("options__item").order_by("position", "id"))
+    if hasattr(container, "prefetched_slots"):
+        slots = container.prefetched_slots
+    else:
+        slots = list(container.slots.prefetch_related("options__item").order_by("position", "id"))
 
     for slot in slots:
         options = list(slot.options.all())
