@@ -67,6 +67,28 @@ def test_admin_gets_200_on_list(club_admin, login, club, kind, species, char_cla
     ["species", "classes", "backgrounds"],
     ids=["species", "classes", "backgrounds"],
 )
+def test_list_renders_header_and_no_template_tags(
+    club_admin, login, club, kind, species, char_class, background
+):
+    """List page renders one h1, no raw template tags, an Add link, no warning Archive."""
+    client = login(club_admin)
+    url = reverse("character_options:list", args=[club.slug, kind])
+    response = client.get(url)
+    assert response.status_code == 200
+    content = response.content
+    assert content.count(b"<h1") == 1, f"expected exactly one h1, got {content.count(b'<h1')}"
+    assert b"{% include" not in content
+    create_url = reverse("character_options:create", args=[club.slug, kind])
+    assert f'href="{create_url}"'.encode() in content
+    assert b"btn-outline-warning" not in content
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "kind",
+    ["species", "classes", "backgrounds"],
+    ids=["species", "classes", "backgrounds"],
+)
 def test_site_admin_gets_200_on_list(
     site_admin, login, club, kind, species, char_class, background
 ):

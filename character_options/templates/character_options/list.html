@@ -9,13 +9,7 @@
 {% url "character_options:list" club.slug "backgrounds" as backgrounds_url %}
 {% url "character_options:create" club.slug kind as create_url %}
 
-{% include "components/page_header.html" with
-    title=kind_obj.plural
-    subtitle=club.name
-    action_url=create_url
-    action_label="Add"
-    action_icon="plus-lg"
-%}
+{% include "components/page_header.html" with title=kind_obj.plural subtitle=club.name action_url=create_url action_label="Add" action_icon="plus-lg" %}
 
 <nav class="mb-3" aria-label="Option kind">
   <a class="btn btn-sm {% if kind == 'species' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{{ species_url }}">Species</a>
