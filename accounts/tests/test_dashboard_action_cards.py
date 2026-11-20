@@ -121,6 +121,26 @@ def test_dashboard_shows_junk_card(club, player, character, item, login):
 
 
 @pytest.mark.django_db
+def test_dashboard_downtime_card_has_valid_refresh_target(
+    club, player, character, action, entries, login
+):
+    """Downtime card exposes a valid id and refresh url for Close & Refresh.
+
+    Regression: the Close & Refresh button targeted an invalid `:contains()`
+    selector and the card had no id, so it never reloaded after a spend.
+    """
+    downtime_services.award(character, 2, note="test", by=player)
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert 'id="dashboard-card-downtime"' in body, "Downtime card must have a stable id"
+    assert f'data-refresh-url="/c/{club.slug}/accounts/dashboard/partial/downtime/"' in body, (
+        "Downtime card must expose its refresh url"
+    )
+
+
+@pytest.mark.django_db
 def test_dashboard_hides_junk_card(club, player, character, login):
     """Dashboard hides the junk_summary card when the character has no junk."""
     c = login(player)

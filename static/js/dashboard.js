@@ -9,21 +9,24 @@
  */
 (function () {
   const EVENT_CARD = {
-    questCompleted: "quests_ready",
-    junkChanged: "junk_summary",
-    downtimeSpent: "downtime_available",
+    questCompleted: ["quests_ready"],
+    junkChanged: ["junk_summary"],
+    downtimeSpent: ["downtime", "downtime_available"],
   };
 
   function refreshCard(key) {
-    const id = `dashboard-card-${key}`;
-    const card = document.getElementById(id);
-    if (!card) return;
-    const url = card.dataset.refreshUrl;
-    if (!url) return;
-    htmx.ajax("GET", url, { target: `#${id}`, swap: "outerHTML" });
+    const keys = Array.isArray(key) ? key : [key];
+    keys.forEach((k) => {
+      const id = `dashboard-card-${k}`;
+      const card = document.getElementById(id);
+      if (!card) return;
+      const url = card.dataset.refreshUrl;
+      if (!url) return;
+      htmx.ajax("GET", url, { target: `#${id}`, swap: "outerHTML" });
+    });
   }
 
-  Object.entries(EVENT_CARD).forEach(([eventName, key]) => {
-    document.body.addEventListener(eventName, () => refreshCard(key));
+  Object.entries(EVENT_CARD).forEach(([eventName, keys]) => {
+    document.body.addEventListener(eventName, () => refreshCard(keys));
   });
 })();
