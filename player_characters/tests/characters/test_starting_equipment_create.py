@@ -6,7 +6,7 @@ from django.urls import reverse
 from character_options.models import Background, CharacterClass
 from items.models import Item
 from ledger.models import LedgerEntry
-from player_characters.models import Character
+from player_characters.models import OTHER, Character
 from starting_equipment.models import (
     StartingEquipmentBackgroundEntry,
     StartingEquipmentBackgroundLine,
@@ -76,12 +76,12 @@ def inactive_template(club):
 
 @pytest.fixture
 def class_option_fighter(club):
-    return CharacterClass.objects.create(club=club, name="Fighter", is_active=True, sort_order=10)
+    return CharacterClass.objects.get(club=club, name="Fighter")
 
 
 @pytest.fixture
 def bg_option_acolyte(club):
-    return Background.objects.create(club=club, name="Acolyte", is_active=True, sort_order=10)
+    return Background.objects.get(club=club, name="Acolyte")
 
 
 class TestCreateWithStartingEquipment:
@@ -122,20 +122,10 @@ class TestCreateWithStartingEquipment:
         assert response.status_code == 302
 
         character = Character.objects.get(name="Aria")
-        # Character form doesn't set FKs yet (parallel task), so set them for the service
-        character.class_option = class_option_fighter
-        character.background_option = bg_option_acolyte
-        character.save(update_fields=["class_option", "background_option"])
-
-        # Now the service will match by FK
-        from starting_equipment.services import apply_starting_equipment
-
-        entry = apply_starting_equipment(character, active_template, player)
-        assert entry is not None
-        character.starting_equipment_claimed = True
-        character.save(update_fields=["starting_equipment_claimed"])
-
-        character.refresh_from_db()
+        # The character form links the picked records; the service matches by FK.
+        assert character.class_option == class_option_fighter
+        assert character.background_option == bg_option_acolyte
+        assert character.starting_equipment_claimed is True
         entries = LedgerEntry.objects.filter(character=character)
         assert entries.count() == 1
         entry = entries.first()
@@ -165,10 +155,10 @@ class TestCreateWithStartingEquipment:
         assert response.url == f"{detail_url(club, character)}?starting_equipment=1"
         assert LedgerEntry.objects.count() == 0
 
-    def test_text_only_creation_no_fk_grants_no_gear(
+    def test_custom_class_and_background_grant_no_gear(
         self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
     ):
-        """Creation with text-only class/background (no FK) grants no gear."""
+        """'Other' class/background (text, no FK) grants no gear even if the name matches."""
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
         holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
         class_entry = make_class_entry(
@@ -181,19 +171,20 @@ class TestCreateWithStartingEquipment:
         client = login(player)
         response = client.post(
             create_url(club),
-            {"name": "Aria", "char_class": "Fighter", "background": "Acolyte"},
+            {
+                "name": "Aria",
+                "char_class": OTHER,
+                "char_class_freetext": "Blood Hunter",
+                "background": OTHER,
+                "background_freetext": "Wanderer",
+            },
         )
         assert response.status_code == 302
 
         character = Character.objects.get(name="Aria")
-        # Character has text fields but NO FKs (class_option/background_option are None)
-        # Service should NOT grant gear because matching is by FK only
-        from starting_equipment.services import apply_starting_equipment
-
-        entry = apply_starting_equipment(character, active_template, player)
-        assert entry is None
-
-        # No ledger entry should be created
+        assert character.char_class == "Blood Hunter"
+        assert character.class_option is None
+        assert character.background_option is None
         assert LedgerEntry.objects.count() == 0
 
     def test_fk_linked_creation_grants_gear(
@@ -217,19 +208,8 @@ class TestCreateWithStartingEquipment:
         assert response.status_code == 302
 
         character = Character.objects.get(name="Aria")
-        # Set FKs (simulating what the character form will do once updated)
-        character.class_option = class_option_fighter
-        character.background_option = bg_option_acolyte
-        character.save(update_fields=["class_option", "background_option"])
-
-        # Service should grant gear because matching is by FK
-        from starting_equipment.services import apply_starting_equipment
-
-        entry = apply_starting_equipment(character, active_template, player)
-        assert entry is not None
-
-        character.starting_equipment_claimed = True
-        character.save(update_fields=["starting_equipment_claimed"])
+        assert character.class_option == class_option_fighter
+        assert character.background_option == bg_option_acolyte
 
         entries = LedgerEntry.objects.filter(character=character)
         assert entries.count() == 1

@@ -46,6 +46,8 @@ class ClubItemMixin:
 class ClassEntryForm(forms.ModelForm):
     def __init__(self, *args, club=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # The model FK is nullable until the cleanup child; the form requires a record.
+        self.fields["class_option"].required = True
         if club is not None:
             self.fields["class_option"].queryset = _class_option_queryset(club)
 
@@ -80,6 +82,8 @@ ClassLineFormSet = inlineformset_factory(
 class BackgroundEntryForm(forms.ModelForm):
     def __init__(self, *args, club=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # The model FK is nullable until the cleanup child; the form requires a record.
+        self.fields["background_option"].required = True
         if club is not None:
             self.fields["background_option"].queryset = _background_option_queryset(club)
 

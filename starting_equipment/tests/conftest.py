@@ -37,25 +37,25 @@ def inactive_template(club):
 @pytest.fixture
 def class_option_fighter(club):
     """CharacterClass record for Fighter."""
-    return CharacterClass.objects.create(club=club, name="Fighter", is_active=True, sort_order=10)
+    return CharacterClass.objects.get(club=club, name="Fighter")
 
 
 @pytest.fixture
 def class_option_wizard(club):
     """CharacterClass record for Wizard."""
-    return CharacterClass.objects.create(club=club, name="Wizard", is_active=True, sort_order=20)
+    return CharacterClass.objects.get(club=club, name="Wizard")
 
 
 @pytest.fixture
 def bg_option_acolyte(club):
     """Background record for Acolyte."""
-    return Background.objects.create(club=club, name="Acolyte", is_active=True, sort_order=10)
+    return Background.objects.get(club=club, name="Acolyte")
 
 
 @pytest.fixture
 def bg_option_sage(club):
     """Background record for Sage."""
-    return Background.objects.create(club=club, name="Sage", is_active=True, sort_order=20)
+    return Background.objects.get(club=club, name="Sage")
 
 
 @pytest.fixture
