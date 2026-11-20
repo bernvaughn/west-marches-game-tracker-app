@@ -186,6 +186,11 @@ def make_stub_bin(tmp_path):
         ["V1"],
         ["v"],
         ["v1 2"],
+        ["v1a; rm -rf /"],
+        ["v10 x"],
+        ["v1.2$(id)"],
+        ["v1.2`id`"],
+        ["v1\n"],
         [""],
     ],
 )
@@ -204,6 +209,32 @@ def test_bad_or_missing_tag_does_nothing(tmp_path, args):
     assert result.returncode != 0, result.stdout
     assert not calls_file.exists() or calls_file.read_text() == "", calls_file.read_text()
     assert "tag" in result.stderr.lower() or "usage" in result.stderr.lower()
+
+
+@pytest.mark.parametrize("tag", ["v1", "v0.1.0", "v2.0.0-rc_1", "v10A"])
+def test_valid_tag_passes_validation(tmp_path, tag):
+    """A valid tag gets past validation and stops at the lock, not exit 2."""
+    bin_dir, calls_file = make_stub_bin(tmp_path)
+    # Make the lock fail so the run stops there and never reaches git. If the
+    # real lock dir is missing, opening the lock file fails first; also exit 1.
+    (bin_dir / "flock").write_text(
+        '#!/usr/bin/env bash\necho "flock $*" >> "${CALLS_FILE}"\nexit 1\n',
+    )
+    env = dict(os.environ)
+    env["PATH"] = f"{bin_dir}:/usr/bin:/bin"
+    env["CALLS_FILE"] = str(calls_file)
+
+    result = subprocess.run(
+        ["bash", str(DEPLOY_SCRIPT), tag],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 1, (result.returncode, result.stderr)
+    assert "invalid tag" not in result.stderr
+    assert "missing tag" not in result.stderr
+    calls = calls_file.read_text() if calls_file.exists() else ""
+    assert "git" not in calls, calls
 
 
 def test_bad_tag_via_stdin_does_nothing(tmp_path):

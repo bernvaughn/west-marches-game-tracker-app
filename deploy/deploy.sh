@@ -36,14 +36,12 @@ if [ -z "$TAG" ]; then
     usage
     exit 2
 fi
-case "$TAG" in
-    v[0-9][0-9A-Za-z._-]*) ;;
-    *)
-        echo "error: invalid tag '$TAG'" >&2
-        usage
-        exit 2
-        ;;
-esac
+TAG_RE='^v[0-9][0-9A-Za-z._-]*$'
+if [[ ! $TAG =~ $TAG_RE ]]; then
+    echo "error: invalid tag '$TAG'" >&2
+    usage
+    exit 2
+fi
 
 # Take a lock so two deploys cannot overlap. Fail fast (-n).
 exec 9>"$LOCK_FILE"
@@ -89,9 +87,9 @@ else
         # shellcheck source=/dev/null
         . "$ENV_FILE"
         set +a
-        export DB_PATH="${DATABASE_PATH:-$DB_PATH}"
+        export DB_PATH="${DATABASE_PATH:-${DB_PATH:-/var/lib/downtime/db.sqlite3}}"
     fi
-    "$APP_DIR/deploy/backup.sh"
+    "$APP_DIR/deploy/backup.sh" </dev/null
 fi
 
 # 4. Fetch tags and check out the requested tag.
