@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 
+from items.stacked import bundle_price
 from shops.models import Shop, ShopStock
 
 
@@ -18,7 +19,14 @@ def percent_price(value_cp, percent):
 
 
 def sell_price(stock):
+    """Price of ONE bundle for this stock line.
+
+    Stacked items use bundle_price (ceil, no 1 cp minimum).
+    Non-stacked items keep percent_price exactly as before (floor, 1 cp min).
+    """
     percent = stock.sell_percent if stock.sell_percent is not None else stock.shop.sell_percent
+    if stock.item.is_stacked:
+        return bundle_price(stock.item, stock.bundle_units, percent)
     return percent_price(stock.item.value_cp, percent)
 
 
@@ -32,7 +40,7 @@ def format_vs_base_text(vs_base_cp):
 
 
 def buy_price(shop, item):
-    stock = ShopStock.objects.filter(shop=shop, item=item).first()
+    stock = ShopStock.objects.filter(shop=shop, item=item).order_by("bundle_units").first()
     if stock is not None and stock.buy_percent is not None:
         percent = stock.buy_percent
     else:
