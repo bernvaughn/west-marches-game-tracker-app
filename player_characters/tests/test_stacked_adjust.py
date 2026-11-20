@@ -12,7 +12,12 @@ from player_characters.models import Character
 def parchment(club):
     """Stacked item: 100 cp per 10 sheets."""
     return Item.objects.create(
-        club=club, name="Parchment", is_stacked=True, unit_name="sheet", value_cp=100, value_units=10
+        club=club,
+        name="Parchment",
+        is_stacked=True,
+        unit_name="sheet",
+        value_cp=100,
+        value_units=10,
     )
 
 
@@ -20,7 +25,12 @@ def parchment(club):
 def rope(club):
     """Stacked item: 100 cp per 50 ft."""
     return Item.objects.create(
-        club=club, name="Rope", is_stacked=True, unit_name="ft", value_cp=100, value_units=50
+        club=club,
+        name="Rope",
+        is_stacked=True,
+        unit_name="ft",
+        value_cp=100,
+        value_units=50,
     )
 
 
@@ -54,6 +64,7 @@ class TestAdjustStacked:
         assert r.status_code == 200
         # Check ledger note contains unit name
         from ledger.models import LedgerEntry
+
         entry = LedgerEntry.objects.filter(character=character, kind="award").latest("date")
         assert "7 sheet Parchment" in entry.note
 
@@ -78,6 +89,7 @@ class TestAdjustStacked:
         )
         assert r.status_code == 200
         from ledger.models import LedgerEntry
+
         entry = LedgerEntry.objects.filter(character=character, kind="adjustment").latest("date")
         assert "-3 sheet Parchment" in entry.note
         # Balance should be 7
@@ -105,6 +117,7 @@ class TestAdjustStacked:
         assert "Insufficient" in r.content.decode() or r.status_code == 200
         # No ledger entry should be created
         from ledger.models import LedgerEntry
+
         assert LedgerEntry.objects.filter(character=character, kind="adjustment").count() == 0
 
     def test_normal_item_note_unchanged(self, login, game_master, character, sword):
@@ -126,6 +139,7 @@ class TestAdjustStacked:
         )
         assert r.status_code == 200
         from ledger.models import LedgerEntry
+
         entry = LedgerEntry.objects.filter(character=character, kind="award").latest("date")
         # Normal item note should not have unit summary
         assert entry.note == "Found sword"
@@ -151,7 +165,10 @@ class TestAdjustStacked:
     def test_permissions_other_club_404(self, login, other_club, character, parchment):
         # Create a GM in other club
         from accounts.models import Membership, User
-        other_user = User.objects.create_user("other@example.com", password="pw", display_name="Other")
+
+        other_user = User.objects.create_user(
+            "other@example.com", password="pw", display_name="Other"
+        )
         Membership.objects.create(user=other_user, club=other_club, is_game_master=True)
         c = login(other_user)
         url = reverse("characters:adjust", args=["club-b", character.pk])
@@ -175,7 +192,9 @@ class TestAdjustStacked:
 class TestConsumeStacked:
     """Tests for the consume view with stacked items."""
 
-    def test_consume_stacked_units_names_unit_in_note(self, login, game_master, character, parchment):
+    def test_consume_stacked_units_names_unit_in_note(
+        self, login, game_master, character, parchment
+    ):
         record(character, "award", [Line(item=parchment, quantity=10)], note="Initial")
         c = login(game_master)
         url = reverse("characters:consume", args=["club-a", character.pk])
@@ -193,6 +212,7 @@ class TestConsumeStacked:
         )
         assert r.status_code == 200
         from ledger.models import LedgerEntry
+
         entry = LedgerEntry.objects.filter(character=character, kind="consumed").latest("date")
         assert "-3 sheet Parchment" in entry.note
 
@@ -222,6 +242,7 @@ class TestBulkAwardStacked:
 
     def test_bulk_award_different_unit_counts(self, login, game_master, club, parchment, rope):
         from accounts.models import Membership
+
         owner = Membership.objects.get(user=game_master, club=club)
         char1 = Character.objects.create(club=club, owner=owner, name="Char1")
         char2 = Character.objects.create(club=club, owner=owner, name="Char2")
@@ -248,6 +269,7 @@ class TestBulkAwardStacked:
         )
         assert r.status_code == 200
         from ledger.models import LedgerEntry
+
         entries = LedgerEntry.objects.filter(kind="award").order_by("date")
         assert entries.count() == 2
         # Check notes contain unit names
@@ -342,7 +364,10 @@ class TestAdjustPermissions:
 
     def test_other_club_gm_404(self, login, other_club, game_master, character, parchment):
         from accounts.models import Membership, User
-        other_user = User.objects.create_user("other@example.com", password="pw", display_name="Other")
+
+        other_user = User.objects.create_user(
+            "other@example.com", password="pw", display_name="Other"
+        )
         Membership.objects.create(user=other_user, club=other_club, is_game_master=True)
         c = login(other_user)
         url = reverse("characters:adjust", args=["club-b", character.pk])

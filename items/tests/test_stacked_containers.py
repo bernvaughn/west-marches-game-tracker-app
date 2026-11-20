@@ -15,13 +15,15 @@ class TestStackedContainers:
         """Opening a container with a stacked option gives units."""
         container = make_container(club, "Test Box")
         parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
-        
+
         slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
-        ContainerSlotOption.objects.create(slot=slot, item=parchment, qty_min=1, qty_max=3, weight=1)
-        
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=1, qty_max=3, weight=1
+        )
+
         # Roll the container
         roll = roll_container(container)
-        
+
         assert len(roll.slots) == 1
         assert roll.slots[0].hit is True
         assert roll.slots[0].item_id == parchment.pk
@@ -33,12 +35,14 @@ class TestStackedContainers:
         """Preview row has unit_name set and renders correctly."""
         container = make_container(club, "Test Box")
         parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
-        
+
         slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
-        ContainerSlotOption.objects.create(slot=slot, item=parchment, qty_min=2, qty_max=2, weight=1)
-        
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=2, qty_max=2, weight=1
+        )
+
         preview = loot_preview(container, viewer_can_see_unknown=True)
-        
+
         assert len(preview) == 1
         row = preview[0]
         assert row.item == parchment
@@ -51,13 +55,15 @@ class TestStackedContainers:
         container = make_container(club, "Test Box")
         parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
         rope = make_stacked(club, "Rope", "ft", 100, 50)
-        
+
         slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
-        ContainerSlotOption.objects.create(slot=slot, item=parchment, qty_min=1, qty_max=1, weight=3)
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=1, qty_max=1, weight=3
+        )
         ContainerSlotOption.objects.create(slot=slot, item=rope, qty_min=10, qty_max=20, weight=1)
-        
+
         preview = loot_preview(container, viewer_can_see_unknown=True)
-        
+
         assert len(preview) == 1
         row = preview[0]
         assert row.label == "One of"
@@ -75,13 +81,17 @@ class TestStackedContainers:
         """Unknown slot stays masked for player."""
         container = make_container(club, "Test Box")
         parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
-        
-        slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0, unknown=True)
-        ContainerSlotOption.objects.create(slot=slot, item=parchment, qty_min=1, qty_max=1, weight=1)
-        
+
+        slot = ContainerSlot.objects.create(
+            container=container, chance_pct=100, position=0, unknown=True
+        )
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=1, qty_max=1, weight=1
+        )
+
         # Player view (viewer_can_see_unknown=False)
         preview = loot_preview(container, viewer_can_see_unknown=False)
-        
+
         assert len(preview) == 1
         row = preview[0]
         assert row.masked is True
@@ -93,13 +103,17 @@ class TestStackedContainers:
         """Unknown slot is visible to GM."""
         container = make_container(club, "Test Box")
         parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
-        
-        slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0, unknown=True)
-        ContainerSlotOption.objects.create(slot=slot, item=parchment, qty_min=1, qty_max=1, weight=1)
-        
+
+        slot = ContainerSlot.objects.create(
+            container=container, chance_pct=100, position=0, unknown=True
+        )
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=1, qty_max=1, weight=1
+        )
+
         # GM view (viewer_can_see_unknown=True)
         preview = loot_preview(container, viewer_can_see_unknown=True)
-        
+
         assert len(preview) == 1
         row = preview[0]
         assert row.masked is False
@@ -112,12 +126,14 @@ class TestStackedContainers:
         parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
         parchment.retired = True
         parchment.save()
-        
+
         slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
-        ContainerSlotOption.objects.create(slot=slot, item=parchment, qty_min=1, qty_max=1, weight=1)
-        
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=1, qty_max=1, weight=1
+        )
+
         preview = loot_preview(container, viewer_can_see_unknown=True)
-        
+
         assert len(preview) == 1
         row = preview[0]
         assert row.item == parchment
@@ -127,12 +143,12 @@ class TestStackedContainers:
         """Normal item has empty unit_name."""
         container = make_container(club, "Test Box")
         sword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
-        
+
         slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
         ContainerSlotOption.objects.create(slot=slot, item=sword, qty_min=1, qty_max=1, weight=1)
-        
+
         preview = loot_preview(container, viewer_can_see_unknown=True)
-        
+
         assert len(preview) == 1
         row = preview[0]
         assert row.item == sword
