@@ -19,15 +19,12 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         with transaction.atomic():
             club = accounts_demo.seed()
-            for module in (
-                items_demo,
-                # Seed starting equipment BEFORE characters so packs exist when demo gear is given.
-                # Pass --force so an existing demo DB upgrades its default template
-                # (demo data is disposable; admin edits to the demo template
-                # are expected to be overwritten).
-            ):
-                module.seed(club)
+            items_demo.seed(club)
 
+            # Seed starting equipment BEFORE characters so packs exist when demo gear is given.
+            # Pass --force so an existing demo DB upgrades its default template
+            # (demo data is disposable; admin edits to the demo template
+            # are expected to be overwritten).
             call_command(
                 "seed_starting_equipment",
                 "--club",

@@ -6,14 +6,19 @@ from django.urls import reverse
 
 from accounts.demo import DEMO_LOGINS, DEMO_PASSWORD
 from accounts.models import Club, Membership, User
-from items.models import Item
+from items.models import ContainerSlot, ContainerSlotOption, Item
+from items.opening import open_container
 from ledger.models import LedgerEntry, LedgerLine
-from ledger.services import coin_balance
+from ledger.services import available_items, coin_balance
 from map.models import HexMap, Location, Tile, TileVisit, XPLevel
 from player_characters.models import Character
 from quests.models import Quest, QuestRequirement, QuestReward
 from shops.models import Rotation, Shop, ShopStock
-from starting_equipment.models import StartingEquipmentTemplate
+from starting_equipment.models import (
+    StartingEquipmentBackgroundLine,
+    StartingEquipmentClassLine,
+    StartingEquipmentTemplate,
+)
 
 pytestmark = [pytest.mark.story("FOUNDATION"), pytest.mark.django_db]
 
@@ -36,6 +41,10 @@ MODELS = [
     XPLevel,
     LedgerEntry,
     LedgerLine,
+    ContainerSlot,
+    ContainerSlotOption,
+    StartingEquipmentClassLine,
+    StartingEquipmentBackgroundLine,
 ]
 
 
@@ -132,3 +141,33 @@ def test_demo_character_shows_claim_button_for_owner(client):
     )
     assert response.status_code == 200
     assert response.context["can_claim_starting_equipment"] is True
+
+
+def test_seed_demo_packs_are_openable_containers():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    for name in ("Explorer's Pack", "Priest's Pack", "Dungeoneer's Pack"):
+        pack = Item.objects.get(club=club, name=name)
+        assert pack.is_container, name
+        assert pack.slots.exists(), name
+    assert StartingEquipmentClassLine.objects.filter(
+        class_entry__template__club=club, is_choice=True
+    ).exists()
+
+
+def test_tilda_has_unopened_priests_pack_that_opens():
+    call_command("seed_demo")
+    call_command("seed_demo")  # the gear note guard keeps it to one pack
+    club = Club.objects.get(slug="demo")
+    tilda = Character.objects.get(club=club, name="Tilda Brightwater")
+    assert tilda.owner.user.email == "bob@example.com"
+    assert not tilda.starting_equipment_claimed
+    pack = Item.objects.get(club=club, name="Priest's Pack")
+    assert available_items(tilda).get(pack.pk) == 1
+    assert not LedgerEntry.objects.filter(character=tilda, kind=LedgerEntry.Kind.OPENED).exists()
+
+    opening = open_container(tilda, pack, tilda.owner.user)
+    assert opening.result
+    held = available_items(tilda)
+    assert held.get(pack.pk, 0) == 0
+    assert held[Item.objects.get(club=club, name="Censer").pk] == 1

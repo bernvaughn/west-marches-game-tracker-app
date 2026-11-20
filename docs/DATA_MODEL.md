@@ -63,7 +63,8 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 | Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
 | Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
 | Items | Default item catalogue (about 100 items) from the starting-equipment data. |
-| Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. |
+| Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. Each "X or Y" option of the 2024 PHB is a choice group (see below). |
+| Starting packs | The seven standard packs (Explorer's, Priest's, Dungeoneer's, Burglar's, Scholar's, Diplomat's, Entertainer's) are containers with their PHB contents as fixed slots. A character can open them. |
 
 ### Not seeded
 
@@ -74,6 +75,16 @@ Characters, shops, quests, hex maps and locations, downtime actions, ledger entr
 - Seeding runs in the club-creation transaction. A failure rolls back the whole club.
 - Every seeder is idempotent. It never overwrites edited rows.
 - Existing clubs are not backfilled. They can run `uv run python manage.py seed_starting_equipment --club <slug>`.
+- A plain run leaves an existing template unchanged. It still adds missing catalogue items and configures packs that have no slots.
+- `--force` upgrades an existing template. It resets entry coins and makes each entry's lines match the default data in order. It deletes stale lines, for example an old fixed line that is now a choice default. A forced run on a template that already matches writes no lines.
+- `seed_pack_containers --club <slug>` configures the packs only. It skips a pack that already has slots.
+
+### Choice groups in the default template
+
+- Each "X or Y" in the 2024 PHB is one choice group. All its options are `is_choice=True` lines with the same `choice_group` slug (for example `weapon`, `armor`, `ranged`, `focus`, `pack`, `instrument`).
+- The default option ("X") is the first line of the group. It is never also a fixed line.
+- All 12 classes have choice groups. The backgrounds Artisan (`tools`), Entertainer (`instrument`) and Soldier (`gaming_set`) have one group each. Other backgrounds have no "or" and get no group.
+- One option is one line. Compound options are simplified: "light crossbow + 20 bolts" keeps the crossbow in the group and the ammo is a fixed line. "Any martial/simple weapon" is a short list of named catalogue items.
 
 ## By app
 
@@ -112,10 +123,8 @@ A player's email is shown only to club admins (U17).
 
 - **Template**: belongs to a club, name, is-active flag. One active template per club at a time.
 - **Class entry** and **background entry**: link a template to a character class / background option by FK only. Min/max level range; coins granted; magic items. The old `char_class` / `background` text columns are gone, so an entry either matches a real club option or it does not exist at all (no free-text snapshot).
-- **Choice groups**: class and background entries may have choice groups (e.g., "weapon", "pack", "armor"). Each group has multiple options marked `is_choice=True`. The default pick is the first line (lowest id) in each group. Lines with `is_choice=False` are always granted.
-- **Claim flow**: applying starting equipment returns an entry plus additive reason codes (`no_template`, `empty_template`, `class_missing`, `class_custom`, `class_no_entry`, `class_level_not_covered`, `background_missing`, `background_custom`, `background_no_entry`). Granting anything marks the character claimed; unmatched or custom values surface as warnings instead of blocking the grant. The claim grants all non-choice lines plus the default pick from each choice group.
-- **Packs as containers**: starting packs (Explorer's Pack, Priest's Pack, etc.) are seeded as containers with fixed slots via `seed_pack_containers`. They can be opened by the character to receive their contents.
-- **`--force` upgrades template**: running `seed_starting_equipment --force` updates an existing template's entries and lines to match the default data. Pack seeding runs on every run (idempotent).
+- **Choice groups**: a line with `is_choice=True` belongs to a `choice_group`. The player gets one option per group. The default pick is the first line (lowest id) of the group. Lines with `is_choice=False` are always granted.
+- **Claim flow**: applying starting equipment returns an entry plus additive reason codes (`no_template`, `empty_template`, `class_missing`, `class_custom`, `class_no_entry`, `class_level_not_covered`, `background_missing`, `background_custom`, `background_no_entry`). Granting anything marks the character claimed; unmatched or custom values surface as warnings instead of blocking the grant. The claim grants all fixed lines plus the default pick of each choice group. There is no picker UI yet.
 - Background entries are unique per template + background option per club.
 
 ### ledger
@@ -202,4 +211,4 @@ Nothing right now.
 10. Existing packs migrated by idempotent `seed_pack_containers` command; no ledger rewrite.
 11. Agent/MCP output calls `loot_preview(..., viewer_can_see_unknown=False)`. Unknown items never leak.
 12. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere (shops, catalogue) without revealing it is in a box.
-13. Default starting equipment seeding now configures all standard packs (Explorer's, Priest's, Dungeoneer's, Burglar's, Scholar's, Diplomat's, Entertainer's) as containers with their PHB contents.
+13. Default starting equipment seeding configures the seven standard packs as containers on every run (`items/pack_seeding.py`). The `seed_pack_containers` command uses the same service.

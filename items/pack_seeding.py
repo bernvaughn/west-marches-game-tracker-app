@@ -4,6 +4,7 @@ Extracted from the seed_pack_containers management command so it can be
 called programmatically during default starting equipment seeding.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from django.db import transaction
@@ -140,38 +141,46 @@ def _get_or_create_content_item(
     return item, True
 
 
-def _process_pack(club: Club, pack_name: str, contents: list[tuple]) -> str:
-    """Process a single pack. Returns status string."""
+def _noop(_message: str) -> None:
+    pass
+
+
+def _process_pack(
+    club: Club, pack_name: str, contents: list[tuple], log: Callable[[str], None]
+) -> str:
+    """Process a single pack. Returns a status string."""
     pack = _get_pack_item(club, pack_name)
     if not pack:
+        log(f"  {pack_name}: not in catalogue, skipping")
         return "not_in_catalogue"
 
-    # Check if already configured (has slots)
+    # A pack with slots is already configured (by an earlier run or an admin).
     if pack.slots.exists():
+        log(f"  {pack_name}: already configured, skipping")
         return "already_configured"
 
-    # Set is_container if not already
     if not pack.is_container:
         pack.is_container = True
         pack.save(update_fields=["is_container"])
+        log(f"  {pack_name}: set is_container=True")
 
-    # Create content items and slots
+    content_items_created = 0
     for position, (content_name, qty_min, qty_max, value_cp, symbol) in enumerate(contents):
         # Skip if content is the pack itself
         if content_name.lower() == pack_name.lower():
             continue
 
-        content_item, _created = _get_or_create_content_item(club, content_name, value_cp, symbol)
+        content_item, created = _get_or_create_content_item(club, content_name, value_cp, symbol)
+        if created:
+            content_items_created += 1
+            log(f"    Created content item: {content_name}")
 
-        # Create slot
         slot = ContainerSlot.objects.create(
             container=pack,
             chance_pct=100,
             unknown=False,
             position=position,
         )
-
-        # Create single option for this slot (fixed or ranged quantity)
         ContainerSlotOption.objects.create(
             slot=slot,
             item=content_item,
@@ -180,16 +189,19 @@ def _process_pack(club: Club, pack_name: str, contents: list[tuple]) -> str:
             weight=1,
         )
 
-    # Validate the container configuration
     try:
         validate_container_config(pack)
     except Exception as e:
         raise PackSeedingError(f"Validation failed for {pack_name}: {e}") from e
 
+    log(
+        f"  {pack_name}: configured ({len(contents)} slots, "
+        f"{content_items_created} new content items)"
+    )
     return "configured"
 
 
-def seed_pack_containers(club: Club) -> PackSeedSummary:
+def seed_pack_containers(club: Club, log: Callable[[str], None] | None = None) -> PackSeedSummary:
     """Seed all 5e packs as containers with fixed slots for a club.
 
     Idempotent: existing packs with slots are skipped.
@@ -197,6 +209,7 @@ def seed_pack_containers(club: Club) -> PackSeedSummary:
 
     Args:
         club: The club to seed packs for.
+        log: Optional callback that receives one progress line per step.
 
     Returns:
         PackSeedSummary with counts of configured/skipped packs.
@@ -204,11 +217,12 @@ def seed_pack_containers(club: Club) -> PackSeedSummary:
     Raises:
         PackSeedingError: If validation fails for a pack.
     """
+    log = log or _noop
     summary = PackSeedSummary()
 
     with transaction.atomic():
         for pack_name, contents in PACKS.items():
-            result = _process_pack(club, pack_name, contents)
+            result = _process_pack(club, pack_name, contents, log)
             if result == "configured":
                 summary.configured += 1
             elif result == "not_in_catalogue":
