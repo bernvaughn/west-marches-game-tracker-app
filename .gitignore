@@ -5,3 +5,26 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 staticfiles/
+
+# Stale hand-off, plan and acceptance notes committed by past agent runs.
+# Ignored at the repo root only; docs/ files with similar names are unaffected.
+/ACCEPTANCE_CRITERIA.md
+/HANDOFF_COMMENT.md
+/IMPLEMENTATION_PLAN.md
+/N3_acceptance.md
+/N3_plan.md
+/REVIEW_HANDOFF.md
+/S10_acceptance.md
+/S10_plan.md
+/S8_acceptance.md
+/S8_handoff.md
+/S8_plan.md
+/acceptance.md
+/acceptance_criteria.md
+/handoff.md
+/handoff_review.md
+/implementation_plan.md
+/plan_items.md
+/pr_body.md
+/review_handoff_comment.md
+/artifact.json
