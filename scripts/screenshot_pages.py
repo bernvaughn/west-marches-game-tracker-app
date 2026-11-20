@@ -211,6 +211,7 @@ EXCLUDED = {
     "oauth2_provider:dcr-register-management": "A JSON API.",
     "accounts:message_status": "POST only.",
     "accounts:message_bulk_status": "POST only.",
+    "site_feedback_status": "POST only; site admin changes a report's status.",
     "characters:open_container": "POST only; opens a container from the character sheet via htmx.",
     "characters:select": "POST only.",
     "characters:shop_toggle": "POST only.",
@@ -325,6 +326,8 @@ def _build_pages() -> list[Page]:
         P("site-club-new", "site_admin", lambda d: reverse("site_club_new")),
         P("site-settings", "site_admin", lambda d: reverse("site_settings")),
         P("site-design", "site_admin", lambda d: reverse("site_design")),
+        P("site-feedback", "site_admin", lambda d: reverse("site_feedback")),
+        P("site-feedback-new", "alice", lambda d: reverse("feedback_new")),
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),

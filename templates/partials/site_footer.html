@@ -17,5 +17,12 @@
       <a href="{% url 'about' %}">About</a> · <a href="{% url 'plans' %}">Plans</a>
     </p>
     {% endif %}
+    {% if user.is_authenticated %}
+    <p class="wm-site-footer-links">
+      <a href="{% url 'feedback_new' %}?kind=bug&from={{ request.path|urlencode }}">Report a bug</a>
+      ·
+      <a href="{% url 'feedback_new' %}?kind=feature&from={{ request.path|urlencode }}">Suggest a feature</a>
+    </p>
+    {% endif %}
   </div>
 </footer>
