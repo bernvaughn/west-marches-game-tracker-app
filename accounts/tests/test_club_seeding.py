@@ -49,7 +49,8 @@ def test_view_seeds_club(site_admin, login):
     assert template.is_active
 
     class_names = {
-        entry.char_class for entry in StartingEquipmentClassEntry.objects.filter(template=template)
+        entry.class_option.name
+        for entry in StartingEquipmentClassEntry.objects.filter(template=template)
     }
     assert class_names == set(DEFAULT_CLASSES)
 

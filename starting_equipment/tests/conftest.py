@@ -81,7 +81,6 @@ def class_entry(template, class_option_fighter):
     return StartingEquipmentClassEntry.objects.create(
         template=template,
         class_option=class_option_fighter,
-        char_class="Fighter",
         min_level=1,
         max_level=20,
         coins_cp=1000,
@@ -94,7 +93,6 @@ def class_entry_limited_level(template, class_option_wizard):
     return StartingEquipmentClassEntry.objects.create(
         template=template,
         class_option=class_option_wizard,
-        char_class="Wizard",
         min_level=5,
         max_level=10,
         coins_cp=500,
@@ -139,7 +137,6 @@ def bg_entry(template, bg_option_acolyte):
     return StartingEquipmentBackgroundEntry.objects.create(
         template=template,
         background_option=bg_option_acolyte,
-        background="Acolyte",
         coins_cp=500,
     )
 
@@ -448,7 +445,6 @@ def homebrew_class_entry(template, homebrew_class_option):
     return StartingEquipmentClassEntry.objects.create(
         template=template,
         class_option=homebrew_class_option,
-        char_class="Blood Hunter",
         min_level=1,
         max_level=20,
         coins_cp=500,

@@ -4,6 +4,7 @@ import pytest
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
+from character_options.models import CharacterClass
 from ledger.models import LedgerEntry
 from player_characters.models import Character
 from starting_equipment.models import (
@@ -110,7 +111,7 @@ class TestClaimAlreadyClaimed:
         response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
         assert response["HX-Refresh"] == "true"
-        assert "No starting equipment matches" in " ".join(flash_messages(response))
+        assert "nothing to grant" in " ".join(flash_messages(response))
 
         character_with_class_bg.refresh_from_db()
         assert character_with_class_bg.starting_equipment_claimed is False
@@ -132,8 +133,13 @@ class TestClaimNoMatch:
             club=club, name="Mismatched Template", is_active=True
         )
         # Add entry for Wizard (not Fighter)
+        wizard_class = CharacterClass.objects.get(club=club, name="Wizard")
         StartingEquipmentClassEntry.objects.create(
-            template=template, char_class="Wizard", min_level=1, max_level=20, coins_cp=1000
+            template=template,
+            class_option=wizard_class,
+            min_level=1,
+            max_level=20,
+            coins_cp=1000,
         )
 
         # Create character with Fighter class (no matching template entry)
@@ -152,7 +158,9 @@ class TestClaimNoMatch:
         response = client.post(claim_url(club, character), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
         assert response["HX-Refresh"] == "true"
-        assert "No starting equipment matches" in " ".join(flash_messages(response))
+        flash_text = " ".join(flash_messages(response))
+        assert "no entry for that class" in flash_text
+        assert "no entry for that background" in flash_text
 
         character.refresh_from_db()
         assert character.starting_equipment_claimed is False
@@ -205,7 +213,9 @@ class TestClaimNoTemplate:
 
         assert response.status_code == 204
         assert response["HX-Refresh"] == "true"
-        assert "No active starting equipment template" in " ".join(flash_messages(response))
+        assert "No starting equipment template exists for this club" in " ".join(
+            flash_messages(response)
+        )
 
     def test_no_active_template_flag_not_set(
         self, club, login, player, character_with_class_bg, template

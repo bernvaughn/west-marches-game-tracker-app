@@ -383,12 +383,11 @@ def test_rename_updates_character_text_snapshot(
 
 
 @pytest.mark.django_db
-def test_rename_updates_class_entry_text(club, club_admin, login, char_class):
-    """Renaming a class updates StartingEquipmentClassEntry text field."""
+def test_rename_class_entry_keeps_fk_link(club, club_admin, login, char_class):
+    """Renaming a class keeps the StartingEquipmentClassEntry FK link (no text snapshot)."""
     template = StartingEquipmentTemplate.objects.create(club=club, name="Test")
     entry = StartingEquipmentClassEntry.objects.create(
         template=template,
-        char_class="Fighter",
         class_option=char_class,
     )
 
@@ -400,16 +399,15 @@ def test_rename_updates_class_entry_text(club, club_admin, login, char_class):
     char_class.refresh_from_db()
     entry.refresh_from_db()
     assert char_class.name == "Warrior"
-    assert entry.char_class == "Warrior"
+    assert entry.class_option == char_class
 
 
 @pytest.mark.django_db
-def test_rename_updates_background_entry_text(club, club_admin, login, background):
-    """Renaming a background updates StartingEquipmentBackgroundEntry text field."""
+def test_rename_background_entry_keeps_fk_link(club, club_admin, login, background):
+    """Renaming a background keeps the StartingEquipmentBackgroundEntry FK link (no text snapshot)."""
     template = StartingEquipmentTemplate.objects.create(club=club, name="Test")
     entry = StartingEquipmentBackgroundEntry.objects.create(
         template=template,
-        background="Soldier",
         background_option=background,
     )
 
@@ -421,7 +419,7 @@ def test_rename_updates_background_entry_text(club, club_admin, login, backgroun
     background.refresh_from_db()
     entry.refresh_from_db()
     assert background.name == "Warrior"
-    assert entry.background == "Warrior"
+    assert entry.background_option == background
 
 
 @pytest.mark.django_db
@@ -588,7 +586,6 @@ def test_delete_blocked_by_class_entry(club, club_admin, login, char_class):
     template = StartingEquipmentTemplate.objects.create(club=club, name="Test")
     StartingEquipmentClassEntry.objects.create(
         template=template,
-        char_class="Fighter",
         class_option=char_class,
     )
 
@@ -613,7 +610,6 @@ def test_delete_blocked_by_background_entry(club, club_admin, login, background)
     template = StartingEquipmentTemplate.objects.create(club=club, name="Test")
     StartingEquipmentBackgroundEntry.objects.create(
         template=template,
-        background="Soldier",
         background_option=background,
     )
 
@@ -693,7 +689,6 @@ def test_usage_counts_render_in_list(club, club_admin, login, species, char_clas
     template = StartingEquipmentTemplate.objects.create(club=club, name="Test")
     StartingEquipmentClassEntry.objects.create(
         template=template,
-        char_class="Fighter",
         class_option=char_class,
     )
 

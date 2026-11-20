@@ -53,7 +53,7 @@ class TestSeedDefaultStartingEquipment:
         assert class_entries.count() == len(CLASS_EQUIPMENT)
         assert len(CLASS_EQUIPMENT) == 12
         for class_name in CLASS_EQUIPMENT:
-            entry = class_entries.get(char_class=class_name)
+            entry = class_entries.get(class_option__name=class_name)
             assert entry.coins_cp == CLASS_EQUIPMENT[class_name]["coins_cp"]
             assert entry.min_level == 1
             assert entry.max_level == 20
@@ -67,7 +67,7 @@ class TestSeedDefaultStartingEquipment:
         bg_entries = StartingEquipmentBackgroundEntry.objects.for_club(club).all()
         assert bg_entries.count() == len(BACKGROUND_EQUIPMENT)
         for bg_name in BACKGROUND_EQUIPMENT:
-            entry = bg_entries.get(background=bg_name)
+            entry = bg_entries.get(background_option__name=bg_name)
             assert entry.coins_cp == BACKGROUND_EQUIPMENT[bg_name]["coins_cp"]
             lines = entry.lines.all()
             assert lines.count() == len(BACKGROUND_EQUIPMENT[bg_name]["items"])
@@ -181,7 +181,7 @@ class TestSeedDefaultStartingEquipment:
         StartingEquipmentTemplate.objects.get(club=club, name=DEFAULT_TEMPLATE_NAME)
 
         # Change class entry coins
-        fighter_entry = StartingEquipmentClassEntry.objects.for_club(club).get(char_class="Fighter")
+        fighter_entry = StartingEquipmentClassEntry.objects.for_club(club).get(class_option__name="Fighter")
         fighter_entry.coins_cp = 999
         fighter_entry.save()
 
@@ -303,7 +303,7 @@ class TestSeedDefaultStartingEquipment:
 
         # Modify background entry
         StartingEquipmentTemplate.objects.get(club=club, name=DEFAULT_TEMPLATE_NAME)
-        acolyte = StartingEquipmentBackgroundEntry.objects.for_club(club).get(background="Acolyte")
+        acolyte = StartingEquipmentBackgroundEntry.objects.for_club(club).get(background_option__name="Acolyte")
         acolyte.coins_cp = 999
         acolyte.save()
 

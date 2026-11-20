@@ -66,7 +66,9 @@ class TestSeedStartingEquipmentCommand:
 
         # Modify an entry
         StartingEquipmentTemplate.objects.get(club=club, name="2024 D&D Default")
-        fighter = StartingEquipmentClassEntry.objects.for_club(club).get(char_class="Fighter")
+        fighter = StartingEquipmentClassEntry.objects.for_club(club).get(
+            class_option__name="Fighter"
+        )
         fighter.coins_cp = 999
         fighter.save()
 

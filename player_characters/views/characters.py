@@ -18,7 +18,7 @@ from accounts.permissions import admin_or_gm_required, club_admin_required, club
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests
 from starting_equipment.models import StartingEquipmentTemplate
-from starting_equipment.services import apply_starting_equipment
+from starting_equipment.services import apply_starting_equipment, explain_starting_equipment
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
@@ -106,13 +106,14 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
             template = StartingEquipmentTemplate.objects.filter(
                 club=self.club, is_active=True
             ).first()
-            if template:
-                entry = apply_starting_equipment(character, template, request.user)
-                # Only mark as claimed if equipment was actually granted
-                if entry is not None:
-                    character.starting_equipment_claimed = True
-                    character.save(update_fields=["starting_equipment_claimed"])
+            result = apply_starting_equipment(character, template, request.user)
+            # Only mark as claimed if equipment was actually granted
+            if result.entry is not None:
+                character.starting_equipment_claimed = True
+                character.save(update_fields=["starting_equipment_claimed"])
             messages.success(request, f"Created {character.name}.")
+            for reason in result.reasons:
+                messages.warning(request, reason.message)
             url = reverse(
                 "characters:detail", kwargs={"club_slug": self.club.slug, "pk": character.pk}
             )
@@ -178,6 +179,12 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "has_magic_options": template is not None and template.magic_options.exists(),
             "active_template": template,
         }
+        if template is not None:
+            ctx["starting_equipment_reasons"] = [
+                reason
+                for reason in explain_starting_equipment(character, template)
+                if reason.code != "no_template"
+            ]
         if can_view:
             char_ctx = self.get_character_context(character)
             ctx["abilities"] = ability_rows(character)

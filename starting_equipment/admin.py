@@ -23,7 +23,8 @@ class StartingEquipmentClassLineInline(admin.TabularInline):
 class StartingEquipmentClassEntryInline(admin.StackedInline):
     model = StartingEquipmentClassEntry
     extra = 0
-    fields = ["char_class", "min_level", "max_level", "coins_cp"]
+    fields = ["class_option", "min_level", "max_level", "coins_cp"]
+    autocomplete_fields = ["class_option"]
     inlines = [StartingEquipmentClassLineInline]
 
 
@@ -38,7 +39,8 @@ class StartingEquipmentBackgroundLineInline(admin.TabularInline):
 class StartingEquipmentBackgroundEntryInline(admin.StackedInline):
     model = StartingEquipmentBackgroundEntry
     extra = 0
-    fields = ["background", "coins_cp"]
+    fields = ["background_option", "coins_cp"]
+    autocomplete_fields = ["background_option"]
     inlines = [StartingEquipmentBackgroundLineInline]
 
 
@@ -93,9 +95,10 @@ class StartingEquipmentTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(StartingEquipmentClassEntry)
 class StartingEquipmentClassEntryAdmin(admin.ModelAdmin):
-    list_display = ["template", "char_class", "min_level", "max_level", "coins_cp"]
+    list_display = ["template", "class_option", "min_level", "max_level", "coins_cp"]
     list_filter = ["template__club", "template"]
-    search_fields = ["char_class"]
+    search_fields = ["class_option__name"]
+    autocomplete_fields = ["class_option"]
     inlines = [StartingEquipmentClassLineInline]
 
 
@@ -109,9 +112,10 @@ class StartingEquipmentClassLineAdmin(admin.ModelAdmin):
 
 @admin.register(StartingEquipmentBackgroundEntry)
 class StartingEquipmentBackgroundEntryAdmin(admin.ModelAdmin):
-    list_display = ["template", "background", "coins_cp"]
+    list_display = ["template", "background_option", "coins_cp"]
     list_filter = ["template__club", "template"]
-    search_fields = ["background"]
+    search_fields = ["background_option__name"]
+    autocomplete_fields = ["background_option"]
     inlines = [StartingEquipmentBackgroundLineInline]
 
 

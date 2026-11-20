@@ -32,11 +32,10 @@ def make_template(club, *, is_active=True):
     )
 
 
-def make_class_entry(template, *, char_class="Fighter", class_option=None, coins_cp=1000):
+def make_class_entry(template, *, class_option, coins_cp=1000):
     return StartingEquipmentClassEntry.objects.create(
         template=template,
         class_option=class_option,
-        char_class=char_class,
         min_level=1,
         max_level=20,
         coins_cp=coins_cp,
@@ -49,11 +48,10 @@ def make_class_line(class_entry, item):
     )
 
 
-def make_bg_entry(template, *, background="Acolyte", background_option=None, coins_cp=500):
+def make_bg_entry(template, *, background_option, coins_cp=500):
     return StartingEquipmentBackgroundEntry.objects.create(
         template=template,
         background_option=background_option,
-        background=background,
         coins_cp=coins_cp,
     )
 

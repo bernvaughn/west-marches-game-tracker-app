@@ -43,11 +43,10 @@ class StartingEquipmentClassEntry(models.Model):
         on_delete=models.CASCADE,
         related_name="class_entries",
     )
-    char_class = models.CharField(max_length=60)  # Matches Character.char_class, case-insensitive
     class_option = models.ForeignKey(
         "character_options.CharacterClass",
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         on_delete=models.PROTECT,
         related_name="starting_entries",
     )
@@ -58,9 +57,9 @@ class StartingEquipmentClassEntry(models.Model):
     objects = ClubScopedManager()
 
     class Meta:
-        ordering = ["char_class", "min_level"]
+        ordering = ["class_option__name", "min_level"]
         indexes = [
-            models.Index(fields=["template", "char_class"]),
+            models.Index(fields=["template", "class_option"]),
             models.Index(fields=["template", "min_level", "max_level"]),
         ]
         constraints = [
@@ -75,7 +74,7 @@ class StartingEquipmentClassEntry(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.char_class} L{self.min_level}-{self.max_level} ({self.template})"
+        return f"{self.class_option.name} L{self.min_level}-{self.max_level} ({self.template})"
 
 
 class StartingEquipmentClassLine(models.Model):
@@ -116,11 +115,10 @@ class StartingEquipmentBackgroundEntry(models.Model):
         on_delete=models.CASCADE,
         related_name="background_entries",
     )
-    background = models.CharField(max_length=60)  # New field on Character: background
     background_option = models.ForeignKey(
         "character_options.Background",
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
         on_delete=models.PROTECT,
         related_name="starting_entries",
     )
@@ -129,19 +127,19 @@ class StartingEquipmentBackgroundEntry(models.Model):
     objects = ClubScopedManager()
 
     class Meta:
-        ordering = ["background"]
+        ordering = ["background_option__name"]
         indexes = [
-            models.Index(fields=["template", "background"]),
+            models.Index(fields=["template", "background_option"]),
         ]
         constraints = [
             models.UniqueConstraint(
-                fields=["template", "background"],
+                fields=["template", "background_option"],
                 name="unique_background_per_template",
             ),
         ]
 
     def __str__(self):
-        return f"{self.background} ({self.template})"
+        return f"{self.background_option.name} ({self.template})"
 
 
 class StartingEquipmentBackgroundLine(models.Model):
