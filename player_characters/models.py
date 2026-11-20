@@ -172,3 +172,29 @@ class JunkMark(models.Model):
 
     def __str__(self):
         return f"{self.character}: {self.quantity} × {self.item} junk"
+
+
+class ItemNote(models.Model):
+    """A player's private note on one item in their character's inventory.
+
+    One row per character and item, never per unit in a stack. The row is kept
+    when the item leaves the inventory, so the note hides and returns with the
+    item. Never touches the ledger or the item catalogue.
+    """
+
+    club_path = "character__club"
+
+    character = models.ForeignKey(Character, on_delete=models.CASCADE, related_name="item_notes")
+    item = models.ForeignKey("items.Item", on_delete=models.CASCADE, related_name="+")
+    text = models.TextField(max_length=1000)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["character", "item"], name="unique_item_note_per_item"),
+            models.CheckConstraint(condition=~models.Q(text=""), name="item_note_text_non_empty"),
+        ]
+
+    def __str__(self):
+        return f"{self.character}: note on {self.item}"
