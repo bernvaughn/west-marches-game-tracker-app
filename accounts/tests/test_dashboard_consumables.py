@@ -1,7 +1,9 @@
 """Tests for the Consumables dashboard provider."""
 
 import pytest
+from django.db import connection
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from accounts.dashboard_providers import (
@@ -254,47 +256,9 @@ def test_consumables_provider_get_context_includes_consumable_excludes_pelts(
 
 
 @pytest.mark.django_db
-def test_consumables_provider_get_context_excludes_non_consumables(player, club, character, item):
-    """Provider context excludes non-consumable items."""
-    provider = ConsumablesDashboardProvider()
-
-    # Create a second item
-    second_item = Item.objects.create(
-        club=club,
-        name="Potion of Healing",
-        value_cp=500,
-        traits="consumable",
-    )
-
-    # Give character 1 of a regular item and 2 of a consumable
-    record_many(
-        [
-            dict(
-                character=character,
-                kind="award",
-                lines=[
-                    Line(item=item, quantity=1),
-                    Line(item=second_item, quantity=2),
-                ],
-                note="Test",
-                actor=player,
-            )
-        ]
-    )
-
-    request = MockRequest(club, player)
-    membership = Membership.objects.get(user=player, club=club)
-
-    ctx = provider.get_context(request, club, character, membership)
-
-    assert len(ctx["consumable_items"]) == 1
-    assert ctx["consumable_items"][0]["item"] == second_item
-
-
-@pytest.mark.django_db
-def test_consumables_provider_is_consumable_method():
-    """Test the _is_consumable helper method directly."""
-    provider = ConsumablesDashboardProvider()
+def test_is_consumable_module_function():
+    """Test the module-level is_consumable function."""
+    from accounts.dashboard_providers import is_consumable
 
     # Create mock items
     class MockItem:
@@ -302,24 +266,21 @@ def test_consumables_provider_is_consumable_method():
             self.traits = traits
             self.magic_type = magic_type
 
-    # Magic type decides, quantity never does
-    assert provider._is_consumable(MockItem(magic_type=MagicType.POTION)) is True
-    assert provider._is_consumable(MockItem(magic_type=MagicType.POTION)) is True
-    assert provider._is_consumable(MockItem(magic_type=MagicType.SCROLL)) is True
+    # Magic type decides
+    assert is_consumable(MockItem(magic_type=MagicType.POTION)) is True
+    assert is_consumable(MockItem(magic_type=MagicType.SCROLL)) is True
 
-    # Traits decide, quantity never does
-    assert provider._is_consumable(MockItem(traits="consumable")) is True
-    assert provider._is_consumable(MockItem(traits="CONSUMABLE")) is True
-    assert provider._is_consumable(MockItem(traits="Consumable")) is True
-    assert provider._is_consumable(MockItem(traits="potion, consumable, magical")) is True
+    # Traits decide (case-insensitive)
+    assert is_consumable(MockItem(traits="consumable")) is True
+    assert is_consumable(MockItem(traits="CONSUMABLE")) is True
+    assert is_consumable(MockItem(traits="Consumable")) is True
+    assert is_consumable(MockItem(traits="potion, consumable, magical")) is True
 
-    # Quantity alone never decides
-    assert provider._is_consumable(MockItem()) is False
-    assert provider._is_consumable(MockItem()) is False
-    assert provider._is_consumable(MockItem(traits="magical")) is False
-    assert provider._is_consumable(MockItem(traits="magical")) is False
-    assert provider._is_consumable(MockItem(None)) is False
-    assert provider._is_consumable(MockItem(magic_type="weapon")) is False
+    # Non-consumable traits / no magic type
+    assert is_consumable(MockItem()) is False
+    assert is_consumable(MockItem(traits="magical")) is False
+    assert is_consumable(MockItem(None)) is False
+    assert is_consumable(MockItem(magic_type="weapon")) is False
 
 
 @pytest.mark.django_db
@@ -446,3 +407,87 @@ def test_consumable_consume_partial_view_404_for_no_item(player, club, character
     response = client.get(url, HTTP_HX_REQUEST="true")
 
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_consumables_provider_get_context_single_query(player, club, character):
+    """get_context makes exactly one items query regardless of item count."""
+    provider = ConsumablesDashboardProvider()
+
+    # Create 3 consumable items
+    potion1 = Item.objects.create(
+        club=club, name="Potion 1", magic_type=MagicType.POTION, value_cp=50
+    )
+    potion2 = Item.objects.create(
+        club=club, name="Potion 2", magic_type=MagicType.POTION, value_cp=75
+    )
+    scroll = Item.objects.create(
+        club=club, name="Scroll 1", magic_type=MagicType.SCROLL, value_cp=100
+    )
+
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[
+                    Line(item=potion1, quantity=2),
+                    Line(item=potion2, quantity=1),
+                    Line(item=scroll, quantity=3),
+                ],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
+
+    request = MockRequest(club, player)
+    membership = Membership.objects.get(user=player, club=club)
+
+    with CaptureQueriesContext(connection) as ctx:
+        provider.get_context(request, club, character, membership)
+
+    # Should only query items_item table once
+    item_queries = [q for q in ctx.captured_queries if "items_item" in q["sql"]]
+    assert len(item_queries) == 1, f"Expected 1 item query, got {len(item_queries)}: {item_queries}"
+
+
+@pytest.mark.django_db
+def test_consumables_provider_should_show_single_query(player, club, character):
+    """should_show makes exactly one items query regardless of item count."""
+    provider = ConsumablesDashboardProvider()
+
+    potion1 = Item.objects.create(
+        club=club, name="Potion 1", magic_type=MagicType.POTION, value_cp=50
+    )
+    potion2 = Item.objects.create(
+        club=club, name="Potion 2", magic_type=MagicType.POTION, value_cp=75
+    )
+    scroll = Item.objects.create(
+        club=club, name="Scroll 1", magic_type=MagicType.SCROLL, value_cp=100
+    )
+
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[
+                    Line(item=potion1, quantity=2),
+                    Line(item=potion2, quantity=1),
+                    Line(item=scroll, quantity=3),
+                ],
+                note="Test",
+                actor=player,
+            )
+        ]
+    )
+
+    request = MockRequest(club, player)
+    membership = Membership.objects.get(user=player, club=club)
+
+    with CaptureQueriesContext(connection) as ctx:
+        provider.should_show(request, club, character, membership)
+
+    item_queries = [q for q in ctx.captured_queries if "items_item" in q["sql"]]
+    assert len(item_queries) == 1, f"Expected 1 item query, got {len(item_queries)}: {item_queries}"

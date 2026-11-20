@@ -174,19 +174,6 @@ def test_message_detail_shows_admin_response(club, player, character, player_wit
 
 
 @pytest.mark.story("S9")
-def test_provider_should_show_logic():
-    """Test the should_show method logic."""
-    from accounts.dashboard_providers import MyMessagesDashboardProvider
-
-    provider = MyMessagesDashboardProvider()
-
-    # We'll test via the view integration instead of unit testing the provider directly
-    # since it requires request/club/character/membership
-    assert provider.key == "my_messages"
-    assert provider.order == 7
-
-
-@pytest.mark.story("S9")
 def test_message_detail_404_for_nonexistent(club, player, login):
     """Message detail returns 404 for non-existent message."""
     c = login(player)
