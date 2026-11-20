@@ -1,9 +1,13 @@
 """Tests for the General Store seeding service."""
 
 import pytest
+from django.urls import reverse
 
 from accounts.club_seeding import seed_new_club
+from accounts.models import Club, Membership, User
 from items.models import Item
+from ledger.services import Line, available_coins, item_quantities, record
+from player_characters.junk import set_junk
 from shops.models import Rotation, Shop, ShopStock
 from shops.seeding import GeneralStoreSummary, seed_default_general_store
 
@@ -153,22 +157,58 @@ def test_seed_default_general_store_retired_item_no_twin(club):
     """Retired item: no twin created, no stock row."""
     Item.objects.create(club=club, name="Rope", value_cp=100, symbol="🪢", retired=True)
 
-    _summary = seed_default_general_store(club)
+    seed_default_general_store(club)
 
     shop = Shop.objects.get(club=club, name="General Store")
-    _stock_count = ShopStock.objects.filter(shop=shop).count()
+    assert Item.objects.filter(club=club, name__iexact="Rope").count() == 1
     # Should not create a stock row for the retired item
     assert not ShopStock.objects.filter(shop=shop, item__name__iexact="Rope").exists()
 
 
-def test_seed_default_general_store_rollback_on_failure(club):
-    """A seeding failure rolls back the general store seeding.
-    This is tested via the full club creation rollback in
-    accounts/tests/test_club_seeding.py."""
-    # The full rollback test is in accounts/tests/test_club_seeding.py
-    # test_seed_failure_rolls_back_club_creation which creates the club
-    # inside the transaction and verifies complete rollback.
-    pass
+def test_seed_default_general_store_rollback_on_failure(site_admin, login, monkeypatch):
+    """A General Store seeding failure rolls back the whole new club."""
+
+    def boom(club, **kwargs):
+        raise RuntimeError("general store failed")
+
+    monkeypatch.setattr("accounts.club_seeding.seed_default_general_store", boom)
+    client = login(site_admin)
+    with pytest.raises(RuntimeError):
+        client.post(
+            reverse("site_club_new"),
+            {
+                "name": "Club C",
+                "slug": "",
+                "admin_email": "Boss@Example.com",
+                "admin_display_name": "Boss",
+            },
+        )
+
+    assert not Club.objects.filter(slug="club-c").exists()
+    assert not User.objects.filter(email="boss@example.com").exists()
+    assert not Membership.objects.filter(user__email="boss@example.com").exists()
+
+
+def test_seed_default_general_store_keeps_existing_shop_look(club):
+    """A pre-existing General Store keeps its own position, building and silhouette."""
+    existing = Shop.objects.create(
+        club=club,
+        name="General Store",
+        keeper_name="Someone Else",
+        building=Shop.Building.INN,
+        silhouette=Shop.Silhouette.HOODED_TRADER,
+        street_position=5,
+    )
+
+    summary = seed_default_general_store(club)
+
+    assert summary.skipped is True
+    existing.refresh_from_db()
+    assert existing.building == Shop.Building.INN
+    assert existing.silhouette == Shop.Silhouette.HOODED_TRADER
+    assert existing.street_position == 5
+    assert not existing.stock.exists()
+    assert not Rotation.objects.filter(club=club, name="Always open").exists()
 
 
 def test_seed_new_club_includes_general_store(club):
@@ -275,19 +315,41 @@ def test_gear_list_overlap_with_starting_equipment(club):
             )
 
 
-def test_buy_and_sell_at_shop(club, player, character):
-    """Player can buy Rope and sell a junk item at the right prices.
-    Covered by existing tests in shops/tests/test_buy.py and test_sell_junk.py."""
-    # This acceptance criterion is verified by the existing test suite.
-    # The shops/tests/test_buy.py tests cover buying at correct prices.
-    # The shops/tests/test_sell_junk.py tests cover selling at buy percentage.
-    pass
+def test_buy_and_sell_at_shop(club, player, character, login):
+    """A player buys Rope for 100 cp and sells a 100 cp junk item for 75 cp."""
+    seed_default_general_store(club)
+    shop = Shop.objects.get(club=club, name="General Store")
+    rope_stock = ShopStock.objects.get(shop=shop, item__name="Rope")
+    junk = Item.objects.create(club=club, name="Old Lute", value_cp=100)
+    record(character, "award", [Line(coins=1000), Line(item=junk, quantity=1)])
+    set_junk(character, junk, 1, player)
+    client = login(player)
+
+    resp = client.post(
+        reverse("shops:buy", args=[club.slug, shop.pk, rope_stock.pk]),
+        {"character": character.pk, "quantity": 1},
+    )
+    assert resp.status_code == 302
+    assert available_coins(character) == 900
+    assert item_quantities(character)[rope_stock.item_id] == 1
+    rope_stock.refresh_from_db()
+    assert rope_stock.quantity is None  # still unlimited
+
+    resp = client.post(
+        reverse("shops:sell_junk", args=[club.slug, shop.pk]),
+        {"item": [junk.pk], f"qty_{junk.pk}": "1"},
+    )
+    assert resp.status_code == 302
+    assert available_coins(character) == 975
+    assert item_quantities(character).get(junk.pk, 0) == 0
 
 
 def test_demo_club_has_general_store(club):
     """Demo club seeding includes the General Store at position 0."""
+    from items.demo import seed as seed_items
     from shops.demo import seed
 
+    seed_items(club)
     seed(club)
 
     shops = Shop.objects.for_club(club).order_by("street_position")
@@ -308,8 +370,10 @@ def test_demo_club_has_general_store(club):
 
 def test_demo_seed_idempotent(club):
     """Running demo seed twice creates only one General Store."""
+    from items.demo import seed as seed_items
     from shops.demo import seed
 
+    seed_items(club)
     seed(club)
     seed(club)
 

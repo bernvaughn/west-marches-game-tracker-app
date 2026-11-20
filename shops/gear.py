@@ -110,7 +110,3 @@ GENERAL_STORE_GEAR = [
     GearItem("Vial", 100, "🧪"),
     GearItem("Waterskin", 20, "💧"),
 ]
-
-
-# Convenience: list of (name, value_cp, icon) tuples for compatibility
-GENERAL_STORE_GEAR_TUPLES = [(g.name, g.value_cp, g.icon) for g in GENERAL_STORE_GEAR]

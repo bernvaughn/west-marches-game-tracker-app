@@ -91,7 +91,9 @@ def test_demo_shop_silhouettes_idempotent():
     assert got["The Rusty Lantern"] == "burly_innkeeper"
     assert got["Wandering Caravan"] == "veiled_merchant"
     assert got["General Store"] == "halfling_grocer"
-    Shop.objects.update(silhouette=Shop.Silhouette.HOODED_TRADER)  # a pre-U36 database
+    # A pre-U36 database. The General Store seeder never edits an existing shop,
+    # so leave it out of the reset-and-restore check.
+    Shop.objects.exclude(name="General Store").update(silhouette=Shop.Silhouette.HOODED_TRADER)
     call_command("seed_demo")
     assert dict(Shop.objects.values_list("name", "silhouette")) == got
     call_command("seed_demo")

@@ -94,8 +94,8 @@ def seed_default_general_store(club: Club) -> GeneralStoreSummary:
     """Seed the default General Store for a club.
 
     Idempotent: if a shop named "General Store" already exists (case-insensitive),
-    updates its silhouette/building/position if they are wrong, and returns skipped=True.
-    Never overwrites existing items or stock rows.
+    it returns skipped=True and writes nothing. The existing shop keeps its fields,
+    stock, position and rotations. Never overwrites existing items or stock rows.
 
     Creates missing items by name (case-insensitive), never overwrites existing items.
     Creates one ShopStock per gear item with unlimited quantity (None) and no price overrides.
@@ -111,19 +111,7 @@ def seed_default_general_store(club: Club) -> GeneralStoreSummary:
         # Check if the shop already exists
         existing_shop = Shop.objects.filter(club=club, name__iexact=SHOP_NAME).first()
         if existing_shop:
-            # Fix silhouette, building, and position if they are wrong
-            updated = False
-            if existing_shop.silhouette != SILHOUETTE:
-                existing_shop.silhouette = SILHOUETTE
-                updated = True
-            if existing_shop.building != BUILDING:
-                existing_shop.building = BUILDING
-                updated = True
-            if existing_shop.street_position != STREET_POSITION:
-                existing_shop.street_position = STREET_POSITION
-                updated = True
-            if updated:
-                existing_shop.save(update_fields=["silhouette", "building", "street_position"])
+            # Leave an existing shop exactly as it is: no field, stock or rotation writes.
             return GeneralStoreSummary(skipped=True)
 
         # Create or get gear items
