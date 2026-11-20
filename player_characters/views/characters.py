@@ -179,7 +179,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "has_magic_options": template is not None and template.magic_options.exists(),
             "active_template": template,
         }
-        if template is not None:
+        if can_view and template is not None:
             ctx["starting_equipment_reasons"] = [
                 reason
                 for reason in explain_starting_equipment(character, template)

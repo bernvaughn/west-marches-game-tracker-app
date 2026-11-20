@@ -134,14 +134,14 @@ class Migration(migrations.Migration):
             model_name="startingequipmentclassentry",
             index=models.Index(
                 fields=["template", "class_option"],
-                name="starting_equipment_class_entry_template_class_option_idx",
+                name="starting_eq_templat_e8990c_idx",
             ),
         ),
         migrations.AddIndex(
             model_name="startingequipmentbackgroundentry",
             index=models.Index(
                 fields=["template", "background_option"],
-                name="starting_equipment_background_entry_template_background_option_idx",
+                name="starting_eq_templat_89ec77_idx",
             ),
         ),
         migrations.AddConstraint(
