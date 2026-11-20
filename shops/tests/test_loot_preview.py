@@ -242,3 +242,30 @@ class TestShopLootPreviewLeakSweep:
         response = client.get(url)
         content = response.content.decode()
         assert "Secret Item" not in content
+
+
+@pytest.mark.django_db
+def test_no_open_url_or_button_on_any_shop_surface(
+    client, club, player, character, shop, always_open, shop_stock, seller_with_container
+):
+    """No shop surface links to the open view or shows an Open button."""
+    client.force_login(player)
+    pages = [
+        (reverse("shops:buy", args=[club.slug, shop.pk, shop_stock.pk]), {}),
+        (reverse("shops:buy", args=[club.slug, shop.pk, shop_stock.pk]), HX),
+        (reverse("shops:stock_fragment", args=[club.slug, shop.pk]), {}),
+        (
+            reverse(
+                "shops:player_shop_buy",
+                args=[club.slug, seller_with_container.pk, shop_stock.item.pk],
+            ),
+            HX,
+        ),
+    ]
+    for url, headers in pages:
+        resp = client.get(url, **headers)
+        assert resp.status_code == 200, url
+        html = resp.content.decode()
+        assert "Parchment" in html, url
+        assert "/open/" not in html, url
+        assert ">Open<" not in html, url
