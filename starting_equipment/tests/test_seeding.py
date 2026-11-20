@@ -181,7 +181,9 @@ class TestSeedDefaultStartingEquipment:
         StartingEquipmentTemplate.objects.get(club=club, name=DEFAULT_TEMPLATE_NAME)
 
         # Change class entry coins
-        fighter_entry = StartingEquipmentClassEntry.objects.for_club(club).get(class_option__name="Fighter")
+        fighter_entry = StartingEquipmentClassEntry.objects.for_club(club).get(
+            class_option__name="Fighter"
+        )
         fighter_entry.coins_cp = 999
         fighter_entry.save()
 
@@ -303,7 +305,9 @@ class TestSeedDefaultStartingEquipment:
 
         # Modify background entry
         StartingEquipmentTemplate.objects.get(club=club, name=DEFAULT_TEMPLATE_NAME)
-        acolyte = StartingEquipmentBackgroundEntry.objects.for_club(club).get(background_option__name="Acolyte")
+        acolyte = StartingEquipmentBackgroundEntry.objects.for_club(club).get(
+            background_option__name="Acolyte"
+        )
         acolyte.coins_cp = 999
         acolyte.save()
 

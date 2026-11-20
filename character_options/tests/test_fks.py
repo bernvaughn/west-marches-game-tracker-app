@@ -3,7 +3,6 @@
 import pytest
 from django.db.models import ProtectedError
 
-from character_options.models import Background, CharacterClass, Species
 from player_characters.models import Character
 from starting_equipment.models import (
     StartingEquipmentBackgroundEntry,

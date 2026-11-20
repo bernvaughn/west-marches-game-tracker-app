@@ -702,3 +702,245 @@ class TestApplyStartingEquipment:
 
         # Should return None because no matching entries found (club scoping)
         assert entry is None
+
+
+class TestExplainStartingEquipment:
+    """Tests for the pure explain_starting_equipment reason codes."""
+
+    def test_no_template_none(self, character_with_class_bg, game_master_user):
+        """No template -> no_template reason."""
+        from starting_equipment.services import explain_starting_equipment
+
+        reasons = explain_starting_equipment(character_with_class_bg, None)
+        assert len(reasons) == 1
+        assert reasons[0].code == "no_template"
+        assert "template" in reasons[0].message
+
+    def test_no_template_foreign_club(self, club, player, character_with_class_bg, other_club):
+        """Template belonging to another club -> no_template reason."""
+        from starting_equipment.models import StartingEquipmentTemplate
+        from starting_equipment.services import explain_starting_equipment
+
+        foreign_template = StartingEquipmentTemplate.objects.create(
+            club=other_club, name="Foreign", is_active=True
+        )
+        reasons = explain_starting_equipment(character_with_class_bg, foreign_template)
+        assert len(reasons) == 1
+        assert reasons[0].code == "no_template"
+
+    def test_empty_template(self, character_with_class_bg, empty_template):
+        """Template with no entries -> empty_template reason (short-circuits)."""
+        from starting_equipment.services import explain_starting_equipment
+
+        reasons = explain_starting_equipment(character_with_class_bg, empty_template)
+        assert len(reasons) == 1
+        assert reasons[0].code == "empty_template"
+
+    def test_class_missing(self, club, player, template, class_entry, bg_entry, bg_option_acolyte):
+        """Character with no class at all -> class_missing."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="No Class",
+            char_class="",
+            class_option=None,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_missing" in codes
+
+    def test_class_custom(self, club, player, template, bg_entry, bg_option_acolyte):
+        """Character with custom class text (no FK) -> class_custom."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Custom",
+            char_class="Artificer",
+            class_option=None,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_custom" in codes
+        msg = next(r.message for r in reasons if r.code == "class_custom")
+        assert "Artificer" in msg
+        assert "custom value" in msg
+
+    def test_class_no_entry(
+        self, club, player, template, class_entry, class_option_wizard, bg_option_acolyte
+    ):
+        """Character with class FK but no template entry -> class_no_entry."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Wizard",
+            char_class="Wizard",
+            class_option=class_option_wizard,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=1,
+        )
+        # template has a Fighter entry (via class_entry fixture) but no Wizard entry
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_no_entry" in codes
+
+    def test_class_level_not_covered(
+        self,
+        club,
+        player,
+        template,
+        class_entry_limited_level,
+        class_option_wizard,
+        bg_option_acolyte,
+    ):
+        """Character level outside every class entry range -> class_level_not_covered."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Young Wizard",
+            char_class="Wizard",
+            class_option=class_option_wizard,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=3,
+        )
+        # class_entry_limited_level covers levels 5-10 only
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_level_not_covered" in codes
+        msg = next(r.message for r in reasons if r.code == "class_level_not_covered")
+        assert "level 3" in msg
+        assert "5-10" in msg
+
+    def test_background_missing(self, club, player, template, class_entry, class_option_fighter):
+        """Character with no background at all -> background_missing."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="No Background",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="",
+            background_option=None,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "background_missing" in codes
+
+    def test_background_custom(self, club, player, template, class_entry, class_option_fighter):
+        """Character with custom background text (no FK) -> background_custom."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Custom",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="Homebrew Background",
+            background_option=None,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "background_custom" in codes
+        msg = next(r.message for r in reasons if r.code == "background_custom")
+        assert "Homebrew Background" in msg
+        assert "custom value" in msg
+
+    def test_background_no_entry(
+        self,
+        club,
+        player,
+        template,
+        class_entry,
+        class_option_fighter,
+        bg_option_sage,
+    ):
+        """Character with background FK but no template entry -> background_no_entry."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        # bg_option_sage has no entry in the template (template only has a Fighter
+        # class entry via the class_entry fixture).
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Sage Char",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="Sage",
+            background_option=bg_option_sage,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "background_no_entry" in codes
+
+    def test_granted_with_partial_reasons(
+        self,
+        club,
+        player,
+        template,
+        class_entry,
+        class_option_fighter,
+        bg_option_acolyte,
+    ):
+        """Class matched but background custom -> entry granted plus a warning reason."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import apply_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Custom",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="Homebrew Background",
+            background_option=None,
+            level=1,
+        )
+        result = apply_starting_equipment(character, template, None)
+        assert result.entry is not None
+        codes = {r.code for r in result.reasons}
+        assert "background_custom" in codes
+        assert result.granted

@@ -94,11 +94,25 @@ A player's email is shown only to club admins (U17).
 - **Container slot option**: one row per possible outcome in a slot. `item` (FK Item, PROTECT), `qty_min`, `qty_max` (range, min≤max), `weight` (≥1). One option = fixed entry; several = weighted "pick one" table. Roll order: chance check, then weighted pick, then uniform quantity in [min, max].
 - **Container opening**: links one `opened` ledger entry to the container item, the character, and a JSON `result` (per-slot outcomes in slot order). Write-once; drives the replay and result page.
 
+### character_options
+
+- **Species**: a club-scoped species option (name unique per club, case-insensitive). Is-active flag; sort order.
+- **Character class**: a club-scoped class option (name unique per club, case-insensitive). Is-active flag; sort order.
+- **Background**: a club-scoped background option (name unique per club, case-insensitive). Is-active flag; sort order.
+- Each option belongs to one club and has no default text snapshot; starting-equipment entries link to options by FK only (U97, U98, D1, D2, U104).
+
 ### player_characters
 
 - **Character**: belongs to a club and is owned by a membership. Name and an optional level from 1 (U52, not tied to XP). The sheet (U2, U69) adds optional class, species, alignment, pronouns, a description, the six ability scores (1 to 30, with the modifier worked out as (score - 10) // 2), armor class (0 to 40), a Perception bonus (may be negative; passive Perception is 10 plus the bonus, blank shows a dash), and XP. Handing a character to another player changes the owner (U18).
 - **Inventory entry**: a character, an item, and a quantity. Visible only to the owner, game masters, and club admins (U19).
 - **Junk mark**: a character, an item, and a quantity the player set aside to sell (U47). One per character and item. The quantity is capped at the number owned when read, so it needs no cleanup when items leave. It never touches the ledger.
+
+### starting_equipment
+
+- **Template**: belongs to a club, name, is-active flag. One active template per club at a time.
+- **Class entry** and **background entry**: link a template to a character class / background option by FK only. Min/max level range; coins granted; magic items. The old `char_class` / `background` text columns are gone, so an entry either matches a real club option or it does not exist at all (no free-text snapshot).
+- **Claim flow**: applying starting equipment returns an entry plus additive reason codes (`no_template`, `empty_template`, `class_missing`, `class_custom`, `class_no_entry`, `class_level_not_covered`, `background_missing`, `background_custom`, `background_no_entry`). Granting anything marks the character claimed; unmatched or custom values surface as warnings instead of blocking the grant.
+- Background entries are unique per template + background option per club.
 
 ### ledger
 

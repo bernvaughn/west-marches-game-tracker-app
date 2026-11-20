@@ -231,6 +231,65 @@ class TestClaimNoTemplate:
         assert character_with_class_bg.starting_equipment_claimed is False
 
 
+class TestClaimPartialMatch:
+    """Surface: a granted entry can still carry reasons (custom background)."""
+
+    def test_claim_grants_and_warns_on_custom_background(
+        self,
+        club,
+        login,
+        player,
+        character_with_class_bg,
+        template,
+        class_entry,
+        bg_option_acolyte,
+    ):
+        """Class matched (gear granted) but background custom -> warns, still claimed."""
+        # Remove the background FK so the background becomes custom.
+        character_with_class_bg.background = "Homebrew Background"
+        character_with_class_bg.background_option = None
+        character_with_class_bg.save(update_fields=["background", "background_option"])
+
+        client = login(player)
+        response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
+
+        assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+
+        flashed = " ".join(flash_messages(response))
+        assert "Homebrew Background" in flashed
+        assert "custom value" in flashed
+
+        # Class matched -> entry was granted and character is marked claimed.
+        character_with_class_bg.refresh_from_db()
+        assert character_with_class_bg.starting_equipment_claimed is True
+        assert LedgerEntry.objects.filter(
+            character=character_with_class_bg, note="Starting equipment"
+        ).exists()
+
+    def test_claim_flashes_reasons_and_stays_unclaimed_when_nothing_granted(
+        self, club, login, player, character_with_class_bg
+    ):
+        """Template has no matching entry -> reasons flashed, not claimed."""
+        # Use a template with no entries at all.
+        empty = StartingEquipmentTemplate.objects.create(club=club, name="Empty", is_active=True)
+        StartingEquipmentTemplate.objects.filter(club=club, is_active=True).exclude(
+            pk=empty.pk
+        ).update(is_active=False)
+
+        client = login(player)
+        response = client.post(claim_url(club, character_with_class_bg), HTTP_HX_REQUEST="true")
+
+        assert response.status_code == 204
+        assert response["HX-Refresh"] == "true"
+
+        flashed = " ".join(flash_messages(response))
+        assert "nothing to grant" in flashed
+
+        character_with_class_bg.refresh_from_db()
+        assert character_with_class_bg.starting_equipment_claimed is False
+
+
 class TestClaimUrlResolve:
     """Tests for URL resolution."""
 

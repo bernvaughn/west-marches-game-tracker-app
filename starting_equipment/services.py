@@ -176,9 +176,7 @@ def explain_starting_equipment(
                 Q(min_level__lte=character_level) & Q(max_level__gte=character_level)
             ).exists()
             if not covered:
-                ranges = [
-                    f"levels {e.min_level}-{e.max_level}" for e in qs.order_by("min_level")
-                ]
+                ranges = [f"levels {e.min_level}-{e.max_level}" for e in qs.order_by("min_level")]
                 reasons.append(
                     Reason(
                         "class_level_not_covered",
@@ -194,9 +192,12 @@ def explain_starting_equipment(
     elif background_text and background_option_id is None:
         reasons.append(Reason("background_custom", _background_custom_message(character)))
     else:
-        if background_option_id is not None and not template.background_entries.filter(
-            background_option_id=background_option_id
-        ).exists():
+        if (
+            background_option_id is not None
+            and not template.background_entries.filter(
+                background_option_id=background_option_id
+            ).exists()
+        ):
             reasons.append(Reason("background_no_entry", _background_no_entry_message(character)))
 
     return reasons
@@ -318,4 +319,9 @@ def apply_starting_equipment(
 
 
 # Backward-compatible module-level function wrapper
-__all__ = ["apply_starting_equipment", "explain_starting_equipment", "Reason", "StartingEquipmentResult"]
+__all__ = [
+    "apply_starting_equipment",
+    "explain_starting_equipment",
+    "Reason",
+    "StartingEquipmentResult",
+]

@@ -404,7 +404,7 @@ def test_rename_class_entry_keeps_fk_link(club, club_admin, login, char_class):
 
 @pytest.mark.django_db
 def test_rename_background_entry_keeps_fk_link(club, club_admin, login, background):
-    """Renaming a background keeps the StartingEquipmentBackgroundEntry FK link (no text snapshot)."""
+    """Renaming a background keeps the FK link (no text snapshot)."""
     template = StartingEquipmentTemplate.objects.create(club=club, name="Test")
     entry = StartingEquipmentBackgroundEntry.objects.create(
         template=template,

@@ -214,3 +214,76 @@ class TestCreateWithStartingEquipment:
 
         entries = LedgerEntry.objects.filter(character=character)
         assert entries.count() == 1
+
+
+def flash_messages(response):
+    """Return the list of flash message strings queued on the response's request."""
+    from django.contrib.messages import get_messages
+
+    return [str(m) for m in get_messages(response.wsgi_request)]
+
+
+class TestCreateViewFlashWarnings:
+    """Surface: character creation flashes missing-gear reasons as warnings."""
+
+    def test_custom_text_flashes_class_and_background_warnings(
+        self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
+    ):
+        """Custom (no-FK) class and background both flash warnings; no gear granted."""
+        longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
+        holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
+        class_entry = make_class_entry(
+            active_template, class_option=class_option_fighter, coins_cp=1000
+        )
+        make_class_line(class_entry, longsword)
+        bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
+        make_bg_line(bg_entry, holy_symbol)
+
+        client = login(player)
+        response = client.post(
+            create_url(club),
+            {"name": "Aria", "char_class": "Homebrew Class", "background": "Homebrew Background"},
+        )
+        assert response.status_code == 302
+
+        flashed = " ".join(flash_messages(response))
+        assert "Homebrew Class" in flashed
+        assert "Homebrew Background" in flashed
+        assert "custom value" in flashed
+
+    def test_all_matched_flashes_no_warning(
+        self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
+    ):
+        """Fully matched class/background flashes only the success message."""
+        longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
+        holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
+        class_entry = make_class_entry(
+            active_template, class_option=class_option_fighter, coins_cp=1000
+        )
+        make_class_line(class_entry, longsword)
+        bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
+        make_bg_line(bg_entry, holy_symbol)
+
+        client = login(player)
+        response = client.post(
+            create_url(club),
+            {"name": "Aria", "char_class": "Fighter", "background": "Acolyte"},
+        )
+        assert response.status_code == 302
+
+        flashed = " ".join(flash_messages(response))
+        assert "custom value" not in flashed
+        assert "no entry" not in flashed
+        assert "Created Aria" in flashed
+
+    def test_no_active_template_flashes_no_template(self, club, login, player, inactive_template):
+        """No active template flashes the no_template warning."""
+        client = login(player)
+        response = client.post(
+            create_url(club),
+            {"name": "Aria", "char_class": "Fighter", "background": "Acolyte"},
+        )
+        assert response.status_code == 302
+
+        flashed = " ".join(flash_messages(response))
+        assert "No starting equipment template exists for this club" in flashed
