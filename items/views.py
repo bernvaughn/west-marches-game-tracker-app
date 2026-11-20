@@ -368,7 +368,7 @@ class LootCardsPickerView(ClubScopedMixin, PermissionMixin, View):
     def get(self, request, club_slug):
         is_admin = self.is_club_admin(request.user, request.club)
         show_retired = is_admin and request.GET.get("retired") == "1"
-        items = self.get_club_queryset(Item).filter(retired=False)
+        items = self.get_club_queryset(Item)
         if not show_retired:
             items = items.filter(retired=False)
         q = request.GET.get("q", "").strip()

@@ -69,8 +69,7 @@ def _option_form_view(request, club, kind, instance=None):
     kind_obj = get_kind(kind)
     is_create = instance is None
 
-    if request.method == "GET":
-        form = OptionForm(club=club, kind_slug=kind, instance=instance)
+    def render_form(form, status=200):
         ctx = {
             "club": club,
             "kind": kind,
@@ -85,7 +84,11 @@ def _option_form_view(request, club, kind, instance=None):
             "character_options/_form_modal.html",
             "character_options/form.html",
             ctx,
+            status=status,
         )
+
+    if request.method == "GET":
+        return render_form(OptionForm(club=club, kind_slug=kind, instance=instance))
 
     # POST
     form = OptionForm(request.POST, club=club, kind_slug=kind, instance=instance)
@@ -108,22 +111,7 @@ def _option_form_view(request, club, kind, instance=None):
             return redirect("character_options:list", club_slug=club.slug, kind=kind)
 
     # Invalid form
-    ctx = {
-        "club": club,
-        "kind": kind,
-        "kind_obj": kind_obj,
-        "form": form,
-        "is_create": is_create,
-    }
-    if not is_create:
-        ctx["option"] = instance
-    return render_modal_or_page(
-        request,
-        "character_options/_form_modal.html",
-        "character_options/form.html",
-        ctx,
-        status=400 if is_htmx(request) else 200,
-    )
+    return render_form(form, status=400 if is_htmx(request) else 200)
 
 
 @option_admin_required

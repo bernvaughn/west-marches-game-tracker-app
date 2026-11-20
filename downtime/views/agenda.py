@@ -18,7 +18,7 @@ from downtime.models import DowntimeAction
 from quests.models import Quest
 from shops.models import Rotation
 
-CHANGED_TRIGGER = '{"appModalClose": true, "agendaChanged": true}'
+CHANGED_TRIGGER = {"appModalClose": True, "agendaChanged": True}
 DATE_FORMAT = "%Y-%m-%d"
 
 
