@@ -2,13 +2,14 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
+from items.stacked import unit_label
 from ledger.services import Line, record
 from shops.models import ShopStock
 from shops.services import AlreadySold, NotStocked, ShopClosed, is_open, sell_price
 
 
 def buy(character, stock, quantity=1, actor=None, today=None):
-    """Buy `quantity` of a stocked item for `character`. All or nothing.
+    """Buy `quantity` bundles of a stocked item for `character`. All or nothing.
 
     See the Shops epic design, "Buying". Raises ShopClosed, NotStocked,
     AlreadySold, or ledger InsufficientFunds (which rolls back the decrement).
@@ -33,11 +34,13 @@ def buy(character, stock, quantity=1, actor=None, today=None):
             if updated == 0:
                 raise AlreadySold()
         price = sell_price(stock) * quantity
+        units = quantity * stock.bundle_units
+        note = f"Bought {unit_label(item, units)} from {shop}"
         return record(
             character,
             "purchase",
-            [Line(coins=-price), Line(item=item, quantity=quantity)],
-            note=f"Bought {quantity} × {item} from {shop}",
+            [Line(coins=-price), Line(item=item, quantity=units)],
+            note=note,
             actor=actor,
             shop=shop,
         )

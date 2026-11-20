@@ -1,6 +1,7 @@
 from django import template
 from django.utils.html import format_html, format_html_join
 
+from items import stacked
 from ledger.coins import coin_items, format_coins
 
 register = template.Library()
@@ -23,6 +24,19 @@ def coins_text(value):
     return format_coins(value)
 
 
+@register.filter
+def signed_units(line):
+    """Signed quantity text for a ledger line, quantity part only.
+
+    Stacked items: "+40 ft" (units plus unit name; the template adds the item
+    name via _item_name so it is not repeated). Normal items: "+3".
+    """
+    if line.item is None or not line.item.is_stacked:
+        return f"{line.quantity:+d}"
+    sign = "+" if line.quantity > 0 else "-"
+    return f"{sign}{abs(line.quantity)} {line.item.unit_name}"
+
+
 @register.filter(name="downtime_reward_text")
 def downtime_reward_text(entry):
     """Plain text of what a ledger entry granted, read from its stored lines."""
@@ -31,6 +45,9 @@ def downtime_reward_text(entry):
         if line.coins:
             parts.append(f"{'+' if line.coins > 0 else ''}{format_coins(line.coins)}")
         if line.item_id and line.quantity:
-            sign = "+" if line.quantity > 0 else ""
-            parts.append(f"{sign}{line.quantity} {line.item.name}")
+            if line.item.is_stacked:
+                sign = "+" if line.quantity > 0 else "-"
+                parts.append(f"{sign}{stacked.unit_label(line.item, abs(line.quantity))}")
+            else:
+                parts.append(f"{'+' if line.quantity > 0 else ''}{line.quantity} {line.item.name}")
     return ", ".join(parts)

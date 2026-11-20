@@ -1,4 +1,4 @@
-{% load coins loot_tags %}
+{% load coins loot_tags units %}
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
   <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
@@ -6,6 +6,7 @@
   {% for stock in rows %}
     <tr>
       <td>{% include "items/_item_name.html" with item=stock.item info=True %}{% if stock.item.description %}<small class="d-block text-muted">{{ stock.item.description }}</small>{% endif %}
+          {% if stock.item.is_stacked %}<small class="d-block text-muted">{{ stock.item|bundle_label:stock.bundle_units }}</small>{% endif %}
           {% loot_preview stock.item as loot_rows %}
           {% if loot_rows %}<details class="wm-loot-stock-preview"><summary>Preview contents</summary>{% include "components/loot_rows.html" with rows=loot_rows %}</details>{% endif %}
       </td>

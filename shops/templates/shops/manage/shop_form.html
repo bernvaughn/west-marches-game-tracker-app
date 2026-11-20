@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins units %}
 {% block title %}{% if shop %}Edit {{ shop.name }}{% else %}New shop{% endif %}{% endblock %}
 {% block content %}
 {% url 'shops:manage_list' club.slug as back_url %}
@@ -9,11 +9,12 @@
 <section class="wm-section wm-stock-section">
 <div class="wm-section-bar"><h2>Stock</h2><a class="btn btn-primary" href="{% url 'shops:stock_add' club.slug shop.pk %}">{% include "components/icon.html" with name="plus-lg" %} Add item</a></div>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-<thead><tr><th>Item</th><th class="num">Value</th><th class="num">Quantity</th><th class="num">Sell %</th><th class="num">Buy %</th><th class="num">Sell price</th><th class="num">Buy price</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+<thead><tr><th>Item</th><th class="num">Bundle</th><th class="num">Value</th><th class="num">Quantity</th><th class="num">Sell %</th><th class="num">Buy %</th><th class="num">Sell price</th><th class="num">Buy price</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
 <tbody>
 {% for row in rows %}
 <tr>
 <td>{{ row.stock.item.name }}{% if row.stock.quantity == 0 %} (Sold out){% endif %}{% if row.stock.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
+<td class="num">{% if row.stock.item.is_stacked %}{{ row.stock.item|bundle_label:row.stock.bundle_units }}{% else %}—{% endif %}</td>
 <td class="num">{{ row.stock.item.value_cp|coins }}</td>
 <td class="num">{% if row.stock.quantity is None %}Unlimited{% else %}{{ row.stock.quantity }}{% endif %}</td>
 <td class="num">{% if row.stock.sell_percent is None %}default{% else %}{{ row.stock.sell_percent }}{% endif %}</td>
@@ -24,7 +25,7 @@
 <form method="post" action="{% url 'shops:stock_remove' club.slug shop.pk row.stock.pk %}" class="wm-inline-form">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form></td>
 </tr>
 {% empty %}
-{% include "components/data_table_empty.html" with cols=8 text="No stock." %}
+{% include "components/data_table_empty.html" with cols=9 text="No stock." %}
 {% endfor %}
 </tbody>
 </table></div>

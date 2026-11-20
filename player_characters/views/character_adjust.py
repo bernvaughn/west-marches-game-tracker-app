@@ -27,6 +27,7 @@ from ..forms_adjust import (
     ConsumeForm,
     bulk_item_line_formset,
 )
+from ..forms_consume import consume_line_formset
 from ..models import Character
 
 NO_AMOUNT = "Enter at least one coin or item amount."
@@ -95,14 +96,10 @@ def consume(request, club_slug, pk):
     )
     post = request.method == "POST"
     form = ConsumeForm(request.POST if post else None)
-    formset = item_line_formset(items, request.POST if post else None)
+    formset = consume_line_formset(items, avail, request.POST if post else None)
     if post and _handle(request, character, form, formset, -1, "consumed"):
         messages.success(request, f"Consumed from {character.name}.")
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
-    available_with_units = [
-        (item, avail[item.pk], item.unit_name if item.is_stacked else "")
-        for item in items.order_by("name")
-    ]
     return render(
         request,
         "player_characters/characters/consume.html",
@@ -112,7 +109,7 @@ def consume(request, club_slug, pk):
             "formset": formset,
             "recent": recent_changes(character),
             "coins_available": available_coins(character),
-            "available": available_with_units,
+            "available": [(item, avail[item.pk]) for item in items.order_by("name")],
         },
     )
 

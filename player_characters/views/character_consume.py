@@ -6,11 +6,12 @@ from django.shortcuts import redirect
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
+from items import stacked
 from items.models import Item
 from ledger.services import LedgerError, Line, available_items, recent_changes, record
 
 from ..access import owns_character
-from ..forms_adjust import PlayerConsumeForm
+from ..forms_consume import PlayerConsumeForm
 from ..models import Character
 
 
@@ -26,7 +27,7 @@ def player_consume(request, club_slug, pk, item_pk):
     sheet = redirect("characters:detail", club_slug=club_slug, pk=character.pk)
     sheet_url = sheet.url
     if request.method == "POST":
-        form = PlayerConsumeForm(request.POST, available=available)
+        form = PlayerConsumeForm(request.POST, item=item, available=available)
         if form.is_valid():
             quantity = form.cleaned_data["quantity"]
             try:
@@ -40,10 +41,10 @@ def player_consume(request, club_slug, pk, item_pk):
             except LedgerError as exc:
                 form.add_error(None, str(exc))
             else:
-                messages.success(request, f"Consumed {quantity} {item.name}.")
+                messages.success(request, f"Consumed {stacked.unit_label(item, quantity)}.")
                 return htmx_or_redirect(request, sheet_url)
     else:
-        form = PlayerConsumeForm(available=available)
+        form = PlayerConsumeForm(item=item, available=available)
     return render_modal_or_page(
         request,
         "player_characters/characters/_consume_modal.html",
