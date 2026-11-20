@@ -73,32 +73,37 @@
       </div>
     </div>
 
-    <h4 class="h6 mb-2">Items</h4>
-    <input type="hidden" name="items_{{ c.pk }}-TOTAL_FORMS" id="id_items_{{ c.pk }}-TOTAL_FORS" value="3">
+    <h4 class="h6 mb-2">Items
+      <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Item row actions">
+        <button type="button" class="btn btn-outline-secondary" data-wm-add-item hidden>Add item</button>
+        <button type="button" class="btn btn-outline-secondary" data-wm-copy-loot hidden>Copy this loot to all picked characters</button>
+      </div>
+    </h4>
+    <input type="hidden" name="items_{{ c.pk }}-TOTAL_FORMS" id="id_items_{{ c.pk }}-TOTAL_FORMS" value="{{ cd.item_rows|length }}">
     <input type="hidden" name="items_{{ c.pk }}-INITIAL_FORMS" id="id_items_{{ c.pk }}-INITIAL_FORMS" value="0">
     <input type="hidden" name="items_{{ c.pk }}-MIN_NUM_FORMS" id="id_items_{{ c.pk }}-MIN_NUM_FORMS" value="0">
-    <input type="hidden" name="items_{{ c.pk }}-MAX_NUM_FORMS" id="id_items_{{ c.pk }}-MAX_NUM_FORMS" value="3">
+    <input type="hidden" name="items_{{ c.pk }}-MAX_NUM_FORMS" id="id_items_{{ c.pk }}-MAX_NUM_FORMS" value="500">
 
     <div class="wm-item-rows" data-prefix="items_{{ c.pk }}">
-      {% for row_num in "012"|make_list %}
+      {% for row in cd.item_rows %}
       <div class="wm-form-row wm-form-row--wide-first wm-item-row">
         <div class="col-md-5">
-          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row_num }}-item">Item</label>
-          <input type="text" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row_num }}-item"
-                 id="id_items_{{ c.pk }}-{{ row_num }}-item" list="item-catalogue"
-                 placeholder="Search items by name...">
-          <input type="hidden" name="items_{{ c.pk }}-{{ row_num }}-item_id"
-                 id="id_items_{{ c.pk }}-{{ row_num }}-item_id" value="">
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row.index }}-item">Item</label>
+          <input type="text" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row.index }}-item"
+                 id="id_items_{{ c.pk }}-{{ row.index }}-item" list="item-catalogue"
+                 placeholder="Search items by name..." value="{{ row.item }}">
+          <input type="hidden" name="items_{{ c.pk }}-{{ row.index }}-item_id"
+                 id="id_items_{{ c.pk }}-{{ row.index }}-item_id" value="{{ row.item_id }}">
         </div>
         <div class="col-md-3">
-          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row_num }}-quantity">Quantity</label>
-          <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row_num }}-quantity"
-                 id="id_items_{{ c.pk }}-{{ row_num }}-quantity" min="1" value="">
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row.index }}-quantity">Quantity</label>
+          <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row.index }}-quantity"
+                 id="id_items_{{ c.pk }}-{{ row.index }}-quantity" min="1" value="{{ row.quantity }}">
         </div>
         <div class="col-md-4">
-          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row_num }}-value_override">Value (cp)</label>
-          <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row_num }}-value_override"
-                 id="id_items_{{ c.pk }}-{{ row_num }}-value_override" min="0" value=""
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row.index }}-value_override">Value (cp)</label>
+          <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row.index }}-value_override"
+                 id="id_items_{{ c.pk }}-{{ row.index }}-value_override" min="0" value="{{ row.value_override }}"
                  placeholder="Override value (optional)">
         </div>
         <div class="col-12 wm-loot-slot" hidden></div>
@@ -123,4 +128,5 @@
 </form>
 <script src="{% static 'js/check_all.js' %}" defer></script>
 <script src="{% static 'js/bulk_award.js' %}" defer></script>
+<script src="{% static 'js/loot_rows.js' %}" defer></script>
 {% endblock %}
