@@ -53,6 +53,31 @@ def test_level_20_shows_max_level(club, login, player, character):
     assert 'role="progressbar"' not in content
 
 
+def test_level_19_with_355000_xp_shows_badge_not_max_level(club, login, player, character):
+    _set(character, level=19, xp=355000)
+    content = login(player).get(detail_url(club, character)).content.decode()
+    assert "Level up ready" in content
+    assert f'href="{edit_url(club, character)}"' in content
+    assert "355,000 XP (level 20 reached)" in content
+    assert "Max level" not in content
+    assert 'role="progressbar"' not in content
+
+
+def test_level_10_with_huge_xp_shows_badge_not_max_level(club, login, player, character):
+    _set(character, level=10, xp=900000)
+    content = login(player).get(detail_url(club, character)).content.decode()
+    assert "Level up ready" in content
+    assert "900,000 XP (level 20 reached)" in content
+    assert "Max level" not in content
+
+
+def test_blank_level_with_max_xp_shows_max_level(club, login, player, character):
+    _set(character, level=None, xp=355000)
+    content = login(player).get(detail_url(club, character)).content.decode()
+    assert "Max level" in content
+    assert "Level up ready" not in content
+
+
 def test_blank_xp_shows_nothing_new(club, login, player, character):
     _set(character, level=5, xp=None)
     content = login(player).get(detail_url(club, character)).content.decode()

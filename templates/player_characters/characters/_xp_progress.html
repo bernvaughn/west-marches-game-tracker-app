@@ -5,6 +5,7 @@ Context: xp_progress (from sheet.xp_progress), can_edit, character, club.{% endc
 <p class="wm-xp-text">Max level</p>
 {% else %}
 <div class="wm-xp">
+  {% if xp_progress.next_threshold %}
   <div
     class="wm-xp-bar"
     role="progressbar"
@@ -15,6 +16,7 @@ Context: xp_progress (from sheet.xp_progress), can_edit, character, club.{% endc
   >
     <div class="wm-xp-fill" style="width: {{ xp_progress.percent }}%"></div>
   </div>
+  {% endif %}
   <p class="wm-xp-text">{{ xp_progress.xp_label }}</p>
   {% if xp_progress.level_up_ready and can_edit %}
     <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}">

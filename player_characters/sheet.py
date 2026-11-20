@@ -88,7 +88,12 @@ def xp_progress(character):
     level = character.level
     xp_level = level_for_xp(xp)
     threshold = next_threshold(xp)
-    is_max = (level is not None and level >= MAX_LEVEL) or threshold is None
+    # "Max level" follows the stored level. A blank level falls back to XP.
+    # A stored level below 20 with 355,000+ XP still gets the badge.
+    if level is None:
+        is_max = threshold is None
+    else:
+        is_max = level >= MAX_LEVEL
     level_up_ready = level is not None and level < xp_level
     progress = {
         "xp": xp,
@@ -101,4 +106,6 @@ def xp_progress(character):
     }
     if threshold is not None:
         progress["xp_label"] = f"{xp:,} / {threshold:,} XP to level {xp_level + 1}"
+    else:
+        progress["xp_label"] = f"{xp:,} XP (level {MAX_LEVEL} reached)"
     return progress
