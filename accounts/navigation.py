@@ -29,6 +29,7 @@ class NavEntry(NamedTuple):
     icon: object = None
     shortcut_order: object = None
     shortcut_label: object = None
+    also_current: tuple = ()
 
 
 class NavLink(NamedTuple):
@@ -51,13 +52,16 @@ def register(
     icon=None,
     shortcut_order=None,
     shortcut_label=None,
+    also_current=(),
 ):
     if group not in GROUPS:
         raise ValueError(f"Unknown navigation group: {group!r}")
     for existing in _entries:
         if existing.group == group and existing.url_name == url_name:
             return existing
-    entry = NavEntry(group, label, url_name, check, order, icon, shortcut_order, shortcut_label)
+    entry = NavEntry(
+        group, label, url_name, check, order, icon, shortcut_order, shortcut_label, also_current
+    )
     _entries.append(entry)
     return entry
 
@@ -69,16 +73,29 @@ def entries_for(request):
     if club is None or user is None or not user.is_authenticated:
         return result
     match = getattr(request, "resolver_match", None)
-    current = match.url_name if match else None
+    if match:
+        # resolver_match.url_name is the local name; include namespace for comparison
+        ns = match.namespace
+        current = f"{ns}:{match.url_name}" if ns else match.url_name
+    else:
+        current = None
     shortcuts = []
     for entry in sorted(_entries, key=lambda e: (e.order, e.label)):
         if entry.check is not None and not entry.check(request):
             continue
+        # Check if current matches entry.url_name or any of the also_current patterns
+        # also_current entries can be short names ("club_home") or full names ("accounts:club_home")
+        active = entry.url_name == current
+        if not active:
+            for alt in entry.also_current:
+                if alt == current or (ns and alt == match.url_name):
+                    active = True
+                    break
         link = NavLink(
             entry.label,
             reverse(entry.url_name, args=[club.slug]),
             entry.url_name,
-            entry.url_name == current,
+            active,
             entry.icon,
         )
         result[entry.group].append(link)

@@ -104,3 +104,26 @@ def test_unknown_group_and_no_club(registry, rf, player):
         navigation.register("nope", "X", "club_home")
     navigation.register("primary", "X", "club_home")
     assert all(v == [] for v in navigation.entries_for(_req(rf, player, None)).values())
+
+
+@pytest.mark.story("U115")
+def test_also_current_marks_dashboard_on_club_home(rf, club, player):
+    # The Dashboard entry is already registered in apps.py with also_current=("club_home",)
+    from accounts.models import Membership
+
+    class MockRequest:
+        def __init__(self, club, user):
+            self.club = club
+            self.user = user
+            self.membership = Membership.objects.get(user=user, club=club)
+
+    req = MockRequest(club, player)
+    req.resolver_match = type("Match", (), {"url_name": "club_home", "namespace": "accounts"})()
+    links = navigation.entries_for(req)["primary"]
+    dash = next(link for link in links if link.url_name == "accounts:player_dashboard")
+    assert dash.active is True
+    # Not active on other pages
+    req.resolver_match = type("Match", (), {"url_name": "mine", "namespace": "characters"})()
+    links = navigation.entries_for(req)["primary"]
+    dash = next(link for link in links if link.url_name == "accounts:player_dashboard")
+    assert dash.active is False

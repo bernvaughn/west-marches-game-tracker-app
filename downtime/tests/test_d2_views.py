@@ -221,5 +221,5 @@ def test_topbar_css_has_six_ranks():
     from pathlib import Path
 
     css = Path("static/css/components.css").read_text()
-    for i in range(1, 6):
+    for i in range(1, 7):
         assert f".wm-shortcut-rank-{i}" in css

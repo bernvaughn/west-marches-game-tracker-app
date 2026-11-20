@@ -53,6 +53,17 @@ class AccountsConfig(AppConfig):
         approvals.register(open_messages)
         register_provider(QuickActionsProvider())
         reg = navigation.register
+        reg(
+            "character",
+            "Dashboard",
+            "accounts:player_dashboard",
+            is_member,
+            5,
+            icon="speedometer2",
+            shortcut_order=0,
+            shortcut_label="Dashboard",
+            also_current=("club_home",),
+        )
         reg("club", "People", "accounts:index", not_admin, 100)
         reg("club", "Message the admins", "accounts:message_new", is_member, 60)
         reg("club", "Request stock", "accounts:stock_request_new", is_member, 65)

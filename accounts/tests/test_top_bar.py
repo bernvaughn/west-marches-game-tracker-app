@@ -11,6 +11,7 @@ from accounts import navigation
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U61")]
 
 SHORTCUTS = {
+    "Dashboard": ("accounts:player_dashboard", "character"),
     "Character": ("characters:mine", "character"),
     "Shops": ("shops:index", "town"),
     "Quests": ("quests:index", "town"),
@@ -178,9 +179,50 @@ def test_no_dropdown_menus_in_bar(login, club, club_admin):
 
 def test_shortcut_ranks_in_order(login, club, player):
     b = bar(home(login, player, club))
-    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 6)]
+    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 7)]
     assert pos == sorted(pos)
     assert b.count("data-wm-tooltip") >= 7
+
+
+def test_dashboard_is_first_shortcut(login, club, player):
+    b = bar(home(login, player, club))
+    # Dashboard is rank 1, should appear first
+    assert b.index("wm-shortcut-rank-1") < b.index("wm-shortcut-rank-2")
+    # Verify it has the right href and attributes
+    assert 'aria-label="Dashboard"' in b
+    assert f'href="/c/{club.slug}/accounts/dashboard/"' in b
+    assert 'title="Dashboard"' in b
+    assert "data-wm-tooltip" in b
+
+
+def test_dashboard_current_on_dashboard_page(login, club, player, character):
+    body = (
+        login(player)
+        .get(reverse("accounts:player_dashboard", args=[club.slug]), follow=True)
+        .content.decode()
+    )
+    b = bar(body)
+    dash_rank1 = b[b.index("wm-shortcut-rank-1") : b.index("wm-shortcut-rank-2")]
+    assert 'aria-current="page"' in dash_rank1
+
+
+def test_dashboard_current_on_club_home_for_gm_admin(login, club, game_master, club_admin):
+    # GMs and admins with no selected character see club_home instead of dashboard
+    for user in (game_master, club_admin):
+        body = (
+            login(user).get(reverse("club_home", args=[club.slug]), follow=False).content.decode()
+        )
+        b = bar(body)
+        dash_rank1 = b[b.index("wm-shortcut-rank-1") : b.index("wm-shortcut-rank-2")]
+        assert 'aria-current="page"' in dash_rank1, f"Dashboard not current for {user}"
+
+
+def test_dashboard_shows_for_gm_and_admin(login, club, game_master, club_admin):
+    for user in (game_master, club_admin):
+        body = home(login, user, club)
+        b = bar(body)
+        assert 'aria-label="Dashboard"' in b
+        assert f'href="/c/{club.slug}/accounts/dashboard/"' in b
 
 
 def test_groups_per_role(login, club, player, game_master, club_admin):
