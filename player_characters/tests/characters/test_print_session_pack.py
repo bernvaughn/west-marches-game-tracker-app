@@ -96,10 +96,12 @@ def test_pack_options_exclude_quests(login, club, player, funded, item):
 
 @pytest.mark.story("S10")
 def test_print_button_present(login, club, player, funded):
-    """Print button is present in the output."""
+    """Print button uses data-print-frame, not hx-on/window.print."""
     r = login(player).get(pack_url(club, funded))
     body = r.content.decode()
-    assert "window.print()" in body
+    assert "data-print-frame" in body
+    assert "hx-on::after-request" not in body
+    assert "window.print()" not in body
 
 
 @pytest.mark.story("S10")
@@ -343,6 +345,14 @@ def test_print_sheet_script_loads_once(login, club, player, funded):
     body = login(player).get(url).content.decode()
     assert body.count("js/print_sheet.js") == 1
     assert "hx-on::after-request" not in body
+
+
+@pytest.mark.story("S10")
+def test_print_frame_script_loads_once_in_base(login, club, player, funded):
+    """js/print_frame.js loads once in base.html."""
+    url = reverse("characters:detail", args=[club.slug, funded.pk])
+    body = login(player).get(url).content.decode()
+    assert body.count("js/print_frame.js") == 1
 
 
 @pytest.mark.story("S10")

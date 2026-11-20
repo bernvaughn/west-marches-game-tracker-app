@@ -56,7 +56,9 @@ def test_zero_quantity_hidden(login, club, player, funded, second_item):
 @pytest.mark.story("U6")
 def test_print_button_and_css(login, club, player, funded):
     body = login(player).get(url(club, funded)).content.decode()
-    assert "window.print()" in body
+    assert "data-print-frame" in body
+    assert "hx-on::after-request" not in body
+    assert "window.print()" not in body
     css = (Path(settings.BASE_DIR) / "static/css/print.css").read_text()
     assert "/* Characters: print view */" in css
 

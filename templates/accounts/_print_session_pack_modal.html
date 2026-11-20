@@ -6,9 +6,9 @@
 </div>
 
 <form
-  hx-post="{% url 'characters:print_session_pack' club.slug character.pk %}"
-  hx-target="body"
-  hx-on::after-request="window.print()"
+  data-print-frame
+  method="post"
+  action="{% url 'characters:print_session_pack' club.slug character.pk %}"
 >
   <input type="hidden" name="pack" value="1">
   <div class="modal-body">
@@ -102,4 +102,5 @@
     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
     <button type="submit" class="btn btn-primary">{% include "components/icon.html" with name="printer" %} Print</button>
   </div>
+  <div data-print-note></div>
 </form>

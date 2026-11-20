@@ -6,10 +6,11 @@
 <link rel="stylesheet" href="{% static 'css/print.css' %}">
 {% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% with c=coins.owned|coins_text %}{% with coins_sub="Coins: "|add:c %}{% include "components/page_header.html" with title=character.name subtitle=coins_sub back_url=sheet_url back_label="Back to sheet" %}{% endwith %}{% endwith %}</div>
 
-<form hx-post="{% url 'characters:print_items' club.slug character.pk %}?copies={{ copies }}" hx-target="body" hx-on::after-request="window.print()" class="no-print">
+<form data-print-frame method="post" action="{% url 'characters:print_items' club.slug character.pk %}?copies={{ copies }}" class="no-print">
   <div class="wm-toolbar" role="toolbar" aria-label="Item card actions">
     <button type="submit" class="btn btn-sm btn-primary wm-print-btn">{% include "components/icon.html" with name="printer" %} Print</button>
   </div>
+  <div data-print-note></div>
 </form>
 
 <p class="no-print wm-print-hint text-muted">If your browser still prints a header or footer, turn off Headers and footers in the print dialog.</p>
