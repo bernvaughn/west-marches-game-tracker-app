@@ -74,3 +74,33 @@ def make_diplomats_pack(club):
     )
     add_slot(container, [(sealed_letter, 1, 1, 1)], chance_pct=100, unknown=True, position=4)
     return container
+
+
+def make_stacked(club, name, unit_name, value_cp, value_units):
+    """Create a stacked item in ``club``.
+
+    ``value_cp`` is the price that ``value_units`` units cover.
+    """
+    return Item.objects.create(
+        club=club,
+        name=name,
+        is_stacked=True,
+        unit_name=unit_name,
+        value_cp=value_cp,
+        value_units=value_units,
+    )
+
+
+def make_parchment(club):
+    """Parchment: 100 cp per 10 sheets."""
+    return make_stacked(club, "Parchment", "sheet", 100, 10)
+
+
+def make_rope(club):
+    """Rope: 100 cp per 50 ft."""
+    return make_stacked(club, "Rope", "ft", 100, 50)
+
+
+def make_arrows(club):
+    """Arrows: 100 cp per 20 arrows."""
+    return make_stacked(club, "Arrows", "arrow", 100, 20)
