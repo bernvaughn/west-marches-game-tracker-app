@@ -1,5 +1,5 @@
 {% load units %}
-<p><strong>{{ character.name }}</strong> owns {% if item.is_stacked %}{{ item|with_units:owned }}{% else %}{{ owned }} × {% include "items/_item_name.html" with item=item %}{% endif %}.</p>
+<p><strong>{{ character.name }}</strong> owns {% if item.is_stacked %}{{ owned }} {{ item.unit_name }} {% include "items/_item_name.html" with item=item info=True %}{% else %}{{ owned }} × {% include "items/_item_name.html" with item=item info=True %}{% endif %}.</p>
 {% if form.non_field_errors %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert"><div>{{ form.non_field_errors|join:" " }}</div></div>{% endif %}
 <p>
   <label class="form-label" for="{{ form.quantity.id_for_label }}">{% if item.is_stacked %}How many {{ item.unit_name }} are junk?{% else %}How many are junk?{% endif %}</label>

@@ -12,7 +12,7 @@ from player_characters.models import Character, JunkMark
 from player_characters.player_shop import PlayerShopError, buy_from, listed_rows, stall_price
 from shops.models import Rotation, ShopStock
 from shops.selling import SellLineError, buy_percent_for, sale_total, sell, sell_many
-from shops.services import ShopError
+from shops.services import ShopError, buy_price, percent_price
 
 pytestmark = [pytest.mark.story("U129"), pytest.mark.django_db]
 
@@ -345,6 +345,15 @@ def test_buy_percent_for_uses_first_stock_line(club, shop, parchment):
     ShopStock.objects.create(shop=shop, item=parchment, bundle_units=10, buy_percent=20)
     ShopStock.objects.create(shop=shop, item=parchment, bundle_units=1, buy_percent=80)
     assert buy_percent_for(shop, parchment) == 80  # lowest bundle_units (1) comes first
+
+
+def test_buy_percent_for_smallest_line_null_falls_back_like_buy_price(club, shop, parchment):
+    """Same rule as shops.services.buy_price: the smallest line wins, even with a null override."""
+    ShopStock.objects.create(shop=shop, item=parchment, bundle_units=1)
+    ShopStock.objects.create(shop=shop, item=parchment, bundle_units=10, buy_percent=30)
+    assert buy_percent_for(shop, parchment) == shop.buy_percent  # 50, not 30
+    assert buy_price(shop, parchment) == percent_price(parchment.value_cp, shop.buy_percent)
+    assert sale_total(shop, parchment, 10) == 50  # 100 cp x 50%
 
 
 def test_buy_percent_for_falls_back_to_shop_default(club, shop, parchment):

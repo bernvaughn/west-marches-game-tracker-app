@@ -9,16 +9,14 @@ from shops.services import ShopClosed, ShopError, is_open, percent_price
 
 
 def buy_percent_for(shop, item):
-    """First non-null buy_percent among the item's stock lines, ordered by bundle_units then pk.
+    """Buy percent of the item's smallest bundle line, as shops.services.buy_price uses.
 
-    Falls back to the shop's default buy percent when no line overrides it.
+    A null override on that line, or no line at all, falls back to the shop default.
     """
-    stock = (
-        ShopStock.objects.filter(shop=shop, item=item, buy_percent__isnull=False)
-        .order_by("bundle_units", "pk")
-        .first()
-    )
-    return stock.buy_percent if stock is not None else shop.buy_percent
+    stock = ShopStock.objects.filter(shop=shop, item=item).order_by("bundle_units", "pk").first()
+    if stock is not None and stock.buy_percent is not None:
+        return stock.buy_percent
+    return shop.buy_percent
 
 
 def sale_total(shop, item, units):
