@@ -10,11 +10,13 @@ CHARACTERS = [
     ("alice@example.com", "Aria Windrunner", 5),
     ("alice@example.com", "Wren Thistledown", 2),
     ("bob@example.com", "Borin Stonefist", 4),
+    ("bob@example.com", "Tilda Brightwater", 1),
 ]
 GEAR_NOTE = "Demo: starting gear"
 GEAR = {
     "Aria Windrunner": {"Rope": 1, "Healing potion": 2, "Torch": 5},
     "Borin Stonefist": {"Longsword": 1, "Torch": 3},
+    "Tilda Brightwater": {"Priest's Pack": 1},
 }
 
 
@@ -64,6 +66,23 @@ SHEETS = {
         "perception_bonus": -1,
         "xp": 2700,
         "description": "A shield-bearer who never leaves a torch unlit.",
+    },
+    "Tilda Brightwater": {
+        "char_class": "Cleric",
+        "species": "Human",
+        "alignment": "Lawful Good",
+        "pronouns": "she/her",
+        "strength": 10,
+        "dexterity": 12,
+        "constitution": 14,
+        "intelligence": 11,
+        "wisdom": 16,
+        "charisma": 13,
+        "armor_class": 16,
+        "max_hp": 10,
+        "perception_bonus": 5,
+        "xp": 0,
+        "description": "A devoted cleric who carries an unopened Priest's Pack.",
     },
 }
 

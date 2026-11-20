@@ -14,6 +14,7 @@ from accounts.models import Club
 from character_options.models import Background, CharacterClass
 from character_options.services import seed_default_options
 from items.models import Item
+from items.pack_seeding import PackSeedingError, seed_pack_containers
 from starting_equipment.models import (
     StartingEquipmentBackgroundEntry,
     StartingEquipmentBackgroundLine,
@@ -24,6 +25,10 @@ from starting_equipment.models import (
 )
 
 # 2024 D&D Class starting equipment (PHB 2024)
+# Each item tuple: (name, value_cp, symbol, rarity, magic_type, quantity, is_choice, choice_group)
+# choice_group is a short slug (<=50 chars) unique per entry; default option is first in group.
+# "any martial/simple weapon" options use a curated list of named catalogue items.
+# Pack choices list the real packs by name; Entertainer's Pack enters the catalogue here.
 CLASS_EQUIPMENT = {
     "Barbarian": {
         "coins_cp": 200,  # 2d4 × 10 gp average = 50 gp = 5000 cp, but 2024 uses fixed
@@ -32,10 +37,14 @@ CLASS_EQUIPMENT = {
             ("Handaxe", 500, "🪓", "standard", "", 2, False, ""),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, False, ""),
             ("Javelin", 50, "🏹", "standard", "", 4, False, ""),
-        ],
-        "choices": [
-            # Greataxe OR any martial melee weapon - we'll use Greataxe as default
-            # Two handaxes OR any simple weapon - we'll use Handaxe as default
+            # Choice group: weapon (Greataxe OR any martial melee weapon)
+            ("Battleaxe", 1000, "🪓", "standard", "", 1, True, "weapon"),
+            ("Longsword", 1500, "🗡️", "fine", "", 1, True, "weapon"),
+            ("Warhammer", 1500, "⚔️", "standard", "", 1, True, "weapon"),
+            # Choice group: simple_weapon (Two handaxes OR any simple weapon)
+            ("Mace", 500, "⚔️", "standard", "", 1, True, "simple_weapon"),
+            ("Spear", 100, "🏹", "standard", "", 1, True, "simple_weapon"),
+            ("Quarterstaff", 200, "🪄", "standard", "", 1, True, "simple_weapon"),
         ],
     },
     "Bard": {
@@ -46,11 +55,17 @@ CLASS_EQUIPMENT = {
             ("Dagger", 200, "🗡️", "standard", "", 1, False, ""),
             ("Diplomat's Pack", 3900, "🎒", "standard", "", 1, False, ""),
             ("Lute", 3500, "🎵", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Rapier OR longsword OR any simple weapon
-            # Diplomat's pack OR entertainer's pack
-            # Lute OR any musical instrument
+            # Choice group: weapon (Rapier OR longsword OR any simple weapon)
+            ("Longsword", 1500, "🗡️", "fine", "", 1, True, "weapon"),
+            ("Shortsword", 1000, "🗡️", "fine", "", 1, True, "weapon"),
+            ("Mace", 500, "⚔️", "standard", "", 1, True, "weapon"),
+            ("Spear", 100, "🏹", "standard", "", 1, True, "weapon"),
+            # Choice group: pack (Diplomat's pack OR entertainer's pack)
+            ("Entertainer's Pack", 4000, "🎒", "standard", "", 1, True, "pack"),
+            # Choice group: instrument (Lute OR any musical instrument)
+            ("Flute", 200, "🎵", "standard", "", 1, True, "instrument"),
+            ("Lyre", 300, "🎵", "standard", "", 1, True, "instrument"),
+            ("Horn", 300, "📯", "standard", "", 1, True, "instrument"),
         ],
     },
     "Cleric": {
@@ -63,12 +78,17 @@ CLASS_EQUIPMENT = {
             ("Priest's Pack", 1900, "🎒", "standard", "", 1, False, ""),
             ("Shield", 1000, "🛡️", "standard", "", 1, False, ""),
             ("Holy Symbol (Amulet)", 500, "✝️", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Mace OR warhammer
-            # Scale mail OR leather armor OR chain mail
-            # Light crossbow + 20 bolts OR any simple weapon
-            # Priest's pack OR explorer's pack
+            # Choice group: melee_weapon (Mace OR warhammer)
+            ("Warhammer", 1500, "⚔️", "standard", "", 1, True, "melee_weapon"),
+            # Choice group: armor (Scale mail OR leather armor OR chain mail)
+            ("Leather Armor", 1000, "🧥", "standard", "", 1, True, "armor"),
+            ("Chain Mail", 7500, "🛡️", "standard", "", 1, True, "armor"),
+            # Choice group: ranged (Light crossbow + 20 bolts OR any simple weapon)
+            ("Shortbow", 2500, "🏹", "fine", "", 1, True, "ranged"),
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
+            ("Javelin", 50, "🏹", "standard", "", 1, True, "ranged"),
+            # Choice group: pack (Priest's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Druid": {
@@ -79,10 +99,14 @@ CLASS_EQUIPMENT = {
             ("Leather Armor", 1000, "🧥", "standard", "", 1, False, ""),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, False, ""),
             ("Druidic Focus (Staff)", 500, "🪄", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Wooden shield OR any simple weapon
-            # Scimitar OR any simple melee weapon
+            # Choice group: shield_or_weapon (Wooden shield OR any simple weapon)
+            ("Quarterstaff", 200, "🪄", "standard", "", 1, True, "shield_or_weapon"),
+            ("Spear", 100, "🏹", "standard", "", 1, True, "shield_or_weapon"),
+            ("Club", 10, "⚔️", "standard", "", 1, True, "shield_or_weapon"),
+            # Choice group: melee (Scimitar OR any simple melee weapon)
+            ("Sickle", 100, "🔪", "standard", "", 1, True, "melee"),
+            ("Dagger", 200, "🗡️", "standard", "", 1, True, "melee"),
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "melee"),
         ],
     },
     "Fighter": {
@@ -94,12 +118,18 @@ CLASS_EQUIPMENT = {
             ("Light Crossbow", 2500, "🏹", "standard", "", 1, False, ""),
             ("Crossbow Bolt", 1, "🏹", "trivial", "", 20, False, ""),
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Chain mail OR leather armor + longbow + 20 arrows
-            # Martial weapon + shield OR two martial weapons
-            # Light crossbow + 20 bolts OR two handaxes
-            # Dungeoneer's pack OR explorer's pack
+            # Choice group: armor (Chain mail OR leather armor + longbow + 20 arrows)
+            ("Leather Armor", 1000, "🧥", "standard", "", 1, True, "armor"),
+            ("Longbow", 5000, "🏹", "fine", "", 1, True, "armor"),
+            ("Arrow", 1, "🏹", "trivial", "", 20, True, "armor"),
+            # Choice group: weapons (Martial weapon + shield OR two martial weapons)
+            ("Battleaxe", 1000, "🪓", "standard", "", 1, True, "weapons"),
+            ("Warhammer", 1500, "⚔️", "standard", "", 1, True, "weapons"),
+            ("Greatsword", 5000, "🗡️", "fine", "", 1, True, "weapons"),
+            # Choice group: ranged (Light crossbow + 20 bolts OR two handaxes)
+            ("Handaxe", 500, "🪓", "standard", "", 2, True, "ranged"),
+            # Choice group: pack (Dungeoneer's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Monk": {
@@ -108,10 +138,12 @@ CLASS_EQUIPMENT = {
             ("Shortsword", 1000, "🗡️", "fine", "", 1, False, ""),
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, False, ""),
             ("Dart", 5, "🏹", "trivial", "", 10, False, ""),
-        ],
-        "choices": [
-            # Shortsword OR any simple weapon
-            # Dungeoneer's pack OR explorer's pack
+            # Choice group: weapon (Shortsword OR any simple weapon)
+            ("Spear", 100, "🏹", "standard", "", 1, True, "weapon"),
+            ("Quarterstaff", 200, "🪄", "standard", "", 1, True, "weapon"),
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "weapon"),
+            # Choice group: pack (Dungeoneer's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Paladin": {
@@ -123,11 +155,16 @@ CLASS_EQUIPMENT = {
             ("Priest's Pack", 1900, "🎒", "standard", "", 1, False, ""),
             ("Chain Mail", 7500, "🛡️", "standard", "", 1, False, ""),
             ("Holy Symbol (Amulet)", 500, "✝️", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Martial weapon + shield OR two martial weapons
-            # Five javelins OR any simple melee weapon
-            # Priest's pack OR explorer's pack
+            # Choice group: weapons (Martial weapon + shield OR two martial weapons)
+            ("Battleaxe", 1000, "🪓", "standard", "", 1, True, "weapons"),
+            ("Warhammer", 1500, "⚔️", "standard", "", 1, True, "weapons"),
+            ("Greatsword", 5000, "🗡️", "fine", "", 1, True, "weapons"),
+            # Choice group: ranged (Five javelins OR any simple melee weapon)
+            ("Spear", 100, "🏹", "standard", "", 1, True, "ranged"),
+            ("Mace", 500, "⚔️", "standard", "", 1, True, "ranged"),
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
+            # Choice group: pack (Priest's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Ranger": {
@@ -138,11 +175,13 @@ CLASS_EQUIPMENT = {
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, False, ""),
             ("Longbow", 5000, "🏹", "fine", "", 1, False, ""),
             ("Arrow", 1, "🏹", "trivial", "", 20, False, ""),
-        ],
-        "choices": [
-            # Scale mail OR leather armor
-            # Two shortswords OR two simple melee weapons
-            # Dungeoneer's pack OR explorer's pack
+            # Choice group: armor (Scale mail OR leather armor)
+            ("Leather Armor", 1000, "🧥", "standard", "", 1, True, "armor"),
+            # Choice group: weapons (Two shortswords OR two simple melee weapons)
+            ("Handaxe", 500, "🪓", "standard", "", 2, True, "weapons"),
+            ("Spear", 100, "🏹", "standard", "", 2, True, "weapons"),
+            # Choice group: pack (Dungeoneer's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Rogue": {
@@ -155,11 +194,13 @@ CLASS_EQUIPMENT = {
             ("Leather Armor", 1000, "🧥", "standard", "", 1, False, ""),
             ("Dagger", 200, "🗡️", "standard", "", 2, False, ""),
             ("Thieves' Tools", 2500, "🔧", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Rapier OR shortsword
-            # Shortbow + 20 arrows OR shortsword
-            # Burglar's pack OR dungeoneer's pack OR explorer's pack
+            # Choice group: weapon (Rapier OR shortsword)
+            ("Shortsword", 1000, "🗡️", "fine", "", 1, True, "weapon"),
+            # Choice group: ranged (Shortbow + 20 arrows OR handaxe)
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
+            # Choice group: pack (Burglar's pack OR dungeoneer's pack OR explorer's pack)
+            ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, True, "pack"),
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Sorcerer": {
@@ -170,11 +211,18 @@ CLASS_EQUIPMENT = {
             ("Component Pouch", 2500, "💼", "standard", "", 1, False, ""),
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, False, ""),
             ("Dagger", 200, "🗡️", "standard", "", 2, False, ""),
-        ],
-        "choices": [
-            # Light crossbow + 20 bolts OR any simple weapon
-            # Component pouch OR arcane focus
-            # Dungeoneer's pack OR explorer's pack
+            # Choice group: ranged (Light crossbow + 20 bolts OR any simple weapon)
+            ("Quarterstaff", 200, "🪄", "standard", "", 1, True, "ranged"),
+            ("Spear", 100, "🏹", "standard", "", 1, True, "ranged"),
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
+            # Choice group: focus (Component pouch OR arcane focus)
+            ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Orb)", 1000, "🔮", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Staff)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            # Choice group: pack (Dungeoneer's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Warlock": {
@@ -186,11 +234,18 @@ CLASS_EQUIPMENT = {
             ("Scholar's Pack", 4000, "🎒", "standard", "", 1, False, ""),
             ("Leather Armor", 1000, "🧥", "standard", "", 1, False, ""),
             ("Dagger", 200, "🗡️", "standard", "", 2, False, ""),
-        ],
-        "choices": [
-            # Light crossbow + 20 bolts OR any simple weapon
-            # Component pouch OR arcane focus
-            # Scholar's pack OR dungeoneer's pack
+            # Choice group: ranged (Light crossbow + 20 bolts OR any simple weapon)
+            ("Quarterstaff", 200, "🪄", "standard", "", 1, True, "ranged"),
+            ("Spear", 100, "🏹", "standard", "", 1, True, "ranged"),
+            ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
+            # Choice group: focus (Component pouch OR arcane focus)
+            ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Orb)", 1000, "🔮", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Staff)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            # Choice group: pack (Scholar's pack OR dungeoneer's pack)
+            ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
     "Wizard": {
@@ -200,16 +255,26 @@ CLASS_EQUIPMENT = {
             ("Component Pouch", 2500, "💼", "standard", "", 1, False, ""),
             ("Scholar's Pack", 4000, "🎒", "standard", "", 1, False, ""),
             ("Spellbook", 5000, "📖", "standard", "", 1, False, ""),
-        ],
-        "choices": [
-            # Quarterstaff OR dagger
-            # Component pouch OR arcane focus
-            # Scholar's pack OR explorer's pack
+            # Choice group: weapon (Quarterstaff OR dagger)
+            ("Dagger", 200, "🗡️", "standard", "", 1, True, "weapon"),
+            # Choice group: focus (Component pouch OR arcane focus)
+            ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Orb)", 1000, "🔮", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Staff)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            # Choice group: pack (Scholar's pack OR explorer's pack)
+            ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
 }
 
 # 2024 D&D Background starting equipment (PHB 2024)
+# Choice groups added where the 2024 PHB gives a real option and the data had a stand-in.
+# - Entertainer: instrument (Lute / other)
+# - Artisan: tools (type of artisan's tools)
+# - Guide / Sailor: navigator's tools
+# - Soldier: gaming set
 BACKGROUND_EQUIPMENT = {
     "Acolyte": {
         "coins_cp": 1500,  # 15 gp
@@ -224,8 +289,18 @@ BACKGROUND_EQUIPMENT = {
     "Artisan": {
         "coins_cp": 2000,  # 20 gp
         "items": [
-            ("Artisan's Tools", 2000, "🔨", "standard", "", 1, False, ""),
+            ("Artisan's Tools (Woodcarver's)", 2000, "🔨", "standard", "", 1, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
+            # Choice group: tools (type of artisan's tools)
+            ("Artisan's Tools (Brewer's)", 2000, "🍺", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Calligrapher's)", 1000, "🖋️", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Carpenter's)", 1000, "🔨", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Leatherworker's)", 2000, "🔨", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Mason's)", 2000, "🔨", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Potter's)", 2000, "🏺", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Smith's)", 2000, "🔨", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Tinker's)", 1000, "🔧", "standard", "", 1, True, "tools"),
+            ("Artisan's Tools (Weaver's)", 2000, "🧵", "standard", "", 1, True, "tools"),
         ],
     },
     "Charlatan": {
@@ -249,6 +324,11 @@ BACKGROUND_EQUIPMENT = {
             ("Musical Instrument (Lute)", 3500, "🎵", "standard", "", 1, False, ""),
             ("Costume", 500, "🎭", "standard", "", 1, False, ""),
             ("Mirror", 500, "🪞", "standard", "", 1, False, ""),
+            # Choice group: instrument (Lute / other)
+            ("Musical Instrument (Flute)", 200, "🎵", "standard", "", 1, True, "instrument"),
+            ("Musical Instrument (Lyre)", 300, "🎵", "standard", "", 1, True, "instrument"),
+            ("Musical Instrument (Horn)", 300, "📯", "standard", "", 1, True, "instrument"),
+            ("Musical Instrument (Drum)", 600, "🥁", "standard", "", 1, True, "instrument"),
         ],
     },
     "Farmer": {
@@ -273,6 +353,8 @@ BACKGROUND_EQUIPMENT = {
             ("Navigator's Tools", 2500, "🧭", "standard", "", 1, False, ""),
             ("Walking Stick", 10, "🦯", "trivial", "", 1, False, ""),
             ("Traveler's Clothes", 200, "👕", "standard", "", 1, False, ""),
+            # Choice group: navigator (Navigator's tools)
+            ("Cartographer's Tools", 1500, "🗺️", "standard", "", 1, True, "navigator"),
         ],
     },
     "Hermit": {
@@ -311,6 +393,8 @@ BACKGROUND_EQUIPMENT = {
         "items": [
             ("Navigator's Tools", 2500, "🧭", "standard", "", 1, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
+            # Choice group: navigator (Navigator's tools)
+            ("Cartographer's Tools", 1500, "🗺️", "standard", "", 1, True, "navigator"),
         ],
     },
     "Scribe": {
@@ -326,6 +410,9 @@ BACKGROUND_EQUIPMENT = {
             ("Insignia of Rank", 100, "🎖️", "trivial", "", 1, False, ""),
             ("Gaming Set (Dice)", 100, "🎲", "trivial", "", 1, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
+            # Choice group: gaming_set
+            ("Gaming Set (Playing Cards)", 100, "🎴", "trivial", "", 1, True, "gaming_set"),
+            ("Gaming Set (Dragonchess)", 100, "♟️", "trivial", "", 1, True, "gaming_set"),
         ],
     },
     "Wayfarer": {
@@ -385,6 +472,7 @@ class SeedSummary:
     background_entries_updated: int = 0
     level_coins_created: int = 0
     level_coins_updated: int = 0
+    packs_configured: int = 0
 
 
 def _create_items(club: Club) -> int:
@@ -586,8 +674,10 @@ def seed_default_starting_equipment(
     """Seed the default starting equipment template for a club.
 
     This function is idempotent: if the template already exists and `force`
-    is False, it returns a summary with `skipped=True` and makes no changes.
-    If `force` is True, existing entries are updated to match the default data.
+    is False, it returns a summary with `skipped=True` and makes no changes
+    to the template/lines. However, pack seeding runs on every run (it is
+    idempotent and safe). If `force` is True, existing entries are updated
+    to match the default data.
 
     Args:
         club: The club to seed equipment for.
@@ -617,11 +707,25 @@ def seed_default_starting_equipment(
         summary = SeedSummary(template_created=created)
 
         if not created and not force:
+            # On skipped path, still run pack seeding (idempotent) after ensuring items exist
+            summary.items_created = _create_items(club)
+            try:
+                pack_summary = seed_pack_containers(club)
+            except PackSeedingError as err:
+                raise StartingEquipmentSeedError(str(err)) from err
+            summary.packs_configured = pack_summary.configured
             summary.skipped = True
             return summary
 
         # Create all items needed
         summary.items_created = _create_items(club)
+
+        # Run pack seeding (idempotent)
+        try:
+            pack_summary = seed_pack_containers(club)
+        except PackSeedingError as err:
+            raise StartingEquipmentSeedError(str(err)) from err
+        summary.packs_configured = pack_summary.configured
 
         # Create class entries
         (

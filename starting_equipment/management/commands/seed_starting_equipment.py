@@ -81,5 +81,7 @@ class Command(BaseCommand):
             f"Level coins: {summary.level_coins_created} created, "
             f"{summary.level_coins_updated} updated"
         )
+        if summary.packs_configured:
+            self.stdout.write(f"Packs configured: {summary.packs_configured}")
 
         self.stdout.write(self.style.SUCCESS(f"Successfully seeded '{template_name}' template"))

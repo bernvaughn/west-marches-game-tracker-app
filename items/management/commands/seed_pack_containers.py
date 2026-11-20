@@ -5,92 +5,12 @@ from django.db import transaction
 
 from accounts.models import Club
 from items.containers import validate_container_config
-from items.models import ContainerSlot, ContainerSlotOption, Item
-
-# Pack definitions: pack name -> list of (content name, qty_min, qty_max, value_cp, symbol)
-# Based on 2024 PHB contents. All slots are fixed (chance 100, one option, not unknown).
-PACKS = {
-    "Diplomat's Pack": [
-        ("Chest", 1, 1, 500, "🧰"),
-        ("Map or Scroll Case", 2, 2, 100, "📜"),
-        ("Fine Clothes", 1, 1, 1500, "👔"),
-        ("Ink (1 oz)", 1, 1, 1000, "🖋️"),
-        ("Ink Pen", 1, 1, 2, "🖋️"),
-        ("Lamp", 1, 1, 50, "🪔"),
-        ("Oil (flask)", 2, 2, 10, "🛢️"),
-        ("Paper (one sheet)", 5, 5, 20, "📄"),
-        ("Perfume (vial)", 1, 1, 500, "🧴"),
-        ("Sealing Wax", 1, 1, 50, "🕯️"),
-        ("Soap", 1, 1, 2, "🧼"),
-    ],
-    "Explorer's Pack": [
-        ("Backpack", 1, 1, 200, "🎒"),
-        ("Bedroll", 1, 1, 100, "🛌"),
-        ("Mess kit", 1, 1, 20, "🍳"),
-        ("Tinderbox", 1, 1, 50, "🔥"),
-        ("Torch", 10, 10, 1, "🔦"),
-        ("Ration", 10, 10, 50, "🍞"),
-        ("Waterskin", 1, 1, 20, "💧"),
-        ("Hempen rope (50 ft)", 1, 1, 100, "🪢"),
-    ],
-    "Priest's Pack": [
-        ("Backpack", 1, 1, 200, "🎒"),
-        ("Blanket", 1, 1, 50, "🛌"),
-        ("Candle", 10, 10, 1, "🕯️"),
-        ("Tinderbox", 1, 1, 50, "🔥"),
-        ("Alms box", 1, 1, 10, "📦"),
-        ("Block of incense", 2, 2, 10, "🕯️"),
-        ("Censer", 1, 1, 50, "⚱️"),
-        ("Vestments", 1, 1, 500, "👘"),
-        ("Ration", 2, 2, 50, "🍞"),
-        ("Waterskin", 1, 1, 20, "💧"),
-    ],
-    "Dungeoneer's Pack": [
-        ("Backpack", 1, 1, 200, "🎒"),
-        ("Crowbar", 1, 1, 200, "🔨"),
-        ("Hammer", 1, 1, 100, "🔨"),
-        ("Piton", 10, 10, 5, "⚓"),
-        ("Torch", 10, 10, 1, "🔦"),
-        ("Tinderbox", 1, 1, 50, "🔥"),
-        ("Ration", 10, 10, 50, "🍞"),
-        ("Waterskin", 1, 1, 20, "💧"),
-        ("Hempen rope (50 ft)", 1, 1, 100, "🪢"),
-    ],
-    "Burglar's Pack": [
-        ("Backpack", 1, 1, 200, "🎒"),
-        ("Ball bearings (1,000)", 1, 1, 100, "⚪"),
-        ("String (10 ft)", 1, 1, 1, "🧵"),
-        ("Bell", 1, 1, 10, "🔔"),
-        ("Candle", 5, 5, 1, "🕯️"),
-        ("Crowbar", 1, 1, 200, "🔨"),
-        ("Hammer", 1, 1, 100, "🔨"),
-        ("Piton", 10, 10, 5, "⚓"),
-        ("Hooded lantern", 1, 1, 500, "🏮"),
-        ("Oil (flask)", 2, 2, 100, "🛢️"),
-        ("Ration", 5, 5, 50, "🍞"),
-        ("Tinderbox", 1, 1, 50, "🔥"),
-        ("Waterskin", 1, 1, 20, "💧"),
-        ("Hempen rope (50 ft)", 1, 1, 100, "🪢"),
-    ],
-    "Scholar's Pack": [
-        ("Backpack", 1, 1, 200, "🎒"),
-        ("Book", 1, 1, 2500, "📖"),
-        ("Ink pen", 1, 1, 20, "🖋️"),
-        ("Ink (1 oz)", 1, 1, 100, "🖋️"),
-        ("Parchment (10 sheets)", 1, 1, 100, "📜"),
-        ("Little bag of sand", 1, 1, 1, "🏖️"),
-        ("Small knife", 1, 1, 20, "🔪"),
-    ],
-    "Entertainer's Pack": [
-        ("Backpack", 1, 1, 200, "🎒"),
-        ("Bedroll", 1, 1, 100, "🛌"),
-        ("Costume", 2, 2, 500, "🎭"),
-        ("Ration", 5, 5, 50, "🍞"),
-        ("Waterskin", 1, 1, 20, "💧"),
-        ("Instrument (lute)", 1, 1, 3500, "🎵"),
-        ("Mirror", 1, 1, 500, "🪞"),
-    ],
-}
+from items.models import ContainerSlot, ContainerSlotOption
+from items.pack_seeding import (
+    PACKS,
+    _get_or_create_content_item,
+    _get_pack_item,
+)
 
 
 class Command(BaseCommand):
@@ -132,12 +52,7 @@ class Command(BaseCommand):
 
         with transaction.atomic():
             for pack_name, contents in PACKS.items():
-                result = self._process_pack(
-                    club,
-                    pack_name,
-                    contents,
-                    dry_run,
-                )
+                result = self._process_pack(club, pack_name, contents)
                 if result == "configured":
                     packs_configured += 1
                 elif result == "not_in_catalogue":
@@ -149,7 +64,7 @@ class Command(BaseCommand):
                 transaction.set_rollback(True)
                 self.stdout.write(self.style.WARNING("Dry run complete - rolled back"))
 
-        # Summary
+        # Summary (same text as before for test compatibility)
         self.stdout.write("")
         self.stdout.write("Summary:")
         self.stdout.write(f"  Packs configured: {packs_configured}")
@@ -158,12 +73,10 @@ class Command(BaseCommand):
             f"  Packs skipped (already configured): {packs_skipped_already_configured}"
         )
 
-    def _process_pack(self, club, pack_name, contents, dry_run):
+    def _process_pack(self, club, pack_name, contents):
         """Process a single pack. Returns status string."""
         # Find the pack item in the club (case-insensitive, prefer non-retired)
-        pack = (
-            Item.objects.filter(club=club, name__iexact=pack_name).order_by("retired", "pk").first()
-        )
+        pack = _get_pack_item(club, pack_name)
         if not pack:
             self.stdout.write(f"  {pack_name}: not in catalogue, skipping")
             return "not_in_catalogue"
@@ -188,20 +101,10 @@ class Command(BaseCommand):
                 continue
 
             # Reuse or create content item (case-insensitive, prefer non-retired)
-            content_item = (
-                Item.objects.filter(club=club, name__iexact=content_name)
-                .order_by("retired", "pk")
-                .first()
+            content_item, created = _get_or_create_content_item(
+                club, content_name, value_cp, symbol
             )
-            if not content_item:
-                content_item = Item.objects.create(
-                    club=club,
-                    name=content_name,
-                    value_cp=value_cp,
-                    symbol=symbol,
-                    retired=False,
-                    is_container=False,
-                )
+            if created:
                 content_items_created += 1
                 self.stdout.write(f"    Created content item: {content_name}")
 

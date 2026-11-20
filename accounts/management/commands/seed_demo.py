@@ -21,6 +21,22 @@ class Command(BaseCommand):
             club = accounts_demo.seed()
             for module in (
                 items_demo,
+                # Seed starting equipment BEFORE characters so packs exist when demo gear is given.
+                # Pass --force so an existing demo DB upgrades its default template
+                # (demo data is disposable; admin edits to the demo template
+                # are expected to be overwritten).
+            ):
+                module.seed(club)
+
+            call_command(
+                "seed_starting_equipment",
+                "--club",
+                club.slug,
+                "--force",
+                stdout=self.stdout,
+            )
+
+            for module in (
                 characters_demo,
                 shops_demo,
                 quests_demo,
@@ -31,12 +47,6 @@ class Command(BaseCommand):
             ):
                 module.seed(club)
 
-            call_command(
-                "seed_starting_equipment",
-                "--club",
-                club.slug,
-                stdout=self.stdout,
-            )
         out = self.stdout.write
         out(f"Demo club ready at /c/{club.slug}/")
         out("Demo logins:")

@@ -39,11 +39,16 @@ The site admin "new club" form seeds each new club.
 It seeds the XP table, the character options and the club admin.
 The club admin gets a temporary password.
 It also seeds the default item catalogue (about 100 items).
-It also seeds an active "2024 D&D Default" starting equipment template.
+It also seeds an active "2024 D&D Default" starting equipment template with choice groups for classes and backgrounds that have "or" options (e.g., weapon, pack, armor). The claim grants a default pick (first option) for each choice group.
+Starting packs (Explorer's Pack, Priest's Pack, Dungeoneer's Pack, Burglar's Pack, Scholar's Pack, Diplomat's Pack, Entertainer's Pack) are configured as containers with their PHB contents and can be opened.
 It does not seed characters, shops, quests, maps, downtime actions or messages.
 The GM creates those.
-Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`.
+Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug> --force` to upgrade their template with choice groups and packs, or `uv run python manage.py seed_pack_containers --club <slug>` to configure packs only.
 See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
+
+## Demo data
+
+`seed_demo` now configures starting packs as containers and creates a demo character "Tilda Brightwater" (owned by bob@example.com) with an unopened Priest's Pack. The pack stays unopened until the player opens it.
 
 ## Running targeted tests
 
