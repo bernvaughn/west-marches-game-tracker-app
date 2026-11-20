@@ -1,7 +1,9 @@
 /* Components (U35). Tokens only: no raw hex here. Loaded after tokens.css. */
 
 /* ---- Base ---- */
-body { font-family: var(--wm-font-body); line-height: var(--wm-leading-normal); background: var(--wm-surface); color: var(--wm-text); }
+@media screen {
+  body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; font-family: var(--wm-font-body); line-height: var(--wm-leading-normal); background: var(--wm-surface); color: var(--wm-text); }
+}
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
   font-family: var(--wm-font-heading); font-weight: 700; line-height: var(--wm-leading-tight); color: var(--wm-text);
 }
@@ -125,7 +127,7 @@ fieldset.wm-field > legend { float: none; width: auto; padding: 0; font-size: va
 main > .wm-messages:first-child, .wm-page-header + .wm-messages { margin-top: var(--wm-space-3); }
 
 /* ---- Page layout ---- */
-.wm-main { padding: var(--wm-space-4); max-width: 72rem; margin-inline: auto; }
+.wm-main { padding: var(--wm-space-4); max-width: 72rem; margin-inline: auto; flex: 1 0 auto; width: 100%; }
 @media (min-width: 576px) { .wm-main { padding: var(--wm-space-5) var(--wm-space-6); } }
 .wm-main--narrow { max-width: 72rem; margin-inline: auto; }
 .wm-main--full { max-width: none; }
