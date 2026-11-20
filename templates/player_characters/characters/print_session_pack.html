@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins static %}
+{% load coins static units %}
 {% block title %}Session Pack: {{ character.name }}{% endblock %}
 {% block main_class %}wm-card-print{% endblock %}
 {% block content %}
@@ -100,8 +100,8 @@
         {% for r in inv_rows %}
         <tr>
           <td>{% include "items/_item_name.html" with item=r.item info=True %}{% if r.item.retired %} {% include "components/badge.html" with text="Retired" %}{% endif %}</td>
-          <td class="num">{{ r.owned }}</td>
-          <td class="num">{{ r.available }}</td>
+          <td class="num">{% if r.item.is_stacked %}{% if r.owned > 0 %}{{ r.item|with_units:r.owned }}{% else %}0{% endif %}{% else %}{{ r.owned }}{% endif %}</td>
+          <td class="num">{% if r.item.is_stacked %}{% if r.available > 0 %}{{ r.item|with_units:r.available }}{% else %}0{% endif %}{% else %}{{ r.available }}{% endif %}</td>
         </tr>
         {% endfor %}
         </tbody>
