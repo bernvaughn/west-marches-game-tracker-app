@@ -1,6 +1,7 @@
-"""Helpers for the character sheet: ability modifiers and passive Perception."""
+"""Helpers for the character sheet: ability modifiers, passive Perception and XP progress."""
 
 from .models import ABILITIES
+from .xp_levels import MAX_LEVEL, level_for_xp, next_threshold, progress_fraction
 
 DASH = "—"
 MINUS = "−"
@@ -72,3 +73,39 @@ def ability_rows(character):
             }
         )
     return rows
+
+
+def xp_progress(character):
+    """XP progress for the sheet, or None when XP is blank.
+
+    The bar is driven by XP alone. The stored level only drives the
+    "level up ready" badge and the max-level check. The app never
+    changes the level itself.
+    """
+    if character.xp is None:
+        return None
+    xp = character.xp
+    level = character.level
+    xp_level = level_for_xp(xp)
+    threshold = next_threshold(xp)
+    # "Max level" follows the stored level. A blank level falls back to XP.
+    # A stored level below 20 with 355,000+ XP still gets the badge.
+    if level is None:
+        is_max = threshold is None
+    else:
+        is_max = level >= MAX_LEVEL
+    level_up_ready = level is not None and level < xp_level
+    progress = {
+        "xp": xp,
+        "xp_level": xp_level,
+        "next_level": None if threshold is None else xp_level + 1,
+        "next_threshold": threshold,
+        "percent": int(progress_fraction(xp) * 100),
+        "is_max": is_max,
+        "level_up_ready": level_up_ready,
+    }
+    if threshold is not None:
+        progress["xp_label"] = f"{xp:,} / {threshold:,} XP to level {xp_level + 1}"
+    else:
+        progress["xp_label"] = f"{xp:,} XP (level {MAX_LEVEL} reached)"
+    return progress

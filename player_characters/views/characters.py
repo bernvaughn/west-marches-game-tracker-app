@@ -24,7 +24,12 @@ from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
 from ..models import Character
 from ..player_shop import listed_quantity
-from ..sheet import ability_rows, edit_current_values, passive_perception_label
+from ..sheet import (
+    ability_rows,
+    edit_current_values,
+    passive_perception_label,
+    xp_progress,
+)
 
 
 @method_decorator(club_member_required, name="dispatch")
@@ -177,6 +182,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             char_ctx = self.get_character_context(character)
             ctx["abilities"] = ability_rows(character)
             ctx["passive_perception"] = passive_perception_label(character.perception_bonus)
+            ctx["xp_progress"] = xp_progress(character)
             ctx["rows"] = char_ctx["inventory_rows"]
             ctx["coins"] = char_ctx["coin_summary"]
             ctx["junk"] = {r.item.pk: r.quantity for r in char_ctx["junk_rows"]}

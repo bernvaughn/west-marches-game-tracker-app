@@ -1,0 +1,28 @@
+{% comment %}XP progress bar and level-up nudge. Renders nothing for blank XP.
+Context: xp_progress (from sheet.xp_progress), can_edit, character, club.{% endcomment %}
+{% if xp_progress %}
+{% if xp_progress.is_max %}
+<p class="wm-xp-text">Max level</p>
+{% else %}
+<div class="wm-xp">
+  {% if xp_progress.next_threshold %}
+  <div
+    class="wm-xp-bar"
+    role="progressbar"
+    aria-label="XP progress toward level {{ xp_progress.next_level }}"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="{{ xp_progress.percent }}"
+  >
+    <div class="wm-xp-fill" style="width: {{ xp_progress.percent }}%"></div>
+  </div>
+  {% endif %}
+  <p class="wm-xp-text">{{ xp_progress.xp_label }}</p>
+  {% if xp_progress.level_up_ready and can_edit %}
+    <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}">
+      {% include "components/badge.html" with status="warning" text="Level up ready" %}
+    </a>
+  {% endif %}
+</div>
+{% endif %}
+{% endif %}
