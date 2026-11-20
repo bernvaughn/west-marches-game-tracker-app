@@ -3,11 +3,11 @@
 import pytest
 from django.urls import reverse
 
+from accounts.models import Membership
 from items.models import ContainerOpening
 from items.tests.factories import _get_or_create_item, add_slot, make_container
 from ledger.services import available_items
 from player_characters.models import Character
-from accounts.models import Membership
 
 
 @pytest.fixture
@@ -154,7 +154,6 @@ class TestBulkAwardGrantContainer:
         self, client, club, game_master, container_party_chest
     ):
         """Bulk award to multiple characters with container."""
-        from accounts.models import Membership
 
         owner = Membership.objects.get(user=game_master, club=club)
         char1 = Character.objects.create(club=club, owner=owner, name="Char1")
