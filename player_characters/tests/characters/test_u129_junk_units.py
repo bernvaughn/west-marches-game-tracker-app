@@ -3,7 +3,7 @@
 import pytest
 from django.urls import reverse
 
-from items.tests.factories import make_parchment, make_rope
+from items.tests.factories import make_parchment
 from ledger.services import Line, record
 from player_characters.junk import JunkError, junk_rows, set_junk
 from player_characters.models import JunkMark
@@ -78,6 +78,7 @@ def test_other_club_character_404(club, login, player, owned, parchment, other_c
     foreign_user = User.objects.create_user("x@example.com", password="pw", display_name="X")
     foreign_member = Membership.objects.create(user=foreign_user, club=other_club)
     from player_characters.models import Character
+
     foreign_character = Character.objects.create(club=other_club, owner=foreign_member, name="Zed")
     c = login(player)
     assert c.get(junk_url(club, foreign_character, parchment)).status_code == 404
@@ -85,6 +86,7 @@ def test_other_club_character_404(club, login, player, owned, parchment, other_c
 
 def test_other_club_item_404(club, login, player, owned, parchment, other_club):
     from items.models import Item
+
     foreign_item = Item.objects.create(club=other_club, name="Foreign Parchment", value_cp=100)
     c = login(player)
     assert c.get(junk_url(club, owned, foreign_item)).status_code == 404

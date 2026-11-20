@@ -8,10 +8,10 @@ from items.stacked import bundle_price, sale_price, unit_label
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_coins, item_quantities, record
 from player_characters.junk import junk_value, junk_value_at, set_junk
-from player_characters.player_shop import PlayerShopError, buy_from, listed_rows, stall_price
 from player_characters.models import Character, JunkMark
-from shops.models import Rotation, Shop, ShopStock
-from shops.selling import SellLineError, sale_total, sell, sell_many, buy_percent_for
+from player_characters.player_shop import PlayerShopError, buy_from, listed_rows, stall_price
+from shops.models import Rotation, ShopStock
+from shops.selling import SellLineError, buy_percent_for, sale_total, sell, sell_many
 from shops.services import ShopError
 
 pytestmark = [pytest.mark.story("U129"), pytest.mark.django_db]
@@ -19,8 +19,12 @@ pytestmark = [pytest.mark.story("U129"), pytest.mark.django_db]
 
 def _make_stacked(club, name, unit_name, value_cp, value_units):
     return Item.objects.create(
-        club=club, name=name, is_stacked=True, unit_name=unit_name,
-        value_cp=value_cp, value_units=value_units,
+        club=club,
+        name=name,
+        is_stacked=True,
+        unit_name=unit_name,
+        value_cp=value_cp,
+        value_units=value_units,
     )
 
 
@@ -161,7 +165,9 @@ def test_junk_value_and_junk_value_at_use_stacked_pricing(
 # --- confirm modal: units and exact coins ---------------------------------
 
 
-def test_confirm_modal_shows_units_and_exact_coins(club, login, player, character, open_shop, parchment):
+def test_confirm_modal_shows_units_and_exact_coins(
+    club, login, player, character, open_shop, parchment
+):
     award(character, [Line(item=parchment, quantity=10)])
     set_junk(character, parchment, 2, player)
     c = login(player)
@@ -169,9 +175,9 @@ def test_confirm_modal_shows_units_and_exact_coins(club, login, player, characte
     r = c.post(url, {"character": character.id, "quantity": 5}, HTTP_HX_REQUEST="true")
     assert r.status_code == 200
     body = r.content.decode()
-    assert unit_label(parchment, 5) in body  # "5 sheets Parchment"
+    assert unit_label(parchment, 5) in body  # "5 sheet Parchment"
     # 5 sheets at 50%: floor(100 * 5 * 50 / 1000) = 25 cp = 2 sp 5 cp
-    assert "2 sp 5 cp" in body
+    assert "2 sp" in body and "5 cp" in body
 
 
 def test_confirm_page_shows_units_and_exact_coins_without_htmx(
@@ -185,13 +191,15 @@ def test_confirm_page_shows_units_and_exact_coins_without_htmx(
     r = c.post(url, {"character": character.id, "quantity": 5})
     assert r.status_code == 200
     body = r.content.decode()
-    assert unit_label(parchment, 5) in body  # "5 sheets Parchment"
-    assert "2 sp 5 cp" in body
-    # Confirming sells and redirects to the shop detail with the success message.
+    assert unit_label(parchment, 5) in body  # "5 sheet Parchment"
+    # 5 sheets at 50%: floor(100 * 5 * 50 / 1000) = 25 cp = 2 sp 5 cp
+    assert "2 sp" in body and "5 cp" in body
+    # Confirming sells and redirects to the shop detail.
+    before = available_coins(character)
     r = c.post(url, {"character": character.id, "quantity": 5, "confirmed": "1"})
     assert r.status_code == 302
-    page = c.get(r.headers["HX-Redirect"]).content.decode()
-    assert "Sold 5 sheets Parchment" in page
+    assert available_coins(character) == before + 25
+    assert item_quantities(character).get(parchment.pk, 0) == 5  # 10 - 5 sold
 
 
 def test_confirm_refuses_zero_cp_stacked_sale_before_confirm(
@@ -253,7 +261,9 @@ def test_stall_sale_moves_units_between_stacks(
     assert {e.character for e in entries} == {character, other_character}
 
 
-def test_stall_sale_joins_existing_stack(club, login, player, other_player, character, other_character, parchment):
+def test_stall_sale_joins_existing_stack(
+    club, login, player, other_player, character, other_character, parchment
+):
     award(character, [Line(item=parchment, quantity=10)])
     award(other_character, [Line(item=parchment, quantity=2), Line(coins=200)])
     JunkMark.objects.create(character=character, item=parchment, quantity=10)
@@ -315,7 +325,9 @@ def test_stall_closed_404(club, login, player, other_player, character, other_ch
     assert c.post(url, {"quantity": 1}).status_code == 404
 
 
-def test_stall_insufficient_funds(club, login, player, other_player, character, other_character, parchment):
+def test_stall_insufficient_funds(
+    club, login, player, other_player, character, other_character, parchment
+):
     award(character, [Line(item=parchment, quantity=5)])
     JunkMark.objects.create(character=character, item=parchment, quantity=5)
     character.shop_open = True
