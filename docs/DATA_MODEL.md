@@ -62,7 +62,7 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 | XP table | Default bands from `map/xp.py` (`copy_default_xp_table`). |
 | Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
 | Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
-| Items | Default item catalogue (about 140 items) from the starting-equipment data and the General Store gear list. |
+| Items | Default item catalogue (about 175 items) from the starting-equipment data and the General Store gear list. |
 | Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. Each "X or Y" option of the 2024 PHB is a choice group (see below). |
 | Starting packs | The seven standard packs (Explorer's, Priest's, Dungeoneer's, Burglar's, Scholar's, Diplomat's, Entertainer's) are containers with their PHB contents as fixed slots. A character can open them. |
 | Shops | General Store run by Mabel Packwell (halfling grocer), sells at 100%/buys at 75%, stocks all Adventuring Gear plus ammunition, unlimited quantity, in "Always open" rotation at street position 0. |
@@ -103,7 +103,7 @@ A player's email is shown only to club admins (U17).
 
 ### items
 
-- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 100 items). **`is_container`** (bool, default false) marks an item as openable.
+- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 175 items). **`is_container`** (bool, default false) marks an item as openable.
 - **Stacked item fields**: **`is_stacked`** (bool, default false) marks an item that is sold in bundles but used one unit at a time; an item is a container or stacked, never both. **`unit_name`** (char, 40, blank) names the unit, such as `sheet`, `ft`, or `arrow`; unit names are never pluralised. **`value_units`** (positive int, default 1) is the number of units that `value_cp` covers (1 for normal items). CHECK rules: a stacked item cannot be a container; `value_units` is at least 1; a stacked item must have a non-blank `unit_name`.
 - **Container slot**: belongs to a container item. `chance_pct` (1–100), `unknown` (bool, masks the slot as `???` before opening), `position` (order). At least one slot is required.
 - **Container slot option**: one row per possible outcome in a slot. `item` (FK Item, PROTECT), `qty_min`, `qty_max` (range, min≤max), `weight` (≥1). One option = fixed entry; several = weighted "pick one" table. Roll order: chance check, then weighted pick, then uniform quantity in [min, max].
