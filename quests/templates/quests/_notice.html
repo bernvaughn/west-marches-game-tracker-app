@@ -1,4 +1,4 @@
-{% load coins %}{% comment %}
+{% load coins loot_tags %}{% comment %}
   Quest notice. Context: quest, character (optional), stamp ("ready"/"done"/None), heading ("h1" or "h2"),
   large (bool), hide_title (bool: the page header shows the name), faded (bool), link_url (optional), label (optional faded badge text).
 {% endcomment %}
@@ -10,7 +10,7 @@
   {% if quest.description %}<p class="wm-notice-desc">{% if large %}{{ quest.description|linebreaksbr }}{% else %}{{ quest.description|truncatechars:140 }}{% endif %}</p>{% endif %}
   <dl class="wm-notice-info">
     <dt>Reward</dt>
-    <dd>{% for rw in quest.rewards.all %}{% if rw.item %}{{ rw.quantity }} x {% include "items/_item_name.html" with item=rw.item %}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    <dd>{% for rw in quest.rewards.all %}{% if rw.item %}{{ rw.quantity }} x {% include "items/_item_name.html" with item=rw.item %}{% loot_preview rw.item as loot_rows %}{% if loot_rows %}<details class="wm-loot-stock-preview"><summary>Preview contents</summary>{% include "components/loot_rows.html" with rows=loot_rows %}</details>{% endif %}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
     <dt>Bring</dt>
     <dd>{% for r in quest.requirements.all %}{{ r.quantity }} x {% include "items/_item_name.html" with item=r.item %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
     {% if quest.end_date %}<dt>Ends</dt><dd>{{ quest.end_date }}</dd>{% endif %}

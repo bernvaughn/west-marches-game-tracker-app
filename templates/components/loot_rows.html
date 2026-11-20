@@ -1,0 +1,15 @@
+{% comment %}
+loot_rows: Renders loot preview rows from a list of PreviewRow objects.
+
+Context: rows (list of PreviewRow from loot_preview())
+
+Usage:
+    {% loot_preview item as rows %}
+    {% if rows %}{% include "components/loot_rows.html" with rows=rows %}{% endif %}
+
+This is a wrapper around items/_loot_preview.html so call sites don't need to change
+if the inner template moves.
+{% endcomment %}
+{% if rows %}
+    {% include "items/_loot_preview.html" with rows=rows %}
+{% endif %}

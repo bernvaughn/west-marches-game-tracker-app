@@ -1,6 +1,8 @@
-{% load coins %}
+{% load coins loot_tags %}
 {% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=stock.item %}</h2>{% endif %}
 {% if stock.item.description %}<p>{{ stock.item.description }}</p>{% endif %}
+{% loot_preview stock.item as loot_rows %}
+{% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
 <dl class="wm-dl wm-shop-sums">
   <dt>Price each</dt><dd>{{ price|coins }}</dd>
   <dt>Base value</dt><dd>{{ base_value|coins }}</dd>

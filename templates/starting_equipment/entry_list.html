@@ -1,4 +1,5 @@
 {% extends "starting_equipment/base.html" %}
+{% load loot_tags %}
 {% block title %}{{ page_title }} - {{ club.name }}{% endblock %}
 
 {% block body %}
@@ -36,7 +37,10 @@
       <td class="text-end">{{ entry.coins_cp }}</td>
       <td>
         {% for line in entry.lines.all %}
-        {{ line.quantity }}&times; {{ line.item.name }}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}{% if not forloop.last %}, {% endif %}
+        {{ line.quantity }}&times; {% include "items/_item_name.html" with item=line.item %}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}
+        {% loot_preview line.item as loot_rows %}
+        {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+        {% if not forloop.last %}, {% endif %}
         {% empty %}
         <span class="text-muted">&mdash;</span>
         {% endfor %}
@@ -52,7 +56,10 @@
       <td class="text-end">{{ entry.coins_cp }}</td>
       <td>
         {% for line in entry.lines.all %}
-        {{ line.quantity }}&times; {{ line.item.name }}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}{% if not forloop.last %}, {% endif %}
+        {{ line.quantity }}&times; {% include "items/_item_name.html" with item=line.item %}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}
+        {% loot_preview line.item as loot_rows %}
+        {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+        {% if not forloop.last %}, {% endif %}
         {% empty %}
         <span class="text-muted">&mdash;</span>
         {% endfor %}
@@ -61,15 +68,18 @@
       <td class="text-center">{{ entry.level }}</td>
       <td class="text-end">{{ entry.coins_cp }}</td>
       {% elif entry_type == "magic-options" %}
-      <td>{{ entry.item.name }}</td>
+      <td>{% include "items/_item_name.html" with item=entry.item %}
+          {% loot_preview entry.item as loot_rows %}
+          {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+      </td>
       <td class="text-center">{{ entry.max_per_character }}</td>
       <td>{{ entry.notes|default:"&mdash;" }}</td>
       {% endif %}
       <td class="text-end">
-        <a href="{% url edit_url_name club.slug template.pk entry.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+        <a href="{% url "starting_equipment:"|add:edit_url_name club.slug template.pk entry.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
         <a
-          href="{% url delete_url_name club.slug template.pk entry.pk %}"
-          hx-get="{% url delete_url_name club.slug template.pk entry.pk %}"
+          href="{% url "starting_equipment:"|add:delete_url_name club.slug template.pk entry.pk %}"
+          hx-get="{% url "starting_equipment:"|add:delete_url_name club.slug template.pk entry.pk %}"
           hx-target="#app-modal .modal-content"
           data-app-modal
           class="btn btn-sm btn-outline-danger"

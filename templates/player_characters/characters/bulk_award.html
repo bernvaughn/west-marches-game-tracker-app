@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static character_tags coins %}
+{% load static character_tags coins loot_tags %}
 {% block title %}Award Loot to Party{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Award Loot to Party" %}
@@ -15,6 +15,13 @@
     </option>
     {% endfor %}
   </datalist>
+
+  <!-- Hidden loot preview templates for container items -->
+  {% for item_pk, rows in loot_previews.items %}
+    <template id="loot-preview-{{ item_pk }}">
+      {% include "components/loot_rows.html" with rows=rows %}
+    </template>
+  {% endfor %}
 
   <h2 class="h6">Characters</h2>
   {{ form.characters.errors }}
@@ -94,6 +101,7 @@
                  id="id_items_{{ c.pk }}-{{ row_num }}-value_override" min="0" value=""
                  placeholder="Override value (optional)">
         </div>
+        <div class="col-12 wm-loot-slot" hidden></div>
       </div>
       {% endfor %}
     </div>
@@ -138,11 +146,30 @@ document.addEventListener('DOMContentLoaded', function() {
       var selectedOption = document.querySelector('#item-catalogue option[value="' + this.value + '"]');
       if (selectedOption) {
         hiddenField.value = selectedOption.value;
+        // Show loot preview if this is a container item
+        showLootPreview(this, selectedOption.value);
       } else {
         hiddenField.value = '';
+        // Hide loot preview
+        showLootPreview(this, null);
       }
     });
   });
+
+  function showLootPreview(inputElement, itemId) {
+    // Each item row has its own preview slot.
+    var row = inputElement.closest('.wm-item-row');
+    var lootSlot = row ? row.querySelector('.wm-loot-slot') : null;
+    if (!lootSlot) return;
+    var template = itemId ? document.getElementById('loot-preview-' + itemId) : null;
+    if (template) {
+      lootSlot.replaceChildren(template.content.cloneNode(true));
+      lootSlot.hidden = false;
+    } else {
+      lootSlot.replaceChildren();
+      lootSlot.hidden = true;
+    }
+  }
 });
 </script>
 {% endblock %}
