@@ -19,6 +19,19 @@ ROUTES = [
 
 
 @pytest.mark.parametrize("route", ROUTES)
+def test_member_gets_200_on_own_club(route, login, player, club):
+    client = login(player)
+    if route == "club_home":
+        # Players are redirected to dashboard
+        response = client.get(reverse(route, args=[club.slug]), follow=True)
+        assert response.status_code == 200
+        # Check redirect chain
+        assert any("/accounts/dashboard/" in url for url, _ in response.redirect_chain)
+    else:
+        assert client.get(reverse(route, args=[club.slug])).status_code == 200
+
+
+@pytest.mark.parametrize("route", ROUTES)
 def test_member_gets_404_on_other_club(route, login, player, other_club):
     resp = login(player).get(reverse(route, args=[other_club.slug]))
     assert resp.status_code == 404

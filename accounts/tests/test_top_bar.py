@@ -1,7 +1,9 @@
 import re
 from html.parser import HTMLParser
+from pathlib import Path
 
 import pytest
+from django.conf import settings
 from django.urls import reverse
 
 from accounts import navigation
@@ -22,9 +24,17 @@ def home(login, user, club):
     return login(user).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
 
 
-def header(body):
+def site_home(login, user):
+    return login(user).get(reverse("home")).content.decode()
+
+
+def bar(body):
     start = body.index('<nav class="site-header')
     return body[start : body.index("</nav>", start)]
+
+
+def panel(body):
+    return body[body.index('id="site-menu"') :]
 
 
 def section(body, key):
@@ -55,7 +65,7 @@ class _Outside(HTMLParser):
 
 
 def test_shortcuts_have_icon_label_tooltip_outside_collapse(login, club, player):
-    body = header(home(login, player, club))
+    body = bar(home(login, player, club))
     tree = _Outside()
     tree.feed(body)
     by_label = {a["aria-label"]: (a, inside) for a, inside in tree.found}
@@ -65,8 +75,6 @@ def test_shortcuts_have_icon_label_tooltip_outside_collapse(login, club, player)
         assert inside is False
         assert "data-wm-tooltip" in a and a["title"] == label
         assert a["href"] == reverse(name, args=[club.slug])
-    assert body.count("wm-shortcut-label") == 5
-    assert "navbar-collapse" not in body
     assert "<svg" in body[body.index("nav-link wm-shortcut") : body.index("wm-shortcut-label")]
 
 
@@ -99,19 +107,22 @@ def test_agent_access_only_in_game_master_menu(login, club, player, game_master)
     url = reverse("agent_access:index", args=[club.slug])
     body = home(login, game_master, club)
     assert url in section(body, "gm")
-    assert url not in header(body)
+    assert url not in bar(body)
     assert url not in home(login, player, club)
 
 
-def test_logout_last_in_panel_by_post(login, club, player):
-    body = home(login, player, club)
+def test_logout_last_in_panel_by_post(login, club, club_admin):
+    body = home(login, club_admin, club)
     account = section(body, "account")
-    panel = body[body.index('id="site-menu"') :]
-    form = panel[panel.index('<form method="post"') : panel.index("</form>")]
+    panel_body = panel(body)
+    head = panel_body[: panel_body.index("</form>")]
+    form = head[head.index('<form method="post"') :]
     assert reverse("logout") in form
-    assert panel.count("<form") == 1 and "wm-menu-logout" in form
+    assert head.count("<form") == 1 and "wm-menu-logout" in form
+    assert 'method="post"' in head
     assert "Log out" not in account
-    client = login(player)
+    assert head.rindex("Club admin") < head.index('action="{}"'.format(reverse("logout")))
+    client = login(club_admin)
     client.post(reverse("logout"))
     assert client.get(reverse("club_home", args=[club.slug])).status_code == 302
 
@@ -141,3 +152,80 @@ def test_registry_icon_adds_shortcut(registry_empty, rf, club, player):
 @pytest.fixture
 def registry_empty(monkeypatch):
     monkeypatch.setattr(navigation, "_entries", [])
+
+
+def test_hamburger_first_club_name_second_no_brand(login, club, player):
+    body = home(login, player, club)
+    b = bar(body)
+    assert b.index("wm-hamburger") < b.index("club-switcher") < b.index("wm-shortcuts")
+    assert "Downtime Market" not in b and "West Marches" not in b
+    assert "<title>" in body and "Downtime Market" in body[: body.index("</title>")]
+    assert 'id="site-menu-title">Downtime Market<' in body
+
+
+def test_hamburger_accessibility_and_panel(login, club, player):
+    body = home(login, player, club)
+    assert 'aria-label="Open menu"' in bar(body)
+    assert 'aria-controls="site-menu"' in bar(body)
+    assert 'class="offcanvas offcanvas-start' in body and 'id="site-menu"' in body
+
+
+def test_no_dropdown_menus_in_bar(login, club, club_admin):
+    b = bar(home(login, club_admin, club))
+    for dead in ("nav-menu", "nav-gm", "nav-admin", ">Menu<", "navbar-collapse", "Club admin"):
+        assert dead not in b
+
+
+def test_shortcut_ranks_in_order(login, club, player):
+    b = bar(home(login, player, club))
+    pos = [b.index(f"wm-shortcut-rank-{i}") for i in range(1, 6)]
+    assert pos == sorted(pos)
+    assert b.count("data-wm-tooltip") >= 7
+
+
+def test_groups_per_role(login, club, player, game_master, club_admin):
+    p = panel(home(login, player, club))
+    assert "wm-menu-group-gm" not in p and "wm-menu-group-admin" not in p
+    assert "Game master" in panel(home(login, game_master, club))
+    assert "Club admin" in panel(home(login, club_admin, club))
+
+
+def test_empty_group_hidden(login, club, player, monkeypatch):
+    monkeypatch.setattr(
+        navigation, "_entries", [e for e in navigation._entries if e.group != "map"]
+    )
+    assert "wm-menu-group-map" not in home(login, player, club)
+
+
+def test_no_club_user_gets_panel_and_logout(login, player):
+    body = login(player).get(reverse("home")).content.decode()
+    assert 'aria-label="Open menu"' in bar(body)
+    assert "Log out" not in bar(body)
+    assert reverse("logout") in panel(body) and "wm-menu-group-account" in panel(body)
+
+
+def test_site_admin_without_club_sees_site_links(login, site_admin):
+    p = panel(login(site_admin).get(reverse("home")).content.decode())
+    assert reverse("site_clubs") in p and reverse("site_settings") in p
+
+
+def test_nowrap_beats_bootstrap_flex_wrap_inherit(login, club, player):
+    """Bootstrap sets flex-wrap: inherit at (0,2,0); our nowrap rule must match it."""
+    b = bar(home(login, player, club))
+    assert re.match(r'<nav class="site-header[^>]*>\s*<div class="container-fluid wm-topbar"', b)
+    css = (Path(settings.BASE_DIR) / "static/css/components.css").read_text()
+    rule = re.search(r"\.site-header > \.wm-topbar \{([^}]*)\}", css)
+    assert rule and "flex-wrap: nowrap" in rule.group(1)
+
+
+def test_skip_link_and_main_id(login, player):
+    html = site_home(login, player)
+    assert 'href="#main"' in html
+    assert html.index('href="#main"') < html.index('<nav class="site-header')
+    assert '<main id="main"' in html
+
+
+def test_icon_only_buttons_have_tooltips(login, player):
+    html = site_home(login, player)
+    assert 'title="Open menu" data-wm-tooltip' in html
+    assert 'title="Close menu" data-wm-tooltip' in html
