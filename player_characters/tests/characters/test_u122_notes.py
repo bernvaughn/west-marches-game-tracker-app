@@ -83,6 +83,24 @@ def test_sheet_shows_note_title_to_owner(club, login, player, owned, item):
     assert "Keep it dry." not in body
 
 
+def test_owner_sees_add_note_button_without_a_note(club, login, player, owned, item):
+    # Regression: the owner must be able to add a first note from the sheet.
+    body = login(player).get(sheet_url(club, owned)).content.decode()
+    assert f'href="{note_url(club, owned, item)}"' in body
+    assert 'aria-label="Add note"' in body
+    assert 'title="Add your own note about this item."' in body
+
+
+@pytest.mark.parametrize("who", ["game_master", "club_admin"])
+def test_non_owner_viewer_sees_no_note_button(club, login, request, player, owned, item, who):
+    body = login(request.getfixturevalue(who)).get(sheet_url(club, owned)).content.decode()
+    assert note_url(club, owned, item) not in body
+    set_note(owned, item, "Read only.", player)
+    body = login(request.getfixturevalue(who)).get(sheet_url(club, owned)).content.decode()
+    assert note_url(club, owned, item) not in body
+    assert "Read only." in body
+
+
 def test_sheet_shows_inline_note_to_gm_and_club_admin(club, login, request, player, owned, item):
     set_note(owned, item, "Do not lose this.", player)
     for who in ("game_master", "club_admin"):

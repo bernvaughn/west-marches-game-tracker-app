@@ -197,7 +197,10 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             ctx["junk_value"] = char_ctx["junk_value"]
             raw_notes = item_notes(character)
             notes = {}
-            for item_pk, text in raw_notes.items():
+            # One entry per inventory row, so the owner can add a first note.
+            for r in ctx["rows"]:
+                item_pk = r.item.pk
+                text = raw_notes.get(item_pk, "")
                 first = text.split("\n")[0] if text else ""
                 notes[item_pk] = {
                     "text": text,
