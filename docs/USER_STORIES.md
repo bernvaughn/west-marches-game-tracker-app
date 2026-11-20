@@ -169,7 +169,7 @@ From using the build after the first-look stories landed.
 **U35 A printable character sheet.** As a player, I want my character's page to look like a stylised character sheet that I could print and bring to the table. *(player_characters, ledger)*
 - A header box with the character's name in large serif, the owner, and the club, like the top of a paper character sheet.
 - Below it, bordered and titled boxes: coins (colour-coded, U29), inventory, notes and stats (U2), and recent ledger entries with a link to the full ledger (C5).
-- Actions (edit, move items, and the game master and club admin adjustments) sit together outside the sheet, so the sheet stays clean.
+- Actions (edit, and the game master and club admin adjustments) sit together outside the sheet, so the sheet stays clean.
 - A "Print sheet" button prints the sheet in black and white without the navigation or actions, on one Letter or A4 page where possible.
 - The sheet is compact, with little white space. At desktop width, the boxes sit in a multi-column grid, each only as wide as its content needs. A typical character fits on one screen with little or no scrolling.
 - Coins show once, with held and available on one line, and zero denominations are never listed. Empty boxes are hidden or show a one-line empty state. The inventory table is narrow, with small right-aligned number columns.
@@ -896,6 +896,67 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - Buying, selling, consuming, or moving items does not change a note. If the character no longer has the item, the note is hidden. If the character gets that item again, the note comes back.
 - The form works as a plain page without JavaScript, like the other inventory actions.
 
+## Round 16: stacked items (2026-11-20)
+
+A **stacked item** is sold in bundles but owned and used one unit at a time: parchment by the sheet, rope by the foot, arrows by the arrow. Each character holds one pool of units per stacked item. A stacked item is not a container: it never opens into other items.
+
+Rules for every story in this round:
+
+- Units are whole numbers, at least 1. Using the last unit removes the item from the inventory.
+- A character has one inventory row per stacked item. Two stacks of the same item are one stack, so combining is automatic and there is no split or combine button.
+- Every consume, sell, and set-aside action takes a unit count, up to the number owned.
+- There are no trades or transfers between characters (see Decisions), so units never move from one character to another.
+
+### Items
+
+**U123 Define a stacked item.** As a club admin, I want to mark a catalogue item as stacked, with a unit name (sheet, ft, arrow), a value, and the number of units that value covers, so one item can be sold in different bundle sizes. *(items)*
+- Example: "Parchment" has the unit "sheet" and a value of 1 gp for 10 sheets. "Rope" has the unit "ft" and a value of 1 gp for 50 ft. "Arrows" has the unit "arrow" and a value of 1 gp for 20 arrows.
+- An item is either a container (U109-U112) or stacked, never both.
+- Changing the value or the unit count changes future prices only. Nobody's unit count changes.
+
+**U124 Turn an existing item into a stacked item.** As a club admin, I want to convert an existing catalogue item to a stacked one, so I do not have to recreate parchment and rope. *(items, player_characters)*
+- Characters who own the item keep their quantity, now counted in units. The admin enters how many units one old item is worth, and the quantities are multiplied once, in one step.
+- The conversion adds one ledger entry per affected character, with a note, and is refused if it would fail for any of them.
+
+### Shops
+
+**U125 Sell stacked items in bundles.** As a club admin, I want to stock a stacked item in a shop as one or more bundle lines, each with its own bundle size, stock, and optional price override, so a shop can sell arrows in bundles of 5 and bundles of 100. *(shops)*
+- Each bundle line is its own shop line with its own stock count or "unlimited" (U9).
+- The default price for a bundle is the item's value scaled to the bundle size, times the shop's sell percentage (S1), rounded up to whole copper in the shop's favor. A price override on the line still wins.
+- Two bundle lines of the same item in one shop must have different bundle sizes.
+- A shop line shows the bundle, for example "bundle of 100 arrows".
+
+**U126 Buy a bundle and get its units.** As a player, I want buying one bundle to add all its units to my character's inventory, in the same row as any units I already have, so my arrows are one pile. *(shops, player_characters, ledger)*
+- Buying a bundle of 5 and then a bundle of 100 gives 105 arrows in one row.
+- Players buy whole bundles only, not part of a bundle (C2, C3 still apply to bundle stock).
+- The ledger entry says the units bought, for example "bought 100 arrows".
+
+### Characters
+
+**U127 See units.** As a player, I want inventories, shops, ledger lines, and cards to show units with the unit name, for example "40 ft Rope", so I always know how much I have. *(player_characters, shops, ledger, items)*
+- A printed item card shows the total units the character holds (U6).
+- The note on an inventory row (U122) belongs to the item, not to a unit.
+
+**U128 Use up units.** As a player, I want to consume any number of units of a stacked item, with a note, so my inventory matches what happened in play. A game master can do the same (U7). *(player_characters, ledger)*
+- Example: consume 10 ft of a character's 50 ft of rope. The character keeps 40 ft.
+- The player cannot consume more units than the character has.
+- Consuming the last unit removes the item from the inventory. Its note hides and comes back if the character gets the item again (U122).
+
+**U129 Sell and set aside units.** As a player, I want to set aside and sell any number of units, so someone with 500 ft of rope can sell 400 ft they do not need. *(shops, player_characters)*
+- Setting aside uses the junk mark (U45) with a unit count. It is capped at the units owned.
+- A shop that buys the item pays `floor(value × units sold × buy percentage ÷ the units the value covers)`, worked out once from the total units sold, never per unit. Selling in pieces never pays more than selling all at once.
+- The confirm modal shows the units and the exact coins (S15).
+- A player stall (U64) can list a number of units. Units sold from a stall leave the character's stack, and bought units join the buyer's stack.
+- A bundle bought at a shop and sold straight back never earns a profit, as long as the shop's sell percentage is at least its buy percentage.
+
+**U130 Award and adjust in units.** As a game master or club admin, I want to give and take units in manual adjustments, and have container drops, quest rewards, and agent batches use units too, so a character can find 3 more sheets of parchment in play without a whole bundle. *(player_characters, ledger, quests, agent_access)*
+- Adjustments (U14) and awards record the unit count and a note, as new ledger entries.
+- A container slot or quest reward can give any whole number of units, for example "2 sheets".
+- The agent's item search shows each stacked item's unit name and the units its value covers (A2).
+
+**U131 Quests take units.** As a player, I want a quest to ask for a number of units, such as "20 sheets of parchment", so stacked items work with quests like any other item. *(quests)*
+- A turn-in uses up the units (the quest rules in Decisions still apply: all or nothing, only once the character holds everything).
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -943,7 +1004,7 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 **C4 Live shop.** As a player, I want sold-out items to disappear from my screen within a few seconds, without reloading. *(shops)*
 - The shop refreshes about every 5 seconds while the page is visible, and not while the tab is hidden.
 
-**C5 Ledger.** As a player, I want to see a history of every time each of my characters gained or lost items or coins, newest first, with a note on what happened (for example `traded to <character name>` or `awarded by game master <name>`), so I can see where things came from and went. *(player_characters)*
+**C5 Ledger.** As a player, I want to see a history of every time each of my characters gained or lost items or coins, newest first, with a note on what happened (for example `sold to <shop name>` or `awarded by game master <name>`), so I can see where things came from and went. *(player_characters)*
 
 **C7 Nightly backup.** As an admin, I want a nightly copy of the database stored outside the server so that a server or account problem does not lose a club's data. *(site-wide)*
 
@@ -1094,6 +1155,8 @@ Not included: players' agents, spending a player's coins, and anything outside t
 ## Database and feature notes
 
 - **Trade/Transfer models removed from database.** The `Trade` and `TradeLine` models were dropped (player_characters migration 0010) and `LedgerEntry.Kind.TRADE`/`TRANSFER` were dropped (ledger migration 0004). `JunkMark` remains. Old ledger notes stay as text.
+- **No trades or transfers between characters.** Players cannot give or send items or coins to another character, including their own. Otherwise a player could make many characters, feed everything to one, and sell it all for unlimited coins. Game masters and club admins can still give and take items by manual adjustment (U14).
+- **Stacked items (U123-U131).** One pool of whole units per character and item. Bundle size lives on the shop line, not on the item, so a shop can sell the same item in several bundle sizes, each with its own stock. Combining is automatic, and every action takes a unit count, so there is no split or combine feature. Sale prices come from the total units sold.
 - **Player shops (U64/U65) remain unchanged** and continue to provide the safe player-to-player economy via fixed-price buying and selling.
 
 ## Still open
