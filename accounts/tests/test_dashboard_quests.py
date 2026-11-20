@@ -1,10 +1,14 @@
 """Tests for dashboard quest turn-in HTMX endpoint."""
 
+import pathlib
+
 import pytest
 from django.urls import reverse
 from django.utils import timezone
 
 from quests.models import QuestCompletion
+
+ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 
 def _url(name, *args):
@@ -166,3 +170,16 @@ def test_dashboard_quest_turnin_not_live_404(login, player, upcoming_quest, char
     url = _url("dashboard_quest_turnin", upcoming_quest.pk)
     response = c.get(url)
     assert response.status_code == 404
+
+
+def test_dashboard_quest_buttons_above_stretched_link():
+    """Buttons in quest rows sit above the stretched-link overlay (z-index fix).
+
+    The stretched-link::after pseudo-element covers the list-group-item at z-index 1.
+    Buttons need position: relative and z-index: 2 to be clickable.
+    """
+    css = (ROOT / "static/css/areas/accounts.css").read_text()
+    # Check for the rule that raises buttons above the stretched link overlay
+    assert ".wm-dashboard-section .list-group-item .btn {" in css
+    assert "position: relative" in css
+    assert "z-index: 2" in css
