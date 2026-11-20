@@ -62,7 +62,7 @@
 }
 /* Queue row checkboxes: stay easy to tap on phones (>= 24 px at 390 px). */
 @media (max-width: 575.98px) {
-  #queue-table .form-check-input { width: 1.5em; height: 1.5em; }
+  #queue-table .form-check-input { width: 1.5rem; height: 1.5rem; }
 }
 
 @media print {
