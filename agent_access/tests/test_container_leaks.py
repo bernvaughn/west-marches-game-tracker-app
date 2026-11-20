@@ -1,8 +1,8 @@
 """Tests for container unknown-item leak audit in MCP/agent output."""
 
-import glob
 import json
-import os
+import re
+from pathlib import Path
 
 import pytest
 from django.db import connection
@@ -214,43 +214,59 @@ def test_propose_awards_container_carries_only_item_name(mcp, gm_connection, clu
 # ---------------------------------------------------------------------------
 
 
+# Direct reads of container slots. Agent code must call loot_preview() instead.
+# (".options" is not listed: PreviewRow.options is loot_preview output, and slot
+# options are reachable only through .slots or the slot models.)
+_SLOT_READ = re.compile(r"\.(slots|prefetched_slots)\b|\bContainerSlot(Option)?\b")
+# tools_lookup.py may name the slot models only to build the Prefetch that
+# loot_preview() then consumes. It must still never read .slots itself.
+_PREFETCH_ONLY = {"tools_lookup.py": re.compile(r"\bContainerSlot(Option)?\b")}
+_AGENT_ACCESS = Path(__file__).resolve().parents[1]
+
+
+def _slot_violations(path: Path, text: str) -> list[str]:
+    allowed = _PREFETCH_ONLY.get(path.name)
+    found = []
+    for n, line in enumerate(text.splitlines(), 1):
+        code = line.split("#", 1)[0]
+        for match in _SLOT_READ.finditer(code):
+            if allowed and allowed.fullmatch(match.group(0)):
+                continue
+            found.append(f"{path.name}:{n}: {match.group(0)}")
+    return found
+
+
 def test_agent_access_no_direct_slot_access():
-    """No file under agent_access/ references .slots or ContainerSlot outside allowlist."""
-    base = "agent_access"
-    allowlist = {
-        "agent_access/migrations",
-        "agent_access/__pycache__",
-    }
-
+    """Non-test code under agent_access/ never reads container slots directly."""
     violations = []
-    for py_file in glob.glob(os.path.join(base, "**", "*.py"), recursive=True):
-        # Skip allowlisted paths
-        if any(py_file.startswith(a.replace("/", os.sep)) for a in allowlist):
+    for path in _AGENT_ACCESS.rglob("*.py"):
+        rel = path.relative_to(_AGENT_ACCESS).parts
+        if rel[0] in {"tests", "migrations"}:
             continue
+        violations += _slot_violations(path, path.read_text())
+    assert not violations, "Use loot_preview() instead:\n" + "\n".join(violations)
 
-        with open(py_file) as f:
-            content = f.read()
 
-        # Check for direct slot access patterns
-        if ".slots" in content and "loot_preview" not in content:
-            # Allow test files to check for the pattern we're guarding against
-            if "test_" not in py_file and "conftest" not in py_file:
-                violations.append(f"{py_file}: uses '.slots' directly")
+@pytest.mark.parametrize(
+    "snippet",
+    [
+        "rows = item.slots.all()",
+        "rows = item.prefetched_slots",
+        "opts = ContainerSlotOption.objects.all()",
+        "from items.models import ContainerSlot",
+        "from items.containers import loot_preview\nrows = item.slots.all()",
+    ],
+)
+def test_slot_guard_catches_direct_reads(snippet):
+    """The guard flags direct reads, even in a file that also imports loot_preview."""
+    assert _slot_violations(Path("tools_new.py"), snippet)
 
-        if "ContainerSlot" in content and "loot_preview" not in content:
-            if "test_" not in py_file and "conftest" not in py_file:
-                # Allow import for type hints if used properly
-                if "from items.models import" in content and "ContainerSlot" in content:
-                    # Check if it's just an import without usage
-                    lines = content.split("\n")
-                    for i, line in enumerate(lines):
-                        if "ContainerSlot" in line and not line.strip().startswith("#"):
-                            if "import" not in line and "type:" not in line:
-                                violations.append(
-                                    f"{py_file}:{i + 1}: references ContainerSlot directly"
-                                )
 
-    assert not violations, "Source guard violations:\n" + "\n".join(violations)
+def test_slot_guard_lookup_may_only_name_models():
+    """tools_lookup.py may name the slot models but not read slots."""
+    path = Path("tools_lookup.py")
+    assert not _slot_violations(path, "Prefetch('slots', queryset=ContainerSlot.objects)")
+    assert _slot_violations(path, "rows = item.slots.all()")
 
 
 # ---------------------------------------------------------------------------
