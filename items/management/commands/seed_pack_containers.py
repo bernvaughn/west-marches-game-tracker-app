@@ -11,11 +11,17 @@ from items.models import ContainerSlot, ContainerSlotOption, Item
 # Based on 2024 PHB contents. All slots are fixed (chance 100, one option, not unknown).
 PACKS = {
     "Diplomat's Pack": [
-        ("Fine clothes", 1, 1, 1500, "👔"),
-        ("Flask of oil", 1, 2, 100, "🛢️"),
-        ("Vial of perfume", 1, 1, 500, "🧴"),
-        ("Sealing wax", 1, 1, 50, "🕯️"),
-        ("Sealed letter", 1, 1, 10, "📜"),
+        ("Chest", 1, 1, 500, "🧰"),
+        ("Map or Scroll Case", 2, 2, 100, "📜"),
+        ("Fine Clothes", 1, 1, 1500, "👔"),
+        ("Ink (1 oz)", 1, 1, 1000, "🖋️"),
+        ("Ink Pen", 1, 1, 2, "🖋️"),
+        ("Lamp", 1, 1, 50, "🪔"),
+        ("Oil (flask)", 2, 2, 10, "🛢️"),
+        ("Paper (one sheet)", 5, 5, 20, "📄"),
+        ("Perfume (vial)", 1, 1, 500, "🧴"),
+        ("Sealing Wax", 1, 1, 50, "🕯️"),
+        ("Soap", 1, 1, 2, "🧼"),
     ],
     "Explorer's Pack": [
         ("Backpack", 1, 1, 200, "🎒"),

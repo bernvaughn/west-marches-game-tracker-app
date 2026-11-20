@@ -7,9 +7,11 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 
 from items.containers import roll_container, validate_container_config
+from items.management.commands.seed_pack_containers import PACKS
 from items.models import ContainerSlot, ContainerSlotOption, Item
+from items.opening import open_container
 from ledger.models import LedgerEntry
-from ledger.services import Line, record
+from ledger.services import Line, available_items, record
 
 pytestmark = [pytest.mark.django_db]
 
@@ -26,53 +28,26 @@ def test_seed_command_creates_content_items_slots_and_options(club):
     assert pack.is_container is True
 
     slots = list(pack.slots.order_by("position"))
-    assert len(slots) == 5
+    expected = PACKS["Diplomat's Pack"]
+    assert len(slots) == len(expected) == 11
 
-    # Check content items were created
-    fine_clothes = Item.objects.get(club=club, name="Fine clothes")
-    flask = Item.objects.get(club=club, name="Flask of oil")
-    perfume = Item.objects.get(club=club, name="Vial of perfume")
-    wax = Item.objects.get(club=club, name="Sealing wax")
-    letter = Item.objects.get(club=club, name="Sealed letter")
-
-    # Slot 0: Fine clothes x1
-    assert slots[0].chance_pct == 100
-    assert slots[0].unknown is False
-    opts = list(slots[0].options.all())
-    assert len(opts) == 1
-    assert opts[0].item == fine_clothes
-    assert opts[0].qty_min == 1 and opts[0].qty_max == 1
-
-    # Slot 1: Flask of oil 1-2
-    assert slots[1].chance_pct == 100
-    opts = list(slots[1].options.all())
-    assert opts[0].item == flask
-    assert opts[0].qty_min == 1 and opts[0].qty_max == 2
-
-    # Slot 2: Vial of perfume x1
-    assert slots[2].chance_pct == 100
-    opts = list(slots[2].options.all())
-    assert opts[0].item == perfume
-    assert opts[0].qty_min == 1 and opts[0].qty_max == 1
-
-    # Slot 3: Sealing wax x1
-    assert slots[3].chance_pct == 100
-    opts = list(slots[3].options.all())
-    assert opts[0].item == wax
-    assert opts[0].qty_min == 1 and opts[0].qty_max == 1
-
-    # Slot 4: Sealed letter x1 (in seed data, not unknown)
-    assert slots[4].chance_pct == 100
-    opts = list(slots[4].options.all())
-    assert opts[0].item == letter
-    assert opts[0].qty_min == 1 and opts[0].qty_max == 1
+    # One fixed slot per content, in order, with the 2024 PHB quantities.
+    for slot, (name, qty_min, qty_max, _value, _symbol) in zip(slots, expected, strict=True):
+        assert slot.chance_pct == 100
+        assert slot.unknown is False
+        opts = list(slot.options.all())
+        assert len(opts) == 1
+        assert opts[0].item == Item.objects.get(club=club, name=name)
+        assert opts[0].qty_min == qty_min == qty_max == opts[0].qty_max
+    oil = slots[6].options.get()
+    assert oil.item.name == "Oil (flask)" and oil.qty_min == 2
 
     # Validate
     validate_container_config(pack)
 
     # Roll works
     roll = roll_container(pack)
-    assert len(roll.slots) == 5
+    assert len(roll.slots) == 11
     for outcome in roll.slots:
         assert outcome.hit is True
         assert outcome.item_id is not None
@@ -204,7 +179,7 @@ def test_seed_command_dry_run_leaves_db_unchanged(club):
     pack.refresh_from_db()
     assert pack.is_container is False
     assert not pack.slots.exists()
-    assert Item.objects.filter(club=club, name="Fine clothes").count() == 0
+    assert Item.objects.filter(club=club, name="Fine Clothes").count() == 0
     assert "Rolled back" in out.getvalue() or "Dry run" in out.getvalue()
 
 
@@ -251,7 +226,7 @@ def test_seed_command_all_packs_pass_validation(club):
         validate_container_config(pack)  # Should not raise
 
 
-def test_seed_command_existing_owner_can_open(club, character):
+def test_seed_command_existing_owner_can_open(club, character, player):
     """Character who owned the pack before seeding can open it (if open_container exists)."""
     pack = Item.objects.create(club=club, name="Diplomat's Pack", value_cp=3900)
     # Give the character 1 pack via ledger
@@ -261,15 +236,13 @@ def test_seed_command_existing_owner_can_open(club, character):
 
     pack.refresh_from_db()
     assert pack.is_container is True
-    assert pack.slots.count() == 5
+    assert pack.slots.count() == len(PACKS["Diplomat's Pack"])
 
-    # If open_container is available, test it works
-    try:
-        from items.opening import open_container
-    except ImportError:
-        pytest.skip("open_container not yet implemented (slice B)")
-
-    opening = open_container(character, pack, character.membership.user)
+    opening = open_container(character, pack, player)
     assert opening.container == pack
     assert opening.character == character
     assert opening.result  # Has per-slot outcomes
+    # The pack is used up and its contents are in the inventory.
+    held = available_items(character)
+    assert held.get(pack.pk, 0) == 0
+    assert held[Item.objects.get(club=club, name="Paper (one sheet)").pk] == 5
