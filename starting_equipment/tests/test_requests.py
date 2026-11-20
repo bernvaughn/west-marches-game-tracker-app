@@ -3,6 +3,7 @@
 import json
 
 import pytest
+from bs4 import BeautifulSoup
 from django.urls import reverse
 from django.utils import timezone
 
@@ -148,6 +149,31 @@ class TestRequestNewGet:
         content = response.content.decode()
         assert "Request Magic Starting Item" in content
         assert "<html" in content.lower()  # Full page has html tag
+
+    @pytest.mark.parametrize("htmx", [True, False], ids=["modal", "page"])
+    def test_submit_button_is_inside_posting_form(
+        self, club, login, player, character_with_class_bg, template, magic_option, htmx
+    ):
+        """Submit Request button sits inside the form that posts the request.
+
+        Regression: the modal put the button in the modal footer, outside the form,
+        so clicking it sent nothing.
+        """
+        client = login(player)
+        headers = {"HTTP_HX_REQUEST": "true"} if htmx else {}
+        response = client.get(request_new_url(club, character_with_class_bg), **headers)
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        button = next(
+            b for b in soup.find_all("button") if b.get_text(strip=True) == "Submit Request"
+        )
+        form = button.find_parent("form")
+        assert form is not None, "Submit Request button is outside any <form>"
+        url = request_new_url(club, character_with_class_bg)
+        assert url in (form.get("hx-post"), form.get("action"))
+        assert form.find("select", attrs={"name": "item"}) is not None
+        assert form.find("input", attrs={"name": "quantity"}) is not None
+        assert form.find("input", attrs={"name": "csrfmiddlewaretoken"}) is not None
 
 
 class TestRequestNewPost:

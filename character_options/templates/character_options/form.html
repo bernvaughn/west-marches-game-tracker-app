@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+
+{% block title %}{% if is_create %}New {{ kind_obj.singular }}{% else %}Edit {{ option }}{% endif %} - {{ club.name }}{% endblock %}
+
+{% block content %}
+{% url "character_options:list" club.slug kind as list_url %}
+{% include "components/page_header.html" with
+    title=page_title
+    subtitle=club.name
+    back_url=list_url
+    back_label=kind_obj.plural
+%}
+
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="mb-3">
+    <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+    {{ form.name }}
+    {% if form.name.errors %}
+    <div class="text-danger mt-1">{{ form.name.errors }}</div>
+    {% endif %}
+  </div>
+  <div class="wm-form-actions mt-3">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="{{ list_url }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

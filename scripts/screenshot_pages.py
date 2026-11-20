@@ -252,6 +252,15 @@ EXCLUDED = {
     "shops:sell_junk_pick": "HTMX partial endpoint for shop picker modal.",
     "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
+    # character_options - admin only, HTMX modals
+    "character_options:index": "Admin redirect to species list.",
+    "character_options:list": "Admin list with HTMX partials; modals are separate.",
+    "character_options:create": "Admin create modal; POST only for non-HTMX.",
+    "character_options:edit": "Admin edit modal; POST only for non-HTMX.",
+    "character_options:archive": "POST only.",
+    "character_options:restore": "POST only.",
+    "character_options:delete": "GET shows confirm modal; POST deletes.",
+    "character_options:move": "POST only.",
 }
 
 

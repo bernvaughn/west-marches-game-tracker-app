@@ -13,13 +13,18 @@ from django.views.decorators.http import require_POST
 
 from accounts.htmx import render_modal_or_page
 from accounts.mixins import ClubContextMixin, ClubScopedMixin, PermissionMixin
-from accounts.permissions import admin_or_gm_required, club_admin_required, club_member_required
+from accounts.permissions import (
+    admin_or_gm_required,
+    can_see_gm_details,
+    club_admin_required,
+    club_member_required,
+)
 from ledger.coins import CP_PER_GP, CP_PER_PP, CP_PER_SP
 from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards, chunk, too_many
 
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
-from .containers import validate_container_config
+from .containers import loot_preview, validate_container_config
 from .forms import ItemForm, SlotFormSet
 from .magic_types import NONE_LABEL, MagicType
 from .models import Item
@@ -85,6 +90,13 @@ class WhereToBuyView(ClubScopedMixin, PermissionMixin, View):
         )
 
 
+def _loot_rows(request, item):
+    """Return loot preview rows for a container item, or None if not a container."""
+    if not item.is_container:
+        return None
+    return loot_preview(item, can_see_gm_details(request.user, request.club))
+
+
 @method_decorator(club_member_required, name="dispatch")
 class DetailView(ClubScopedMixin, PermissionMixin, View):
     def get(self, request, club_slug, pk):
@@ -92,7 +104,11 @@ class DetailView(ClubScopedMixin, PermissionMixin, View):
         is_admin = self.is_club_admin(request.user, request.club)
         if item.retired and not is_admin:
             raise Http404
-        return render(request, "items/detail.html", {"item": item, "is_admin": is_admin})
+        return render(
+            request,
+            "items/detail.html",
+            {"item": item, "is_admin": is_admin, "loot_rows": _loot_rows(request, item)},
+        )
 
 
 @method_decorator(club_member_required, name="dispatch")
@@ -106,7 +122,7 @@ class DetailsModalView(ClubScopedMixin, PermissionMixin, View):
             request,
             "items/_details_modal.html",
             "items/detail.html",
-            {"item": item, "is_admin": is_admin},
+            {"item": item, "is_admin": is_admin, "loot_rows": _loot_rows(request, item)},
         )
 
 
