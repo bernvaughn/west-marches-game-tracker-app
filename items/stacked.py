@@ -29,6 +29,15 @@ def _require_positive(value, name):
         raise ValueError(f"{name} must be a positive integer")
 
 
+def _require_percent(value, name):
+    """Validate that ``value`` is a non-bool integer percent, 0 or more.
+
+    0% is valid shop data (the manage form allows 0-1000) and prices to 0.
+    """
+    if not isinstance(value, Integral) or isinstance(value, bool) or value < 0:
+        raise ValueError(f"{name} must be a non-negative integer")
+
+
 def bundle_price(item, bundle_units, sell_percent):
     """Price of one bundle of ``bundle_units`` units at ``sell_percent``.
 
@@ -36,7 +45,7 @@ def bundle_price(item, bundle_units, sell_percent):
     Integer math only; no 1 cp minimum.
     """
     _require_positive(bundle_units, "bundle_units")
-    _require_positive(sell_percent, "sell_percent")
+    _require_percent(sell_percent, "sell_percent")
     v = item.value_cp
     vu = item.value_units
     return -(-(v * bundle_units * sell_percent) // (100 * vu))
@@ -50,7 +59,7 @@ def sale_price(item, units, buy_percent):
     minimum (may return 0; slices refuse a 0 cp sale).
     """
     _require_positive(units, "units")
-    _require_positive(buy_percent, "buy_percent")
+    _require_percent(buy_percent, "buy_percent")
     v = item.value_cp
     vu = item.value_units
     return (v * units * buy_percent) // (100 * vu)

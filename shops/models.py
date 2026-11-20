@@ -89,7 +89,7 @@ class ShopStock(models.Model):
                 fields=["shop", "item", "bundle_units"], name="unique_shop_item_bundle"
             ),
             models.CheckConstraint(
-                check=Q(bundle_units__gte=1), name="shop_stock_bundle_units_ge_1"
+                condition=Q(bundle_units__gte=1), name="shop_stock_bundle_units_ge_1"
             ),
         ]
 

@@ -99,7 +99,7 @@ def _split_sale_total(it, units, buy_percent, parts):
 @pytest.mark.story("U129")
 @pytest.mark.parametrize("value_cp", [0, 1, 3, 7, 13, 25, 50, 100, 300])
 @pytest.mark.parametrize("value_units", [1, 2, 3, 7, 10, 20, 50])
-@pytest.mark.parametrize("buy_percent", [1, 25, 50, 75, 100, 150])
+@pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100, 150])
 def test_split_sales_never_beat_one_sale(value_cp, value_units, buy_percent):
     thing = item(value_cp, value_units, "Thing", "unit")
     total = sale_price(thing, 100, buy_percent)
@@ -115,8 +115,8 @@ def test_split_sales_never_beat_one_sale(value_cp, value_units, buy_percent):
 @pytest.mark.story("U129")
 @pytest.mark.parametrize("value_cp", [0, 1, 3, 7, 13, 25, 50, 100, 300])
 @pytest.mark.parametrize("value_units", [1, 2, 3, 7, 10, 20, 50])
-@pytest.mark.parametrize("sell_percent", [1, 25, 50, 75, 100, 150])
-@pytest.mark.parametrize("buy_percent", [1, 25, 50, 75, 100])
+@pytest.mark.parametrize("sell_percent", [0, 1, 25, 50, 75, 100, 150])
+@pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100])
 def test_buy_then_sell_back_never_profits_when_sell_ge_buy(
     value_cp, value_units, sell_percent, buy_percent
 ):
@@ -170,15 +170,30 @@ def test_large_values_match_exact_fraction_math():
     "fn, kwargs",
     [
         (bundle_price, {"bundle_units": 0, "sell_percent": 100}),
-        (bundle_price, {"bundle_units": 5, "sell_percent": 0}),
+        (bundle_price, {"bundle_units": -1, "sell_percent": 100}),
+        (bundle_price, {"bundle_units": 5, "sell_percent": -1}),
+        (bundle_price, {"bundle_units": 5, "sell_percent": True}),
+        (bundle_price, {"bundle_units": 5, "sell_percent": 50.0}),
         (sale_price, {"units": 0, "buy_percent": 100}),
-        (sale_price, {"units": 5, "buy_percent": 0}),
+        (sale_price, {"units": -3, "buy_percent": 100}),
+        (sale_price, {"units": 5, "buy_percent": -1}),
+        (sale_price, {"units": 5, "buy_percent": False}),
+        (sale_price, {"units": 5, "buy_percent": 50.0}),
     ],
 )
-def test_zero_or_negative_units_raise(fn, kwargs):
+def test_bad_units_or_negative_percent_raise(fn, kwargs):
     thing = item(100, 10, "Thing", "unit")
     with pytest.raises(ValueError):
         fn(thing, **kwargs)
+
+
+@pytest.mark.story("U129")
+@pytest.mark.parametrize("n", [1, 7, 100])
+def test_zero_percent_prices_to_zero(n):
+    """0% is valid shop data (manage form allows 0-1000); it prices to 0."""
+    rope = item(100, 50, "Rope", "ft")
+    assert sale_price(rope, n, 0) == 0
+    assert bundle_price(rope, n, 0) == 0
 
 
 # --- labels ----------------------------------------------------------------

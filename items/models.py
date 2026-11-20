@@ -39,15 +39,15 @@ class Item(models.Model):
         ordering = ["name"]
         constraints = [
             models.CheckConstraint(
-                check=~Q(is_stacked=True, is_container=True),
+                condition=~Q(is_stacked=True, is_container=True),
                 name="item_not_stacked_and_container",
             ),
             models.CheckConstraint(
-                check=Q(value_units__gte=1),
+                condition=Q(value_units__gte=1),
                 name="item_value_units_ge_1",
             ),
             models.CheckConstraint(
-                check=Q(is_stacked=False) | ~Q(unit_name=""),
+                condition=Q(is_stacked=False) | ~Q(unit_name=""),
                 name="item_stacked_needs_unit_name",
             ),
         ]
