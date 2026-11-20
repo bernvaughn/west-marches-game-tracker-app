@@ -1,5 +1,5 @@
 {% extends "components/modal_frame.html" %}
-{% load accounts_tags %}
+{% load accounts_tags loot_tags %}
 
 {% block title %}Request Magic Starting Item{% endblock %}
 
@@ -48,6 +48,12 @@
     Based on template: {{ template.name }}
 </div>
 {% endif %}
+
+<div class="wm-loot-preview-slot" id="loot-preview-container" style="display: none;">
+  <hr class="my-2">
+  <h4 class="h6">Preview</h4>
+  <div id="loot-preview-content"></div>
+</div>
 {% endblock %}
 
 {% block footer %}
@@ -90,5 +96,34 @@
     // Initialize on load
     updateQuantityMax();
 })();
+
+    // Loot preview for container items
+    const previewContainer = document.getElementById('loot-preview-container');
+    const previewContent = document.getElementById('loot-preview-content');
+    
+    if (previewContainer && previewContent) {
+      // Pre-render preview templates for each magic option that is a container
+      const previewTemplates = {};
+      {% for option in magic_options %}
+        {% loot_preview option.item as loot_rows %}
+        {% if loot_rows %}
+        previewTemplates['{{ option.item.pk }}'] = `
+          {% include "components/loot_rows.html" with rows=loot_rows %}
+        `;
+        {% endif %}
+      {% endfor %}
+      
+      itemSelect.addEventListener('change', function() {
+        const itemId = this.value;
+        if (itemId && previewTemplates[itemId]) {
+          previewContent.innerHTML = previewTemplates[itemId];
+          previewContainer.style.display = 'block';
+        } else {
+          previewContent.innerHTML = '';
+          previewContainer.style.display = 'none';
+        }
+      });
+    }
+  })();
 </script>
 {% endblock %}

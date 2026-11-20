@@ -1,4 +1,5 @@
 {% extends "starting_equipment/base.html" %}
+{% load loot_tags %}
 {% block title %}{{ page_title }} - {{ club.name }}{% endblock %}
 
 {% block body %}
@@ -36,7 +37,10 @@
       <td class="text-end">{{ entry.coins_cp }}</td>
       <td>
         {% for line in entry.lines.all %}
-        {{ line.quantity }}&times; {{ line.item.name }}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}{% if not forloop.last %}, {% endif %}
+        {{ line.quantity }}&times; {% include "items/_item_name.html" with item=line.item %}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}
+        {% loot_preview line.item as loot_rows %}
+        {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+        {% if not forloop.last %}, {% endif %}
         {% empty %}
         <span class="text-muted">&mdash;</span>
         {% endfor %}
@@ -52,7 +56,10 @@
       <td class="text-end">{{ entry.coins_cp }}</td>
       <td>
         {% for line in entry.lines.all %}
-        {{ line.quantity }}&times; {{ line.item.name }}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}{% if not forloop.last %}, {% endif %}
+        {{ line.quantity }}&times; {% include "items/_item_name.html" with item=line.item %}{% if line.is_choice %} (choice: {{ line.choice_group }}){% endif %}
+        {% loot_preview line.item as loot_rows %}
+        {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+        {% if not forloop.last %}, {% endif %}
         {% empty %}
         <span class="text-muted">&mdash;</span>
         {% endfor %}
@@ -61,7 +68,10 @@
       <td class="text-center">{{ entry.level }}</td>
       <td class="text-end">{{ entry.coins_cp }}</td>
       {% elif entry_type == "magic-options" %}
-      <td>{{ entry.item.name }}</td>
+      <td>{% include "items/_item_name.html" with item=entry.item %}
+          {% loot_preview entry.item as loot_rows %}
+          {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+      </td>
       <td class="text-center">{{ entry.max_per_character }}</td>
       <td>{{ entry.notes|default:"&mdash;" }}</td>
       {% endif %}
