@@ -13,8 +13,24 @@ from player_characters.models import Character
 
 
 def _preselected(request):
-    pks = [p for p in request.GET.getlist("character") if p.isdigit()]
-    return list(Character.objects.for_club(request.club).filter(pk__in=pks))
+    # Support both ?character= (singular, existing) and ?characters=1,2,3 (comma list, new)
+    pks = []
+    # Parse singular character param
+    for p in request.GET.getlist("character"):
+        p = p.strip()
+        if p.isascii() and p.isdigit():
+            pks.append(p)
+    # Parse comma-separated characters param
+    characters_param = request.GET.get("characters", "")
+    if characters_param:
+        for token in characters_param.split(","):
+            token = token.strip()
+            # Accept only ASCII digits (no unicode digits, no negatives, no blanks)
+            if token.isascii() and token.isdigit():
+                pks.append(token)
+    # De-duplicate and cap to avoid huge queries
+    unique_pks = list(dict.fromkeys(pks))[:200]
+    return list(Character.objects.for_club(request.club).filter(pk__in=unique_pks))
 
 
 @admin_or_gm_required

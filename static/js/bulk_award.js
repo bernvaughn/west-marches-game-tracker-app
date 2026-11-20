@@ -1,27 +1,21 @@
 /**
  * Bulk award loot preview functionality.
  * Handles showing container item previews when an item is selected in the bulk award form.
+ * Uses delegated event listener so cloned/copied rows also work.
  */
 (function () {
     'use strict';
 
-    function initBulkAwardLootPreview() {
-        // Handle item autocomplete: update hidden field with selected item ID
-        document.querySelectorAll('input[list="item-catalogue"]').forEach(function (input) {
-            input.addEventListener('input', function () {
-                var hiddenField = document.getElementById(this.id.replace('-item', '-item_id'));
-                var selectedOption = document.querySelector('#item-catalogue option[value="' + this.value + '"]');
-                if (selectedOption) {
-                    hiddenField.value = selectedOption.value;
-                    // Show loot preview if this is a container item
-                    showLootPreview(this, selectedOption.value);
-                } else {
-                    hiddenField.value = '';
-                    // Hide loot preview
-                    showLootPreview(this, null);
-                }
-            });
-        });
+    function handleItemInput(input) {
+        var hiddenField = document.getElementById(input.id.replace('-item', '-item_id'));
+        var selectedOption = document.querySelector('#item-catalogue option[value="' + input.value + '"]');
+        if (selectedOption) {
+            hiddenField.value = selectedOption.value;
+            showLootPreview(input, selectedOption.value);
+        } else {
+            hiddenField.value = '';
+            showLootPreview(input, null);
+        }
     }
 
     function showLootPreview(inputElement, itemId) {
@@ -39,10 +33,25 @@
         }
     }
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initBulkAwardLootPreview);
-    } else {
-        initBulkAwardLootPreview();
+    // Show a character's coins and items only while that character is ticked.
+    // Sections render visible so the form works without JavaScript.
+    function syncSections() {
+        document.querySelectorAll('input[name="characters"][data-wm-toggle]').forEach(function (box) {
+            var target = document.querySelector(box.dataset.wmToggle);
+            if (target) target.classList.toggle('d-none', !box.checked);
+        });
     }
+    syncSections();
+    // "Select all" / "Clear" (check_all.js) set .checked without a change event,
+    // so re-sync after clicks as well.
+    document.addEventListener('change', syncSections);
+    document.addEventListener('click', syncSections);
+
+    // Delegated listener for item autocomplete inputs (works for dynamically added rows)
+    document.addEventListener('input', function (e) {
+        var input = e.target.closest('input[list="item-catalogue"]');
+        if (input) {
+            handleItemInput(input);
+        }
+    });
 })();

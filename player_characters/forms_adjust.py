@@ -3,7 +3,32 @@ from django.utils import timezone
 
 from ledger.coins import CoinsField
 from ledger.services import Line
-from player_characters.forms import item_line_formset
+from player_characters.forms import BaseItemLineFormSet, ItemLineForm, item_line_formset
+
+# Safety cap for item rows per character in bulk award.
+# The UI has no limit via the "Add item" button; this prevents
+# excessive formset processing on malicious or runaway submissions.
+BULK_MAX_ROWS = 500
+
+
+def bulk_item_line_formset(items, data=None, *, prefix):
+    """Formset factory for bulk award with a high max_num.
+
+    Uses the same ItemLineForm and BaseItemLineFormSet as the
+    shared item_line_formset but allows many more rows (default
+    extra=3, max_num=BULK_MAX_ROWS). The caller must provide a
+    unique prefix per character.
+    """
+    from django.forms import formset_factory
+
+    factory = formset_factory(
+        ItemLineForm,
+        formset=BaseItemLineFormSet,
+        extra=3,
+        max_num=BULK_MAX_ROWS,
+        validate_max=True,
+    )
+    return factory(data, prefix=prefix, form_kwargs={"items": items})
 
 
 class _DateNoteMixin(forms.Form):

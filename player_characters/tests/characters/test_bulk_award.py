@@ -39,6 +39,28 @@ def entries(character):
     return LedgerEntry.objects.filter(character=character).order_by("pk")
 
 
+def bulk_payload_many_items(
+    character, items, num_rows, coins=None, note="Party loot", date="2025-01-15"
+):
+    """Build POST payload for bulk award with many item rows."""
+    data = {
+        "note": note,
+        "date": date,
+        "characters": [str(character.pk)],
+    }
+    if coins:
+        data[f"coins_{character.pk}"] = str(coins)
+    prefix = f"items_{character.pk}"
+    data[f"{prefix}-TOTAL_FORMS"] = str(num_rows)
+    data[f"{prefix}-INITIAL_FORMS"] = "0"
+    data[f"{prefix}-MIN_NUM_FORMS"] = "0"
+    data[f"{prefix}-MAX_NUM_FORMS"] = str(num_rows)
+    for i, (item, qty) in enumerate(items):
+        data[f"{prefix}-{i}-item_id"] = str(item.pk)
+        data[f"{prefix}-{i}-quantity"] = str(qty)
+    return data
+
+
 @pytest.mark.story("S8")
 def test_bulk_award_get(login, game_master, club, character, second_character, item):
     c = login(game_master)
