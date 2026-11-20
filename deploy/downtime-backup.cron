@@ -1,0 +1,12 @@
+# Deploy this file:
+#   sudo install -m 644 -o root -g root deploy/downtime-backup.cron /etc/cron.d/downtime-backup
+#   (no dot in the file name; cron.d ignores names that contain a dot)
+#
+# Create the log file with the right owner:
+#   sudo install -m 640 -o deploy -g deploy /dev/null /var/log/downtime-backup.log
+#
+# Runs /srv/app/deploy/backup.sh as deploy every day at 03:15 server time
+# (UTC on this Droplet), appending output to the log file.
+PATH=/usr/local/bin:/usr/bin:/bin
+
+15 3 * * * deploy /srv/app/deploy/backup.sh >> /var/log/downtime-backup.log 2>&1
