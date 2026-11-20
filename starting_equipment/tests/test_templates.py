@@ -439,3 +439,99 @@ class TestClubScoping:
         other_template.refresh_from_db()
         assert template.name == "Updated"
         assert other_template.name == "Other Template"  # Unchanged
+
+
+@pytest.mark.django_db
+class TestTemplateDetailMissingWarning:
+    """Surface: template detail warns for active classes/backgrounds with no entry."""
+
+    def test_warns_for_uncovered_active_class_and_background(
+        self, client, club_admin, club, template, class_entry, class_option_wizard, bg_option_sage
+    ):
+        """Active class and background with no template entry each produce a warning."""
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert "has no entry in this template" in content
+        assert class_option_wizard.name in content
+        assert bg_option_sage.name in content
+
+    def test_covered_class_and_background_are_not_flagged(
+        self, client, club_admin, club, template, class_entry, bg_entry
+    ):
+        """A class/background that HAS an entry is not listed as missing."""
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+        # class_entry (Fighter) and bg_entry (Acolyte) are present, so they are
+        # not flagged even though other active options without entries are.
+        assert (
+            "Fighter" not in content.split("has no entry in this template")[0]
+            if "has no entry in this template" in content
+            else True
+        )
+        # Stronger: covered options are never named in a missing warning.
+        import re
+
+        missing = re.findall(r'Class "([^"]+)" has no entry', content)
+        missing += re.findall(r'Background "([^"]+)" has no entry', content)
+        assert "Fighter" not in missing
+        assert "Acolyte" not in missing
+
+    def test_archived_records_not_warned(
+        self,
+        client,
+        club_admin,
+        club,
+        template,
+        class_entry,
+        bg_entry,
+        class_option_wizard,
+        bg_option_sage,
+    ):
+        """Archived records are not listed as missing (other active ones still are)."""
+        class_option_wizard.is_active = False
+        class_option_wizard.save()
+        bg_option_sage.is_active = False
+        bg_option_sage.save()
+
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+        import re
+
+        missing_classes = re.findall(r'Class "([^"]+)" has no entry', content)
+        missing_backgrounds = re.findall(r'Background "([^"]+)" has no entry', content)
+        assert class_option_wizard.name not in missing_classes
+        assert bg_option_sage.name not in missing_backgrounds
+        # Other active options without entries are still flagged.
+        assert missing_classes or missing_backgrounds
+
+    def test_warning_names_the_template(
+        self, client, club_admin, club, template, class_option_wizard
+    ):
+        """The warning names the template so an admin can prepare an inactive one."""
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert template.name in content

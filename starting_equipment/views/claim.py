@@ -12,6 +12,23 @@ from player_characters.models import Character
 from starting_equipment.models import StartingEquipmentTemplate
 from starting_equipment.services import apply_starting_equipment
 
+_NO_GRANT_FALLBACK = "The template has nothing to grant for this character."
+
+
+def _respond_without_grant(request, club_slug, character, reasons):
+    """Flash the reasons (or a fallback) and refresh/redirect without claiming."""
+    if reasons:
+        for reason in reasons:
+            flash.warning(request, reason.message)
+    else:
+        flash.warning(request, _NO_GRANT_FALLBACK)
+
+    if is_htmx(request):
+        response = HttpResponse(status=204)
+        response["HX-Refresh"] = "true"
+        return response
+    return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+
 
 @club_member_required
 @require_POST
@@ -43,45 +60,29 @@ def claim_starting_equipment(request, club_slug, character_pk):
 
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
 
-    # Get active template for club
+    # Get active template for club (may be None)
     template = StartingEquipmentTemplate.objects.filter(club=request.club, is_active=True).first()
 
-    if template is None:
-        if is_htmx(request):
-            flash.error(request, "No active starting equipment template found for this club.")
-            response = HttpResponse(status=204)
-            response["HX-Refresh"] = "true"
-            return response
-        flash.error(request, "No active starting equipment template found for this club.")
-
-        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
-
     # Apply starting equipment
-    entry = apply_starting_equipment(character, template, request.user)
+    result = apply_starting_equipment(character, template, request.user)
+    entry = result.entry
 
-    # Nothing granted: no matching class/background entry (and no coins).
+    # Nothing granted: flash the reasons and do not mark claimed.
     if entry is None:
-        if is_htmx(request):
-            flash.error(
-                request,
-                "No starting equipment matches this character's class/background.",
-            )
-            response = HttpResponse(status=204)
-            response["HX-Refresh"] = "true"
-            return response
-        flash.error(request, "No starting equipment matches this character's class/background.")
-        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+        return _respond_without_grant(request, club_slug, character, result.reasons)
 
     # Mark as claimed
     character.starting_equipment_claimed = True
     character.save(update_fields=["starting_equipment_claimed"])
 
+    flash.success(request, "Starting equipment claimed.")
+    # A granted entry can still carry reasons (for example a custom background).
+    for reason in result.reasons:
+        flash.warning(request, reason.message)
+
     if is_htmx(request):
-        flash.success(request, "Starting equipment claimed.")
         response = HttpResponse(status=204)
         response["HX-Refresh"] = "true"
         return response
-
-    flash.success(request, "Starting equipment claimed.")
 
     return redirect("characters:detail", club_slug=club_slug, pk=character.pk)

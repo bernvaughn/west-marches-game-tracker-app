@@ -658,12 +658,13 @@ Story numbers continue from U93. U94 replaces the public-only note in U93.
 Stories for the player experience of starting equipment: automatic grants on character creation, background field, coin animation, and magic item requests.
 
 **U97 Automatic Starting Equipment.** As a player, I want my new character to receive starting equipment and coins automatically based on their class, background, and level, so I don't need to ask an admin for basic gear. *(player_characters, starting_equipment, ledger)*
-- Template matching is case-insensitive on class and matches the character's background.
+- Matching uses the character's class-option and background-option FKs against the active template's entries (case-insensitive by club-scoped name).
 - Starting coins come from the level coins table per the configured template.
 - Approved magic item requests are granted as part of the starting equipment.
+- Applying starting equipment returns additive reason codes (`no_template`, `empty_template`, `class_missing`, `class_custom`, `class_no_entry`, `class_level_not_covered`, `background_missing`, `background_custom`, `background_no_entry`). Unmatched or custom values surface as warnings instead of blocking a grant.
 
-**U98 Background Field.** As a player, I want to set my character's background during creation, so my starting equipment includes background-appropriate gear. *(player_characters)*
-- The Character model has a `background` CharField with `max_length=60` and `blank=True`.
+**U98 Background Choice.** As a player, I want my character's background to be a club-defined option during creation, so my starting equipment includes background-appropriate gear. *(player_characters)*
+- The Character model links `background` to a `Background` option (FK, optional) for starting-equipment matching; the free-text `background` CharField remains only as a display fallback.
 
 **U99 Coin Animation.** As a player, I want to see a fun coin animation when I first view my new character, so the starting gold feels rewarding. *(player_characters)*
 - The animation is triggered by the `?starting_equipment=1` query param.
@@ -680,13 +681,13 @@ Stories for the player experience of starting equipment: automatic grants on cha
 
 ### Technical Decisions (Clarifying Stories)
 
-**D1 Background field on Character.** As a developer, I want the Character model to have a `background` CharField (max 60, optional), so starting equipment can match background-specific gear. *(player_characters)*
+**D1 Background field on Character.** As a developer, I want the Character model to keep a free-text `background` CharField (max 60, optional) as a display fallback, while starting-equipment matching uses the `background_option` FK to a club-scoped `Background`. *(player_characters)*
 - Field: `background = models.CharField(max_length=60, blank=True)`
-- Used by starting equipment templates to grant background-appropriate gear
+- Matching for gear grants uses `background_option` against `StartingEquipmentBackgroundEntry.background_option`; the free-text field is no longer used for matching.
 
-**D2 Case-insensitive class matching.** As a developer, I want class matching for starting equipment to be case-insensitive, so player-entered class names match admin templates reliably. *(starting_equipment, player_characters)*
-- Matching uses `char_class__iexact` against `StartingEquipmentClassEntry.char_class`
-- Players can type class names freely; admin templates use canonical names
+**D2 Case-insensitive class matching.** As a developer, I want class matching for starting equipment to be case-insensitive by club-scoped name, so player-entered class names match admin templates reliably. *(starting_equipment, player_characters)*
+- Matching uses `class_option` FK to a club-scoped `CharacterClass`; names are unique per club case-insensitively.
+- Players can type class names freely; admin templates use canonical names.
 
 **D3 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), with UI for player selection in a future version, so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
 - `StartingEquipmentClassLine` and `StartingEquipmentBackgroundLine` have `is_choice` and `choice_group` fields
@@ -713,7 +714,7 @@ Stories for club admins and game masters to manage starting equipment templates 
 - One class entry per class and level range; lines list items, quantities, coins, and choice groups. Class matching is case-insensitive (US4).
 
 **U104 Configure Background-Based Equipment.** As a club admin, I want to configure background-based starting equipment, so characters get background-appropriate gear. *(starting_equipment, items)*
-- One background entry per background; uses the Character.background field (US4).
+- One background entry per club-scoped Background option per template; entries link by FK only (no free-text snapshot).
 
 **U105 Configure Level-Based Coins.** As a club admin, I want to configure level-based starting coins per the 2024 DMG table, so higher-level characters start with appropriate wealth. *(starting_equipment)*
 - LevelCoins table per template, levels 2-20, from the 2024 DMG "Starting Equipment at Higher Levels" table.
@@ -726,6 +727,15 @@ Stories for club admins and game masters to manage starting equipment templates 
 
 **U108 Set Active Template.** As a club admin, I want to set one template as active per club, so there's a single source of truth for starting equipment. *(starting_equipment)*
 - Exactly one template per club is active; activating a template clears the active flag on the club's other templates.
+
+**U112 Template Highlights Missing Class/Background Entries.** As a club admin, I want the template detail page to warn which active class and background options in my club lack a template entry, so I can prepare an inactive template before switching. *(starting_equipment)*
+- The template detail lists active classes and backgrounds with no entry for this template.
+- Archived class/background options are not warned about.
+- The warning names the template so an admin can stage gear on an inactive template first.
+
+**U113 Character Sheet Explains Missing Gear.** As a player, I want my character sheet to explain why some starting gear was not granted (custom class/background, no entry for the option, level not covered), so I know what to ask an admin about. *(player_characters, starting_equipment)*
+- Creating or claiming starting equipment flashes each applicable reason code as a warning.
+- The character sheet lists the missing-gear reasons when any apply; it omits the section when nothing is missing.
 
 
 ### Containers

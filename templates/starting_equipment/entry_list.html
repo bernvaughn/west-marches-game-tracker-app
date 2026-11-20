@@ -26,13 +26,7 @@
     {% for entry in entries %}
     <tr>
       {% if entry_type == "class" %}
-      <td>
-        {% if entry.class_option %}
-        {{ entry.class_option.name }}
-        {% else %}
-        <span class="text-muted">{{ entry.char_class }} (unlinked)</span>
-        {% endif %}
-      </td>
+      <td>{{ entry.class_option.name }}</td>
       <td class="text-center">{{ entry.min_level }}&ndash;{{ entry.max_level }}</td>
       <td class="text-end">{{ entry.coins_cp }}</td>
       <td>
@@ -46,13 +40,7 @@
         {% endfor %}
       </td>
       {% elif entry_type == "background" %}
-      <td>
-        {% if entry.background_option %}
-        {{ entry.background_option.name }}
-        {% else %}
-        <span class="text-muted">{{ entry.background }} (unlinked)</span>
-        {% endif %}
-      </td>
+      <td>{{ entry.background_option.name }}</td>
       <td class="text-end">{{ entry.coins_cp }}</td>
       <td>
         {% for line in entry.lines.all %}

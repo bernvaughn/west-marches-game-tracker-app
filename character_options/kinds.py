@@ -24,7 +24,6 @@ class OptionKind:
         entry_model=None,
         entry_fk_field=None,
         entry_reverse_field=None,
-        entry_text_field=None,
     ):
         self.slug = slug
         self.model = model
@@ -36,7 +35,6 @@ class OptionKind:
         self.entry_model = entry_model
         self.entry_fk_field = entry_fk_field
         self.entry_reverse_field = entry_reverse_field
-        self.entry_text_field = entry_text_field
 
 
 KINDS = {
@@ -51,7 +49,6 @@ KINDS = {
         entry_model=None,
         entry_fk_field=None,
         entry_reverse_field=None,
-        entry_text_field=None,
     ),
     "classes": OptionKind(
         slug="classes",
@@ -64,7 +61,6 @@ KINDS = {
         entry_model=StartingEquipmentClassEntry,
         entry_fk_field="class_option",  # StartingEquipmentClassEntry.class_option
         entry_reverse_field="starting_entries",  # CharacterClass.starting_entries
-        entry_text_field="char_class",
     ),
     "backgrounds": OptionKind(
         slug="backgrounds",
@@ -77,7 +73,6 @@ KINDS = {
         entry_model=StartingEquipmentBackgroundEntry,
         entry_fk_field="background_option",  # StartingEquipmentBackgroundEntry.background_option
         entry_reverse_field="starting_entries",  # Background.starting_entries
-        entry_text_field="background",
     ),
 }
 

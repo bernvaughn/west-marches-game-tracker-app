@@ -49,7 +49,6 @@ def _create_template_with_entries(club):
     class_entry = StartingEquipmentClassEntry.objects.create(
         template=template,
         class_option=fighter_class,
-        char_class="Fighter",
         min_level=1,
         max_level=20,
         coins_cp=1000,
@@ -65,7 +64,6 @@ def _create_template_with_entries(club):
     bg_entry = StartingEquipmentBackgroundEntry.objects.create(
         template=template,
         background_option=acolyte_bg,
-        background="Acolyte",
         coins_cp=500,
     )
 
@@ -207,7 +205,6 @@ class TestClaimNoMatch:
         wizard_class = CharacterClass.objects.get(club=club, name="Wizard")
         StartingEquipmentClassEntry.objects.create(
             template=template,
-            char_class="Wizard",
             class_option=wizard_class,
             min_level=1,
             max_level=20,

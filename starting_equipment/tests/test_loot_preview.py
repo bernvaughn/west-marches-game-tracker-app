@@ -152,7 +152,8 @@ def test_decide_confirm_shows_preview(login, club, game_master, pack_request):
 def test_apply_starting_equipment_grants_container_unopened(
     character_with_class_bg, template, pack_class_line, pack_bg_line, diplomats_pack, club_admin
 ):
-    entry = apply_starting_equipment(character_with_class_bg, template, actor=club_admin)
+    result = apply_starting_equipment(character_with_class_bg, template, actor=club_admin)
+    entry = result.entry
     assert entry is not None
     lines = LedgerLine.objects.filter(entry=entry, item=diplomats_pack)
     assert sorted(ln.quantity for ln in lines) == [1, 2]

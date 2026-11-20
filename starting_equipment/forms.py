@@ -37,31 +37,25 @@ def _background_option_queryset(club):
 class ClubItemMixin:
     """Mixin that scopes a form's ``item`` field to the current club."""
 
-    def __init__(self, *args, club=None, **kwargs):
+    def __init__(self, *args, club=None, template=None, **kwargs):
+        # ``template`` is accepted (and ignored) so the shared entry view can
+        # pass the same form_kwargs to the entry form and its line formset.
         super().__init__(*args, **kwargs)
         if club is not None and "item" in self.fields:
             self.fields["item"].queryset = _item_queryset(club)
 
 
 class ClassEntryForm(forms.ModelForm):
-    def __init__(self, *args, club=None, **kwargs):
+    def __init__(self, *args, club=None, template=None, **kwargs):
+        # ``template`` is accepted (and ignored) so the shared entry view can
+        # pass it to every entry form; only background entries need it.
         super().__init__(*args, **kwargs)
-        # The model FK is nullable until the cleanup child; the form requires a record.
-        self.fields["class_option"].required = True
         if club is not None:
             self.fields["class_option"].queryset = _class_option_queryset(club)
 
     class Meta:
         model = StartingEquipmentClassEntry
         fields = ["class_option", "min_level", "max_level", "coins_cp"]
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if instance.class_option:
-            instance.char_class = instance.class_option.name
-        if commit:
-            instance.save()
-        return instance
 
 
 class ClassLineForm(ClubItemMixin, forms.ModelForm):
@@ -80,10 +74,9 @@ ClassLineFormSet = inlineformset_factory(
 
 
 class BackgroundEntryForm(forms.ModelForm):
-    def __init__(self, *args, club=None, **kwargs):
+    def __init__(self, *args, club=None, template=None, **kwargs):
         super().__init__(*args, **kwargs)
-        # The model FK is nullable until the cleanup child; the form requires a record.
-        self.fields["background_option"].required = True
+        self.template = template
         if club is not None:
             self.fields["background_option"].queryset = _background_option_queryset(club)
 
@@ -91,13 +84,22 @@ class BackgroundEntryForm(forms.ModelForm):
         model = StartingEquipmentBackgroundEntry
         fields = ["background_option", "coins_cp"]
 
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        if instance.background_option:
-            instance.background = instance.background_option.name
-        if commit:
-            instance.save()
-        return instance
+    def clean(self):
+        cleaned_data = super().clean()
+        option = cleaned_data.get("background_option")
+        if option is not None and self.template is not None:
+            qs = StartingEquipmentBackgroundEntry.objects.filter(
+                template=self.template, background_option=option
+            )
+            if self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                self.add_error(
+                    "background_option",
+                    f"This template already has a background entry for '{option.name}'. "
+                    "Backgrounds are unique per template.",
+                )
+        return cleaned_data
 
 
 class BackgroundLineForm(ClubItemMixin, forms.ModelForm):
@@ -116,7 +118,9 @@ BackgroundLineFormSet = inlineformset_factory(
 
 
 class LevelCoinsForm(forms.ModelForm):
-    def __init__(self, *args, club=None, **kwargs):
+    def __init__(self, *args, club=None, template=None, **kwargs):
+        # ``template`` is accepted (and ignored) so the shared entry view can
+        # pass the same form_kwargs to every entry form.
         super().__init__(*args, **kwargs)
 
     class Meta:

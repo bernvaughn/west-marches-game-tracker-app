@@ -466,9 +466,8 @@ def _create_class_entries(template: StartingEquipmentTemplate, force: bool) -> t
         class_option = CharacterClass.objects.for_club(club).get(name=class_name)
         entry, created = StartingEquipmentClassEntry.objects.get_or_create(
             template=template,
-            char_class=class_name,
+            class_option=class_option,
             defaults={
-                "class_option": class_option,
                 "min_level": 1,
                 "max_level": 20,
                 "coins_cp": class_data["coins_cp"],
@@ -477,9 +476,8 @@ def _create_class_entries(template: StartingEquipmentTemplate, force: bool) -> t
         if created:
             created_count += 1
         elif force:
-            entry.class_option = class_option
             entry.coins_cp = class_data["coins_cp"]
-            entry.save(update_fields=["class_option", "coins_cp"])
+            entry.save(update_fields=["coins_cp"])
             updated_count += 1
 
         # Create lines for this class entry
@@ -519,18 +517,16 @@ def _create_background_entries(template: StartingEquipmentTemplate, force: bool)
         bg_option = Background.objects.for_club(club).get(name=bg_name)
         entry, created = StartingEquipmentBackgroundEntry.objects.get_or_create(
             template=template,
-            background=bg_name,
+            background_option=bg_option,
             defaults={
-                "background_option": bg_option,
                 "coins_cp": bg_data["coins_cp"],
             },
         )
         if created:
             created_count += 1
         elif force:
-            entry.background_option = bg_option
             entry.coins_cp = bg_data["coins_cp"]
-            entry.save(update_fields=["background_option", "coins_cp"])
+            entry.save(update_fields=["coins_cp"])
             updated_count += 1
 
         # Create lines for this background entry

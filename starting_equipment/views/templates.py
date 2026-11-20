@@ -57,6 +57,20 @@ class TemplateDetailView(StartingEquipmentBaseView):
         ).prefetch_related("lines__item")
         context["level_coins"] = template.level_coins.all()
         context["magic_options"] = template.magic_options.select_related("item")
+        # Active club classes/backgrounds with no entry in this template:
+        # warn the admin so characters with those options get no gear.
+        from character_options.models import Background, CharacterClass
+
+        context["missing_class_options"] = (
+            CharacterClass.objects.for_club(request.club)
+            .filter(is_active=True)
+            .exclude(starting_entries__template=template)
+        )
+        context["missing_background_options"] = (
+            Background.objects.for_club(request.club)
+            .filter(is_active=True)
+            .exclude(starting_entries__template=template)
+        )
         return render(request, "starting_equipment/template_detail.html", context)
 
 

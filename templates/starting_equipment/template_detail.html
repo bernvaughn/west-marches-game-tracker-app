@@ -37,6 +37,21 @@
   </div>
 </div>
 
+{% if missing_class_options or missing_background_options %}
+<div class="alert alert-warning" role="status">
+  <h4 class="alert-heading">Missing starting equipment entries</h4>
+  <p>The following active classes and backgrounds have no entry in template "<strong>{{ template.name }}</strong>". Characters with those options will not get matching gear until you add entries.</p>
+  <ul class="mb-0 small">
+    {% for cls in missing_class_options %}
+    <li>Class "{{ cls.name }}" has no entry in this template. <a href="{% url 'starting_equipment:class_entry_list' club.slug template.pk %}">Add a class entry</a>.</li>
+    {% endfor %}
+    {% for bg in missing_background_options %}
+    <li>Background "{{ bg.name }}" has no entry in this template. <a href="{% url 'starting_equipment:background_entry_list' club.slug template.pk %}">Add a background entry</a>.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
 {% if class_entries or background_entries or level_coins or magic_options %}
 <div class="row">
   {% if class_entries %}
@@ -51,13 +66,7 @@
         {% for entry in class_entries %}
         <div class="mb-3 pb-3 border-bottom">
           <div class="d-flex justify-content-between align-items-start">
-            <strong>
-              {% if entry.class_option %}
-              {{ entry.class_option.name }}
-              {% else %}
-              <span class="text-muted">{{ entry.char_class }} (unlinked)</span>
-              {% endif %}
-            </strong>
+            <strong>{{ entry.class_option.name }}</strong>
             <span class="badge bg-info text-dark">L{{ entry.min_level }}–{{ entry.max_level }}</span>
           </div>
           {% if entry.coins_cp %}
@@ -95,13 +104,7 @@
       <div class="card-body">
         {% for entry in background_entries %}
         <div class="mb-3 pb-3 border-bottom">
-          <strong>
-            {% if entry.background_option %}
-            {{ entry.background_option.name }}
-            {% else %}
-            <span class="text-muted">{{ entry.background }} (unlinked)</span>
-            {% endif %}
-          </strong>
+          <strong>{{ entry.background_option.name }}</strong>
           {% if entry.coins_cp %}
           <div class="text-muted small">Coins: {{ entry.coins_cp|coins }}</div>
           {% endif %}

@@ -179,16 +179,12 @@ def rename_option(kind_slug, option, new_name):
     option.name = new_name
     option.save(update_fields=["name"])
 
-    # Update Character text field (filter by forward FK on Character)
+    # Update Character text field (filter by forward FK on Character).
+    # Starting equipment entries no longer store a text snapshot: matching is
+    # by FK only, so nothing to update there.
     Character.objects.filter(**{kind.character_fk_field: option}).update(
         **{kind.character_text_field: new_name}
     )
-
-    # Update starting equipment entry text field (filter by forward FK on entry model)
-    if kind.entry_model:
-        kind.entry_model.objects.filter(**{kind.entry_fk_field: option}).update(
-            **{kind.entry_text_field: new_name}
-        )
 
     return option
 

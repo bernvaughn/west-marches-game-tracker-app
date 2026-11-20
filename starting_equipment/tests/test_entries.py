@@ -59,7 +59,9 @@ class TestClassEntry:
         }
         r = c.post(url("class_entry_create", club, template.pk), data)
         assert r.status_code == 302
-        entry = StartingEquipmentClassEntry.objects.get(template=template, char_class="Paladin")
+        entry = StartingEquipmentClassEntry.objects.get(
+            template=template, class_option=paladin_class
+        )
         assert entry.coins_cp == 500
         assert entry.class_option == paladin_class
         assert entry.lines.filter(item=class_item, quantity=1).exists()
@@ -67,7 +69,6 @@ class TestClassEntry:
     def test_edit(self, login, club_admin, club, template, class_item, class_option_fighter):
         entry = StartingEquipmentClassEntry.objects.create(
             template=template,
-            char_class="Ranger",
             class_option=class_option_fighter,
             min_level=1,
             max_level=20,
@@ -90,9 +91,13 @@ class TestClassEntry:
         assert entry.class_option == class_option_fighter
         assert entry.lines.filter(item=class_item, quantity=2).exists()
 
-    def test_delete(self, login, club_admin, club, template):
+    def test_delete(self, login, club_admin, club, template, class_option_fighter):
         entry = StartingEquipmentClassEntry.objects.create(
-            template=template, char_class="Bard", min_level=1, max_level=20, coins_cp=50
+            template=template,
+            class_option=class_option_fighter,
+            min_level=1,
+            max_level=20,
+            coins_cp=50,
         )
         c = login(club_admin)
         r = c.post(url("class_entry_delete", club, template.pk, entry.pk))
@@ -143,7 +148,7 @@ class TestBackgroundEntry:
         r = c.post(url("background_entry_create", club, template.pk), data)
         assert r.status_code == 302
         entry = StartingEquipmentBackgroundEntry.objects.get(
-            template=template, background="Acolyte"
+            template=template, background_option=bg_option_acolyte
         )
         assert entry.coins_cp == 300
         assert entry.background_option == bg_option_acolyte
@@ -151,7 +156,7 @@ class TestBackgroundEntry:
 
     def test_edit(self, login, club_admin, club, template, class_item, bg_option_acolyte):
         entry = StartingEquipmentBackgroundEntry.objects.create(
-            template=template, background="Sage", background_option=bg_option_acolyte, coins_cp=100
+            template=template, background_option=bg_option_acolyte, coins_cp=100
         )
         c = login(club_admin)
         data = {
@@ -166,9 +171,9 @@ class TestBackgroundEntry:
         assert entry.background_option == bg_option_acolyte
         assert entry.lines.filter(item=class_item, quantity=3).exists()
 
-    def test_delete(self, login, club_admin, club, template):
+    def test_delete(self, login, club_admin, club, template, bg_option_acolyte):
         entry = StartingEquipmentBackgroundEntry.objects.create(
-            template=template, background="Sage", coins_cp=100
+            template=template, background_option=bg_option_acolyte, coins_cp=100
         )
         c = login(club_admin)
         r = c.post(url("background_entry_delete", club, template.pk, entry.pk))
@@ -340,8 +345,13 @@ def test_cross_club_404(login, club_admin, club, other_club):
     ):
         assert c.get(url(name, club, foreign.pk)).status_code == 404
     # An entry belonging to another club's template is 404 too.
+    foreign_class = CharacterClass.objects.create(club=other_club, name="Foreign Fighter")
     entry = StartingEquipmentClassEntry.objects.create(
-        template=foreign, char_class="Fighter", min_level=1, max_level=20, coins_cp=50
+        template=foreign,
+        class_option=foreign_class,
+        min_level=1,
+        max_level=20,
+        coins_cp=50,
     )
     assert c.get(url("class_entry_edit", club, foreign.pk, entry.pk)).status_code == 404
     assert c.post(url("class_entry_delete", club, foreign.pk, entry.pk)).status_code == 404

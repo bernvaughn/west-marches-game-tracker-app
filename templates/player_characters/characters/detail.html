@@ -36,6 +36,16 @@
       <button class="btn btn-lg btn-primary no-print" type="button" hx-post="{% url 'starting_equipment:claim' club.slug character.pk %}" hx-target="#app-modal .modal-content" hx-swap="innerHTML" data-app-modal aria-label="Claim starting equipment">{% include "components/icon.html" with name="box" label="Claim starting equipment" %} Claim starting equipment</button>
     </section>
     {% endif %}
+    {% if starting_equipment_reasons %}
+    <section class="wm-sheet-box wm-sheet-full wm-sheet-notice no-print" aria-labelledby="sheet-notice-starting-equipment-reasons" role="status">
+      <h2 class="wm-sheet-box-title" id="sheet-notice-starting-equipment-reasons">Starting equipment notes</h2>
+      <ul class="wm-sheet-notice-text" style="margin: 0 0 0 1.25rem; padding: 0;">
+        {% for reason in starting_equipment_reasons %}
+        <li>{{ reason.message }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
     <section class="wm-sheet-box wm-sheet-full wm-sheet-coins" aria-labelledby="sheet-coins">
       <h2 class="wm-sheet-box-title" id="sheet-coins">Coins</h2>
       <p class="wm-sheet-coins-total">{{ coins.owned|coins }}</p>

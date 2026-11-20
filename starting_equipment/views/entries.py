@@ -82,8 +82,8 @@ class _EntryFormView(StartingEquipmentBaseView):
     def get_entry(self, template, pk):
         return get_object_or_404(self.get_club_queryset(self.model), pk=pk, template=template)
 
-    def _forms(self, request, entry=None):
-        form_kwargs = {"club": self.club}
+    def _forms(self, request, entry=None, template=None):
+        form_kwargs = {"club": self.club, "template": template}
         if entry is None:
             form = self.form_class(**form_kwargs)
             formset = self.formset_class(form_kwargs=form_kwargs) if self.formset_class else None
@@ -113,7 +113,7 @@ class _EntryFormView(StartingEquipmentBaseView):
     def get(self, request, club_slug, template_pk, pk=None):
         template = self.get_club_template_or_404(pk=template_pk)
         entry = self.get_entry(template, pk) if pk is not None else None
-        form, formset = self._forms(request, entry)
+        form, formset = self._forms(request, entry, template)
         return render_modal_or_page(
             request,
             self.modal_template_name,
@@ -132,7 +132,7 @@ class _EntryFormView(StartingEquipmentBaseView):
     def post(self, request, club_slug, template_pk, pk=None):
         template = self.get_club_template_or_404(pk=template_pk)
         entry = self.get_entry(template, pk) if pk is not None else None
-        form_kwargs = {"club": self.club}
+        form_kwargs = {"club": self.club, "template": template}
 
         if entry is None:
             # Create: the inline line formset needs a persisted parent (its

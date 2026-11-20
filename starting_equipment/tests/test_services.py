@@ -31,7 +31,8 @@ class TestApplyStartingEquipment:
         """Class equipment match is by class_option FK."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         assert entry.kind == "award"
@@ -58,7 +59,8 @@ class TestApplyStartingEquipment:
         """Background equipment match is by background_option FK."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -84,7 +86,8 @@ class TestApplyStartingEquipment:
         """Level coins applied for character level > 1 from LevelCoins table."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_level_5, template, game_master_user)
+        result = apply_starting_equipment(character_level_5, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -113,7 +116,8 @@ class TestApplyStartingEquipment:
         """Level 1 character does NOT get level coins."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -145,7 +149,8 @@ class TestApplyStartingEquipment:
         """
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -165,7 +170,8 @@ class TestApplyStartingEquipment:
         """Empty template (no class/background/level entries) returns None."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, empty_template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, empty_template, game_master_user)
+        entry = result.entry
 
         assert entry is None
         # No ledger entry should be created
@@ -198,7 +204,8 @@ class TestApplyStartingEquipment:
             status=StartingEquipmentRequest.Status.APPROVED,
         )
 
-        entry = apply_starting_equipment(character_level_5, template, game_master_user)
+        result = apply_starting_equipment(character_level_5, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         # Verify it's a single entry (not multiple)
@@ -226,7 +233,8 @@ class TestApplyStartingEquipment:
         """Service uses ledger.record() with kind='award' and note='Starting equipment'."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         assert entry.kind == LedgerEntry.Kind.AWARD
@@ -250,7 +258,8 @@ class TestApplyStartingEquipment:
             class_entry=class_entry_limited_level, item=class_item, quantity=1, is_choice=False
         )
 
-        entry = apply_starting_equipment(character_level_3_wizard, template, game_master_user)
+        result = apply_starting_equipment(character_level_3_wizard, template, game_master_user)
+        entry = result.entry
 
         # Character is level 3, class entry is for levels 5-10
         # Should NOT grant class equipment (no matching class entry for level 3)
@@ -274,7 +283,8 @@ class TestApplyStartingEquipment:
             class_entry=class_entry_limited_level, item=class_item, quantity=1, is_choice=False
         )
 
-        entry = apply_starting_equipment(character_level_7_wizard, template, game_master_user)
+        result = apply_starting_equipment(character_level_7_wizard, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -295,7 +305,8 @@ class TestApplyStartingEquipment:
         """Choice groups in class lines are skipped (is_choice=True)."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -320,7 +331,8 @@ class TestApplyStartingEquipment:
         """Choice groups in background lines are skipped (is_choice=True)."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -346,7 +358,8 @@ class TestApplyStartingEquipment:
         """Background equipment only applied when character.background_option is set."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_no_bg, template, game_master_user)
+        result = apply_starting_equipment(character_no_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -369,7 +382,8 @@ class TestApplyStartingEquipment:
         """Class equipment not granted when character has no class_option."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_no_class, template, game_master_user)
+        result = apply_starting_equipment(character_no_class, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -392,7 +406,8 @@ class TestApplyStartingEquipment:
         """Custom character (no class_option FK) gets no class gear."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_custom_class, template, game_master_user)
+        result = apply_starting_equipment(character_custom_class, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -415,7 +430,8 @@ class TestApplyStartingEquipment:
         """Homebrew class with an entry gets gear."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_homebrew_class, template, game_master_user)
+        result = apply_starting_equipment(character_homebrew_class, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -445,13 +461,13 @@ class TestApplyStartingEquipment:
         )
 
         # Level 3 wizard - outside range, no gear
-        entry_l3 = apply_starting_equipment(character_level_3_wizard, template, game_master_user)
-        assert entry_l3 is None
+        result_l3 = apply_starting_equipment(character_level_3_wizard, template, game_master_user)
+        assert result_l3.entry is None
 
-        # Level 7 wizard - inside range, gets gear
-        entry_l7 = apply_starting_equipment(character_level_7_wizard, template, game_master_user)
-        assert entry_l7 is not None
-        lines = entry_l7.lines.select_related("item")
+        # Level 7 wizard - inside range, gets gear (background Sage has no entry -> reason only)
+        result_l7 = apply_starting_equipment(character_level_7_wizard, template, game_master_user)
+        assert result_l7.entry is not None
+        lines = result_l7.entry.lines.select_related("item")
         item_lines = [line for line in lines if line.item is not None]
         assert len(item_lines) == 1
         assert item_lines[0].item.name == "Longsword"
@@ -474,7 +490,8 @@ class TestApplyStartingEquipment:
             level=None,  # Explicitly None
         )
 
-        entry = apply_starting_equipment(character, template, game_master_user)
+        result = apply_starting_equipment(character, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -523,7 +540,8 @@ class TestApplyStartingEquipment:
             status=StartingEquipmentRequest.Status.APPROVED,
         )
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -547,9 +565,10 @@ class TestApplyStartingEquipment:
         class_entry.template = inactive_template
         class_entry.save()
 
-        entry = apply_starting_equipment(
+        result = apply_starting_equipment(
             character_with_class_bg, inactive_template, game_master_user
         )
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -563,7 +582,8 @@ class TestApplyStartingEquipment:
         """Class entry coins_cp is included in ledger."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_no_bg, template, game_master_user)
+        result = apply_starting_equipment(character_no_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -585,7 +605,8 @@ class TestApplyStartingEquipment:
         """Background entry coins_cp is included in ledger."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -608,7 +629,8 @@ class TestApplyStartingEquipment:
         """Level coins at level 10 uses correct LevelCoins entry."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_level_10, template, game_master_user)
+        result = apply_starting_equipment(character_level_10, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -630,7 +652,8 @@ class TestApplyStartingEquipment:
         """If no LevelCoins entry exists for character's level, no level coins granted."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_level_5, template, game_master_user)
+        result = apply_starting_equipment(character_level_5, template, game_master_user)
+        entry = result.entry
 
         assert entry is not None
         lines = entry.lines.all()
@@ -643,7 +666,8 @@ class TestApplyStartingEquipment:
         """Actor can be None (no user specified)."""
         from starting_equipment.services import apply_starting_equipment
 
-        entry = apply_starting_equipment(character_with_class_bg, template, None)
+        result = apply_starting_equipment(character_with_class_bg, template, None)
+        entry = result.entry
 
         assert entry is not None
         assert entry.created_by is None
@@ -673,7 +697,250 @@ class TestApplyStartingEquipment:
 
         # Template is for club, character is for other_club
         # The club-scoped managers should prevent cross-club access
-        entry = apply_starting_equipment(character, template, game_master_user)
+        result = apply_starting_equipment(character, template, game_master_user)
+        entry = result.entry
 
         # Should return None because no matching entries found (club scoping)
         assert entry is None
+
+
+class TestExplainStartingEquipment:
+    """Tests for the pure explain_starting_equipment reason codes."""
+
+    def test_no_template_none(self, character_with_class_bg, game_master_user):
+        """No template -> no_template reason."""
+        from starting_equipment.services import explain_starting_equipment
+
+        reasons = explain_starting_equipment(character_with_class_bg, None)
+        assert len(reasons) == 1
+        assert reasons[0].code == "no_template"
+        assert "template" in reasons[0].message
+
+    def test_no_template_foreign_club(self, club, player, character_with_class_bg, other_club):
+        """Template belonging to another club -> no_template reason."""
+        from starting_equipment.models import StartingEquipmentTemplate
+        from starting_equipment.services import explain_starting_equipment
+
+        foreign_template = StartingEquipmentTemplate.objects.create(
+            club=other_club, name="Foreign", is_active=True
+        )
+        reasons = explain_starting_equipment(character_with_class_bg, foreign_template)
+        assert len(reasons) == 1
+        assert reasons[0].code == "no_template"
+
+    def test_empty_template(self, character_with_class_bg, empty_template):
+        """Template with no entries -> empty_template reason (short-circuits)."""
+        from starting_equipment.services import explain_starting_equipment
+
+        reasons = explain_starting_equipment(character_with_class_bg, empty_template)
+        assert len(reasons) == 1
+        assert reasons[0].code == "empty_template"
+
+    def test_class_missing(self, club, player, template, class_entry, bg_entry, bg_option_acolyte):
+        """Character with no class at all -> class_missing."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="No Class",
+            char_class="",
+            class_option=None,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_missing" in codes
+
+    def test_class_custom(self, club, player, template, bg_entry, bg_option_acolyte):
+        """Character with custom class text (no FK) -> class_custom."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Custom",
+            char_class="Artificer",
+            class_option=None,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_custom" in codes
+        msg = next(r.message for r in reasons if r.code == "class_custom")
+        assert "Artificer" in msg
+        assert "custom value" in msg
+
+    def test_class_no_entry(
+        self, club, player, template, class_entry, class_option_wizard, bg_option_acolyte
+    ):
+        """Character with class FK but no template entry -> class_no_entry."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Wizard",
+            char_class="Wizard",
+            class_option=class_option_wizard,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=1,
+        )
+        # template has a Fighter entry (via class_entry fixture) but no Wizard entry
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_no_entry" in codes
+
+    def test_class_level_not_covered(
+        self,
+        club,
+        player,
+        template,
+        class_entry_limited_level,
+        class_option_wizard,
+        bg_option_acolyte,
+    ):
+        """Character level outside every class entry range -> class_level_not_covered."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Young Wizard",
+            char_class="Wizard",
+            class_option=class_option_wizard,
+            background="Acolyte",
+            background_option=bg_option_acolyte,
+            level=3,
+        )
+        # class_entry_limited_level covers levels 5-10 only
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "class_level_not_covered" in codes
+        msg = next(r.message for r in reasons if r.code == "class_level_not_covered")
+        assert "level 3" in msg
+        assert "5-10" in msg
+
+    def test_background_missing(self, club, player, template, class_entry, class_option_fighter):
+        """Character with no background at all -> background_missing."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="No Background",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="",
+            background_option=None,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "background_missing" in codes
+
+    def test_background_custom(self, club, player, template, class_entry, class_option_fighter):
+        """Character with custom background text (no FK) -> background_custom."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Custom",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="Homebrew Background",
+            background_option=None,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "background_custom" in codes
+        msg = next(r.message for r in reasons if r.code == "background_custom")
+        assert "Homebrew Background" in msg
+        assert "custom value" in msg
+
+    def test_background_no_entry(
+        self,
+        club,
+        player,
+        template,
+        class_entry,
+        class_option_fighter,
+        bg_option_sage,
+    ):
+        """Character with background FK but no template entry -> background_no_entry."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import explain_starting_equipment
+
+        # bg_option_sage has no entry in the template (template only has a Fighter
+        # class entry via the class_entry fixture).
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Sage Char",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="Sage",
+            background_option=bg_option_sage,
+            level=1,
+        )
+        reasons = explain_starting_equipment(character, template)
+        codes = {r.code for r in reasons}
+        assert "background_no_entry" in codes
+
+    def test_granted_with_partial_reasons(
+        self,
+        club,
+        player,
+        template,
+        class_entry,
+        class_option_fighter,
+        bg_option_acolyte,
+    ):
+        """Class matched but background custom -> entry granted plus a warning reason."""
+        from accounts.models import Membership
+        from player_characters.models import Character
+        from starting_equipment.services import apply_starting_equipment
+
+        owner = Membership.objects.get(user=player, club=club)
+        character = Character.objects.create(
+            club=club,
+            owner=owner,
+            name="Custom",
+            char_class="Fighter",
+            class_option=class_option_fighter,
+            background="Homebrew Background",
+            background_option=None,
+            level=1,
+        )
+        result = apply_starting_equipment(character, template, None)
+        assert result.entry is not None
+        codes = {r.code for r in result.reasons}
+        assert "background_custom" in codes
+        assert result.granted

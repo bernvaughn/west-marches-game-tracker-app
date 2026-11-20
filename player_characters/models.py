@@ -3,11 +3,6 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from accounts.scoping import ClubScopedManager
-from character_options.defaults import (
-    DEFAULT_BACKGROUNDS,
-    DEFAULT_CLASSES,
-    DEFAULT_SPECIES,
-)
 
 ABILITIES = [
     ("strength", "STR", "Strength"),
@@ -20,13 +15,6 @@ ABILITIES = [
 
 
 OTHER = "Other"
-
-# Officially published D&D options for character sheet fields. Kept as plain
-# constants (no model `choices`) so "Other" plus freetext values can be saved.
-# Derived from character_options.defaults for backwards compatibility.
-CLASS_CHOICES = [(n, n) for n in DEFAULT_CLASSES]
-SPECIES_CHOICES = [(n, n) for n in DEFAULT_SPECIES]
-BACKGROUND_CHOICES = [(n, n) for n in DEFAULT_BACKGROUNDS]
 
 PRONOUNS_CHOICES = [
     ("he/him", "he/him"),
