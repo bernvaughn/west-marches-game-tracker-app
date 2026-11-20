@@ -83,6 +83,25 @@ def test_sheet_shows_note_title_to_owner(club, login, player, owned, item):
     assert "Keep it dry." not in body
 
 
+def test_sheet_shows_add_note_button_for_owned_item_without_note(club, login, player, owned, item):
+    # No note has been set yet: the owner still gets an "Add note" button.
+    body = login(player).get(sheet_url(club, owned)).content.decode()
+    note_url = reverse("characters:note", args=[club.slug, owned.pk, item.pk])
+    assert note_url in body
+    assert 'aria-label="Add note"' in body
+    assert 'title="Add your own note about this item."' in body
+    assert '#sticky"' in body
+
+
+def test_gm_sees_no_note_button(club, login, game_master, player, owned, item):
+    set_note(owned, item, "A note.", player)
+    body = login(game_master).get(sheet_url(club, owned)).content.decode()
+    # GM can read the note text but gets no edit button.
+    assert "A note." in body
+    assert 'aria-label="Edit note"' not in body
+    assert 'aria-label="Add note"' not in body
+
+
 def test_sheet_shows_inline_note_to_gm_and_club_admin(club, login, request, player, owned, item):
     set_note(owned, item, "Do not lose this.", player)
     for who in ("game_master", "club_admin"):
