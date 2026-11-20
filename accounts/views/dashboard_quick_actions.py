@@ -9,6 +9,7 @@ from accounts.dashboard_providers import get_healing_potion_stock
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
+from items.stacked import unit_label
 from ledger.coins import format_coins
 from player_characters.junk import junk_rows
 from player_characters.selection import selected_character
@@ -16,8 +17,8 @@ from quests.services import needed_by_open_quests
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import ShopStock
-from shops.selling import sell_many
-from shops.services import is_open, open_shops, percent_price, sell_price
+from shops.selling import sale_total, sell_many
+from shops.services import is_open, open_shops, sell_price
 
 
 @club_member_required
@@ -69,9 +70,7 @@ def quick_action_sell_junk(request, club_slug):
             "rows": rows,
             "error": error,
             "total": sum(
-                r["price"] * r["quantity"]
-                for r in rows
-                if r["ticked"] and 1 <= r["quantity"] <= r["junk"]
+                r["line_total"] for r in rows if r["ticked"] and 1 <= r["quantity"] <= r["junk"]
             ),
         },
     )
@@ -80,25 +79,23 @@ def quick_action_sell_junk(request, club_slug):
 def _rows_sell(character, shop, posted=None):
     """Junk rows with price, line total, quest warning and tick state."""
     rows = junk_rows(character)
-    overrides = dict(
-        ShopStock.objects.filter(
-            shop=shop, item__in=[r.item for r in rows], buy_percent__isnull=False
-        ).values_list("item_id", "buy_percent")
-    )
     needs = needed_by_open_quests(character) if rows else {}
     out = []
     for r in rows:
-        price = percent_price(r.item.value_cp, overrides.get(r.item.pk, shop.buy_percent))
         quests = needs.get(r.item.pk, [])
-        ticked, quantity = not quests, r.quantity
+        quantity = r.quantity
+        if posted is not None:
+            quantity = posted["quantities"].get(r.item.pk, quantity)
+        line_total = sale_total(shop, r.item, quantity)
+        ticked = not quests
         if posted is not None:
             ticked = str(r.item.pk) in posted["ticked"]
-            quantity = posted["quantities"].get(r.item.pk, r.quantity)
         out.append(
             {
                 "item": r.item,
                 "junk": r.quantity,
-                "price": price,
+                "line_total": line_total,
+                "pays_zero": line_total == 0,
                 "quests": quests,
                 "ticked": ticked,
                 "quantity": quantity,
@@ -108,7 +105,7 @@ def _rows_sell(character, shop, posted=None):
 
 
 def _parse_sell(data, character, shop):
-    """Return (lines, error, posted) from form data."""
+    """Return (lines, error, posted) from form data. A bad id or quantity refuses the sale."""
     junk = {r.item.pk: r for r in junk_rows(character)}
     ticked = data.getlist("item")
     quantities = {}
@@ -126,6 +123,10 @@ def _parse_sell(data, character, shop):
         quantity = quantities.get(pk)
         if quantity is None or not 1 <= quantity <= row.quantity:
             return [], f"{row.item}: choose a quantity from 1 to {row.quantity}.", posted
+        if row.item.is_stacked and sale_total(shop, row.item, quantity) == 0:
+            unit_text = unit_label(row.item, quantity)
+            message = f"{unit_text} is worth less than 1 cp here. Set it aside instead."
+            return ([], message, posted)
         lines.append((row.item, quantity))
     if not lines:
         error = "Tick at least one item."

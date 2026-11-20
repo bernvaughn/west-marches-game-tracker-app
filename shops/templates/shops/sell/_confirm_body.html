@@ -1,10 +1,20 @@
-{% load coins %}
+{% load coins units %}
 <dl class="wm-dl wm-shop-sums">
-  <dt>Quantity</dt><dd>{{ quantity }}</dd>
+  <dt>Units</dt><dd>{{ unit_text }}</dd>
+  {% if item.is_stacked %}
+  <dt>Pays</dt><dd>{{ total|coins }}</dd>
+  {% else %}
   <dt>Price each</dt><dd>{{ price|coins }}</dd>
   <dt>Total</dt><dd>{{ total|coins }}</dd>
+  {% endif %}
 </dl>
 <p>Selling as <strong>{{ character.name }}</strong></p>
-<div class="alert alert-warning wm-alert wm-alert--warning" role="alert">{% include "components/icon.html" with name="exclamation-triangle-fill" %}<div>{% if junk_quantity %}Only {{ junk_quantity }} of these {% if junk_quantity == 1 %}is{% else %}are{% endif %} marked as junk. All {{ quantity }} sell at {{ price|coins }} each and leave your inventory.{% else %}{{ item.name }} is not marked as junk. If you sell it, the shop still pays {{ price|coins }} each and it leaves your inventory.{% endif %}</div></div>
+<div class="alert alert-warning wm-alert wm-alert--warning" role="alert">{% include "components/icon.html" with name="exclamation-triangle-fill" %}<div>
+  {% if item.is_stacked %}
+    {% if junk_quantity %}Only {{ junk_quantity }} of {{ unit_text }} are marked as junk. All {{ unit_text }} sell and leave your inventory for {{ total|coins }}.{% else %}{{ item.name }} is not marked as junk. Selling {{ unit_text }} pays {{ total|coins }} and it leaves your inventory.{% endif %}
+  {% else %}
+    {% if junk_quantity %}Only {{ junk_quantity }} of these {% if junk_quantity == 1 %}is{% else %}are{% endif %} marked as junk. All {{ quantity }} sell at {{ price|coins }} each and leave your inventory.{% else %}{{ item.name }} is not marked as junk. If you sell it, the shop still pays {{ price|coins }} each and it leaves your inventory.{% endif %}
+  {% endif %}
+</div>
 <input type="hidden" name="quantity" value="{{ quantity }}">
 <input type="hidden" name="confirmed" value="1">

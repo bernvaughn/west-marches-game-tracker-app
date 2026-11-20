@@ -41,7 +41,8 @@ def buy_url(club, seller, item):
 
 def test_listing_is_junk_quantity(seller, item):
     rows = player_shop.listed_rows(seller)
-    assert [(r.item, r.quantity, r.price) for r in rows] == [(item, 3, 100)]
+    # Price is the whole-listing price: 3 Rope at 100 cp each = 300 cp.
+    assert [(r.item, r.quantity, r.price) for r in rows] == [(item, 3, 300)]
     assert player_shop.has_listing(seller)
     assert player_shop.listed_quantity(seller) == 3
 
