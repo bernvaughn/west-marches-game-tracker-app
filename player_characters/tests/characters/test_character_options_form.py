@@ -1,6 +1,5 @@
 """Tests for CharacterForm with club-scoped character options."""
 
-
 import pytest
 from django.urls import reverse
 

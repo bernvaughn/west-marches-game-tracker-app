@@ -27,7 +27,7 @@ def club(db):
 
 @pytest.fixture
 def unseeded_club(db):
-    return Club.objects.create(name="Club A", slug="club-a")
+    return Club.objects.create(name="Unseeded Club", slug="unseeded-club")
 
 
 @pytest.fixture
