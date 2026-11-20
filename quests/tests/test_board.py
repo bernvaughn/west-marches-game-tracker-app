@@ -27,7 +27,7 @@ def test_open_notice_content(login, player, quest, item):
     assert "wm-notice" in board and quest.name in board
     assert "x" * 200 not in board and "x" * 135 in board
     assert format_coins(1000) in board
-    assert f"2 × {item}" in board and "Ends" in board
+    assert f"2 x {item}" in board and "Ends" in board
 
 
 def test_ready_stamp_follows_character(login, player, quest, character, item, give):

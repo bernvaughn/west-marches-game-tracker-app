@@ -38,7 +38,7 @@ def _gm_character(club, game_master):
 
 def test_notice_keeps_reward_name_and_adds_preview(login, player, character, pack_quest):
     notice, _ = _page(login(player), pack_quest)
-    assert "2 ×" in notice
+    assert "2 x" in notice
     assert "Diplomat&#x27;s Pack" in notice or "Diplomat's Pack" in notice
     assert "Preview contents" in notice
     assert "Fine clothes" in notice

@@ -1,6 +1,7 @@
 """Tests for stacked items in containers."""
 
 import pytest
+from django.template.loader import render_to_string
 
 from items.containers import loot_preview, roll_container
 from items.models import ContainerSlot, ContainerSlotOption, Item
@@ -153,3 +154,44 @@ class TestStackedContainers:
         row = preview[0]
         assert row.item == sword
         assert row.unit_name == ""
+
+
+@pytest.mark.django_db
+def test_loot_preview_render_keeps_times_for_normal_items(club):
+    """A normal item shows "2×"; a stacked item shows "2 sheet"."""
+    container = make_container(club, "Render Box")
+    parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
+    rope = Item.objects.create(club=club, name="Rope", value_cp=10)
+    for pos, item in enumerate((parchment, rope)):
+        slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=pos)
+        ContainerSlotOption.objects.create(slot=slot, item=item, qty_min=2, qty_max=2, weight=1)
+    ranged = ContainerSlot.objects.create(container=container, chance_pct=100, position=2)
+    ContainerSlotOption.objects.create(slot=ranged, item=rope, qty_min=1, qty_max=3, weight=1)
+    ContainerSlotOption.objects.create(slot=ranged, item=parchment, qty_min=1, qty_max=3, weight=1)
+
+    html = render_to_string(
+        "items/_loot_preview.html",
+        {"rows": loot_preview(container, viewer_can_see_unknown=True)},
+    )
+
+    assert "2 sheet</span>" in html
+    assert "2&#215;</span>" in html or "2\u00d7</span>" in html
+    assert "1&#8211;3&#215;</span>" in html or "1\u20133\u00d7</span>" in html
+    assert "1&#8211;3 sheet</span>" in html or "1\u20133 sheet</span>" in html
+
+
+@pytest.mark.django_db
+def test_details_body_has_one_value_row_for_stacked(login, game_master, club):
+    from django.urls import reverse
+
+    from ledger.coins import format_coins
+
+    parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
+    c = login(game_master)
+    body = c.get(reverse("items:details_modal", args=[club.slug, parchment.pk])).content.decode()
+    assert body.count("<dt>Value") == 1
+    assert f"{format_coins(100)}</span> per 10 sheet</dd>" in body
+    rope = Item.objects.create(club=club, name="Rope", value_cp=10)
+    body = c.get(reverse("items:details_modal", args=[club.slug, rope.pk])).content.decode()
+    assert f"{format_coins(10)}</span></dd>" in body
+    assert "per " not in body.split("<dt>Value</dt>")[1].split("</dd>")[0]

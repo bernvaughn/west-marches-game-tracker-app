@@ -1,5 +1,7 @@
 """Tests for stacked items in quests."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -128,10 +130,10 @@ class TestQuestStackedRequirements:
         assert r.status_code == 200
         content = r.content.decode()
         # Should show unit name in requirements
-        assert "sheet" in content
-        assert "20" in content
-        # Should show in turn-in card
-        assert "Needed" in content or "Has" in content
+        assert re.search(r"20 sheet\s*(<[^>]+>\s*)*Parchment", content)
+        assert "20 × Parchment" not in content
+        # Turn-in card shows units in Needed and Has
+        assert "20 sheet</td>" in content
 
     def test_reward_note_names_unit(
         self, login, player, character, quest_with_stacked_reward, parchment
@@ -236,3 +238,14 @@ class TestQuestTurnInAllOrNothing:
         # Both consumed - quantity 0 means item not in dict
         assert available_items(character).get(parchment.pk, 0) == 0
         assert available_items(character).get(rope.pk, 0) == 0
+
+
+@pytest.mark.django_db
+def test_stacked_reward_shows_units_and_item_link(
+    login, player, character, quest_with_stacked_reward
+):
+    """The notice and turn-in card show "2 sheet" then the linked item name."""
+    url = reverse("quests:detail", args=["club-a", quest_with_stacked_reward.pk])
+    content = login(player).get(url).content.decode()
+    assert len(re.findall(r"2 sheet\s*(<[^>]+>\s*)*Parchment", content)) >= 2
+    assert "2 × Parchment" not in content and "2 x Parchment" not in content

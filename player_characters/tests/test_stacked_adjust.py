@@ -1,5 +1,7 @@
 """Tests for stacked items in adjust, consume, and bulk award."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -114,7 +116,8 @@ class TestAdjustStacked:
             follow=True,
         )
         # Should fail with form error
-        assert "Insufficient" in r.content.decode() or r.status_code == 200
+        assert r.status_code == 200
+        assert "has 0 x Parchment available but needs 5" in r.content.decode()
         # No ledger entry should be created
         from ledger.models import LedgerEntry
 
@@ -379,3 +382,12 @@ class TestAdjustPermissions:
         url = reverse("characters:adjust", args=["club-a", character.pk])
         r = c.get(url)
         assert r.status_code == 200
+
+
+@pytest.mark.django_db
+def test_bulk_award_datalist_shows_unit_price_once(login, game_master, parchment, sword):
+    r = login(game_master).get(reverse("characters:bulk_award", args=["club-a"]))
+    body = r.content.decode()
+    assert re.search(r"Parchment \((<[^>]+>)?[^<]+(</span>)? per 10 sheet\)", body)
+    assert body.count("per 10 sheet") == 1
+    assert "per 1 " not in body
