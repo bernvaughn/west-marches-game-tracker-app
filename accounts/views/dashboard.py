@@ -118,7 +118,7 @@ def character_preview(request, club_slug, pk):
         raise Http404("Not your character.")
 
     # Build preview data using shared helper
-    stats = build_header_stats(character, request.club, membership)
+    stats = build_header_stats(character)
 
     return JsonResponse(
         {

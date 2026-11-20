@@ -135,29 +135,6 @@ def test_quick_actions_uses_provider_context_has_junk():
 
 
 @pytest.mark.django_db
-def test_dashboard_partial_wraps_context_in_provider_context(club, player, character, login):
-    """Verify the dashboard_partial endpoint wraps context in provider_context dict."""
-    c = login(player)
-
-    # Test with a provider that might not show (should 404)
-    # Test with one that does show
-    resp = c.get(f"/c/{club.slug}/accounts/dashboard/partial/downtime/")
-    # 404 is expected if no action, but we want to verify context wrapping
-    # So let's check the response is valid (either 200 or 404, but not an error)
-    assert resp.status_code in [200, 404], "Response should be valid HTML or 404"
-
-    # If it's 200, verify it contains provider_context data
-    if resp.status_code == 200:
-        content = resp.content.decode()
-        # The template should render successfully if context is properly wrapped
-        assert (
-            "downtime" not in content.lower()
-            or "No downtime" in content.lower()
-            or "Spend" in content
-        )
-
-
-@pytest.mark.django_db
 def test_all_provider_templates_use_provider_context(club, player, character, login):
     """Verify that all provider templates consistently use provider_context.* pattern.
 

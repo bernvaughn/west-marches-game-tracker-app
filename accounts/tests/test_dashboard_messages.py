@@ -174,16 +174,12 @@ def test_message_detail_shows_admin_response(club, player, character, player_wit
 
 
 @pytest.mark.story("S9")
-def test_provider_should_show_logic():
-    """Test the should_show method logic."""
+def test_my_messages_provider_attributes():
+    """MyMessagesDashboardProvider keeps its key and order."""
     from accounts.dashboard_providers import MyMessagesDashboardProvider
 
-    provider = MyMessagesDashboardProvider()
-
-    # We'll test via the view integration instead of unit testing the provider directly
-    # since it requires request/club/character/membership
-    assert provider.key == "my_messages"
-    assert provider.order == 7
+    assert MyMessagesDashboardProvider.key == "my_messages"
+    assert MyMessagesDashboardProvider.order == 7
 
 
 @pytest.mark.story("S9")

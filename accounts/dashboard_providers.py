@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.utils.text import Truncator
 
 from accounts.models import Message
+from accounts.scoping import club_queryset
 from downtime import services as downtime_services
 from downtime.models import DowntimeAction
 from items.magic_types import MagicType
@@ -29,7 +30,6 @@ from shops.services import open_shops
 if TYPE_CHECKING:
     from clubs.models import Club
 
-    from accounts.models import Membership
     from player_characters.models import Character
 
 
@@ -62,11 +62,7 @@ def get_healing_potion_stock(club: "Club", today) -> QuerySet[ShopStock]:
     )
 
 
-def build_header_stats(
-    character: "Character",
-    club: "Club",
-    membership: "Membership",
-) -> dict:
+def build_header_stats(character: "Character") -> dict:
     """Build header stats dict: coins, downtime, junk count/value, unread messages."""
     coin_sum = coin_summary(character)
     downtime_balance = downtime_services.balance(character)
@@ -105,10 +101,7 @@ class HeaderDashboardProvider(BaseDashboardProvider):
     template = "accounts/_dashboard_header.html"
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        return build_header_stats(character, club, membership)
-
-    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        return True
+        return build_header_stats(character)
 
 
 # =============================================================================
@@ -191,44 +184,52 @@ class ConsumablesDashboardProvider(BaseDashboardProvider):
     order = 8
     template = "accounts/_dashboard_consumables.html"
 
-    def _is_consumable(self, item: Item) -> bool:
-        """Check if item is consumable. Delegates to module-level helper."""
-        return is_consumable(item)
+    def _consumable_rows(self, character) -> list[tuple[Item, int]]:
+        """Return list of (item, quantity) for consumable items the character has.
 
-    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        Loads all items in a single query and filters to consumables.
+        Preserves the iteration order of available_items.
+        """
         have = available_items(character)
         if not have:
-            return {"consumable_items": []}
+            return []
 
-        consumable_items = []
+        # Filter to items with qty > 0 and collect their pks
+        item_ids = [item_id for item_id, qty in have.items() if qty > 0]
+        if not item_ids:
+            return []
+
+        # Single query to load all items
+        items = Item.objects.filter(pk__in=item_ids)
+        item_map = {item.pk: item for item in items}
+
+        # Build result preserving order of have
+        rows = []
         for item_id, qty in have.items():
             if qty <= 0:
                 continue
-            item = Item.objects.filter(pk=item_id).first()
+            item = item_map.get(item_id)
             if item and is_consumable(item):
-                consumable_items.append(
-                    {
-                        "item": item,
-                        "quantity": qty,
-                        "consume_partial_url": reverse(
-                            "accounts:consumable_consume_partial",
-                            args=[club.slug, item.pk],
-                        ),
-                    }
-                )
+                rows.append((item, qty))
+        return rows
 
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        rows = self._consumable_rows(character)
+        consumable_items = [
+            {
+                "item": item,
+                "quantity": qty,
+                "consume_partial_url": reverse(
+                    "accounts:consumable_consume_partial",
+                    args=[club.slug, item.pk],
+                ),
+            }
+            for item, qty in rows
+        ]
         return {"consumable_items": consumable_items}
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        have = available_items(character)
-        if not have:
-            return False
-        for item_id, qty in have.items():
-            if qty > 0:
-                item = Item.objects.filter(pk=item_id).first()
-                if item and is_consumable(item):
-                    return True
-        return False
+        return bool(self._consumable_rows(character))
 
 
 # =============================================================================
@@ -300,9 +301,6 @@ class QuestsDashboardProvider(BaseDashboardProvider):
             "quest_items": quest_items,
         }
 
-    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        return True
-
 
 class MessagesDashboardProvider(BaseDashboardProvider):
     """Message admins and unread count (for admin messages)."""
@@ -324,9 +322,6 @@ class MessagesDashboardProvider(BaseDashboardProvider):
         return {
             "message_items": message_items,
         }
-
-    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        return True
 
 
 class MapDashboardProvider(BaseDashboardProvider):
@@ -393,9 +388,6 @@ class MyMessagesDashboardProvider(BaseDashboardProvider):
     template = "accounts/_dashboard_my_messages.html"
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
-        from accounts.models import Message
-        from accounts.scoping import club_queryset
-
         messages = (
             club_queryset(request, Message)
             .filter(sender=membership)
@@ -436,9 +428,6 @@ class MyMessagesDashboardProvider(BaseDashboardProvider):
         }
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:
-        from accounts.models import Message
-        from accounts.scoping import club_queryset
-
         return club_queryset(request, Message).filter(sender=membership).exists()
 
     def _get_status_badge_class(self, status):
