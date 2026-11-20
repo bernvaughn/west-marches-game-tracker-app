@@ -113,7 +113,22 @@
   .wm-sheet .wm-sheet-table.table > thead > tr > th { background: white; color: black; font-size: 10pt; }
   .wm-sheet-table tr { background: white; }
   .wm-sheet .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
+  .wm-xp-bar { display: none; }
+  .wm-xp-text { color: black; }
 }
+
+/* XP progress bar (gamification): slim bar under the XP number, text only in print. */
+.wm-xp { margin-top: var(--wm-space-1); }
+.wm-xp-bar {
+  height: 6px;
+  border: 1px solid var(--wm-border);
+  border-radius: var(--wm-radius-sm, 3px);
+  background: var(--wm-neutral-bg);
+  overflow: hidden;
+  width: 14rem;
+}
+.wm-xp-fill { height: 100%; width: 0%; background: var(--wm-accent); }
+.wm-xp-text { margin: 0; font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
 
 /* U59: inventory row actions now live in components.css (U84 S1). */
 
