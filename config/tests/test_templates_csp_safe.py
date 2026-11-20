@@ -6,8 +6,9 @@ The site serves ``Content-Security-Policy: script-src 'self'`` (see
 deliberately add ``'unsafe-inline'``, so the Django test suite itself cannot
 catch regressions; this test scans the templates statically instead.
 
-It walks every ``*.html`` under ``BASE_DIR/templates`` and each installed
-app's ``templates`` directory and fails with a ``file:line`` list when it
+It walks every ``*.html`` under ``BASE_DIR/templates`` and each project
+app's ``BASE_DIR/<app>/templates`` directory (third-party templates are
+never scanned) and fails with a ``file:line`` list when it
 finds:
   * a ``<script>`` tag without a ``src`` attribute (data blocks of type
     ``application/json`` or ``application/ld+json`` are allowed), or
@@ -17,7 +18,6 @@ Django template comments (``{# #}`` and ``{% comment %}``) and ``{% verbatim %}
 `` blocks are stripped first so live examples inside them are not flagged.
 """
 
-import importlib
 import re
 from pathlib import Path
 
@@ -33,11 +33,16 @@ _JSON_TYPE_RE = re.compile(r"\btype\s*=\s*[\"']application/(?:json|ld\+json)[\"'
 _ON_ATTR_RE = re.compile(r"\bon\w+\s*=", re.IGNORECASE)
 
 
+def _blank_keep_newlines(match):
+    """Replace a match with its newlines only, so line numbers stay right."""
+    return "\n" * match.group(0).count("\n")
+
+
 def _strip_template_marks(source):
     """Remove Django comments and verbatim blocks so they are not scanned."""
-    source = _VERBATIM_RE.sub("", source)
-    source = _COMMENT_RE.sub("", source)
-    source = _BRACE_COMMENT_RE.sub("", source)
+    source = _VERBATIM_RE.sub(_blank_keep_newlines, source)
+    source = _COMMENT_RE.sub(_blank_keep_newlines, source)
+    source = _BRACE_COMMENT_RE.sub(_blank_keep_newlines, source)
     return source
 
 
@@ -80,17 +85,21 @@ def scan_source(source, filename):
 
 
 def _iter_template_files():
-    """Yield every ``*.html`` under BASE_DIR/templates and each app templates dir."""
-    roots = [Path(settings.BASE_DIR) / "templates"]
-    for app_path in settings.INSTALLED_APPS:
-        try:
-            module = importlib.import_module(app_path)
-        except Exception:
+    """Yield every project ``*.html`` template.
+
+    Only project templates are scanned: ``BASE_DIR/templates`` plus each
+    top-level ``BASE_DIR/<app>/templates`` dir. Hidden dirs (such as a
+    ``.venv`` inside the repo) are skipped, so third-party templates in
+    ``site-packages`` are never scanned. We cannot fix those, and a library
+    upgrade must not fail this test.
+    """
+    base = Path(settings.BASE_DIR)
+    roots = [base / "templates"]
+    for child in sorted(base.iterdir()):
+        if child.name.startswith(".") or child.name in {"node_modules", "templates"}:
             continue
-        app_dir = Path(module.__file__).resolve().parent
-        templates_dir = app_dir / "templates"
-        if templates_dir.is_dir():
-            roots.append(templates_dir)
+        if child.is_dir() and (child / "templates").is_dir():
+            roots.append(child / "templates")
     for root in roots:
         if not root.is_dir():
             continue
@@ -123,6 +132,26 @@ def test_scanner_flags_inline_script_and_event_attribute():
     assert "inline on* event attribute" in messages
     # Exactly two real problems: the onclick line and the inline script line.
     assert len(problems) == 2
+
+
+def test_scanner_keeps_line_numbers_after_multiline_comment():
+    """Stripped multi-line comments must not shift the reported line."""
+    source = "{% comment %}\none\ntwo\n{% endcomment %}\n<script>x()</script>"
+    assert scan_source(source, "fake.html") == [
+        "fake.html:5: inline <script> tag without a src attribute"
+    ]
+
+
+def test_only_project_templates_are_scanned():
+    """Third-party templates (Django admin, site-packages) are out of scope."""
+    base = Path(settings.BASE_DIR).resolve()
+    paths = list(_iter_template_files())
+    assert paths, "expected to find project templates"
+    for path in paths:
+        resolved = path.resolve()
+        assert resolved.is_relative_to(base), resolved
+        assert "site-packages" not in resolved.parts, resolved
+        assert not any(part.startswith(".") for part in resolved.relative_to(base).parts), resolved
 
 
 def test_templates_have_no_inline_scripts_or_event_attributes():
