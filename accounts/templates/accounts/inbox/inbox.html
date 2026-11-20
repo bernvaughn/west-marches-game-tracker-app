@@ -22,26 +22,28 @@
         <option value="closed">Close</option>
         <option value="open">Reopen</option>
       </select>
-      <button class="btn btn-sm btn-secondary" type="submit">Apply</button>
+      <input type="checkbox" class="form-check-input" id="inbox-select-all"
+             data-wm-check-all data-wm-check-all-for="message_ids" hidden
+             title="Select all" aria-label="Select all messages">
+      <label class="form-check-label" for="inbox-select-all">Select all</label>
+      <button class="btn btn-sm btn-outline-secondary" type="submit">Apply</button>
     </div>
 
     <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
     <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
       <thead><tr>
-        <th scope="col" class="text-center" style="width: 2rem;">
-          <input type="checkbox" id="inbox-select-all" class="form-check-input"
-                 onclick="wmSetCheckboxes(this.form, 'message_ids', this.checked)"
-                 title="Select all" aria-label="Select all messages">
-        </th>
-        <th>From</th><th>Character</th><th class="wm-msg-col">Message</th><th>Date</th><th>Status</th><th class="actions">Actions</th>
+        <th scope="col" class="text-center" style="width: 2rem;"></th>
+        <th>From</th><th class="d-none d-sm-table-cell">Character</th><th class="wm-msg-col d-none d-sm-table-cell">Message</th><th class="d-none d-sm-table-cell">Date</th><th>Status</th><th class="actions">Actions</th>
       </tr></thead>
   <tbody>
   {% for m in messages_list %}
   <tr>
-    <td class="text-center"><input type="checkbox" name="message_ids" value="{{ m.pk }}" class="form-check-input"></td>
-    <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div></td>
-    <td>{{ m.character.name|default:"-" }}</td>
-    <td class="wm-msg-col">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% elif m.kind == "starting_request" %}<span class="badge text-bg-primary">Starting request</span><br>{% endif %}{{ m.body|linebreaksbr }}
+    <td class="text-center"><label class="d-inline-flex p-2"><input type="checkbox" name="message_ids" value="{{ m.pk }}" class="form-check-input" aria-label="Select message from {{ m.sender.user.display_name }} #{{ m.pk }}"></label></td>
+    <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div>
+      <div class="d-sm-none">{{ m.body|linebreaksbr }}</div>
+    </td>
+    <td class="d-none d-sm-table-cell">{{ m.character.name|default:"-" }}</td>
+    <td class="wm-msg-col d-none d-sm-table-cell">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% elif m.kind == "starting_request" %}<span class="badge text-bg-primary">Starting request</span><br>{% endif %}{{ m.body|linebreaksbr }}
       {% if m.granted_entries.all or m.granted_visits.all or m.granted_credits.all or m.granted_found_marks.all %}
       <div class="wm-granted"><strong>Granted</strong>
         <ul>
@@ -54,7 +56,7 @@
         </ul></div>
       {% endif %}
     </td>
-    <td class="wm-date">{{ m.created|date:"DATETIME_FORMAT" }}</td>
+    <td class="wm-date d-none d-sm-table-cell">{{ m.created|date:"DATETIME_FORMAT" }}</td>
     <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
     <td class="actions"><div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for this message from {{ m.sender.user.display_name }}">
       {% if m.status == "open" %}

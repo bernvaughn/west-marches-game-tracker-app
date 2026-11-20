@@ -419,3 +419,36 @@ def test_message_form_has_template_choices():
     assert form.fields["template"].choices == TEMPLATE_CHOICES
     assert form.fields["template"].required is False
     assert "template" not in form.Meta.fields
+
+
+@pytest.mark.story("U30")
+def test_inbox_select_all_apply_and_row_labels(club, club_admin, player, login):
+    """Select all is CSP-safe, Apply is readable, row checkboxes are labelled, columns respond."""
+    Message.objects.create(club=club, sender=_mem(player, club), body="One ring")
+    Message.objects.create(club=club, sender=_mem(player, club), body="Two rings")
+    _, inbox = _urls(club)
+    page = login(club_admin).get(inbox).content.decode()
+
+    # No inline event handlers: select-all must not use onclick (CSP script-src 'self').
+    assert "onclick" not in page
+
+    # Select-all control lives in the bulk form, outside the swapped #inbox-list.
+    assert "data-wm-check-all" in page
+    assert 'data-wm-check-all-for="message_ids"' in page
+    bar_start = page.index('<div id="inbox-bulk-bar"')
+    bar = page[bar_start : page.index("</div>", bar_start)]
+    assert "data-wm-check-all" in bar
+    assert 'id="inbox-list"' not in bar
+
+    # Apply button uses the readable outline variant, not the solid secondary.
+    assert 'class="btn btn-sm btn-outline-secondary"' in bar
+    assert 'class="btn btn-sm btn-secondary"' not in bar
+
+    # Every row checkbox has a unique accessible name.
+    labels = re.findall(r'aria-label="Select message from [^"]+"', page)
+    assert len(labels) == 2
+    assert len(set(labels)) == 2
+
+    # Responsive utilities: message text in the From cell below 576px, other columns hide.
+    assert "d-sm-none" in page
+    assert "d-none d-sm-table-cell" in page
