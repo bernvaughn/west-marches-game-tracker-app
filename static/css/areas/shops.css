@@ -118,8 +118,9 @@
   .wm-inventory-sell th.wm-col-sells,
   .wm-inventory-sell td.wm-col-sells { display: none; }
   /* Keep the info icon on the name's first line (1.75rem = 28px >= 24px tap target). */
-  .wm-inventory-sell .wm-inv-name { display: flex; align-items: flex-start; min-width: 0; overflow-wrap: anywhere; }
-  .wm-inventory-sell .wm-item-info { width: 1.75rem; height: 1.75rem; margin-left: 0; }
+  .wm-inventory-sell .wm-inv-name { display: flex; align-items: flex-start; min-width: 0; overflow-wrap: break-word; }
+  .wm-inventory-sell .wm-item-symbol { margin-right: .25rem; }
+  .wm-inventory-sell .wm-item-info { flex: none; width: 1.75rem; height: 1.75rem; margin-left: 0; }
   .wm-inv-sells { display: block; font-size: var(--wm-text-xs); color: var(--wm-text-muted); }
 }
 
