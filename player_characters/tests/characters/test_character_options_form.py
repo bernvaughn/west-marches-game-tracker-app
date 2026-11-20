@@ -1,9 +1,12 @@
 """Tests for CharacterForm with club-scoped character options."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
 from character_options.models import Background, CharacterClass, Species
+from character_options.services import seed_default_options
 from player_characters.models import OTHER, Character
 
 
@@ -17,8 +20,8 @@ def edit_url(club, pk):
 
 @pytest.fixture
 def club_with_options(club):
-    """Ensure club has seeded options."""
-    # club fixture already seeds defaults
+    """The club, seeded with the default option lists."""
+    seed_default_options(club)
     return club
 
 
@@ -331,9 +334,10 @@ class TestCustomFlags:
     def test_other_flag_shows_on_create(self, club_with_options, login, club_admin):
         """Other flag shows for class and background on create."""
         html = login(club_admin).get(create_url(club_with_options)).content.decode()
-        assert "Custom value: no starting equipment for this char_class." in html
+        assert "Custom value: no starting equipment for this class." in html
         assert "Custom value: no starting equipment for this background." in html
-        assert "Custom value" in html  # species flag
+        assert "Custom value." in html  # species flag
+        assert "char_class." not in html  # never the raw field name
 
     def test_custom_badge_on_edit_when_custom(self, club_with_options, login, player, character):
         """Custom badge shows on edit when FK null and text set."""
@@ -362,11 +366,6 @@ class TestCustomFlags:
 class TestDetailPageBadges:
     """Custom badge on detail page."""
 
-    @pytest.mark.skip(
-        reason=(
-            "Badge not rendering in test environment due to template caching; works in production"
-        )
-    )
     def test_custom_badge_on_detail_when_custom(self, club_with_options, login, player, character):
         character.char_class = "Custom Class"
         character.class_option = None
@@ -376,9 +375,9 @@ class TestDetailPageBadges:
             kwargs={"club_slug": club_with_options.slug, "pk": character.pk},
         )
         html = login(player).get(detail_url).content.decode()
-        # Badge uses wm-badge--warning class
-        assert "wm-badge--warning" in html
-        assert "custom" in html.lower()
+        assert re.search(
+            r'Custom Class\s*<span class="wm-badge wm-badge--warning">custom</span>', html
+        )
 
     def test_no_badge_on_detail_when_linked(self, club_with_options, login, player, character):
         class_name = (
