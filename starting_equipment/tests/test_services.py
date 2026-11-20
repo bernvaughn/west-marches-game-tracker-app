@@ -12,9 +12,6 @@ from starting_equipment.models import (
     StartingEquipmentRequest,
 )
 
-# Import the service function (will be created by SE3)
-# from starting_equipment.services import apply_starting_equipment
-
 pytestmark = [pytest.mark.django_db]
 
 User = get_user_model()
@@ -23,21 +20,18 @@ User = get_user_model()
 class TestApplyStartingEquipment:
     """Tests for the apply_starting_equipment service function."""
 
-    def test_class_match_case_insensitive(
+    def test_class_match_by_fk(
         self,
-        character_lowercase_class_bg,
+        character_with_class_bg,
         template,
         class_entry,
         class_line,
         game_master_user,
     ):
-        """Class equipment match is case-insensitive (char_class 'fighter' matches
-        template 'Fighter')."""
-        # Import here to avoid circular import if service doesn't exist yet
+        """Class equipment match is by class_option FK."""
         from starting_equipment.services import apply_starting_equipment
 
-        # Character has char_class="fighter" (lowercase), template has "Fighter"
-        entry = apply_starting_equipment(character_lowercase_class_bg, template, game_master_user)
+        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
 
         assert entry is not None
         assert entry.kind == "award"
@@ -51,9 +45,9 @@ class TestApplyStartingEquipment:
         assert item_lines[0].item.name == "Longsword"
         assert item_lines[0].quantity == 1
 
-    def test_background_match_case_insensitive(
+    def test_background_match_by_fk(
         self,
-        character_lowercase_class_bg,
+        character_with_class_bg,
         template,
         class_entry,
         class_line,
@@ -61,12 +55,10 @@ class TestApplyStartingEquipment:
         bg_line,
         game_master_user,
     ):
-        """Background equipment match is case-insensitive (background 'acolyte'
-        matches template 'Acolyte')."""
+        """Background equipment match is by background_option FK."""
         from starting_equipment.services import apply_starting_equipment
 
-        # Character has background="acolyte" (lowercase), template has "Acolyte"
-        entry = apply_starting_equipment(character_lowercase_class_bg, template, game_master_user)
+        entry = apply_starting_equipment(character_with_class_bg, template, game_master_user)
 
         assert entry is not None
         lines = entry.lines.select_related("item")
@@ -341,7 +333,7 @@ class TestApplyStartingEquipment:
         assert "Longsword" in item_names
         assert "Holy Symbol" in item_names
 
-    def test_background_equipment_only_when_character_has_background(
+    def test_background_equipment_only_when_character_has_background_option(
         self,
         character_no_bg,
         template,
@@ -351,7 +343,7 @@ class TestApplyStartingEquipment:
         bg_line,
         game_master_user,
     ):
-        """Background equipment only applied when character.background is set."""
+        """Background equipment only applied when character.background_option is set."""
         from starting_equipment.services import apply_starting_equipment
 
         entry = apply_starting_equipment(character_no_bg, template, game_master_user)
@@ -364,7 +356,7 @@ class TestApplyStartingEquipment:
         assert len(item_lines) == 1
         assert item_lines[0].item.name == "Longsword"
 
-    def test_no_class_equipment_when_character_has_no_class(
+    def test_no_class_equipment_when_character_has_no_class_option(
         self,
         character_no_class,
         template,
@@ -374,7 +366,7 @@ class TestApplyStartingEquipment:
         bg_line,
         game_master_user,
     ):
-        """Class equipment not granted when character has no class."""
+        """Class equipment not granted when character has no class_option."""
         from starting_equipment.services import apply_starting_equipment
 
         entry = apply_starting_equipment(character_no_class, template, game_master_user)
@@ -386,6 +378,83 @@ class TestApplyStartingEquipment:
         # Should only get background item (Holy Symbol), no class item
         assert len(item_lines) == 1
         assert item_lines[0].item.name == "Holy Symbol"
+
+    def test_custom_character_gets_no_class_gear(
+        self,
+        character_custom_class,
+        template,
+        class_entry,
+        class_line,
+        bg_entry,
+        bg_line,
+        game_master_user,
+    ):
+        """Custom character (no class_option FK) gets no class gear."""
+        from starting_equipment.services import apply_starting_equipment
+
+        entry = apply_starting_equipment(character_custom_class, template, game_master_user)
+
+        assert entry is not None
+        lines = entry.lines.select_related("item")
+        item_lines = [line for line in lines if line.item is not None]
+
+        # Should only get background item (Holy Symbol), no class item
+        assert len(item_lines) == 1
+        assert item_lines[0].item.name == "Holy Symbol"
+
+    def test_homebrew_class_with_entry_gets_gear(
+        self,
+        character_homebrew_class,
+        template,
+        homebrew_class_entry,
+        homebrew_class_line,
+        bg_entry,
+        bg_line,
+        game_master_user,
+    ):
+        """Homebrew class with an entry gets gear."""
+        from starting_equipment.services import apply_starting_equipment
+
+        entry = apply_starting_equipment(character_homebrew_class, template, game_master_user)
+
+        assert entry is not None
+        lines = entry.lines.select_related("item")
+        item_lines = [line for line in lines if line.item is not None]
+
+        # Should get both class item (Crimson Rite Dagger) and background item
+        assert len(item_lines) == 2
+        item_names = {line.item.name for line in item_lines}
+        assert "Crimson Rite Dagger" in item_names
+        assert "Holy Symbol" in item_names
+
+    def test_level_range_follows_class_record(
+        self,
+        character_level_3_wizard,
+        character_level_7_wizard,
+        template,
+        class_entry_limited_level,
+        class_item,
+        game_master_user,
+    ):
+        """Level range follows the class record (FK), not the text field."""
+        from starting_equipment.services import apply_starting_equipment
+
+        # Add a class line for the wizard entry
+        StartingEquipmentClassLine.objects.create(
+            class_entry=class_entry_limited_level, item=class_item, quantity=1, is_choice=False
+        )
+
+        # Level 3 wizard - outside range, no gear
+        entry_l3 = apply_starting_equipment(character_level_3_wizard, template, game_master_user)
+        assert entry_l3 is None
+
+        # Level 7 wizard - inside range, gets gear
+        entry_l7 = apply_starting_equipment(character_level_7_wizard, template, game_master_user)
+        assert entry_l7 is not None
+        lines = entry_l7.lines.select_related("item")
+        item_lines = [line for line in lines if line.item is not None]
+        assert len(item_lines) == 1
+        assert item_lines[0].item.name == "Longsword"
 
     def test_character_level_none_defaults_to_1(
         self, club, player, template, class_entry, class_line, bg_entry, game_master_user
@@ -399,7 +468,9 @@ class TestApplyStartingEquipment:
             owner=owner,
             name="No Level",
             char_class="Fighter",
+            class_option=class_entry.class_option,
             background="Acolyte",
+            background_option=bg_entry.background_option,
             level=None,  # Explicitly None
         )
 
@@ -594,7 +665,9 @@ class TestApplyStartingEquipment:
             owner=owner,
             name="Other Club Fighter",
             char_class="Fighter",
+            class_option=None,  # No FK, won't match
             background="Acolyte",
+            background_option=None,
             level=1,
         )
 

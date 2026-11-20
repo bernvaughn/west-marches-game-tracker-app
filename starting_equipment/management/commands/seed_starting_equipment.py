@@ -5,6 +5,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounts.models import Club
+from character_options.models import Background, CharacterClass
+from character_options.services import seed_default_options
 from items.models import Item
 from starting_equipment.models import (
     StartingEquipmentBackgroundEntry,
@@ -397,6 +399,13 @@ class Command(BaseCommand):
             self.stdout.write(f"Using club: {club.name} ({club.slug})")
 
         with transaction.atomic():
+            # First, seed default character options (classes, backgrounds) for this club
+            created_counts = seed_default_options(club)
+            self.stdout.write(
+                f"Seeded default options: {created_counts['classes']} classes, "
+                f"{created_counts['backgrounds']} backgrounds"
+            )
+
             # Create or get template
             template, created = StartingEquipmentTemplate.objects.get_or_create(
                 club=club,
@@ -498,6 +507,34 @@ class Command(BaseCommand):
                 "Please resolve duplicates in the admin before seeding."
             ) from None
 
+    def _get_class_option(self, club, name):
+        """Get CharacterClass option by name, raise if not found."""
+        try:
+            return CharacterClass.objects.for_club(club).get(name=name)
+        except CharacterClass.DoesNotExist as err:
+            raise CommandError(
+                f"Class '{name}' not found for club {club}. Run seed_default_options first."
+            ) from err
+        except MultipleObjectsReturned:
+            raise CommandError(
+                f"Multiple classes named '{name}' exist for club {club}. "
+                "Please resolve duplicates in the admin before seeding."
+            ) from None
+
+    def _get_background_option(self, club, name):
+        """Get Background option by name, raise if not found."""
+        try:
+            return Background.objects.for_club(club).get(name=name)
+        except Background.DoesNotExist as err:
+            raise CommandError(
+                f"Background '{name}' not found for club {club}. Run seed_default_options first."
+            ) from err
+        except MultipleObjectsReturned:
+            raise CommandError(
+                f"Multiple backgrounds named '{name}' exist for club {club}. "
+                "Please resolve duplicates in the admin before seeding."
+            ) from None
+
     def _create_class_entries(self, template, force):
         """Create StartingEquipmentClassEntry for each class."""
         club = template.club
@@ -505,10 +542,12 @@ class Command(BaseCommand):
         updated_count = 0
 
         for class_name, class_data in CLASS_EQUIPMENT.items():
+            class_option = self._get_class_option(club, class_name)
             entry, created = StartingEquipmentClassEntry.objects.get_or_create(
                 template=template,
                 char_class=class_name,
                 defaults={
+                    "class_option": class_option,
                     "min_level": 1,
                     "max_level": 20,
                     "coins_cp": class_data["coins_cp"],
@@ -517,8 +556,9 @@ class Command(BaseCommand):
             if created:
                 created_count += 1
             elif force:
+                entry.class_option = class_option
                 entry.coins_cp = class_data["coins_cp"]
-                entry.save(update_fields=["coins_cp"])
+                entry.save(update_fields=["class_option", "coins_cp"])
                 updated_count += 1
 
             # Create lines for this class entry
@@ -551,16 +591,21 @@ class Command(BaseCommand):
         updated_count = 0
 
         for bg_name, bg_data in BACKGROUND_EQUIPMENT.items():
+            bg_option = self._get_background_option(club, bg_name)
             entry, created = StartingEquipmentBackgroundEntry.objects.get_or_create(
                 template=template,
                 background=bg_name,
-                defaults={"coins_cp": bg_data["coins_cp"]},
+                defaults={
+                    "background_option": bg_option,
+                    "coins_cp": bg_data["coins_cp"],
+                },
             )
             if created:
                 created_count += 1
             elif force:
+                entry.background_option = bg_option
                 entry.coins_cp = bg_data["coins_cp"]
-                entry.save(update_fields=["coins_cp"])
+                entry.save(update_fields=["background_option", "coins_cp"])
                 updated_count += 1
 
             # Create lines for this background entry
