@@ -122,54 +122,5 @@
   </div>
 </form>
 <script src="{% static 'js/check_all.js' %}" defer></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  // Toggle character sections when checkboxes change
-  document.querySelectorAll('input[name="characters"]').forEach(function(cb) {
-    cb.addEventListener('change', function() {
-      var target = document.querySelector(this.dataset.wmToggle);
-      if (target) {
-        target.classList.toggle('d-none', !this.checked);
-      }
-    });
-    // Initialize visibility
-    var target = document.querySelector(cb.dataset.wmToggle);
-    if (target) {
-      target.classList.toggle('d-none', !cb.checked);
-    }
-  });
-
-  // Handle item autocomplete: update hidden field with selected item ID
-  document.querySelectorAll('input[list="item-catalogue"]').forEach(function(input) {
-    input.addEventListener('input', function() {
-      var hiddenField = document.getElementById(this.id.replace('-item', '-item_id'));
-      var selectedOption = document.querySelector('#item-catalogue option[value="' + this.value + '"]');
-      if (selectedOption) {
-        hiddenField.value = selectedOption.value;
-        // Show loot preview if this is a container item
-        showLootPreview(this, selectedOption.value);
-      } else {
-        hiddenField.value = '';
-        // Hide loot preview
-        showLootPreview(this, null);
-      }
-    });
-  });
-
-  function showLootPreview(inputElement, itemId) {
-    // Each item row has its own preview slot.
-    var row = inputElement.closest('.wm-item-row');
-    var lootSlot = row ? row.querySelector('.wm-loot-slot') : null;
-    if (!lootSlot) return;
-    var template = itemId ? document.getElementById('loot-preview-' + itemId) : null;
-    if (template) {
-      lootSlot.replaceChildren(template.content.cloneNode(true));
-      lootSlot.hidden = false;
-    } else {
-      lootSlot.replaceChildren();
-      lootSlot.hidden = true;
-    }
-  }
-});
-</script>
+<script src="{% static 'js/bulk_award.js' %}" defer></script>
 {% endblock %}

@@ -1,5 +1,5 @@
 {% extends "components/modal_frame.html" %}
-{% load accounts_tags loot_tags %}
+{% load accounts_tags loot_tags static %}
 
 {% block title %}Request Magic Starting Item{% endblock %}
 
@@ -117,4 +117,5 @@
     updateLootPreview();
 })();
 </script>
+<script src="{% static 'js/starting_equipment_request.js' %}" defer></script>
 {% endblock %}
