@@ -3,6 +3,7 @@
 import pytest
 from django.urls import reverse
 
+from character_options.models import Background, CharacterClass
 from items.models import Item
 from ledger.models import LedgerEntry
 from player_characters.models import Character
@@ -40,9 +41,18 @@ def _create_template_with_entries(club):
         club=club, name="Active Template", is_active=True
     )
 
+    # Create class and background options (seeded by the club fixture)
+    fighter_class = CharacterClass.objects.get(club=club, name="Fighter")
+    acolyte_bg = Background.objects.get(club=club, name="Acolyte")
+
     # Class entry for Fighter
     class_entry = StartingEquipmentClassEntry.objects.create(
-        template=template, char_class="Fighter", min_level=1, max_level=20, coins_cp=1000
+        template=template,
+        class_option=fighter_class,
+        char_class="Fighter",
+        min_level=1,
+        max_level=20,
+        coins_cp=1000,
     )
 
     # Class item
@@ -53,7 +63,10 @@ def _create_template_with_entries(club):
 
     # Background entry for Acolyte
     bg_entry = StartingEquipmentBackgroundEntry.objects.create(
-        template=template, background="Acolyte", coins_cp=500
+        template=template,
+        background_option=acolyte_bg,
+        background="Acolyte",
+        coins_cp=500,
     )
 
     # Background item
@@ -100,12 +113,19 @@ class TestFullClaimFlow:
         template = _create_template_with_entries(club)
         assert template.is_active is True
 
+        # Need to set the FKs on the character for matching to work
+        fighter_class = CharacterClass.objects.get(club=club, name="Fighter")
+        acolyte_bg = Background.objects.get(club=club, name="Acolyte")
+        character.class_option = fighter_class
+        character.background_option = acolyte_bg
+        character.save(update_fields=["class_option", "background_option"])
+
         # 3. Visit character detail -> claim button should appear
         response = client.get(detail_url(club, character))
         assert response.status_code == 200
         assert response.context["can_claim_starting_equipment"] is True
 
-        # 4. POST claim (HTMX) -> ledger entry created, claimed=True
+        # 4. POST claim (HTMX) -> ledger entry created with items/coins, claimed=True
         response = client.post(claim_url(club, character), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
 
@@ -154,15 +174,18 @@ class TestAutoApplyOnCreation:
         character = Character.objects.get(name="Auto Claim Character")
         character.refresh_from_db()
 
+        # Character creation sets the FKs and auto-applies starting equipment
+        character.refresh_from_db()
+        assert character.class_option is not None
+        assert character.background_option is not None
+        assert character.starting_equipment_claimed is True
+
         # Verify ledger entry created
         entries = LedgerEntry.objects.filter(character=character)
         assert entries.count() == 1
         entry = entries.first()
         assert entry.kind == LedgerEntry.Kind.AWARD
         assert entry.note == "Starting equipment"
-
-        # Verify claimed flag is True (this is the fix being tested)
-        assert character.starting_equipment_claimed is True
 
 
 class TestClaimNoMatch:
@@ -181,8 +204,14 @@ class TestClaimNoMatch:
             club=club, name="Mismatched Template", is_active=True
         )
         # Add entry for Wizard (not Fighter)
+        wizard_class = CharacterClass.objects.get(club=club, name="Wizard")
         StartingEquipmentClassEntry.objects.create(
-            template=template, char_class="Wizard", min_level=1, max_level=20, coins_cp=1000
+            template=template,
+            char_class="Wizard",
+            class_option=wizard_class,
+            min_level=1,
+            max_level=20,
+            coins_cp=1000,
         )
 
         # Create character with Fighter class (no matching template entry)
@@ -196,6 +225,13 @@ class TestClaimNoMatch:
         character = Character.objects.get(name="Mismatch Character")
         character.refresh_from_db()
         assert character.starting_equipment_claimed is False  # Not auto-applied
+
+        # Set FKs (seeded by the club fixture)
+        fighter_class = CharacterClass.objects.get(club=club, name="Fighter")
+        acolyte_bg = Background.objects.get(club=club, name="Acolyte")
+        character.class_option = fighter_class
+        character.background_option = acolyte_bg
+        character.save(update_fields=["class_option", "background_option"])
 
         # POST claim -> error, nothing granted, not marked claimed
         response = client.post(claim_url(club, character), HTTP_HX_REQUEST="true")

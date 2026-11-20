@@ -11,6 +11,8 @@ from django.core.exceptions import MultipleObjectsReturned
 from django.db import transaction
 
 from accounts.models import Club
+from character_options.models import Background, CharacterClass
+from character_options.services import seed_default_options
 from items.models import Item
 from starting_equipment.models import (
     StartingEquipmentBackgroundEntry,
@@ -461,10 +463,12 @@ def _create_class_entries(template: StartingEquipmentTemplate, force: bool) -> t
     updated_count = 0
 
     for class_name, class_data in CLASS_EQUIPMENT.items():
+        class_option = CharacterClass.objects.for_club(club).get(name=class_name)
         entry, created = StartingEquipmentClassEntry.objects.get_or_create(
             template=template,
             char_class=class_name,
             defaults={
+                "class_option": class_option,
                 "min_level": 1,
                 "max_level": 20,
                 "coins_cp": class_data["coins_cp"],
@@ -473,8 +477,9 @@ def _create_class_entries(template: StartingEquipmentTemplate, force: bool) -> t
         if created:
             created_count += 1
         elif force:
+            entry.class_option = class_option
             entry.coins_cp = class_data["coins_cp"]
-            entry.save(update_fields=["coins_cp"])
+            entry.save(update_fields=["class_option", "coins_cp"])
             updated_count += 1
 
         # Create lines for this class entry
@@ -511,16 +516,21 @@ def _create_background_entries(template: StartingEquipmentTemplate, force: bool)
     updated_count = 0
 
     for bg_name, bg_data in BACKGROUND_EQUIPMENT.items():
+        bg_option = Background.objects.for_club(club).get(name=bg_name)
         entry, created = StartingEquipmentBackgroundEntry.objects.get_or_create(
             template=template,
             background=bg_name,
-            defaults={"coins_cp": bg_data["coins_cp"]},
+            defaults={
+                "background_option": bg_option,
+                "coins_cp": bg_data["coins_cp"],
+            },
         )
         if created:
             created_count += 1
         elif force:
+            entry.background_option = bg_option
             entry.coins_cp = bg_data["coins_cp"]
-            entry.save(update_fields=["coins_cp"])
+            entry.save(update_fields=["background_option", "coins_cp"])
             updated_count += 1
 
         # Create lines for this background entry
@@ -595,6 +605,9 @@ def seed_default_starting_equipment(
         StartingEquipmentSeedError: If duplicate items exist or items are missing.
     """
     with transaction.atomic():
+        # First, seed default character options (classes, backgrounds) for this club
+        seed_default_options(club)
+
         # Create or get template
         template, created = StartingEquipmentTemplate.objects.get_or_create(
             club=club,

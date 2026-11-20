@@ -50,10 +50,10 @@ class TemplateDetailView(StartingEquipmentBaseView):
         template = self.get_club_template_or_404(pk=pk)
         context = self.get_template_context(template=template)
         context["class_entries"] = template.class_entries.select_related(
-            "template"
+            "template", "class_option"
         ).prefetch_related("lines__item")
         context["background_entries"] = template.background_entries.select_related(
-            "template"
+            "template", "background_option"
         ).prefetch_related("lines__item")
         context["level_coins"] = template.level_coins.all()
         context["magic_options"] = template.magic_options.select_related("item")

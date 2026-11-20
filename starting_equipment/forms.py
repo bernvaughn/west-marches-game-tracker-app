@@ -6,6 +6,7 @@ Item fields are club-scoped so a club can only pick from its own catalogue.
 from django import forms
 from django.forms import inlineformset_factory
 
+from character_options.models import Background, CharacterClass
 from items.models import Item
 from starting_equipment.models import (
     MagicItemStartingOption,
@@ -23,6 +24,16 @@ def _item_queryset(club):
     return Item.objects.filter(club=club).order_by("name")
 
 
+def _class_option_queryset(club):
+    """Return the club's CharacterClass records for entry class pickers."""
+    return CharacterClass.objects.for_club(club).order_by("sort_order", "name")
+
+
+def _background_option_queryset(club):
+    """Return the club's Background records for entry background pickers."""
+    return Background.objects.for_club(club).order_by("sort_order", "name")
+
+
 class ClubItemMixin:
     """Mixin that scopes a form's ``item`` field to the current club."""
 
@@ -35,10 +46,20 @@ class ClubItemMixin:
 class ClassEntryForm(forms.ModelForm):
     def __init__(self, *args, club=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if club is not None:
+            self.fields["class_option"].queryset = _class_option_queryset(club)
 
     class Meta:
         model = StartingEquipmentClassEntry
-        fields = ["char_class", "min_level", "max_level", "coins_cp"]
+        fields = ["class_option", "min_level", "max_level", "coins_cp"]
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if instance.class_option:
+            instance.char_class = instance.class_option.name
+        if commit:
+            instance.save()
+        return instance
 
 
 class ClassLineForm(ClubItemMixin, forms.ModelForm):
@@ -59,10 +80,20 @@ ClassLineFormSet = inlineformset_factory(
 class BackgroundEntryForm(forms.ModelForm):
     def __init__(self, *args, club=None, **kwargs):
         super().__init__(*args, **kwargs)
+        if club is not None:
+            self.fields["background_option"].queryset = _background_option_queryset(club)
 
     class Meta:
         model = StartingEquipmentBackgroundEntry
-        fields = ["background", "coins_cp"]
+        fields = ["background_option", "coins_cp"]
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if instance.background_option:
+            instance.background = instance.background_option.name
+        if commit:
+            instance.save()
+        return instance
 
 
 class BackgroundLineForm(ClubItemMixin, forms.ModelForm):

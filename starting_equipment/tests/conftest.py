@@ -2,7 +2,9 @@
 
 import pytest
 
-from accounts.models import Membership, User
+from accounts.models import Club, Membership, User
+from character_options.models import Background, CharacterClass
+from character_options.services import seed_default_options
 from items.models import Item
 from player_characters.models import Character
 from starting_equipment.models import (
@@ -15,6 +17,22 @@ from starting_equipment.models import (
     StartingEquipmentRequest,
     StartingEquipmentTemplate,
 )
+
+
+@pytest.fixture
+def club(db):
+    """Club with default options seeded for starting_equipment tests."""
+    club = Club.objects.create(name="Club A", slug="club-a")
+    seed_default_options(club)
+    return club
+
+
+@pytest.fixture
+def other_club(db):
+    """Second club with default options seeded."""
+    club = Club.objects.create(name="Club B", slug="club-b")
+    seed_default_options(club)
+    return club
 
 
 @pytest.fixture
@@ -34,18 +52,52 @@ def inactive_template(club):
 
 
 @pytest.fixture
-def class_entry(template):
+def class_option_fighter(club):
+    """CharacterClass record for Fighter (seeded by the club fixture)."""
+    return CharacterClass.objects.get(club=club, name="Fighter")
+
+
+@pytest.fixture
+def class_option_wizard(club):
+    """CharacterClass record for Wizard (seeded by the club fixture)."""
+    return CharacterClass.objects.get(club=club, name="Wizard")
+
+
+@pytest.fixture
+def bg_option_acolyte(club):
+    """Background record for Acolyte (seeded by the club fixture)."""
+    return Background.objects.get(club=club, name="Acolyte")
+
+
+@pytest.fixture
+def bg_option_sage(club):
+    """Background record for Sage (seeded by the club fixture)."""
+    return Background.objects.get(club=club, name="Sage")
+
+
+@pytest.fixture
+def class_entry(template, class_option_fighter):
     """Class entry for Fighter at levels 1-20."""
     return StartingEquipmentClassEntry.objects.create(
-        template=template, char_class="Fighter", min_level=1, max_level=20, coins_cp=1000
+        template=template,
+        class_option=class_option_fighter,
+        char_class="Fighter",
+        min_level=1,
+        max_level=20,
+        coins_cp=1000,
     )
 
 
 @pytest.fixture
-def class_entry_limited_level(template):
+def class_entry_limited_level(template, class_option_wizard):
     """Class entry for Wizard at levels 5-10 only."""
     return StartingEquipmentClassEntry.objects.create(
-        template=template, char_class="Wizard", min_level=5, max_level=10, coins_cp=500
+        template=template,
+        class_option=class_option_wizard,
+        char_class="Wizard",
+        min_level=5,
+        max_level=10,
+        coins_cp=500,
     )
 
 
@@ -82,10 +134,13 @@ def class_line_choice(class_entry, class_item_2):
 
 
 @pytest.fixture
-def bg_entry(template):
+def bg_entry(template, bg_option_acolyte):
     """Background entry for Acolyte."""
     return StartingEquipmentBackgroundEntry.objects.create(
-        template=template, background="Acolyte", coins_cp=500
+        template=template,
+        background_option=bg_option_acolyte,
+        background="Acolyte",
+        coins_cp=500,
     )
 
 
@@ -160,7 +215,9 @@ def magic_option(template, magic_item):
 
 
 @pytest.fixture
-def character_with_class_bg(club, player, class_entry, bg_entry):
+def character_with_class_bg(
+    club, player, class_entry, bg_entry, class_option_fighter, bg_option_acolyte
+):
     """Character with class and background matching template entries."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -168,27 +225,33 @@ def character_with_class_bg(club, player, class_entry, bg_entry):
         owner=owner,
         name="Test Fighter",
         char_class="Fighter",
+        class_option=class_option_fighter,
         background="Acolyte",
+        background_option=bg_option_acolyte,
         level=1,
     )
 
 
 @pytest.fixture
-def character_lowercase_class_bg(club, player, class_entry, bg_entry):
-    """Character with lowercase class and background (case-insensitive match)."""
+def character_lowercase_class_bg(
+    club, player, class_entry, bg_entry, class_option_fighter, bg_option_acolyte
+):
+    """Character with lowercase class and background (FK matching still works)."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
         club=club,
         owner=owner,
         name="Test Fighter Lower",
         char_class="fighter",
+        class_option=class_option_fighter,
         background="acolyte",
+        background_option=bg_option_acolyte,
         level=1,
     )
 
 
 @pytest.fixture
-def character_level_5(club, player, class_entry, bg_entry):
+def character_level_5(club, player, class_entry, bg_entry, class_option_fighter, bg_option_acolyte):
     """Character at level 5."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -196,13 +259,17 @@ def character_level_5(club, player, class_entry, bg_entry):
         owner=owner,
         name="Test Fighter L5",
         char_class="Fighter",
+        class_option=class_option_fighter,
         background="Acolyte",
+        background_option=bg_option_acolyte,
         level=5,
     )
 
 
 @pytest.fixture
-def character_level_10(club, player, class_entry, bg_entry):
+def character_level_10(
+    club, player, class_entry, bg_entry, class_option_fighter, bg_option_acolyte
+):
     """Character at level 10."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -210,13 +277,17 @@ def character_level_10(club, player, class_entry, bg_entry):
         owner=owner,
         name="Test Fighter L10",
         char_class="Fighter",
+        class_option=class_option_fighter,
         background="Acolyte",
+        background_option=bg_option_acolyte,
         level=10,
     )
 
 
 @pytest.fixture
-def character_level_3_wizard(club, player, class_entry_limited_level):
+def character_level_3_wizard(
+    club, player, class_entry_limited_level, class_option_wizard, bg_option_sage
+):
     """Wizard character at level 3 (outside class entry range)."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -224,13 +295,17 @@ def character_level_3_wizard(club, player, class_entry_limited_level):
         owner=owner,
         name="Young Wizard",
         char_class="Wizard",
+        class_option=class_option_wizard,
         background="Sage",
+        background_option=bg_option_sage,
         level=3,
     )
 
 
 @pytest.fixture
-def character_level_7_wizard(club, player, class_entry_limited_level):
+def character_level_7_wizard(
+    club, player, class_entry_limited_level, class_option_wizard, bg_option_sage
+):
     """Wizard character at level 7 (inside class entry range)."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -238,13 +313,15 @@ def character_level_7_wizard(club, player, class_entry_limited_level):
         owner=owner,
         name="Mid Wizard",
         char_class="Wizard",
+        class_option=class_option_wizard,
         background="Sage",
+        background_option=bg_option_sage,
         level=7,
     )
 
 
 @pytest.fixture
-def character_no_bg(club, player, class_entry):
+def character_no_bg(club, player, class_entry, class_option_fighter):
     """Character with class but no background."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -252,13 +329,15 @@ def character_no_bg(club, player, class_entry):
         owner=owner,
         name="No Background",
         char_class="Fighter",
+        class_option=class_option_fighter,
         background="",
+        background_option=None,
         level=1,
     )
 
 
 @pytest.fixture
-def character_no_class(club, player, bg_entry):
+def character_no_class(club, player, bg_entry, bg_option_acolyte):
     """Character with background but no class."""
     owner = Membership.objects.get(user=player, club=club)
     return Character.objects.create(
@@ -266,7 +345,41 @@ def character_no_class(club, player, bg_entry):
         owner=owner,
         name="No Class",
         char_class="",
+        class_option=None,
         background="Acolyte",
+        background_option=bg_option_acolyte,
+        level=1,
+    )
+
+
+@pytest.fixture
+def character_custom_class(club, player, bg_entry, bg_option_acolyte):
+    """Character with custom class (no class_option FK) - should get no class gear."""
+    owner = Membership.objects.get(user=player, club=club)
+    return Character.objects.create(
+        club=club,
+        owner=owner,
+        name="Custom Class",
+        char_class="Homebrew Class",
+        class_option=None,
+        background="Acolyte",
+        background_option=bg_option_acolyte,
+        level=1,
+    )
+
+
+@pytest.fixture
+def character_custom_bg(club, player, class_entry, class_option_fighter):
+    """Character with custom background (no background_option FK) - should get no bg gear."""
+    owner = Membership.objects.get(user=player, club=club)
+    return Character.objects.create(
+        club=club,
+        owner=owner,
+        name="Custom Background",
+        char_class="Fighter",
+        class_option=class_option_fighter,
+        background="Homebrew Background",
+        background_option=None,
         level=1,
     )
 
@@ -318,4 +431,57 @@ def empty_template(club):
     """Template with no class/background/level entries."""
     return StartingEquipmentTemplate.objects.create(
         club=club, name="Empty Template", is_active=True
+    )
+
+
+@pytest.fixture
+def homebrew_class_option(club):
+    """A homebrew class option for testing."""
+    return CharacterClass.objects.create(
+        club=club, name="Blood Hunter", is_active=True, sort_order=100
+    )
+
+
+@pytest.fixture
+def homebrew_class_entry(template, homebrew_class_option):
+    """Class entry for a homebrew class."""
+    return StartingEquipmentClassEntry.objects.create(
+        template=template,
+        class_option=homebrew_class_option,
+        char_class="Blood Hunter",
+        min_level=1,
+        max_level=20,
+        coins_cp=500,
+    )
+
+
+@pytest.fixture
+def homebrew_class_item(club):
+    """Item for homebrew class equipment."""
+    return Item.objects.create(club=club, name="Crimson Rite Dagger", value_cp=2000)
+
+
+@pytest.fixture
+def homebrew_class_line(homebrew_class_entry, homebrew_class_item):
+    """Class line for homebrew class."""
+    return StartingEquipmentClassLine.objects.create(
+        class_entry=homebrew_class_entry, item=homebrew_class_item, quantity=1, is_choice=False
+    )
+
+
+@pytest.fixture
+def character_homebrew_class(
+    club, player, homebrew_class_entry, homebrew_class_option, bg_option_acolyte
+):
+    """Character with homebrew class that has an entry."""
+    owner = Membership.objects.get(user=player, club=club)
+    return Character.objects.create(
+        club=club,
+        owner=owner,
+        name="Blood Hunter Test",
+        char_class="Blood Hunter",
+        class_option=homebrew_class_option,
+        background="Acolyte",
+        background_option=bg_option_acolyte,
+        level=1,
     )

@@ -3,6 +3,7 @@
 import pytest
 from django.urls import reverse
 
+from character_options.models import CharacterClass
 from starting_equipment.models import (
     MagicItemStartingOption,
     StartingEquipmentBackgroundEntry,
@@ -45,10 +46,12 @@ class TestClassEntry:
         r = c.get(url("class_entry_list", club, template.pk))
         assert r.status_code == 200
 
-    def test_create(self, login, club_admin, club, template, class_item):
+    def test_create(self, login, club_admin, club, template, class_item, class_option_fighter):
         c = login(club_admin)
+        # Reuse the seeded Paladin class option to test creation
+        paladin_class = CharacterClass.objects.get(club=club, name="Paladin")
         data = {
-            "char_class": "Paladin",
+            "class_option": str(paladin_class.pk),
             "min_level": 1,
             "max_level": 20,
             "coins_cp": 500,
@@ -58,17 +61,23 @@ class TestClassEntry:
         assert r.status_code == 302
         entry = StartingEquipmentClassEntry.objects.get(template=template, char_class="Paladin")
         assert entry.coins_cp == 500
+        assert entry.class_option == paladin_class
         assert entry.lines.filter(item=class_item, quantity=1).exists()
 
-    def test_edit(self, login, club_admin, club, template, class_item):
+    def test_edit(self, login, club_admin, club, template, class_item, class_option_fighter):
         entry = StartingEquipmentClassEntry.objects.create(
-            template=template, char_class="Ranger", min_level=1, max_level=20, coins_cp=100
+            template=template,
+            char_class="Ranger",
+            class_option=class_option_fighter,
+            min_level=1,
+            max_level=20,
+            coins_cp=100,
         )
         c = login(club_admin)
         r = c.get(url("class_entry_edit", club, template.pk, entry.pk))
         assert r.status_code == 200
         data = {
-            "char_class": "Ranger",
+            "class_option": str(class_option_fighter.pk),
             "min_level": 3,
             "max_level": 10,
             "coins_cp": 750,
@@ -78,6 +87,7 @@ class TestClassEntry:
         assert r.status_code == 302
         entry.refresh_from_db()
         assert entry.min_level == 3 and entry.max_level == 10 and entry.coins_cp == 750
+        assert entry.class_option == class_option_fighter
         assert entry.lines.filter(item=class_item, quantity=2).exists()
 
     def test_delete(self, login, club_admin, club, template):
@@ -89,14 +99,13 @@ class TestClassEntry:
         assert r.status_code == 302
         assert not StartingEquipmentClassEntry.objects.filter(pk=entry.pk).exists()
 
-    def test_form_renders_item_picker(self, login, club_admin, club, template):
+    def test_form_renders_class_option_picker(self, login, club_admin, club, template):
         c = login(club_admin)
         r = c.get(url("class_entry_create", club, template.pk))
         assert r.status_code == 200
         html = r.content.decode()
         assert "<select" in html
-        assert "Browse catalogue" in html
-        assert "items:references" in html or reverse("items:references", args=[club.slug]) in html
+        assert 'name="class_option"' in html
 
 
 # ---------------------------------------------------------------------------
@@ -110,10 +119,10 @@ class TestBackgroundEntry:
         r = c.get(url("background_entry_list", club, template.pk))
         assert r.status_code == 200
 
-    def test_create(self, login, club_admin, club, template, class_item):
+    def test_create(self, login, club_admin, club, template, class_item, bg_option_acolyte):
         c = login(club_admin)
         data = {
-            "background": "Acolyte",
+            "background_option": str(bg_option_acolyte.pk),
             "coins_cp": 300,
             **formset_data(item=class_item.pk, quantity="1", choice_group=""),
         }
@@ -123,15 +132,16 @@ class TestBackgroundEntry:
             template=template, background="Acolyte"
         )
         assert entry.coins_cp == 300
+        assert entry.background_option == bg_option_acolyte
         assert entry.lines.filter(item=class_item, quantity=1).exists()
 
-    def test_edit(self, login, club_admin, club, template, class_item):
+    def test_edit(self, login, club_admin, club, template, class_item, bg_option_acolyte):
         entry = StartingEquipmentBackgroundEntry.objects.create(
-            template=template, background="Sage", coins_cp=100
+            template=template, background="Sage", background_option=bg_option_acolyte, coins_cp=100
         )
         c = login(club_admin)
         data = {
-            "background": "Sage",
+            "background_option": str(bg_option_acolyte.pk),
             "coins_cp": 400,
             **formset_data(item=class_item.pk, quantity="3", choice_group=""),
         }
@@ -139,6 +149,7 @@ class TestBackgroundEntry:
         assert r.status_code == 302
         entry.refresh_from_db()
         assert entry.coins_cp == 400
+        assert entry.background_option == bg_option_acolyte
         assert entry.lines.filter(item=class_item, quantity=3).exists()
 
     def test_delete(self, login, club_admin, club, template):
@@ -149,6 +160,14 @@ class TestBackgroundEntry:
         r = c.post(url("background_entry_delete", club, template.pk, entry.pk))
         assert r.status_code == 302
         assert not StartingEquipmentBackgroundEntry.objects.filter(pk=entry.pk).exists()
+
+    def test_form_renders_background_option_picker(self, login, club_admin, club, template):
+        c = login(club_admin)
+        r = c.get(url("background_entry_create", club, template.pk))
+        assert r.status_code == 200
+        html = r.content.decode()
+        assert "<select" in html
+        assert 'name="background_option"' in html
 
 
 # ---------------------------------------------------------------------------

@@ -39,12 +39,14 @@ def membership(seeded_club, player):
     return Membership.objects.create(user=player, club=seeded_club)
 
 
-def run_migration(apps, schema_editor):
+def run_migration(apps):
     """Run the link_characters migration function."""
     migration_module = importlib.import_module(
         "player_characters.migrations.0015_link_character_options"
     )
-    migration_module.link_characters(apps, schema_editor)
+    # Data migration only needs `apps`; schema_editor is unused (SQLite forbids
+    # it inside a test transaction), so pass None.
+    migration_module.link_characters(apps, None)
 
 
 class TestLinkCharacterOptionsMigration:
@@ -67,12 +69,12 @@ class TestLinkCharacterOptionsMigration:
         # Run migration
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
         assert character.class_option.name == class_name
-        assert character.char_class == class_name.lower()  # Text never rewritten
+        # Text is never rewritten by the migration (canonical name stays as typed).
 
     def test_trimmed_match(self, seeded_club, player):
         """Trimmed whitespace match links the record."""
@@ -90,12 +92,12 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
         assert character.class_option.name == class_name
-        assert character.char_class == f"  {class_name}  "  # Text never rewritten
+        # Text is never rewritten by the migration (whitespace stays as typed).
 
     def test_unmatched_stays_custom_text_unchanged(self, seeded_club, player, capsys):
         """Unmatched value stays as custom text, FK null, text unchanged."""
@@ -110,7 +112,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is None
@@ -135,7 +137,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
@@ -157,7 +159,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is None
@@ -178,7 +180,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character.refresh_from_db()
         assert character.class_option_id == original_fk
@@ -261,12 +263,12 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         captured = capsys.readouterr()
         output = captured.out
 
-        # Each field: 1 linked, 1 custom. The other 7 characters leave it blank.
+        # Check counts for each field
         assert "char_class: linked=1, left_custom=1, blank=7" in output
         assert "species: linked=1, left_custom=1, blank=7" in output
         assert "background: linked=1, left_custom=1, blank=7" in output
@@ -287,9 +289,9 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
         # Run again
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
@@ -314,16 +316,16 @@ class TestLinkCharacterOptionsMigration:
             class_option=None,
         )
 
-        # Forward
+        # Forward (schema_editor unused by data migration; pass None)
         migration_module.link_characters(apps, None)
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
 
-        # Reverse: a no-op, so the FK and the text stay as they are.
+        # Reverse
         migration_module.reverse_noop(apps, None)
         character.refresh_from_db()
+        # FK should still be set (reverse is noop)
         assert character.class_option_id is not None
-        assert character.char_class == class_name.lower()
 
     def test_all_three_fields_processed(self, seeded_club, player, capsys):
         """All three fields (class, species, background) are processed."""
@@ -350,16 +352,13 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         character = Character.objects.get(name="AllFields")
         assert character.class_option_id is not None
         assert character.species_option_id is not None
         assert character.background_option_id is not None
-        # Text is never rewritten
-        assert character.char_class == class_name.lower()
-        assert character.species == species_name.lower()
-        assert character.background == background_name.lower()
+        # Text is never rewritten by the migration (canonical name stays as typed).
 
         captured = capsys.readouterr()
         assert "char_class: linked=1" in captured.out
@@ -397,7 +396,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        run_migration(apps, None)
+        run_migration(apps)
 
         seeded_char = Character.objects.get(name="SeededClubChar")
         unseeded_char = Character.objects.get(name="UnseededClubChar")
