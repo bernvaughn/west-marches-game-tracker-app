@@ -1,5 +1,5 @@
 {% extends "components/modal_frame.html" %}
-{% load accounts_tags %}
+{% load accounts_tags loot_tags %}
 
 {% block title %}Request Magic Starting Item{% endblock %}
 
@@ -48,6 +48,15 @@
     Based on template: {{ template.name }}
 </div>
 {% endif %}
+
+<div class="wm-loot-preview-slot" id="loot-preview-container" hidden>
+  <hr class="my-2">
+  <h4 class="h6">Preview</h4>
+  <div id="loot-preview-content"></div>
+</div>
+{% for option in magic_options %}{% loot_preview option.item as loot_rows %}{% if loot_rows %}
+<template id="loot-preview-{{ option.item.pk }}">{% include "components/loot_rows.html" with rows=loot_rows %}</template>
+{% endif %}{% endfor %}
 {% endblock %}
 
 {% block footer %}
@@ -86,9 +95,26 @@
         helpText.textContent = `Maximum per character: ${max}`;
     }
 
+    const previewContainer = document.getElementById('loot-preview-container');
+    const previewContent = document.getElementById('loot-preview-content');
+
+    function updateLootPreview() {
+        if (!previewContainer || !previewContent) return;
+        const tpl = itemSelect.value ? document.getElementById('loot-preview-' + itemSelect.value) : null;
+        if (tpl) {
+            previewContent.replaceChildren(tpl.content.cloneNode(true));
+            previewContainer.hidden = false;
+        } else {
+            previewContent.replaceChildren();
+            previewContainer.hidden = true;
+        }
+    }
+
     itemSelect.addEventListener('change', updateQuantityMax);
+    itemSelect.addEventListener('change', updateLootPreview);
     // Initialize on load
     updateQuantityMax();
+    updateLootPreview();
 })();
 </script>
 {% endblock %}

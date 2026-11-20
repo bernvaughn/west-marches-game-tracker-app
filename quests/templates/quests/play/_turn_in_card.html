@@ -13,6 +13,7 @@
       </tbody>
     </table>
   </div>
+  {% load loot_tags %}
   {% if rewards %}
   <div class="wm-quest-rewards">
     <h3 class="h6">Rewards</h3>
@@ -20,7 +21,12 @@
       {% for reward in rewards %}
         <li class="wm-reward-item">
           {% if reward.coins %}{{ reward.coins|coins }}{% endif %}
-          {% if reward.item %}{% if reward.coins %}, {% endif %}{{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}{% endif %}
+          {% if reward.item %}
+            {% if reward.coins %}, {% endif %}
+            {{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}
+            {% loot_preview reward.item as loot_rows %}
+            {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
+          {% endif %}
         </li>
       {% endfor %}
     </ul>

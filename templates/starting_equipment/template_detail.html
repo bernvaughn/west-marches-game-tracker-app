@@ -1,5 +1,5 @@
 {% extends "starting_equipment/base.html" %}
-{% load coins %}
+{% load coins loot_tags %}
 
 {% block title %}{{ template.name }} - {{ club.name }}{% endblock %}
 
@@ -70,7 +70,9 @@
               {% if line.is_choice %}
               <span class="text-muted">[Choice: {{ line.choice_group }}] </span>
               {% endif %}
-              {{ line.quantity }}× {{ line.item.name }}
+              {{ line.quantity }}× {% include "items/_item_name.html" with item=line.item %}
+              {% loot_preview line.item as loot_rows %}
+              {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
             </li>
             {% endfor %}
           </ul>
@@ -110,7 +112,9 @@
               {% if line.is_choice %}
               <span class="text-muted">[Choice: {{ line.choice_group }}] </span>
               {% endif %}
-              {{ line.quantity }}× {{ line.item.name }}
+              {{ line.quantity }}× {% include "items/_item_name.html" with item=line.item %}
+              {% loot_preview line.item as loot_rows %}
+              {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
             </li>
             {% endfor %}
           </ul>
@@ -164,7 +168,9 @@
         <ul class="list-unstyled mb-0">
           {% for opt in magic_options %}
           <li class="mb-2">
-            <strong>{{ opt.item.name }}</strong> (max {{ opt.max_per_character }})
+            <strong>{% include "items/_item_name.html" with item=opt.item %}</strong> (max {{ opt.max_per_character }})
+            {% loot_preview opt.item as loot_rows %}
+            {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
             {% if opt.notes %}
             <div class="text-muted small">{{ opt.notes }}</div>
             {% endif %}
