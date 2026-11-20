@@ -43,3 +43,54 @@
     }
   });
 })();
+
+(function () {
+  // Live refresh of the shop stock without reloading the page.
+  // The CSP blocks Function() (no unsafe-eval), so the htmx [..] trigger filters
+  // were removed from the template. The poll is driven from here instead: a
+  // setInterval and a visibilitychange listener dispatch shopStockPoll on #stock,
+  // which #stock's hx-trigger listens for. The refresh only runs while the tab
+  // is visible.
+  var POLL_INTERVAL = 5000;
+  var timer = null;
+
+  function stockEl() {
+    return document.getElementById("stock");
+  }
+
+  function poll() {
+    var el = stockEl();
+    if (!el) return;
+    if (document.visibilityState === "visible") {
+      el.dispatchEvent(new Event("shopStockPoll"));
+    }
+  }
+
+  function start() {
+    stop();
+    timer = setInterval(poll, POLL_INTERVAL);
+  }
+
+  function stop() {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  }
+
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") {
+      poll();
+    }
+  });
+
+  // (Re)start whenever the shop content is swapped, e.g. by the shop switcher,
+  // so a detached #stock is never polled and a fresh #stock is picked up.
+  document.body.addEventListener("htmx:afterSwap", function (e) {
+    if (e.target.id === "stock" || e.target.id === "main" || e.target.querySelector("#stock")) {
+      start();
+    }
+  });
+
+  start();
+})();

@@ -55,8 +55,11 @@ def test_cross_club_404(login, player, club, other_open):
 def test_wrapper_polls_when_visible(login, player, club, shop, always_open):
     body = login(player).get(url("detail", club, shop.id)).content.decode()
     assert f'hx-get="{url("stock_fragment", club, shop.id)}"' in body
-    assert "every 5s [document.visibilityState === 'visible']" in body
-    assert "visibilitychange[document.visibilityState === 'visible'] from:document" in body
+    stock = body.split('id="stock"', 1)[1]
+    trigger = stock.split('hx-trigger="', 1)[1].split('"', 1)[0]
+    assert trigger == "shopStockChanged from:body, shopStockPoll"
+    # No [..] trigger filters: they need unsafe-eval, which the CSP does not allow.
+    assert "[" not in trigger
 
 
 @pytest.mark.story("C4")
