@@ -1,6 +1,6 @@
 <section id="turn-in" class="wm-quest-turnin card" aria-labelledby="turn-in-title">
   <h2 id="turn-in-title" class="h4">Turn in</h2>
-  {% load coins %}
+  {% load coins units %}
   {% if character %}
   <p class="wm-quest-turnin-name"><strong>{{ character.name }}</strong></p>
   <div class="wm-table-scroll">
@@ -8,7 +8,12 @@
       <thead><tr><th scope="col">Item</th><th scope="col" class="num">Needed</th><th scope="col" class="num">Has</th><th scope="col">Status</th></tr></thead>
       <tbody>
       {% for r in turnin_rows %}
-        <tr{% if r.short %} class="wm-quest-turnin-missing"{% endif %}><td>{% include "items/_item_name.html" with item=r.item info=True %}</td><td class="num">{{ r.needed }}</td><td class="num">{{ r.has }}</td><td>{% if r.short %}{% include "components/badge.html" with status="warning" text="Missing" %} {{ r.short }}{% else %}{% include "components/badge.html" with status="success" text="OK" %}{% endif %}</td></tr>
+        <tr{% if r.short %} class="wm-quest-turnin-missing"{% endif %}>
+          <td>{% include "items/_item_name.html" with item=r.item info=True %}{% if r.unit_name %} <span class="text-muted small">({{ r.unit_name }})</span>{% endif %}</td>
+          <td class="num">{{ r.needed }}{% if r.unit_name %} {{ r.unit_name }}{% endif %}</td>
+          <td class="num">{{ r.has }}{% if r.unit_name %} {{ r.unit_name }}{% endif %}</td>
+          <td>{% if r.short %}{% include "components/badge.html" with status="warning" text="Missing" %} {{ r.short }}{% if r.unit_name %} {{ r.unit_name }}{% endif %}{% else %}{% include "components/badge.html" with status="success" text="OK" %}{% endif %}</td>
+        </tr>
       {% endfor %}
       </tbody>
     </table>
@@ -23,7 +28,7 @@
           {% if reward.coins %}{{ reward.coins|coins }}{% endif %}
           {% if reward.item %}
             {% if reward.coins %}, {% endif %}
-            {{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}
+            {{ reward.item|with_units:reward.quantity }}
             {% loot_preview reward.item as loot_rows %}
             {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
           {% endif %}

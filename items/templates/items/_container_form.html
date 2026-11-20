@@ -91,11 +91,13 @@ The "Is container" toggle is ItemForm.is_container, rendered by {{ form }}.
                           <label class="form-label small" for="{{ opt_form.qty_min.id_for_label }}">Qty min</label>
                           {{ opt_form.qty_min }}
                           {{ opt_form.qty_min.errors }}
+                          <div class="form-text">Qty is in units for stacked items</div>
                         </div>
                         <div class="col-md-2">
                           <label class="form-label small" for="{{ opt_form.qty_max.id_for_label }}">Qty max</label>
                           {{ opt_form.qty_max }}
                           {{ opt_form.qty_max.errors }}
+                          <div class="form-text">Qty is in units for stacked items</div>
                         </div>
                         <div class="col-md-2">
                           <label class="form-label small" for="{{ opt_form.weight.id_for_label }}">Weight</label>

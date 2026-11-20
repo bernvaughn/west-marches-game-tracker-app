@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from accounts.htmx import hx_response, is_htmx
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
+from items import stacked
 from ledger.services import InsufficientItems, available_items
 from player_characters.selection import selected_character
 from quests import services
@@ -115,6 +116,7 @@ def detail(request, club_slug, pk):
                     "needed": req.quantity,
                     "has": has,
                     "short": max(0, req.quantity - has),
+                    "unit_name": req.item.unit_name if req.item.is_stacked else "",
                 }
             )
         # Same order as quests.services.turn_in (liveness is checked above).
@@ -155,7 +157,7 @@ def detail(request, club_slug, pk):
 
 
 def _missing_text(missing):
-    return "Missing " + ", ".join(f"{n} x {item}" for item, n in missing) + "."
+    return "Missing " + ", ".join(stacked.unit_label(item, n) for item, n in missing) + "."
 
 
 @club_member_required
@@ -174,7 +176,10 @@ def turn_in(request, club_slug, pk):
         if rw.coins > 0:
             reward_parts.append(f"{rw.coins} gp")
         if rw.item_id and rw.quantity > 0:
-            reward_parts.append(f"{rw.quantity} {rw.item.name}")
+            if rw.item.is_stacked:
+                reward_parts.append(stacked.unit_label(rw.item, rw.quantity))
+            else:
+                reward_parts.append(f"{rw.quantity} {rw.item.name}")
     reward_summary = ", ".join(reward_parts) if reward_parts else "no reward"
 
     try:

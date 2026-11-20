@@ -6,7 +6,7 @@
   <div class="wm-form-row wm-form-row--wide-first">
     {{ row.non_field_errors }}
     <div><label class="form-label mb-1" for="{{ row.item.id_for_label }}">Item</label>{{ row.item }}{{ row.item.errors }}</div>
-    <div><label class="form-label mb-1" for="{{ row.quantity.id_for_label }}">Quantity</label>{{ row.quantity }}{{ row.quantity.errors }}</div>
+    <div><label class="form-label mb-1" for="{{ row.quantity.id_for_label }}">Quantity</label>{{ row.quantity }}{{ row.quantity.errors }}<div class="form-text">Units for stacked items</div></div>
   </div>
 {% endfor %}
 </div>

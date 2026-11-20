@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from items.unit_notes import with_unit_summary
 from ledger.services import Line, available_items, record_many
 
 from .models import QuestCompletion
@@ -63,12 +64,14 @@ def turn_in(quest, character, actor, today=None):
                 f"{character} has completed this quest the maximum number of times."
             )
 
+        turn_in_lines = [Line(item=r.item, quantity=-r.quantity) for r in reqs]
+        turn_in_note = with_unit_summary(f"Turned in for quest {quest.name}", turn_in_lines)
         specs = [
             dict(
                 character=character,
                 kind="quest_turn_in",
-                lines=[Line(item=r.item, quantity=-r.quantity) for r in reqs],
-                note=f"Turned in for quest {quest.name}",
+                lines=turn_in_lines,
+                note=turn_in_note,
                 date=today,
                 actor=actor,
             )
@@ -82,12 +85,13 @@ def turn_in(quest, character, actor, today=None):
         if coins > 0:
             reward_lines.append(Line(coins=coins))
         if reward_lines:
+            reward_note = with_unit_summary(f"Reward for quest {quest.name}", reward_lines)
             specs.append(
                 dict(
                     character=character,
                     kind="quest_reward",
                     lines=reward_lines,
-                    note=f"Reward for quest {quest.name}",
+                    note=reward_note,
                     date=today,
                     actor=actor,
                 )
