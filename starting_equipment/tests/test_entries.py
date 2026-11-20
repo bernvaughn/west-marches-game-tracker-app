@@ -99,6 +99,20 @@ class TestClassEntry:
         assert r.status_code == 302
         assert not StartingEquipmentClassEntry.objects.filter(pk=entry.pk).exists()
 
+    def test_create_requires_class_option(self, login, club_admin, club, template, class_item):
+        c = login(club_admin)
+        data = {
+            "class_option": "",
+            "min_level": 1,
+            "max_level": 20,
+            "coins_cp": 500,
+            **formset_data(item=class_item.pk, quantity="1", choice_group=""),
+        }
+        r = c.post(url("class_entry_create", club, template.pk), data)
+        assert r.status_code == 200
+        assert "class_option" in r.context["form"].errors
+        assert not StartingEquipmentClassEntry.objects.filter(template=template).exists()
+
     def test_form_renders_class_option_picker(self, login, club_admin, club, template):
         c = login(club_admin)
         r = c.get(url("class_entry_create", club, template.pk))
@@ -160,6 +174,18 @@ class TestBackgroundEntry:
         r = c.post(url("background_entry_delete", club, template.pk, entry.pk))
         assert r.status_code == 302
         assert not StartingEquipmentBackgroundEntry.objects.filter(pk=entry.pk).exists()
+
+    def test_create_requires_background_option(self, login, club_admin, club, template, class_item):
+        c = login(club_admin)
+        data = {
+            "background_option": "",
+            "coins_cp": 300,
+            **formset_data(item=class_item.pk, quantity="1", choice_group=""),
+        }
+        r = c.post(url("background_entry_create", club, template.pk), data)
+        assert r.status_code == 200
+        assert "background_option" in r.context["form"].errors
+        assert not StartingEquipmentBackgroundEntry.objects.filter(template=template).exists()
 
     def test_form_renders_background_option_picker(self, login, club_admin, club, template):
         c = login(club_admin)

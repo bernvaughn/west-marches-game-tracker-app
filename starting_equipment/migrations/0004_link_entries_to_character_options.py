@@ -3,67 +3,44 @@
 from django.db import migrations
 
 
-def link_class_entries(apps, schema_editor):
-    """Link class entries to CharacterClass records by name (case-insensitive)."""
-    StartingEquipmentClassEntry = apps.get_model("starting_equipment", "StartingEquipmentClassEntry")
-    CharacterClass = apps.get_model("character_options", "CharacterClass")
+def _link_entries(apps, entry_model, option_model, text_field, fk_field):
+    """Link entries to option records by trimmed, case-insensitive name.
 
-    for entry in StartingEquipmentClassEntry.objects.all():
-        if entry.class_option_id:
-            continue  # Already linked
+    Uses plain ``filter`` calls: historical models get a plain ``Manager``,
+    so ``ClubScopedManager.for_club`` is not available here. An entry with
+    a blank name is left unlinked. A missing record is created as active,
+    because an admin chose that name on purpose.
+    """
+    Entry = apps.get_model("starting_equipment", entry_model)
+    Option = apps.get_model("character_options", option_model)
 
-        # Find matching CharacterClass by case-insensitive name in the same club
-        match = CharacterClass.objects.for_club(entry.template.club).filter(
-            name__iexact=entry.char_class
-        ).first()
-
-        if match:
-            entry.class_option = match
-        else:
-            # Create an active record for this name (admin chose it on purpose)
-            match = CharacterClass.objects.create(
-                club=entry.template.club,
-                name=entry.char_class,
+    entries = Entry.objects.filter(**{f"{fk_field}__isnull": True}).select_related("template")
+    for entry in entries:
+        name = (getattr(entry, text_field) or "").strip()
+        if not name:
+            continue
+        club_id = entry.template.club_id
+        match = Option.objects.filter(club_id=club_id, name__iexact=name).first()
+        if match is None:
+            match = Option.objects.create(
+                club_id=club_id,
+                name=name,
                 is_active=True,
                 sort_order=9999,  # Put auto-created records at the end
             )
-            entry.class_option = match
-
-        entry.save(update_fields=["class_option"])
-
-
-def link_background_entries(apps, schema_editor):
-    """Link background entries to Background records by name (case-insensitive)."""
-    StartingEquipmentBackgroundEntry = apps.get_model("starting_equipment", "StartingEquipmentBackgroundEntry")
-    Background = apps.get_model("character_options", "Background")
-
-    for entry in StartingEquipmentBackgroundEntry.objects.all():
-        if entry.background_option_id:
-            continue  # Already linked
-
-        # Find matching Background by case-insensitive name in the same club
-        match = Background.objects.for_club(entry.template.club).filter(
-            name__iexact=entry.background
-        ).first()
-
-        if match:
-            entry.background_option = match
-        else:
-            # Create an active record for this name (admin chose it on purpose)
-            match = Background.objects.create(
-                club=entry.template.club,
-                name=entry.background,
-                is_active=True,
-                sort_order=9999,  # Put auto-created records at the end
-            )
-            entry.background_option = match
-
-        entry.save(update_fields=["background_option"])
+        setattr(entry, fk_field, match)
+        entry.save(update_fields=[fk_field])
 
 
 def forward(apps, schema_editor):
-    link_class_entries(apps, schema_editor)
-    link_background_entries(apps, schema_editor)
+    _link_entries(apps, "StartingEquipmentClassEntry", "CharacterClass", "char_class", "class_option")
+    _link_entries(
+        apps,
+        "StartingEquipmentBackgroundEntry",
+        "Background",
+        "background",
+        "background_option",
+    )
 
 
 def reverse(apps, schema_editor):
@@ -72,10 +49,9 @@ def reverse(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('character_options', '0002_seed_default_options'),
-        ('starting_equipment', '0003_startingequipmentbackgroundentry_background_option_and_more'),
+        ("character_options", "0002_seed_default_options"),
+        ("starting_equipment", "0003_startingequipmentbackgroundentry_background_option_and_more"),
     ]
 
     operations = [
