@@ -1,14 +1,13 @@
-import json
-
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Case, IntegerField, When
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from accounts.htmx import hx_response
 from accounts.permissions import admin_or_gm_required, club_member_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 from player_characters.selection import selected_character
@@ -326,15 +325,13 @@ def bulk_approve(request, club_slug):
                 f" {skipped} request(s) were skipped "
                 "(already decided, visits, or missing a location)."
             )
-        response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps(
-            {
+        return hx_response(
+            trigger={
                 "appModalClose": True,
                 "toast": {"message": message, "type": "success"},
                 "refreshQueue": True,
             }
         )
-        return response
 
     return render(
         request,

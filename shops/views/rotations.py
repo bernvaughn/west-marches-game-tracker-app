@@ -1,15 +1,13 @@
-import json
 from datetime import date
 
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Prefetch
-from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 from shops.forms.rotations import CopyStockForm, RotationForm
@@ -53,8 +51,7 @@ def _save_form(request, club_slug, instance, message):
         form.save()
         messages.success(request, message)
         if is_htmx(request):
-            trigger = json.dumps({"appModalClose": True, "agendaChanged": True})
-            return None, HttpResponse(status=204, headers={"HX-Trigger": trigger})
+            return None, hx_response(trigger={"appModalClose": True, "agendaChanged": True})
         return None, redirect("shops:rotation_list", club_slug=club_slug)
     return form, None
 
@@ -131,12 +128,10 @@ def _copy_result(count):
     """A success message and HTMX trigger for a completed copy."""
     entry = "entry" if count == 1 else "entries"
     message = f"Copied {count} stock {entry}."
-    trigger = json.dumps(
-        {
-            "appModalClose": True,
-            "toast": {"message": message, "type": "success"},
-        }
-    )
+    trigger = {
+        "appModalClose": True,
+        "toast": {"message": message, "type": "success"},
+    }
     return message, trigger
 
 
@@ -149,7 +144,7 @@ def rotation_copy_stock(request, club_slug, rotation_id):
             count = _copy_stock(form, rotation)
             message, trigger = _copy_result(count)
             if is_htmx(request):
-                return HttpResponse(status=204, headers={"HX-Trigger": trigger})
+                return hx_response(trigger=trigger)
             messages.success(request, message)
             return redirect("shops:rotation_list", club_slug=club_slug)
     else:

@@ -1,15 +1,13 @@
-import json
 from datetime import date
 
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count
-from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404
 from quests.forms import QuestForm, RequirementFormSet, RewardFormSet
@@ -66,8 +64,7 @@ def _form_view(request, quest):
                 rews.save()
             messages.success(request, f"Saved quest {saved.name}.")
             if is_htmx(request):
-                trigger = json.dumps({"appModalClose": True, "agendaChanged": True})
-                return HttpResponse(status=204, headers={"HX-Trigger": trigger})
+                return hx_response(trigger={"appModalClose": True, "agendaChanged": True})
             return redirect("quests:manage", club_slug=club.slug)
     return render_modal_or_page(
         request,

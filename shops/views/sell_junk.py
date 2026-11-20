@@ -1,10 +1,9 @@
 from django.contrib import messages
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
+from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
@@ -37,11 +36,7 @@ def pick_shop(request, club_slug):
     if len(open_shop_list) == 1:
         shop = open_shop_list[0]
         shop_url = reverse("shops:sell_junk", args=[club_slug, shop.pk])
-        if is_htmx(request):
-            response = HttpResponse(status=204)
-            response["HX-Redirect"] = shop_url
-            return response
-        return redirect(shop_url)
+        return htmx_or_redirect(request, shop_url)
     return render_modal_or_page(
         request,
         "shops/sell/_shop_picker_modal.html",
@@ -126,13 +121,8 @@ def sell_junk(request, club_slug, shop_id):
                 messages.success(request, f"Sold junk to {shop} for {format_coins(total)}.")
                 add_recent_shop(request, shop.pk)
                 shop_url = reverse("shops:detail", args=[club_slug, shop.pk])
-                if is_htmx(request):
-                    # A full reload shows the "Sold junk" message with the total.
-                    response = HttpResponse(status=204)
-                    response["HX-Redirect"] = shop_url
-                    response["HX-Trigger"] = "junkChanged"
-                    return response
-                return redirect(shop_url)
+                # A full reload shows the "Sold junk" message with the total.
+                return htmx_or_redirect(request, shop_url, trigger="junkChanged")
     elif request.GET.get("recalc") and character is not None:
         # htmx asks again as ticks and quantities change, so the total follows them.
         _, _, posted = _parse(request.GET, character)

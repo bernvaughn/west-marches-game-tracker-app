@@ -1,11 +1,11 @@
 from django.contrib import messages
 from django.db import transaction
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
@@ -81,8 +81,4 @@ def sell_item(request, club_slug, shop_id, item_id):
                 add_recent_shop(request, shop.pk)
     if error:
         messages.error(request, error)
-    if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Redirect"] = target
-        return response
-    return redirect(target)
+    return htmx_or_redirect(request, target)

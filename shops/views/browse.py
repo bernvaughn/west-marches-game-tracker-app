@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 
-from accounts.htmx import render_modal_or_page
+from accounts.htmx import render_modal_or_page, set_hx_headers
 from accounts.mixins import (
     CharacterContextMixin,
     ClubContextMixin,
@@ -325,5 +325,4 @@ class FavoriteToggleView(ClubScopedMixin, CharacterContextMixin, ClubContextMixi
             "character": character,
         }
         response = render(request, "shops/browse/_star_button.html", context)
-        response["HX-Trigger"] = f'{{"toast": {{"message": "{message}", "type": "success"}}}}'
-        return response
+        return set_hx_headers(response, trigger={"toast": {"message": message, "type": "success"}})

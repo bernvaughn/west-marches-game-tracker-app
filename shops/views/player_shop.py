@@ -1,9 +1,9 @@
 from django.contrib import messages
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect, render
+from django.http import Http404
+from django.shortcuts import render
 from django.urls import reverse
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
@@ -84,11 +84,7 @@ def buy(request, club_slug, character_id, item_id):
                     if has_listing(seller)
                     else reverse("shops:index", kwargs={"club_slug": club_slug})
                 )
-                if is_htmx(request):
-                    response = HttpResponse(status=204)
-                    response["HX-Redirect"] = target
-                    return response
-                return redirect(target)
+                return htmx_or_redirect(request, target)
     elif "quantity" in request.GET:
         form = BuyForm(request.GET, max_quantity=max_quantity)
     else:

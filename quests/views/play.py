@@ -1,14 +1,12 @@
-import json
-
 from django.contrib import messages
 from django.db.models import Count
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx
+from accounts.htmx import hx_response, is_htmx
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
 from ledger.services import InsufficientItems, available_items
@@ -194,12 +192,13 @@ def turn_in(request, club_slug, pk):
 
         if is_htmx(request):
             # HTMX request: return 204 with HX-Redirect and HX-Trigger
-            response = HttpResponse(status=204)
-            response["HX-Redirect"] = reverse("quests:index", args=[club_slug])
-            response["HX-Trigger"] = json.dumps(
-                {"toast": {"message": toast_message, "type": "success"}, "questCompleted": True}
+            return hx_response(
+                redirect=reverse("quests:index", args=[club_slug]),
+                trigger={
+                    "toast": {"message": toast_message, "type": "success"},
+                    "questCompleted": True,
+                },
             )
-            return response
 
         # Non-htmx: current behavior
         messages.success(request, f"{character} completed {quest.name}.")
