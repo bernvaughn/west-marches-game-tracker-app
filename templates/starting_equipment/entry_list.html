@@ -76,10 +76,10 @@
       <td>{{ entry.notes|default:"&mdash;" }}</td>
       {% endif %}
       <td class="text-end">
-        <a href="{% url edit_url_name club.slug template.pk entry.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+        <a href="{% url "starting_equipment:"|add:edit_url_name club.slug template.pk entry.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
         <a
-          href="{% url delete_url_name club.slug template.pk entry.pk %}"
-          hx-get="{% url delete_url_name club.slug template.pk entry.pk %}"
+          href="{% url "starting_equipment:"|add:delete_url_name club.slug template.pk entry.pk %}"
+          hx-get="{% url "starting_equipment:"|add:delete_url_name club.slug template.pk entry.pk %}"
           hx-target="#app-modal .modal-content"
           data-app-modal
           class="btn btn-sm btn-outline-danger"

@@ -23,13 +23,9 @@
           {% if reward.coins %}{{ reward.coins|coins }}{% endif %}
           {% if reward.item %}
             {% if reward.coins %}, {% endif %}
+            {{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}
             {% loot_preview reward.item as loot_rows %}
-            {% if loot_rows %}
-              {{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}
-              {% include "components/loot_rows.html" with rows=loot_rows %}
-            {% else %}
-              {{ reward.quantity }} × {% include "items/_item_name.html" with item=reward.item %}
-            {% endif %}
+            {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
           {% endif %}
         </li>
       {% endfor %}
