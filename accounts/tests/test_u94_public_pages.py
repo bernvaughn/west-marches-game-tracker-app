@@ -79,6 +79,12 @@ def test_footer_on_public_pages(name, player, login):
     # Credit text with link
     assert "Designed by Vaughn Bernard, built by" in body
     assert 'href="https://codeherder.com/"' in body
+    # Ko-fi support link on public pages
+    assert 'href="https://ko-fi.com/S3O12AYUQM"' in body
+    assert "Buy me a coffee" in body
+    # No CSP-blocked Ko-fi widget snippet
+    assert "storage.ko-fi.com" not in body
+    assert "kofiwidget2" not in body
     # About and Plans links on public pages
     assert reverse("about") in body
     assert reverse("plans") in body
@@ -98,6 +104,9 @@ def test_footer_on_club_pages(club, player, login):
         # Credit text with link
         assert "Designed by Vaughn Bernard, built by" in body
         assert 'href="https://codeherder.com/"' in body
+        # Ko-fi support link on club pages
+        assert 'href="https://ko-fi.com/S3O12AYUQM"' in body
+        assert "Buy me a coffee" in body
         # About and Plans links should NOT be on club pages
         assert reverse("about") not in body
         assert reverse("plans") not in body
@@ -112,6 +121,9 @@ def test_footer_on_signin_page():
     # Credit text with link
     assert "Designed by Vaughn Bernard, built by" in body
     assert 'href="https://codeherder.com/"' in body
+    # Ko-fi support link on sign-in page
+    assert 'href="https://ko-fi.com/S3O12AYUQM"' in body
+    assert "Buy me a coffee" in body
     # About and Plans links on sign-in page (public page)
     assert reverse("about") in body
     assert reverse("plans") in body
