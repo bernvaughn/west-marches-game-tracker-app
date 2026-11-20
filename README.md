@@ -38,7 +38,7 @@ For the UI audit, `uv run python scripts/screenshots.py --audit --out <dir>` cap
 The site admin "new club" form seeds each new club.
 It seeds the XP table, the character options and the club admin.
 The club admin gets a temporary password.
-It also seeds the default item catalogue (about 140 items).
+It also seeds the default item catalogue (about 175 items).
 It also seeds an active "2024 D&D Default" starting equipment template.
 Each "X or Y" option of the 2024 PHB is a choice group in that template.
 All 12 classes have choice groups, and so do the Artisan, Entertainer and Soldier backgrounds.
