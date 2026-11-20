@@ -26,6 +26,13 @@ def detail_url(club, character):
     return reverse("characters:detail", kwargs={"club_slug": club.slug, "pk": character.pk})
 
 
+def reveal_url(club, character):
+    return reverse(
+        "characters:starting_reveal",
+        kwargs={"club_slug": club.slug, "pk": character.pk},
+    )
+
+
 def make_template(club, *, is_active=True):
     return StartingEquipmentTemplate.objects.create(
         club=club, name="Test Template", is_active=is_active
@@ -97,7 +104,9 @@ class TestCreateWithStartingEquipment:
         character = Character.objects.get(name="Aria")
         assert character.background == "Acolyte"
         assert character.club == club
-        assert response.url == f"{detail_url(club, character)}?starting_equipment=1"
+        # No class/background FKs were matched, so nothing was granted:
+        # the player goes straight to the sheet.
+        assert response.url == detail_url(club, character)
 
     def test_grants_class_and_background_items_and_coins(
         self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
@@ -139,6 +148,8 @@ class TestCreateWithStartingEquipment:
         coin_lines = [line for line in lines if line.coins != 0]
         assert sum(line.coins for line in coin_lines) == 1500
 
+        assert response.url == reveal_url(club, character)
+
     def test_no_active_template_still_creates_and_redirects(
         self, club, login, player, inactive_template
     ):
@@ -152,7 +163,7 @@ class TestCreateWithStartingEquipment:
 
         character = Character.objects.get(name="Aria")
         assert character.background == "Acolyte"
-        assert response.url == f"{detail_url(club, character)}?starting_equipment=1"
+        assert response.url == detail_url(club, character)
         assert LedgerEntry.objects.count() == 0
 
     def test_text_only_creation_no_fk_grants_no_gear(
@@ -214,6 +225,7 @@ class TestCreateWithStartingEquipment:
 
         entries = LedgerEntry.objects.filter(character=character)
         assert entries.count() == 1
+        assert response.url == reveal_url(club, character)
 
 
 def flash_messages(response):

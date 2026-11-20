@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load coins static accounts_tags %}
+{% block title %}Your starting gear{% endblock %}
+{% block content %}
+{% url 'characters:detail' club.slug character.pk as sheet_url %}
+{% include "components/page_header.html" with title="Your starting gear" back_url=sheet_url back_label="Back to "|add:character.name %}
+{% flash_messages %}
+<div class="wm-card">
+  <div class="wm-card-body">
+    <div
+      data-wm-starting-reveal
+      data-sheet-url="{{ sheet_url }}"
+      data-coins="{{ coins_cp }}"
+    >
+      <h2>Your starting gear</h2>
+      <div class="wm-chest" aria-hidden="true">
+        <div class="wm-chest__base"></div>
+        <div class="wm-chest__lid"></div>
+      </div>
+      <ul data-wm-reveal>
+        {% for row in rows %}
+        <li data-wm-reveal-item>+{{ row.qty }} {% include "items/_item_name.html" with item=row.item %}</li>
+        {% endfor %}
+      </ul>
+      {% if coins_cp > 0 %}
+      <p data-wm-coins><span data-wm-coins-display aria-hidden="true">{{ coins_cp|coins }}</span></p>
+      {% endif %}
+      <p class="visually-hidden" role="status" aria-live="polite" data-wm-live></p>
+      <div class="wm-reveal-actions">
+        <a class="btn btn-outline-secondary" data-wm-skip href="{{ sheet_url }}">Skip</a>
+        <a class="btn btn-primary" href="{{ sheet_url }}">Go to character sheet</a>
+        <button type="button" data-wm-replay hidden>Replay</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script src="{% static 'js/starting_coins_animation.js' %}" defer></script>
+<script src="{% static 'js/starting_reveal.js' %}" defer></script>
+{% endblock %}

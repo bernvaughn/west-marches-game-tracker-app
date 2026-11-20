@@ -124,10 +124,13 @@ class CreateView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
             messages.success(request, f"Created {character.name}.")
             for reason in result.reasons:
                 messages.warning(request, reason.message)
-            url = reverse(
-                "characters:detail", kwargs={"club_slug": self.club.slug, "pk": character.pk}
-            )
-            return redirect(f"{url}?starting_equipment=1")
+            if result.entry is not None:
+                return redirect(
+                    "characters:starting_reveal",
+                    club_slug=self.club.slug,
+                    pk=character.pk,
+                )
+            return redirect("characters:detail", club_slug=self.club.slug, pk=character.pk)
         return render(
             request,
             "player_characters/characters/form.html",

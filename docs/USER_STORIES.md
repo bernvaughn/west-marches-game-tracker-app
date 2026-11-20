@@ -919,7 +919,15 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - Reloading or resubmitting cannot grant gear twice; `starting_equipment_claimed` tracks the grant.
 - A player who leaves can finish later from the character sheet via the "Choose starting equipment" link.
 - Only the character owner, a game master, or a club admin can submit the choices.
-- On success the player is sent to the gear reveal (`characters:detail?starting_equipment=1`).
+- On success the player is sent to the gear reveal (`characters:starting_reveal`).
+
+**U124 See my starting gear revealed.** As a player, I want to see my starting equipment revealed item by item with my starting coins counting up before my sheet opens, so claiming gear feels rewarding. *(player_characters, starting_equipment, ledger)*
+- After the choices step (or straight after creation when there are no choices), the player lands on the gear reveal page (`characters:starting_reveal`).
+- The reveal shows each granted item one at a time from the saved "Starting equipment" ledger entry, then counts the starting coins up from zero.
+- It never rolls or changes anything: it only shows the stored entry, so reloading changes nothing.
+- With `prefers-reduced-motion` on, everything shows at once and there is no auto-advance.
+- A Skip link jumps straight to the sheet, a Replay button re-plays the reveal, and a screen reader hears the result in an aria-live region.
+- When the reveal ends, the character sheet opens.
 
 ## Quests
 

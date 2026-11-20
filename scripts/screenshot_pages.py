@@ -201,6 +201,9 @@ EXCLUDED = {
     "starting_equipment:choices": (
         "GET picker page; needs an unclaimed character with choice groups (demo state varies)."
     ),
+    "characters:starting_reveal": (
+        "Needs a character with a granted 'Starting equipment' entry (demo state varies)."
+    ),
     "starting_equipment:request_decide": "POST only; admin/GM approve or decline.",
     "starting_equipment:request_decide_confirm": "HTMX confirm modal; needs a starting request PK.",
     "starting_equipment:request_status": "HTMX partial for a request status row.",

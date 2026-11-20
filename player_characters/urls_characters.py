@@ -9,6 +9,7 @@ from .views import (
     character_print,
     character_shop,
     character_slips,
+    character_starting_reveal,
     characters,
     selection,
 )
@@ -46,6 +47,11 @@ urlpatterns = [
         "<int:pk>/print-session-pack/",
         character_print.print_session_pack,
         name="print_session_pack",
+    ),
+    path(
+        "<int:pk>/starting-equipment/reveal/",
+        character_starting_reveal.character_starting_reveal,
+        name="starting_reveal",
     ),
     path("<int:pk>/preview/", selection.character_preview, name="preview"),
     path("bulk-award/", character_adjust.bulk_award, name="bulk_award"),
