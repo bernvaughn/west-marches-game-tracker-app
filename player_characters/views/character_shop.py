@@ -1,9 +1,8 @@
 from django.contrib import messages
-from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx
+from accounts.htmx import htmx_or_redirect
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 
@@ -23,8 +22,4 @@ def shop_toggle(request, club_slug, pk):
         f"{character.name}'s shop is {'open' if character.shop_open else 'closed'}.",
     )
     sheet = redirect("characters:detail", club_slug=club_slug, pk=character.pk)
-    if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Redirect"] = sheet.url
-        return response
-    return sheet
+    return htmx_or_redirect(request, sheet.url)

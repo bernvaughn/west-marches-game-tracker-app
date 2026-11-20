@@ -6,14 +6,11 @@ current club. Views receive ``(club_slug, template_pk[, pk])`` as defined by
 ``urls_entries.py``.
 """
 
-import json
-
 from django.contrib import messages
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from starting_equipment.forms import (
     BackgroundEntryForm,
     BackgroundLineFormSet,
@@ -124,9 +121,7 @@ class _EntryFormView(StartingEquipmentBaseView):
     def _save_success(self, request, club_slug, template_pk):
         messages.success(request, f"{self.page_title} saved.")
         if is_htmx(request):
-            response = HttpResponse(status=204)
-            response["HX-Trigger"] = json.dumps({"entrySaved": True, "appModalClose": True})
-            return response
+            return hx_response(trigger={"entrySaved": True, "appModalClose": True})
         return redirect(_entry_url(self.list_url_name, club_slug, template_pk))
 
     def post(self, request, club_slug, template_pk, pk=None):
@@ -222,9 +217,7 @@ class _EntryDeleteView(StartingEquipmentBaseView):
         entry.delete()
         messages.success(request, f"{self.page_title} deleted.")
         if is_htmx(request):
-            response = HttpResponse(status=204)
-            response["HX-Trigger"] = json.dumps({"entryDeleted": True, "appModalClose": True})
-            return response
+            return hx_response(trigger={"entryDeleted": True, "appModalClose": True})
         return redirect(_entry_url(self.list_url_name, club_slug, template_pk))
 
 

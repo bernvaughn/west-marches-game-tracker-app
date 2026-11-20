@@ -1,26 +1,24 @@
 """Downtime agenda views (U72): one month view of rotations, quests and downtime actions."""
 
 import calendar
-import json
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
 from django import forms
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.urls import NoReverseMatch, path, reverse
 from django.utils import timezone
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404
 from downtime.models import DowntimeAction
 from quests.models import Quest
 from shops.models import Rotation
 
-CHANGED_TRIGGER = json.dumps({"appModalClose": True, "agendaChanged": True})
+CHANGED_TRIGGER = {"appModalClose": True, "agendaChanged": True}
 DATE_FORMAT = "%Y-%m-%d"
 
 
@@ -213,7 +211,7 @@ def _action_form(request, instance):
         saved = form.save()
         messages.success(request, f"Saved downtime action {saved.name}.")
         if is_htmx(request):
-            return None, HttpResponse(status=204, headers={"HX-Trigger": CHANGED_TRIGGER})
+            return None, hx_response(trigger=CHANGED_TRIGGER)
         url = reverse("downtime:agenda", args=[request.club.slug])
         month = _safe_month_from(saved.start_date or saved.end_date)
         return None, redirect(f"{url}?month={month}")

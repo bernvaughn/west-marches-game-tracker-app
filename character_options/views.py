@@ -1,7 +1,5 @@
 """Admin views for character options: species, classes, backgrounds."""
 
-import json
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
@@ -10,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from accounts.permissions import is_club_admin
 from character_options.forms import OptionForm
 from character_options.kinds import get_kind
@@ -66,58 +64,60 @@ def list_options(request, club, kind):
     return render(request, "character_options/list.html", ctx)
 
 
-@option_admin_required
-def create_option_view(request, club, kind):
-    """Create a new option (modal GET, modal POST)."""
+def _option_form_view(request, club, kind, instance=None):
+    """Shared form view for creating or editing an option."""
     kind_obj = get_kind(kind)
+    is_create = instance is None
 
-    if request.method == "GET":
-        form = OptionForm(club=club, kind_slug=kind)
+    def render_form(form, status=200):
+        ctx = {
+            "club": club,
+            "kind": kind,
+            "kind_obj": kind_obj,
+            "form": form,
+            "is_create": is_create,
+        }
+        if not is_create:
+            ctx["option"] = instance
         return render_modal_or_page(
             request,
             "character_options/_form_modal.html",
             "character_options/form.html",
-            {
-                "club": club,
-                "kind": kind,
-                "kind_obj": kind_obj,
-                "form": form,
-                "is_create": True,
-            },
+            ctx,
+            status=status,
         )
 
+    if request.method == "GET":
+        return render_form(OptionForm(club=club, kind_slug=kind, instance=instance))
+
     # POST
-    form = OptionForm(request.POST, club=club, kind_slug=kind)
+    form = OptionForm(request.POST, club=club, kind_slug=kind, instance=instance)
     if form.is_valid():
         try:
-            form.save()
+            if is_create:
+                form.save()
+            else:
+                rename_option(kind, instance, form.cleaned_data["name"])
         except IntegrityError:
             form.add_error(
                 "name",
                 f"A {kind_obj.singular.lower()} with this name already exists.",
             )
         else:
-            messages.success(request, f"{kind_obj.singular} created.")
+            verb = "created." if is_create else "renamed."
+            messages.success(request, f"{kind_obj.singular} {verb}")
             if is_htmx(request):
-                response = HttpResponse(status=204)
-                response["HX-Trigger"] = json.dumps({"optionsChanged": True, "appModalClose": True})
-                return response
+                return hx_response(trigger={"optionsChanged": True, "appModalClose": True})
             return redirect("character_options:list", club_slug=club.slug, kind=kind)
 
     # Invalid form
-    return render_modal_or_page(
-        request,
-        "character_options/_form_modal.html",
-        "character_options/form.html",
-        {
-            "club": club,
-            "kind": kind,
-            "kind_obj": kind_obj,
-            "form": form,
-            "is_create": True,
-        },
-        status=400 if is_htmx(request) else 200,
-    )
+    return render_form(form, status=400 if is_htmx(request) else 200)
+
+
+@option_admin_required
+def create_option_view(request, club, kind):
+    """Create a new option (modal GET, modal POST)."""
+    return _option_form_view(request, club, kind)
 
 
 @option_admin_required
@@ -126,56 +126,7 @@ def edit_option(request, club, kind, pk):
     kind_obj = get_kind(kind)
     model = kind_obj.model
     option = get_object_or_404(model.objects.for_club(club), pk=pk)
-
-    if request.method == "GET":
-        form = OptionForm(club=club, kind_slug=kind, instance=option)
-        return render_modal_or_page(
-            request,
-            "character_options/_form_modal.html",
-            "character_options/form.html",
-            {
-                "club": club,
-                "kind": kind,
-                "kind_obj": kind_obj,
-                "option": option,
-                "form": form,
-                "is_create": False,
-            },
-        )
-
-    # POST
-    form = OptionForm(request.POST, club=club, kind_slug=kind, instance=option)
-    if form.is_valid():
-        try:
-            rename_option(kind, option, form.cleaned_data["name"])
-        except IntegrityError:
-            form.add_error(
-                "name",
-                f"A {kind_obj.singular.lower()} with this name already exists.",
-            )
-        else:
-            messages.success(request, f"{kind_obj.singular} renamed.")
-            if is_htmx(request):
-                response = HttpResponse(status=204)
-                response["HX-Trigger"] = json.dumps({"optionsChanged": True, "appModalClose": True})
-                return response
-            return redirect("character_options:list", club_slug=club.slug, kind=kind)
-
-    # Invalid form
-    return render_modal_or_page(
-        request,
-        "character_options/_form_modal.html",
-        "character_options/form.html",
-        {
-            "club": club,
-            "kind": kind,
-            "kind_obj": kind_obj,
-            "option": option,
-            "form": form,
-            "is_create": False,
-        },
-        status=400 if is_htmx(request) else 200,
-    )
+    return _option_form_view(request, club, kind, option)
 
 
 @option_admin_required
@@ -250,9 +201,7 @@ def delete_option(request, club, kind, pk):
     option.delete()
     messages.success(request, f"{kind_obj.singular} deleted.")
     if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps({"optionsChanged": True, "appModalClose": True})
-        return response
+        return hx_response(trigger={"optionsChanged": True, "appModalClose": True})
     return redirect("character_options:list", club_slug=club.slug, kind=kind)
 
 

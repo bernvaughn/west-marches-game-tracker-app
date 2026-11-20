@@ -1,11 +1,11 @@
 """View for claiming starting equipment."""
 
 from django.contrib import messages as flash
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx
+from accounts.htmx import hx_response, is_htmx
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from player_characters.models import Character
@@ -24,9 +24,7 @@ def _respond_without_grant(request, club_slug, character, reasons):
         flash.warning(request, _NO_GRANT_FALLBACK)
 
     if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Refresh"] = "true"
-        return response
+        return hx_response(refresh=True)
     return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
 
 
@@ -53,9 +51,7 @@ def claim_starting_equipment(request, club_slug, character_pk):
     if character.starting_equipment_claimed:
         if is_htmx(request):
             flash.error(request, "Starting equipment has already been claimed for this character.")
-            response = HttpResponse(status=204)
-            response["HX-Refresh"] = "true"
-            return response
+            return hx_response(refresh=True)
         flash.error(request, "Starting equipment has already been claimed for this character.")
 
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
@@ -81,8 +77,6 @@ def claim_starting_equipment(request, club_slug, character_pk):
         flash.warning(request, reason.message)
 
     if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Refresh"] = "true"
-        return response
+        return hx_response(refresh=True)
 
     return redirect("characters:detail", club_slug=club_slug, pk=character.pk)

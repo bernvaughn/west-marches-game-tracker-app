@@ -1,9 +1,9 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
@@ -24,6 +24,7 @@ def player_consume(request, club_slug, pk, item_pk):
     if available < 1:
         raise Http404("The character has none of this item available.")
     sheet = redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+    sheet_url = sheet.url
     if request.method == "POST":
         form = PlayerConsumeForm(request.POST, available=available)
         if form.is_valid():
@@ -40,11 +41,7 @@ def player_consume(request, club_slug, pk, item_pk):
                 form.add_error(None, str(exc))
             else:
                 messages.success(request, f"Consumed {quantity} {item.name}.")
-                if is_htmx(request):
-                    response = HttpResponse(status=204)
-                    response["HX-Redirect"] = sheet.url
-                    return response
-                return sheet
+                return htmx_or_redirect(request, sheet_url)
     else:
         form = PlayerConsumeForm(available=available)
     return render_modal_or_page(

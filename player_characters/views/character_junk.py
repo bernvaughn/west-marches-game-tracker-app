@@ -1,8 +1,8 @@
 from django.contrib import messages
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
@@ -23,6 +23,7 @@ def junk(request, club_slug, pk, item_pk):
     if owned < 1:
         raise Http404("The character owns none of this item.")
     sheet = redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+    sheet_url = sheet.url
     if request.method == "POST":
         form = JunkForm(request.POST, owned=owned)
         if form.is_valid():
@@ -32,11 +33,7 @@ def junk(request, club_slug, pk, item_pk):
                 form.add_error(None, str(exc))
             else:
                 messages.success(request, f"Saved junk marks for {character.name}.")
-                if is_htmx(request):
-                    response = HttpResponse(status=204)
-                    response["HX-Redirect"] = sheet.url
-                    return response
-                return sheet
+                return htmx_or_redirect(request, sheet_url)
     else:
         mark = JunkMark.objects.filter(character=character, item=item).first()
         form = JunkForm(initial={"quantity": min(mark.quantity, owned) if mark else 0}, owned=owned)

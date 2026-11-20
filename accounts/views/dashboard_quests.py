@@ -5,6 +5,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods
 
+from accounts.htmx import hx_response
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.services import InsufficientItems, available_items
@@ -94,12 +95,10 @@ def dashboard_quest_turnin(request, club_slug, quest_pk):
         response.status_code = 400
         return response
     except services.QuestNotLive:
-        response = HttpResponse()
-        response["HX-Trigger"] = (
-            '{"toast": {"message": "Quest is no longer live.", "type": "error"}}'
+        return hx_response(
+            trigger={"toast": {"message": "Quest is no longer live.", "type": "error"}},
+            status=400,
         )
-        response.status_code = 400
-        return response
     except services.QuestError as e:
         ctx = {
             "club": club,
@@ -114,13 +113,13 @@ def dashboard_quest_turnin(request, club_slug, quest_pk):
         return response
 
     # Success - return 204 with HX-Trigger to close modal, show toast, refresh dashboard
-    response = HttpResponse(status=204)
-    response["HX-Trigger"] = (
-        '{"appModalClose": true, '
-        '"toast": {"message": "Quest turned in successfully.", "type": "success"}, '
-        '"dashboardRefresh": true}'
+    return hx_response(
+        trigger={
+            "appModalClose": True,
+            "toast": {"message": "Quest turned in successfully.", "type": "success"},
+            "dashboardRefresh": True,
+        }
     )
-    return response
 
 
 def _missing_text(missing):
