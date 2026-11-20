@@ -1,114 +1,132 @@
-"""Browser test: Print Session Pack via hidden iframe.
+"""Browser test: Print Session Pack prints from a hidden iframe.
 
-The modal form uses data-print-frame. On submit it fetches the pack HTML,
-loads it into a sandboxed srcdoc iframe, and calls print() on that frame.
-The page body must remain scrollable; the print view never appears on screen.
+The dashboard modal form has data-print-frame. On submit, print_frame.js
+POSTs the form, loads the pack HTML into a hidden srcdoc iframe, and calls
+print() on that frame. The print view never shows on the page, and the page
+stays scrollable.
 """
+
+import time
 
 import pytest
 from django.test import Client
 from django.urls import reverse
 
-# No ledger services needed for browser tests
-
-STUB_PRINT = """
+# A capture-phase load listener on document runs before the listener that
+# print_frame.js puts on the iframe, so the stub is in place before print().
+# The stub fires afterprint, as a real dialog does when it closes.
+STUB_FRAME_PRINT = """
 window.__printCalls = 0;
-window.__printErrors = [];
-const origPrint = window.print;
-window.print = function () {
-  window.__printCalls += 1;
-  return origPrint.apply(this, arguments);
-};
-// Also stub iframe contentWindow.print when attached
-document.addEventListener('DOMContentLoaded', function () {
-  const observer = new MutationObserver(function (mutations) {
-    mutations.forEach(function (m) {
-      m.addedNodes.forEach(function (node) {
-        if (node.tagName === 'IFRAME' && node.srcdoc) {
-          node.addEventListener('load', function () {
-            try {
-              node.contentWindow.print = function () {
-                window.__printCalls += 1;
-              };
-            } catch (e) {
-              window.__printErrors.push(e.message);
-            }
-          });
-        }
-      });
-    });
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
-});
+window.__blockPrint = false;
+window.__frameHtml = [];
+document.addEventListener('load', function (event) {
+  var frame = event.target;
+  if (!frame || frame.tagName !== 'IFRAME' || !frame.hasAttribute('data-print-frame-target')) {
+    return;
+  }
+  window.__frameHtml.push(frame.contentDocument.documentElement.outerHTML);
+  frame.contentWindow.print = function () {
+    window.__printCalls += 1;
+    if (window.__blockPrint) throw new Error('Print blocked');
+    frame.contentWindow.dispatchEvent(new Event('afterprint'));
+  };
+}, true);
 """
+
+MODAL_FORM = "#app-modal form[data-print-frame]"
+MODAL_OPEN = "document.body.classList.contains('modal-open')"
 
 
 def _session_id(user):
+    # Log in before Playwright starts: its event loop blocks sync ORM calls.
     client = Client()
     client.force_login(user)
     return client.cookies["sessionid"].value
 
 
-def _open_dashboard(pw, live_server, session_id, url):
+def _wait_for(page, expression, timeout=5.0):
+    # The app CSP has no unsafe-eval, so page.wait_for_function cannot run.
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if page.evaluate(expression):
+            return
+        page.wait_for_timeout(50)
+    raise AssertionError(f"Timed out waiting for: {expression}")
+
+
+def _init_script_noise(message):
+    # Playwright injects the init script into every frame. The print frame is
+    # sandboxed without allow-scripts, so Chromium logs one error per inject.
+    # Without an init script the frame logs nothing: print_frame.js strips
+    # the page's own <script> tags.
+    return message.location.get("url") == "about:srcdoc" and message.text.startswith(
+        "Blocked script execution in 'about:srcdoc'"
+    )
+
+
+def _open_dashboard(pw, live_server, session_id, club):
     browser = pw.chromium.launch()
-    context = browser.new_context()
+    context = browser.new_context(viewport={"width": 1000, "height": 400})
     context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
-    context.add_init_script(STUB_PRINT)
+    context.add_init_script(STUB_FRAME_PRINT)
     page = context.new_page()
     errors = []
-    page.on("console", lambda m: m.type == "error" and errors.append(m.text))
+
+    def on_console(message):
+        if message.type == "error" and not _init_script_noise(message):
+            errors.append(message.text)
+
+    page.on("console", on_console)
     page.on("pageerror", lambda e: errors.append(str(e)))
-    page.goto(live_server.url + url)
+    page.goto(live_server.url + reverse("accounts:player_dashboard", args=[club.slug]))
     page.wait_for_load_state("networkidle")
     return browser, page, errors
 
 
-SELECTOR = "#app-modal .modal-content form[data-print-frame]"
+def _open_modal(page):
+    page.locator("[data-app-modal]", has_text="Print Session Pack").click()
+    page.wait_for_selector(MODAL_FORM, state="visible")
 
 
-def is_post_print(r):
-    return r.request.method == "POST" and "print_session_pack" in r.url
+def _submit(page, pack_path):
+    def is_pack_post(response):
+        return response.request.method == "POST" and response.url.endswith(pack_path)
+
+    with page.expect_response(is_pack_post) as resp:
+        page.click(f"{MODAL_FORM} button[type=submit]")
+    assert resp.value.status == 200
+
+
+def _pack_path(club, character):
+    return reverse("characters:print_session_pack", args=[club.slug, character.pk])
 
 
 @pytest.mark.browser
-def test_print_session_pack_modal_submit_prints_via_iframe(
-    transactional_db, live_server, club, player, funded, item
-):
-    """Submit the dashboard modal: print called once, body stays scrollable."""
-    url = reverse("accounts:dashboard", args=[club.slug])
+def test_modal_submit_prints_from_hidden_frame(transactional_db, live_server, club, player, funded):
+    from playwright.sync_api import sync_playwright
+
     session_id = _session_id(player)
     with sync_playwright() as pw:
-        browser, page, errors = _open_dashboard(pw, live_server, session_id, url)
+        browser, page, errors = _open_dashboard(pw, live_server, session_id, club)
         try:
-            # Open the Print Session Pack modal
-            page.click('[data-app-modal][hx-get*="print_session_pack_modal"]')
-            page.wait_for_selector(SELECTOR, state="visible")
-
-            # Submit the form (all checkboxes checked by default)
-            with page.expect_response(is_post_print) as resp:
-                page.click('#app-modal button[type="submit"]')
-            assert resp.value.status == 200
-
-            # Print should be called on the iframe
-            page.wait_for_function("window.__printCalls >= 1", timeout=5000)
+            _open_modal(page)
+            _submit(page, _pack_path(club, funded))
+            _wait_for(page, "window.__printCalls >= 1")
+            _wait_for(page, f"!{MODAL_OPEN} && !document.querySelector('#app-modal.show')")
             page.wait_for_timeout(300)
+
             assert page.evaluate("window.__printCalls") == 1
-
-            # Body must remain scrollable (no modal-open class, no overflow hidden)
-            body_class = page.evaluate("document.body.className")
-            assert "modal-open" not in body_class
-            overflow = page.evaluate("getComputedStyle(document.body).overflow")
-            assert overflow != "hidden"
-
-            # No .wm-sheet on the visible page (print view not swapped in)
-            sheet_count = page.locator(".wm-sheet").count()
-            assert sheet_count == 0
-
-            # Iframe should be removed after afterprint (fallback timeout may apply)
-            # We just check no stray iframes with srcdoc remain
-            iframes = page.locator("iframe[srcdoc]").count()
-            assert iframes == 0
-
+            # The frame got the pack, and the page did not.
+            assert "wm-sheet" in page.evaluate("window.__frameHtml[0]")
+            assert "<script" not in page.evaluate("window.__frameHtml[0]")
+            assert page.locator(".wm-sheet").count() == 0
+            # afterprint removed the frame.
+            assert page.locator("iframe[data-print-frame-target]").count() == 0
+            # The page still scrolls.
+            assert page.evaluate("getComputedStyle(document.body).overflow") != "hidden"
+            assert page.evaluate("document.documentElement.scrollHeight > window.innerHeight")
+            page.evaluate("window.scrollTo(0, 200)")
+            assert page.evaluate("window.scrollY") > 0
             assert errors == []
         finally:
             browser.close()
@@ -117,134 +135,81 @@ def test_print_session_pack_modal_submit_prints_via_iframe(
 
 
 @pytest.mark.browser
-def test_print_session_pack_modal_shows_note_when_print_blocked(
+def test_modal_shows_note_when_frame_print_throws(
     transactional_db, live_server, club, player, funded
 ):
-    """If print() throws, the warning note appears in the modal."""
-    url = reverse("accounts:dashboard", args=[club.slug])
+    from playwright.sync_api import sync_playwright
+
     session_id = _session_id(player)
-
-    BLOCK_PRINT = (
-        STUB_PRINT
-        + """
-    // Override to make print throw
-    const originalPrint = window.print;
-    window.print = function () {
-      throw new Error('Print blocked');
-    };
-    """
-    )
-
     with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        context = browser.new_context()
-        context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
-        context.add_init_script(BLOCK_PRINT)
-        page = context.new_page()
-        errors = []
-        page.on("console", lambda m: m.type == "error" and errors.append(m.text))
-        page.on("pageerror", lambda e: errors.append(str(e)))
-        page.goto(live_server.url + url)
-        page.wait_for_load_state("networkidle")
-
+        browser, page, _errors = _open_dashboard(pw, live_server, session_id, club)
         try:
-            # Open the Print Session Pack modal
-            page.click('[data-app-modal][hx-get*="print_session_pack_modal"]')
-            page.wait_for_selector(SELECTOR, state="visible")
+            page.evaluate("window.__blockPrint = true")
+            _open_modal(page)
+            _submit(page, _pack_path(club, funded))
 
-            # Submit the form
-            with page.expect_response(is_post_print) as resp:
-                page.click('#app-modal button[type="submit"]')
-            assert resp.value.status == 200
-
-            # Wait for the note to appear
-            note_sel = "[data-print-note] .alert-warning"
-            page.wait_for_selector(note_sel, state="visible", timeout=5000)
-            note_text = page.locator(note_sel).inner_text()
-            assert "blocked the print dialog" in note_text
-            assert "Ctrl+P" in note_text or "Cmd+P" in note_text
-
-            # Modal should still be open
-            modal_visible = page.locator("#app-modal").is_visible()
-            assert modal_visible
-
+            note = page.locator(f"{MODAL_FORM} [data-print-note] .alert-warning")
+            note.wait_for(state="visible", timeout=5000)
+            text = note.inner_text()
+            assert "blocked the print dialog" in text
+            assert "Ctrl+P" in text and "Cmd+P" in text
+            assert page.evaluate("window.__printCalls") == 1
+            assert page.locator("#app-modal").is_visible()
+            assert page.locator("iframe[data-print-frame-target]").count() == 0
         finally:
             browser.close()
 
 
 @pytest.mark.browser
-def test_print_session_pack_options_reach_frame(
-    transactional_db, live_server, club, player, funded, item
+def test_modal_shows_fetch_note_when_post_fails(
+    transactional_db, live_server, club, player, funded
 ):
-    """Map option checked/unchecked affects what the iframe receives."""
-    url = reverse("accounts:dashboard", args=[club.slug])
+    from playwright.sync_api import sync_playwright
+
+    pack_path = _pack_path(club, funded)
     session_id = _session_id(player)
-
-    CAPTURE_HTML = (
-        STUB_PRINT
-        + """
-    window.__capturedHtml = '';
-    const observer = new MutationObserver(function (mutations) {
-      mutations.forEach(function (m) {
-        m.addedNodes.forEach(function (node) {
-          if (node.tagName === 'IFRAME' && node.srcdoc) {
-            window.__capturedHtml = node.srcdoc;
-          }
-        });
-      });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    """
-    )
-
     with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        context = browser.new_context()
-        context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
-        context.add_init_script(CAPTURE_HTML)
-        page = context.new_page()
-        page.goto(live_server.url + url)
-        page.wait_for_load_state("networkidle")
-
+        browser, page, _errors = _open_dashboard(pw, live_server, session_id, club)
         try:
-            # Open modal, uncheck map, submit
-            page.click('[data-app-modal][hx-get*="print_session_pack_modal"]')
-            page.wait_for_selector(SELECTOR, state="visible")
-            page.uncheck("#opt-map")
-            with page.expect_response(is_post_print):
-                page.click('#app-modal button[type="submit"]')
-            page.wait_for_timeout(500)
+            page.route(live_server.url + pack_path, lambda route: route.abort())
+            _open_modal(page)
+            page.click(f"{MODAL_FORM} button[type=submit]")
 
-            html = page.evaluate("window.__capturedHtml")
-            assert "wm-map-print" not in html
-
-            # Close modal if still open
-            page.keyboard.press("Escape")
-            page.wait_for_timeout(200)
-
-            # Open again, check map, submit
-            page.click('[data-app-modal][hx-get*="print_session_pack_modal"]')
-            page.wait_for_selector(SELECTOR, state="visible")
-            page.check("#opt-map")
-            with page.expect_response(is_post_print):
-                page.click('#app-modal button[type="submit"]')
-            page.wait_for_timeout(500)
-
-            html = page.evaluate("window.__capturedHtml")
-            from map.models import HexMap
-
-            HexMap.objects.create(club=club, name="Test Map")
-            # Note: map only prints if there are active maps, so this may not include wm-map-print
-            # The key assertion is that the option is sent and processed
-
+            note = page.locator(f"{MODAL_FORM} [data-print-note] .alert-warning")
+            note.wait_for(state="visible", timeout=5000)
+            assert "Could not prepare the print" in note.inner_text()
+            assert page.evaluate("window.__printCalls") == 0
+            assert page.locator("#app-modal").is_visible()
         finally:
             browser.close()
 
 
-# Need to import sync_playwright at module level for the tests to work
-try:
+@pytest.mark.browser
+def test_modal_options_reach_frame(transactional_db, live_server, club, player, funded):
     from playwright.sync_api import sync_playwright
-except ImportError:
-    # Playwright not installed, define a dummy to avoid import errors at collect time
-    sync_playwright = None
-    pytestmark = pytest.mark.skip(reason="Playwright not installed")
+
+    from map.models import HexMap
+
+    HexMap.objects.create(club=club, name="The Marches")
+    pack_path = _pack_path(club, funded)
+    session_id = _session_id(player)
+    with sync_playwright() as pw:
+        browser, page, errors = _open_dashboard(pw, live_server, session_id, club)
+        try:
+            # Map is off by default.
+            _open_modal(page)
+            _submit(page, pack_path)
+            _wait_for(page, "window.__frameHtml.length === 1")
+            _wait_for(page, f"!{MODAL_OPEN}")
+            assert "wm-map-print" not in page.evaluate("window.__frameHtml[0]")
+
+            # Turn the map on.
+            _open_modal(page)
+            page.check("#opt-map")
+            _submit(page, pack_path)
+            _wait_for(page, "window.__frameHtml.length === 2")
+            assert "wm-map-print" in page.evaluate("window.__frameHtml[1]")
+            assert page.evaluate("window.__printCalls") == 2
+            assert errors == []
+        finally:
+            browser.close()
