@@ -182,23 +182,11 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   <pre tabindex="0">{% verbatim %}{% include "components/toast_container.html" %}{% endverbatim %}</pre>
   <p>Toast notifications appear bottom-right (bottom-center on mobile). Trigger via <code>HX-Trigger</code> header or Django messages with <code>toast-*</code> tag.</p>
   <div class="wm-toolbar">
-    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast()">Show success toast</button>
-    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast('warning')">Show warning toast</button>
-    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast('danger')">Show danger toast</button>
-    <button class="btn btn-sm btn-outline-secondary" type="button" onclick="window.showTestToast('info')">Show info toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-test-toast>Show success toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-test-toast="warning">Show warning toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-test-toast="danger">Show danger toast</button>
+    <button class="btn btn-sm btn-outline-secondary" type="button" data-wm-test-toast="info">Show info toast</button>
   </div>
-  <script>
-    window.showTestToast = function(type) {
-      if (!window.wmShowToast) return;
-      const messages = {
-        success: 'Action completed successfully',
-        warning: 'Request declined',
-        danger: 'Operation cancelled',
-        info: 'Choice confirmed. Choose what to do next.'
-      };
-      window.wmShowToast(messages[type] || messages.success, type);
-    };
-  </script>
   {% include "components/toast_container.html" %}
 </section>
 
@@ -252,3 +240,5 @@ Low-value column: class="wm-col-optional" on the th and the td (hidden below 576
   </div>
 </section>
 {% endblock %}
+
+{% block extra_scripts %}<script src="{% static 'js/design_reference.js' %}" defer></script>{% endblock %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins static %}
 {% block title %}Print loot cards{% endblock %}
 {% block content %}
 {% url "items:index" club.slug as index_url %}
@@ -12,8 +12,8 @@
       <input type="text" name="q" id="id_q" class="form-control" value="{{ search_query }}" placeholder="Filter by name">
       {% if show_retired %}<input type="hidden" name="retired" value="1">{% endif %}
       <input type="hidden" name="copies" id="id_copies" value="type">
-      <button class="btn btn-outline-secondary" type="button" id="btn-copies-type" onclick="document.getElementById('id_copies').value='type'; this.classList.add('active'); document.getElementById('btn-copies-item').classList.remove('active')">One card per item type</button>
-      <button class="btn btn-outline-secondary" type="button" id="btn-copies-item" onclick="document.getElementById('id_copies').value='item'; this.classList.add('active'); document.getElementById('btn-copies-type').classList.remove('active')">One card per item</button>
+      <button class="btn btn-outline-secondary" type="button" id="btn-copies-type">One card per item type</button>
+      <button class="btn btn-outline-secondary" type="button" id="btn-copies-item">One card per item</button>
     </div>
     <div class="form-text">Choose how cards are generated. "One card per item type" creates one card per catalogue entry with a quantity. "One card per item" expands each quantity into individual cards (max 90 cards).</div>
   </div>
@@ -52,22 +52,4 @@
 </form>
 {% endblock %}
 
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const typeBtn = document.getElementById('btn-copies-type');
-  const itemBtn = document.getElementById('btn-copies-item');
-  const copiesInput = document.getElementById('id_copies');
-  if (typeBtn && itemBtn && copiesInput) {
-    const initial = copiesInput.value;
-    if (initial === 'item') {
-      itemBtn.classList.add('active');
-      typeBtn.classList.remove('active');
-    } else {
-      typeBtn.classList.add('active');
-      itemBtn.classList.remove('active');
-    }
-  }
-});
-</script>
-{% endblock %}
+{% block extra_scripts %}<script src="{% static 'js/loot_cards_picker.js' %}" defer></script>{% endblock %}
