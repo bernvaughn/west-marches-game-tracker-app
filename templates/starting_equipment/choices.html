@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static accounts_tags %}
+{% block title %}Choose starting equipment{% endblock %}
+
+{% block content %}
+{% url 'characters:detail' club.slug character.pk as sheet_url %}
+{% include "components/page_header.html" with title="Choose starting equipment" back_url=sheet_url back_label="Back to sheet" %}
+<article class="wm-sheet wm-sheet--page">
+  <header class="wm-sheet-header">
+    <h1>Choose starting equipment</h1>
+    <p>Pick one option for each choice group below for {{ character.name }} ({{ club.name }}).</p>
+  </header>
+  {% flash_messages %}
+  {% if reasons %}
+  <section class="wm-sheet-box wm-sheet-full wm-sheet-notice no-print" aria-labelledby="choices-reasons" role="status">
+    <h2 class="wm-sheet-box-title" id="choices-reasons">Starting equipment notes</h2>
+    <ul class="wm-sheet-notice-text" style="margin: 0 0 0 1.25rem; padding: 0;">
+      {% for reason in reasons %}
+      <li>{{ reason.message }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+  <form method="post" class="wm-form wm-character-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="choices-groups">
+      <h2 class="wm-sheet-box-title" id="choices-groups">Choose one option per group</h2>
+      <div class="wm-sheet-grid wm-sheet-layout">
+        {% for gf in group_fields %}
+        <div class="wm-sheet-box wm-sheet-full mb-3">
+          <fieldset class="border p-3 mb-0">
+            <legend class="wm-sheet-box-title wm-sheet-full wm-sheet-notice" style="font-size: 1rem;">{{ gf.group.label }}</legend>
+            <div class="wm-sheet-choices mt-2">
+              {% for row in gf.rows %}
+              <label class="form-check d-block mb-2">
+                <input
+                  type="radio"
+                  class="form-check-input"
+                  name="{{ gf.field.html_name }}"
+                  value="{{ row.line_id }}"
+                  id="{{ row.id_for_label }}"
+                  {% if row.selected %}checked{% endif %}
+                  required
+                >
+                <span class="form-check-label">
+                  {% include "items/_item_name.html" with item=row.item info=True %}
+                  &times;{{ row.quantity }}
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    <div class="wm-form-actions mt-3">
+      <button type="submit" class="btn btn-primary">Confirm choices</button>
+      <a class="btn btn-outline-secondary" href="{{ sheet_url }}">Finish later</a>
+    </div>
+  </form>
+</article>
+{% endblock %}
