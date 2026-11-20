@@ -4,7 +4,7 @@ from django.shortcuts import render
 
 from ..club_seeding import seed_new_club
 from ..forms.clubs import ClubCreateForm
-from ..models import Club
+from ..models import Club, User
 from ..passwords import get_or_create_member
 from ..permissions import site_admin_required
 
@@ -20,6 +20,17 @@ def club_new(request):
     form = ClubCreateForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         data = form.cleaned_data
+        existing = User.objects.filter(email__iexact=data["admin_email"]).first()
+        if existing and not data["confirm_existing"]:
+            # Tell the site admin first. Resubmitting the same form confirms it.
+            posted = request.POST.copy()
+            posted["confirm_existing"] = "1"
+            form = ClubCreateForm(posted)
+            return render(
+                request,
+                "accounts/clubs/new.html",
+                {"form": form, "existing_user": existing},
+            )
         with transaction.atomic():
             club = Club.objects.create(name=data["name"], slug=data["slug"])
             seed_new_club(club)

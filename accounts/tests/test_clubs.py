@@ -58,9 +58,40 @@ def test_slug_blank_and_duplicate(site_admin, login, club):
     assert Club.objects.count() == before
 
 
+@pytest.mark.story("U120")
+def test_existing_email_shows_notice_before_creating(site_admin, login, player):
+    before = Club.objects.count()
+    r = _post(login(site_admin), admin_email=player.email.upper())
+    body = r.content.decode()
+    assert r.status_code == 200
+    assert "This email already has an account." in body
+    assert 'name="confirm_existing"' in body and 'value="1"' in body
+    assert r.context["existing_user"] == player
+    assert Club.objects.count() == before
+    assert not Membership.objects.filter(user=player, club__slug="club-c").exists()
+
+
+@pytest.mark.story("U120")
+def test_new_email_shows_no_notice(site_admin, login):
+    r = _post(login(site_admin))
+    assert "already has an account" not in r.content.decode()
+    assert Club.objects.filter(slug="club-c").exists()
+
+
+@pytest.mark.story("U120")
+def test_confirming_existing_email_creates_the_club(site_admin, login, player):
+    c = login(site_admin)
+    first = _post(c, admin_email=player.email)
+    assert first.context["existing_user"] == player
+    r = _post(c, admin_email=player.email, confirm_existing="1")
+    club = Club.objects.get(slug="club-c")
+    assert Membership.objects.get(user=player, club=club).is_club_admin
+    assert "existing_user" not in r.context
+
+
 @pytest.mark.story("U12")
 def test_existing_user_keeps_password(site_admin, login, player):
-    r = _post(login(site_admin), admin_email=player.email)
+    r = _post(login(site_admin), admin_email=player.email, confirm_existing="1")
     club = Club.objects.get(slug="club-c")
     player.refresh_from_db()
     assert player.check_password("pw")
