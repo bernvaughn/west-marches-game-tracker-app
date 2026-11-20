@@ -60,7 +60,7 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 | Area | Details |
 | --- | --- |
 | XP table | Default bands from `map/xp.py` (`copy_default_xp_table`). |
-| Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py` (`seed_default_options`). |
+| Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
 | Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
 | Items | Default item catalogue (about 100 items) from the starting-equipment data. |
 | Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. |
