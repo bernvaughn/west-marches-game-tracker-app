@@ -58,6 +58,13 @@ class ItemForm(forms.ModelForm):
         )
         if self.instance.pk:
             self.initial["value"] = self.instance.value_cp
+            # Add is_container field only on edit page (instance exists)
+            self.fields["is_container"] = forms.BooleanField(
+                required=False,
+                label="Is container",
+                initial=self.instance.is_container,
+                widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            )
 
     def clean_name(self):
         name = self.cleaned_data["name"].strip()
@@ -74,6 +81,8 @@ class ItemForm(forms.ModelForm):
     def save(self, commit=True):
         self.instance.club = self.club
         self.instance.value_cp = self.cleaned_data.get("value") or 0
+        if "is_container" in self.cleaned_data:
+            self.instance.is_container = self.cleaned_data["is_container"]
         return super().save(commit=commit)
 
 
@@ -176,13 +185,16 @@ class BaseSlotFormSet(BaseInlineFormSet):
 
     def add_fields(self, form, index):
         super().add_fields(form, index)
+        # Prevent empty_permitted from skipping validation when form data matches model defaults
+        form.empty_permitted = False
         # Build the nested options formset for this slot
         prefix = f"{self.prefix}-{index}-opts"
         form.options = OptionFormSet(
             self.data if self.is_bound else None,
             instance=form.instance,
             prefix=prefix,
-            form_kwargs={"club": self.club, "container": self.container},
+            club=self.club,
+            container=self.container,
         )
 
     def _should_delete_form(self, form):
@@ -193,6 +205,26 @@ class BaseSlotFormSet(BaseInlineFormSet):
 
     def clean(self):
         super().clean()
+        # Validate that any posted slot IDs belong to this container's club
+        if self.container and self.club:
+            valid_slot_ids = set(
+                ContainerSlot.objects.filter(container__club=self.club).values_list("pk", flat=True)
+            )
+            for form in self.forms:
+                if self.can_delete and self._should_delete_form(form):
+                    continue
+                # Check raw form data for ID field (works even if form validation fails)
+                id_field_name = form.add_prefix("id")
+                slot_id = form.data.get(id_field_name)
+                if slot_id:
+                    try:
+                        slot_id = int(slot_id)
+                    except (TypeError, ValueError):
+                        slot_id = None
+                    if slot_id and slot_id not in valid_slot_ids:
+                        raise forms.ValidationError(
+                            "A posted slot ID does not belong to this club."
+                        )
         # Every kept slot needs at least one kept option
         # Note: nested option formsets are validated in the view before calling is_valid()
         for form in self.forms:
@@ -218,12 +250,13 @@ class BaseSlotFormSet(BaseInlineFormSet):
 class BaseOptionFormSet(BaseInlineFormSet):
     """Formset for slot options."""
 
-    def __init__(self, *args, form_kwargs=None, **kwargs):
-        self.form_kwargs = form_kwargs or {}
+    def __init__(self, *args, club=None, container=None, **kwargs):
+        self.club = club
+        self.container = container
         super().__init__(*args, **kwargs)
 
     def _construct_form(self, i, **kwargs):
-        kwargs.update(self.form_kwargs)
+        kwargs.update({"club": self.club, "container": self.container})
         return super()._construct_form(i, **kwargs)
 
     def _should_delete_form(self, form):

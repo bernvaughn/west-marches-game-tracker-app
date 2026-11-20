@@ -91,7 +91,16 @@ def test_option_picker_lists_only_club_items(login, club_admin, club, other_club
     r = c.get(url("edit", club, container.pk))
     assert r.status_code == 200
     assert b"Local Item" in r.content
-    assert b"Foreign Item" not in r.content
+    # Check that the option item picker (select field) only contains club items
+    # The picker is in the nested option formset; verify foreign item not in select options
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(r.content, "html.parser")
+    item_selects = soup.select('select[name*="-item"]')
+    for select in item_selects:
+        options = [opt.text for opt in select.find_all("option")]
+        assert "Foreign Item" not in options, f"Foreign Item found in picker: {options}"
+        assert "Local Item" in options, f"Local Item missing from picker: {options}"
 
 
 def test_posting_foreign_club_item_rejected(login, club_admin, club, other_club):
@@ -148,7 +157,12 @@ def test_posting_foreign_slot_id_rejected(login, club_admin, club, other_club):
     )
     r = c.post(url("edit", club, container.pk), post)
     assert r.status_code == 200
-    assert b"invalid choice" in r.content.lower() or b"not in the same club" in r.content.lower()
+    content = r.content.lower()
+    assert (
+        b"does not belong to this club" in content
+        or b"invalid choice" in content
+        or b"not in the same club" in content
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -424,7 +438,8 @@ def test_reject_depth_over_3(login, club_admin, club):
     d = make_container(club, "D")
     add_slot(b, [(a, 1, 1, 1)], position=0)
     add_slot(c_, [(b, 1, 1, 1)], position=0)
-    add_slot(d, [(c_, 1, 1, 1)], position=0)
+    # D has an empty slot initially
+    add_slot(d, [], position=0)
     d_slot = d.slots.first()
 
     post = form(

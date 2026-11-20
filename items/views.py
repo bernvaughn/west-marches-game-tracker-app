@@ -197,7 +197,8 @@ def _item_form_view(request, instance, with_container):
                         break
 
             # Then validate slot formset (its clean method uses validated option forms)
-            slot_valid = slot_formset.is_valid() and opts_valid_all
+            slot_formset_valid = slot_formset.is_valid()
+            slot_valid = slot_formset_valid and opts_valid_all
         else:
             slot_valid = True
     else:
@@ -211,7 +212,19 @@ def _item_form_view(request, instance, with_container):
             try:
                 with transaction.atomic():
                     slot_formset.instance = item
-                    slot_formset.save()
+                    # Manually save each slot form to ensure all are saved
+                    # (formset.save() skips forms where has_changed() is False)
+                    saved_slots = []
+                    for slot_form in slot_formset.forms:
+                        if slot_formset.can_delete and slot_formset._should_delete_form(slot_form):
+                            continue
+                        if not slot_form.cleaned_data:
+                            continue
+                        slot = slot_form.save(commit=False)
+                        slot.container = item
+                        slot.save()
+                        saved_slots.append(slot)
+                        slot_form.instance = slot
                     # Save nested option formsets
                     for slot_form in slot_formset.forms:
                         if slot_formset.can_delete and slot_formset._should_delete_form(slot_form):

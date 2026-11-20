@@ -32,6 +32,12 @@ Context: slot_formset (SlotFormSet bound to the container item), item, container
           </ul>
         </div>
       {% endif %}
+      {% if slot_formset.non_form_errors %}
+        <div class="alert alert-danger">
+          <strong>Slot configuration error:</strong>
+          {{ slot_formset.non_form_errors }}
+        </div>
+      {% endif %}
       
       {% if slot_formset %}
         {{ slot_formset.management_form }}
