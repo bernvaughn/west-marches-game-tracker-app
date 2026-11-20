@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Container opened{% endblock %}
+{% block content %}
+{% url "characters:detail" request.club.slug character.pk as back_url %}{% include "components/page_header.html" with title="Container opened" back_url=back_url back_label="Back to "|add:character.name %}
+{% include "components/card_open.html" with title=container.name subtitle="You opened "{{ container.name }}
+{% include "player_characters/characters/_open_result_body.html" with container=container rows=rows error=error %}
+<div class="wm-form-actions"><a class="btn btn-primary" href="{% url 'characters:detail' club.slug character.pk %}" data-wm-tooltip title="Return to the character sheet.">Done</a></div>
+{% include "components/card_close.html" %}
+{% endblock %}
