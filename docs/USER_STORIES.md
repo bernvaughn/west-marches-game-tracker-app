@@ -778,6 +778,88 @@ Stories for club admins and game masters to manage starting equipment templates 
 - Reports are recorded with the page they came from and can be triaged (open, handled, closed) on the site-admin list at /site/feedback/.
 - Sending is rate limited per user.
 
+## Round 14: stories for features that were built without one (2026-11-20)
+
+These features shipped in the week of 2026-11-13 to 2026-11-20 without a written story. Each story below describes what the build does today, so the next round can check it and change it.
+
+### Character sheet
+
+**U115 See my XP progress and when I can level up.** As a player, I want my character sheet to show how far my XP is toward the next level, and tell me when I have enough XP to level up, so I know when to update my character. *(player_characters)*
+- Under XP the sheet shows slim progress, for example "6,500 / 14,000 XP to level 6", using the standard 5e XP thresholds.
+- At level 20, or at the top XP threshold, it shows "Max level" instead.
+- When the saved level is lower than the level the XP earns, a "Level up ready" badge appears and links to the edit form. The sheet never changes the level by itself.
+- When XP is blank, nothing new shows.
+- The progress bar and the badge link do not print.
+
+**U116 New characters start with 10 in every ability.** As a player, I want the six ability scores to start at 10 on the new-character form, so I only change the ones that differ. *(player_characters)*
+- The new-character form pre-fills Strength, Dexterity, Constitution, Intelligence, Wisdom and Charisma with 10. This is the same for players and for game masters or club admins creating a character for someone else.
+- Players can change any score or clear it. A blank score still shows "—" on the sheet, the edit form and the slips.
+- Characters made before this change keep their saved values, including blanks.
+
+**U117 Sell junk from the character sheet.** As a player, I want a "Sell junk" button on my character sheet that asks which shop to sell in, so I can clear junk without walking the street first. *(player_characters, shops)*
+- The button acts for the selected character. It opens a modal that lists the club's open shops in street order. Picking one continues into that shop's junk selling modal from U45.
+- If only one shop is open, it goes straight to that shop's junk selling modal. If no shop is open, the modal says "No shops are open right now."
+- Everything else follows U45 and U56: nothing sells until the player confirms.
+- The button only shows when the character has at least one item marked as junk.
+
+### Club home
+
+**U118 A session desk for game masters and club admins.** As a game master or club admin, I want my club home page to show what is waiting for me and what to do after a session, so I do not have to open each page to find out. *(accounts)*
+- The club home page shows a desk with three sections: "Waiting for you", "After the session" and "My character dashboard".
+- "Waiting for you" uses the same pending approvals as the rest of the app, so the counts match the approvals page.
+- Players without a game master or admin role see their player dashboard as before.
+- A game master or club admin who has no character of their own is sent to the desk instead of an empty player dashboard.
+- The layout works on a phone first.
+
+### Shops
+
+**S13 Closing soon ribbons.** As a player, I want shops that are about to leave the street to say so, so I can buy before they close. *(shops)*
+- A shop leaves the street on the latest close date of its open rotations. If any open rotation has no close date, the shop never leaves.
+- "Closing soon" means the leave date is within 3 days, counting the leave date itself.
+- A club shop on the street shows a "Closing soon" ribbon. Player shops never show it.
+- The shop page shows "Leaves the street on <date>" under the Closed badge area while the shop is open and closing soon.
+- Dates use the house format, for example 24 Nov 2026.
+
+**S14 Switch shops from the shop banner.** As a player, I want a shop picker in the shop banner, so I can move to another open shop without going back to the street. *(shops)*
+- The picker sits next to "Leave" and lists the club's open shops in street order. The current shop is marked.
+- Picking a shop swaps the page in place and keeps the scroll position. The acting character does not change.
+- Each choice is a real link, so the picker also works without JavaScript. Back and Forward restore the shops visited.
+
+**S15 Compare the price before I buy.** As a player, I want the buy confirmation to show how the price compares with the item's base value, so I can judge the deal. *(shops)*
+- The modal shows the base value, the shop's sell percentage, and the price I pay.
+- The percentage is the stock's own override when it has one, and the shop's default otherwise. The price is base value × percentage ÷ 100.
+- It also shows the difference from base, for example "vs base: -2 gp" or "+5 gp".
+
+### Quests
+
+**Q5 Turn-in feedback and a preview of the reward.** As a player, I want to see what a quest pays before I turn it in, and to get a clear result after, so I know it was worth it and that it worked. *(quests)*
+- The turn-in card lists the quest's reward (coins and items) under the requirements. It is hidden when the quest has no reward.
+- After a turn-in, the player returns to the quest board, which refreshes by itself. A toast names the character, the quest and the reward.
+- Without JavaScript, the player goes to the quest page and sees the usual message.
+
+### Downtime
+
+**D11 Replay the wheel, with some extra flair.** As a player, I want to watch my downtime result again and feel the near misses, so the spin is fun without changing the result. *(downtime)*
+- The result modal has a "Spin again" button. It replays the wheel animation with the same stored result. It never rolls again.
+- Slices the wheel nearly landed on glow briefly. Particles burst from the wheel's center when it stops.
+- A sound toggle is off by default. The page remembers the choice in the browser.
+- With no JavaScript, or with reduced motion, the result shows straight away.
+
+### Site-wide
+
+**U119 Support link in the footer.** As a visitor or player, I want a small link in the footer to support the app, so I can chip in if I want to. *(accounts, site-wide)*
+- The standard footer, on public, club and sign-in pages, has a "Buy me a coffee" link to ko-fi.com.
+- It is a plain link with an inline icon. It does not load the Ko-fi widget, because the content security policy blocks that script and image.
+- The link is fixed in the page template, on purpose. The site admin does not set the address or turn it off. This is the donate button U11 asks for.
+
+### Agent access
+
+**A8 Agent tokens expire, and every use is logged.** As a game master, I want my agent's access token to expire, and as a site admin I want a log of what happened to each token, so a lost token stops working and I can see how it was used. *(agent_access)*
+- A new token expires after `AGENT_TOKEN_EXPIRY_DAYS` days. The default is 365, and the setting can be changed.
+- An expired token is refused and the refusal is logged.
+- A log records each token's creation, use, revocation and expiry.
+- The connections list shows an "Expires" column and an Active or Expired badge.
+- The site admin can search and filter the log in Django admin.
 
 ## Quests
 
