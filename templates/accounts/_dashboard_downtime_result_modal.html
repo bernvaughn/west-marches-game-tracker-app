@@ -7,6 +7,6 @@
 </div>
 {% endblock %}
 {% block footer %}
-<button type="button" class="btn wm-chalk-button" data-bs-dismiss="modal" hx-get="{% url 'accounts:dashboard_partial' club.slug 'downtime' %}" hx-target=".wm-dashboard-section:has(h3:contains('Downtime'))" hx-swap="outerHTML">Close & Refresh</button>
+<button type="button" class="btn wm-chalk-button" data-bs-dismiss="modal" hx-get="{% url 'accounts:dashboard_partial' club.slug 'downtime' %}" hx-target="#dashboard-card-downtime" hx-swap="outerHTML">Close & Refresh</button>
 <button type="button" class="btn wm-chalk-button" data-bs-dismiss="modal">Close</button>
 {% endblock %}
