@@ -1,9 +1,9 @@
 """Tests for the link_character_options data migration."""
 
 import importlib
+from contextlib import nullcontext
 
 import pytest
-from django.db import connection
 
 from accounts.models import Membership, User
 from character_options.models import Background, CharacterClass, Species
@@ -68,13 +68,13 @@ class TestLinkCharacterOptionsMigration:
         # Run migration
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
         assert character.class_option.name == class_name
-        assert character.char_class == class_name  # Canonical name
+        assert character.char_class == class_name.lower()  # Text is never rewritten
 
     def test_trimmed_match(self, seeded_club, player):
         """Trimmed whitespace match links the record."""
@@ -92,13 +92,13 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character = Character.objects.get(name="TestChar")
         assert character.class_option_id is not None
         assert character.class_option.name == class_name
-        assert character.char_class == class_name  # Trimmed canonical name
+        assert character.char_class == f"  {class_name}  "  # Text is never rewritten
 
     def test_unmatched_stays_custom_text_unchanged(self, seeded_club, player, capsys):
         """Unmatched value stays as custom text, FK null, text unchanged."""
@@ -113,7 +113,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character = Character.objects.get(name="TestChar")
@@ -139,7 +139,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character = Character.objects.get(name="TestChar")
@@ -162,7 +162,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character = Character.objects.get(name="TestChar")
@@ -184,7 +184,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character.refresh_from_db()
@@ -268,16 +268,17 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         captured = capsys.readouterr()
         output = captured.out
 
-        # Check counts for each field
-        assert "char_class: linked=1, left_custom=1, blank=1" in output
-        assert "species: linked=1, left_custom=1, blank=1" in output
-        assert "background: linked=1, left_custom=1, blank=1" in output
+        # Check counts for each field. Each field is blank on 7 of the 9 characters:
+        # its own "Blank" character plus the 6 characters set up for the other fields.
+        assert "char_class: linked=1, left_custom=1, blank=7" in output
+        assert "species: linked=1, left_custom=1, blank=7" in output
+        assert "background: linked=1, left_custom=1, blank=7" in output
 
     def test_idempotent_re_run(self, seeded_club, player):
         """Re-running the migration is idempotent."""
@@ -295,7 +296,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
             # Run again
             run_migration(apps, schema_editor)
@@ -323,7 +324,7 @@ class TestLinkCharacterOptionsMigration:
             class_option=None,
         )
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             # Forward
             migration_module.link_characters(apps, schema_editor)
             character = Character.objects.get(name="TestChar")
@@ -360,16 +361,17 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         character = Character.objects.get(name="AllFields")
         assert character.class_option_id is not None
         assert character.species_option_id is not None
         assert character.background_option_id is not None
-        assert character.char_class == class_name
-        assert character.species == species_name
-        assert character.background == background_name
+        # Text is never rewritten.
+        assert character.char_class == class_name.lower()
+        assert character.species == species_name.lower()
+        assert character.background == background_name.lower()
 
         captured = capsys.readouterr()
         assert "char_class: linked=1" in captured.out
@@ -407,7 +409,7 @@ class TestLinkCharacterOptionsMigration:
 
         from django.apps import apps
 
-        with connection.schema_editor() as schema_editor:
+        with nullcontext() as schema_editor:  # data-only; SQLite forbids a schema editor here
             run_migration(apps, schema_editor)
 
         seeded_char = Character.objects.get(name="SeededClubChar")

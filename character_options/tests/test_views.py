@@ -5,6 +5,7 @@ import json
 import pytest
 from django.urls import reverse
 
+from accounts.models import Club
 from character_options.models import Background, CharacterClass, Species
 from player_characters.models import Character
 from starting_equipment.models import (
@@ -14,6 +15,21 @@ from starting_equipment.models import (
 )
 
 # --- Fixtures for option kinds ---
+
+
+@pytest.fixture
+def club(db):
+    """An unseeded club: these tests build their own option lists.
+
+    Overrides the root ``club`` fixture, which seeds the 2024 defaults.
+    """
+    return Club.objects.create(name="Club A", slug="club-a")
+
+
+@pytest.fixture
+def other_club(db):
+    """A second unseeded club. Overrides the seeded root fixture."""
+    return Club.objects.create(name="Club B", slug="club-b")
 
 
 @pytest.fixture
