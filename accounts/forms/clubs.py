@@ -9,6 +9,8 @@ class ClubCreateForm(forms.Form):
     slug = forms.SlugField(required=False, max_length=50)
     admin_email = forms.EmailField()
     admin_display_name = forms.CharField(required=False, max_length=150)
+    # Set when the site admin has seen the "already has an account" notice.
+    confirm_existing = forms.BooleanField(required=False, widget=forms.HiddenInput)
 
     def clean_admin_email(self):
         return self.cleaned_data["admin_email"].strip().lower()

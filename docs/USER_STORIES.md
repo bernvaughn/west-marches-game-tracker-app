@@ -861,6 +861,19 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - The connections list shows an "Expires" column and an Active or Expired badge.
 - The site admin can search and filter the log in Django admin.
 
+### Site admin
+
+**U120 Create a club with its first admin.** As the site admin, I want to create a new club and its first club admin in one step, so a new group can sign in and start using the app on day one. *(accounts, character_options, starting_equipment, map)*
+- Only the site admin sees the "New club" form. It asks for the club name, an optional slug, the first admin's email, and an optional display name for them.
+- If the slug is left blank it comes from the name. A slug that another club already uses is refused with an error on the form.
+- The new club is seeded with the XP table, the species, classes and backgrounds, the default item catalogue, and an active "2024 D&D Default" starting equipment template. It gets no characters, shops, quests, maps, downtime actions or messages. The game master creates those.
+- The first admin is the email address typed, saved in lower case and matched without regard to case. Their email is also whitelisted for the club, so they can sign in.
+- If no account has that email, the app creates one with a random temporary password. The "Club created" page shows the password once and the page is never cached. The app sends no email, so the site admin hands the password over. On first sign-in the person must choose their own password (U18).
+- If an account with that email already exists, for example from another club, the form first says "This email already has an account." It explains that the person will become an admin of the new club and that their password will not change. Nothing is created yet. The site admin can change the email, or press "Create club" again to go ahead.
+- After the site admin goes ahead, that account is not changed and no password is shown. The "Club created" page says "Existing user. Their password is unchanged." The person becomes a club admin of the new club and signs in as before.
+- The club, the seed data and the admin are created together. If anything fails, none of it is kept.
+- A lost temporary password is reset the same way as any other (U19).
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
