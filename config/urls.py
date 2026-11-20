@@ -21,6 +21,7 @@ club_patterns = [
 
 urlpatterns = [
     path("favicon.ico", config_views.favicon, name="favicon"),
+    path("healthz", config_views.healthz, name="healthz"),
     path("", account_views.home, name="home"),
     path("", include("accounts.urls_site")),
     path("accounts/", include("django.contrib.auth.urls")),

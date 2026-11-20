@@ -174,6 +174,7 @@ def demo_objects() -> SimpleNamespace:
 
 EXCLUDED = {
     "favicon": "An icon file, not a page.",
+    "healthz": "A health check endpoint returning plain text, not a page.",
     "logout": "POST only.",
     "starting_equipment:templates": "Placeholder view for starting equipment (implemented in SE3).",
     "starting_equipment:template_create": "Stub view, Template CRUD child task.",
