@@ -131,10 +131,10 @@
   function init(root) {
     if (!root) return;
     Array.from(root.querySelectorAll("[" + OPEN_RESULT_ATTR + "]")).forEach(function (container) {
-      if (container.dataset[REVEALED_ATTR]) return;
+      if (container.hasAttribute(REVEALED_ATTR)) return;
       var reveal = container.querySelector("[" + REVEAL_ATTR + "]");
       if (!reveal) return;
-      container.dataset[REVEALED_ATTR] = "true";
+      container.setAttribute(REVEALED_ATTR, "true");
 
       var start = function () {
         var items = Array.from(reveal.querySelectorAll("[" + ITEM_ATTR + "]"));
@@ -157,6 +157,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    init(document);
+  });
+  /* htmx swaps the result into #app-modal .modal-content; hook both swap and
+   * settle so the reveal is armed regardless of swap timing. */
+  document.body.addEventListener("htmx:afterSwap", function () {
     init(document);
   });
   document.body.addEventListener("htmx:afterSettle", function () {
