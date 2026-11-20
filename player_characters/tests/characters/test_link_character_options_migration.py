@@ -1,0 +1,408 @@
+"""Tests for the link_character_options data migration."""
+
+import importlib
+
+import pytest
+
+from accounts.models import Membership, User
+from character_options.models import Background, CharacterClass, Species
+from player_characters.models import Character
+
+
+@pytest.fixture
+def seeded_club(db):
+    """Club with seeded options."""
+    from accounts.models import Club
+    from character_options.services import seed_default_options
+
+    club = Club.objects.create(name="Test Club", slug="test-club")
+    seed_default_options(club)
+    return club
+
+
+@pytest.fixture
+def unseeded_club(db):
+    """Club without seeded options."""
+    from accounts.models import Club
+
+    return Club.objects.create(name="Unseeded Club", slug="unseeded-club")
+
+
+@pytest.fixture
+def player(db):
+    user = User.objects.create_user("player@example.com", password="pw", display_name="Player")
+    return user
+
+
+@pytest.fixture
+def membership(seeded_club, player):
+    return Membership.objects.create(user=player, club=seeded_club)
+
+
+def run_migration(apps):
+    """Run the link_characters migration function."""
+    migration_module = importlib.import_module(
+        "player_characters.migrations.0015_link_character_options"
+    )
+    # Data migration only needs `apps`; schema_editor is unused (SQLite forbids
+    # it inside a test transaction), so pass None.
+    migration_module.link_characters(apps, None)
+
+
+class TestLinkCharacterOptionsMigration:
+    """Test the data migration that links existing characters to option records."""
+
+    def test_case_insensitive_match(self, seeded_club, player, capsys):
+        """Case-insensitive exact name match links the record."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_name = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=class_name.lower(),  # Different case
+            class_option=None,
+        )
+
+        # Run migration
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is not None
+        assert character.class_option.name == class_name
+        # Text is never rewritten by the migration (canonical name stays as typed).
+
+    def test_trimmed_match(self, seeded_club, player):
+        """Trimmed whitespace match links the record."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_name = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=f"  {class_name}  ",  # With whitespace
+            class_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is not None
+        assert character.class_option.name == class_name
+        # Text is never rewritten by the migration (whitespace stays as typed).
+
+    def test_unmatched_stays_custom_text_unchanged(self, seeded_club, player, capsys):
+        """Unmatched value stays as custom text, FK null, text unchanged."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class="My Custom Class",
+            class_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is None
+        assert character.char_class == "My Custom Class"  # Text unchanged
+
+    def test_archived_record_matches(self, seeded_club, player):
+        """Archived record matches and links."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_obj = CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first()
+        class_name = class_obj.name
+        # Archive it
+        class_obj.is_active = False
+        class_obj.save()
+
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=class_name,
+            class_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is not None
+        assert character.class_option.name == class_name
+        assert character.class_option.is_active is False  # Still archived
+
+    def test_other_club_not_matched(self, seeded_club, unseeded_club, player):
+        """Record from another club is not matched."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        other_class = CharacterClass.objects.create(club=unseeded_club, name="OtherClubClass")
+
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=other_class.name,
+            class_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is None
+        assert character.char_class == "OtherClubClass"  # Text unchanged
+
+    def test_already_linked_untouched(self, seeded_club, player):
+        """Already linked character is not modified."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_obj = CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first()
+        character = Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=class_obj.name,
+            class_option=class_obj,
+        )
+        original_fk = character.class_option_id
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character.refresh_from_db()
+        assert character.class_option_id == original_fk
+
+    def test_printed_counts(self, seeded_club, player, capsys):
+        """Migration prints counts per field: linked, left custom, blank."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_name = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        species_name = Species.objects.for_club(seeded_club).filter(is_active=True).first().name
+        background_name = (
+            Background.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+
+        # Create characters with various states
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="LinkedClass",
+            char_class=class_name.lower(),
+            class_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="CustomClass",
+            char_class="Custom Class",
+            class_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="BlankClass",
+            char_class="",
+            class_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="LinkedSpecies",
+            species=species_name.lower(),
+            species_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="CustomSpecies",
+            species="Custom Species",
+            species_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="BlankSpecies",
+            species="",
+            species_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="LinkedBackground",
+            background=background_name.lower(),
+            background_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="CustomBackground",
+            background="Custom Background",
+            background_option=None,
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="BlankBackground",
+            background="",
+            background_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        captured = capsys.readouterr()
+        output = captured.out
+
+        # Check counts for each field
+        assert "char_class: linked=1, left_custom=1, blank=7" in output
+        assert "species: linked=1, left_custom=1, blank=7" in output
+        assert "background: linked=1, left_custom=1, blank=7" in output
+
+    def test_idempotent_re_run(self, seeded_club, player):
+        """Re-running the migration is idempotent."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_name = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=class_name.lower(),
+            class_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+        # Run again
+        run_migration(apps)
+
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is not None
+        assert character.class_option.name == class_name
+
+    def test_reverse_is_noop(self, seeded_club, player):
+        """Reverse migration is a no-op."""
+        migration_module = importlib.import_module(
+            "player_characters.migrations.0015_link_character_options"
+        )
+        from django.apps import apps
+
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_name = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="TestChar",
+            char_class=class_name.lower(),
+            class_option=None,
+        )
+
+        # Forward (schema_editor unused by data migration; pass None)
+        migration_module.link_characters(apps, None)
+        character = Character.objects.get(name="TestChar")
+        assert character.class_option_id is not None
+
+        # Reverse
+        migration_module.reverse_noop(apps, None)
+        character.refresh_from_db()
+        # FK should still be set (reverse is noop)
+        assert character.class_option_id is not None
+
+    def test_all_three_fields_processed(self, seeded_club, player, capsys):
+        """All three fields (class, species, background) are processed."""
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        class_name = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        species_name = Species.objects.for_club(seeded_club).filter(is_active=True).first().name
+        background_name = (
+            Background.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="AllFields",
+            char_class=class_name.lower(),
+            class_option=None,
+            species=species_name.lower(),
+            species_option=None,
+            background=background_name.lower(),
+            background_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        character = Character.objects.get(name="AllFields")
+        assert character.class_option_id is not None
+        assert character.species_option_id is not None
+        assert character.background_option_id is not None
+        # Text is never rewritten by the migration (canonical name stays as typed).
+
+        captured = capsys.readouterr()
+        assert "char_class: linked=1" in captured.out
+        assert "species: linked=1" in captured.out
+        assert "background: linked=1" in captured.out
+
+    def test_multiple_clubs_processed_separately(self, seeded_club, unseeded_club, player):
+        """Each club's characters are processed independently."""
+        # Create a user for the unseeded club
+        other_user = User.objects.create_user(
+            "other@example.com", password="pw", display_name="Other"
+        )
+        membership = Membership.objects.create(user=player, club=seeded_club)
+        other_membership = Membership.objects.create(user=other_user, club=unseeded_club)
+
+        class_name_seeded = (
+            CharacterClass.objects.for_club(seeded_club).filter(is_active=True).first().name
+        )
+        Character.objects.create(
+            club=seeded_club,
+            owner=membership,
+            name="SeededClubChar",
+            char_class=class_name_seeded.lower(),
+            class_option=None,
+        )
+
+        # Unseeded club has no options, so should stay custom
+        Character.objects.create(
+            club=unseeded_club,
+            owner=other_membership,
+            name="UnseededClubChar",
+            char_class="Some Class",
+            class_option=None,
+        )
+
+        from django.apps import apps
+
+        run_migration(apps)
+
+        seeded_char = Character.objects.get(name="SeededClubChar")
+        unseeded_char = Character.objects.get(name="UnseededClubChar")
+
+        assert seeded_char.class_option_id is not None
+        assert seeded_char.class_option.name == class_name_seeded
+
+        assert unseeded_char.class_option_id is None
+        assert unseeded_char.char_class == "Some Class"

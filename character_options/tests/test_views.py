@@ -5,6 +5,7 @@ import json
 import pytest
 from django.urls import reverse
 
+from accounts.models import Club
 from character_options.models import Background, CharacterClass, Species
 from player_characters.models import Character
 from starting_equipment.models import (
@@ -14,6 +15,18 @@ from starting_equipment.models import (
 )
 
 # --- Fixtures for option kinds ---
+
+
+@pytest.fixture
+def club(db):
+    """Unseeded club: these tests create their own option records."""
+    return Club.objects.create(name="Test Club", slug="test-club")
+
+
+@pytest.fixture
+def other_club(db):
+    """Unseeded second club."""
+    return Club.objects.create(name="Other Club", slug="other-club")
 
 
 @pytest.fixture

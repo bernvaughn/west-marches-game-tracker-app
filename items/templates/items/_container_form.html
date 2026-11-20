@@ -1,0 +1,143 @@
+{% comment %}
+_container_form: container configuration formset for the item edit page.
+
+Context: slot_formset (SlotFormSet bound to the container item), item, container_errors (list of validation messages), show_toggle (bool).
+{% endcomment %}
+{% load accounts_tags %}
+
+{% can_see_gm_details_tag as can_see_gm %}
+
+<div id="container-config" class="wm-container-config mt-4">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3 class="h5 mb-0">Container contents</h3>
+      <div class="form-check">
+        <input type="checkbox" class="form-check-input" name="is_container" id="id_is_container"
+               {% if item.is_container %}checked{% endif %} {% if not can_see_gm %}disabled{% endif %}>
+        <label class="form-check-label" for="id_is_container">Is container</label>
+      </div>
+    </div>
+    <div class="card-body">
+      {% if not can_see_gm %}
+        <p class="text-muted small">Only club admins can edit container configuration.</p>
+      {% endif %}
+      
+      {% if container_errors %}
+        <div class="alert alert-danger">
+          <strong>Container validation failed:</strong>
+          <ul class="mb-0 mt-2">
+            {% for err in container_errors %}
+              <li>{{ err }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% if slot_formset.non_form_errors %}
+        <div class="alert alert-danger">
+          <strong>Slot configuration error:</strong>
+          {{ slot_formset.non_form_errors }}
+        </div>
+      {% endif %}
+      
+      {% if slot_formset %}
+        {{ slot_formset.management_form }}
+        
+        <div id="slots-container">
+          {% for slot_form in slot_formset.forms %}
+            <div class="slot-row border rounded p-3 mb-3 position-relative bg-light"
+                 data-slot-index="{{ forloop.counter0 }}">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <h5 class="h6 mb-0">Slot {{ forloop.counter }}</h5>
+                <div class="btn-group btn-group-sm">
+                  {% if slot_form.instance.pk %}
+                    {{ slot_form.DELETE }}
+                    <label class="btn btn-outline-danger btn-sm" for="{{ slot_form.DELETE.id_for_label }}">
+                      <span class="wm-icon-trash" aria-hidden="true"></span> Delete slot
+                    </label>
+                  {% endif %}
+                </div>
+              </div>
+              
+              {{ slot_form.non_field_errors }}
+              {{ slot_form.id }}
+              
+              <div class="row g-2 mb-2">
+                <div class="col-md-3">
+                  <label class="form-label small" for="{{ slot_form.chance_pct.id_for_label }}">Chance %</label>
+                  {{ slot_form.chance_pct }}
+                  {{ slot_form.chance_pct.errors }}
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small" for="{{ slot_form.position.id_for_label }}">Order</label>
+                  {{ slot_form.position }}
+                  {{ slot_form.position.errors }}
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <div class="form-check">
+                    {{ slot_form.unknown }}
+                    <label class="form-check-label small" for="{{ slot_form.unknown.id_for_label }}">Unknown</label>
+                  </div>
+                  {{ slot_form.unknown.errors }}
+                </div>
+              </div>
+              
+              {% if slot_form.options %}
+                <div class="mt-2">
+                  <h6 class="small text-muted mb-2">Options (pick one, weighted)</h6>
+                  {{ slot_form.options.management_form }}
+                  <div class="options-container">
+                    {% for opt_form in slot_form.options.forms %}
+                      <div class="option-row row g-2 mb-2 align-items-end border-top pt-2"
+                           data-option-index="{{ forloop.counter0 }}">
+                        {{ opt_form.non_field_errors }}
+                        {{ opt_form.id }}
+                        
+                        <div class="col-md-4">
+                          <label class="form-label small" for="{{ opt_form.item.id_for_label }}">Item</label>
+                          {{ opt_form.item }}
+                          {{ opt_form.item.errors }}
+                        </div>
+                        <div class="col-md-2">
+                          <label class="form-label small" for="{{ opt_form.qty_min.id_for_label }}">Qty min</label>
+                          {{ opt_form.qty_min }}
+                          {{ opt_form.qty_min.errors }}
+                        </div>
+                        <div class="col-md-2">
+                          <label class="form-label small" for="{{ opt_form.qty_max.id_for_label }}">Qty max</label>
+                          {{ opt_form.qty_max }}
+                          {{ opt_form.qty_max.errors }}
+                        </div>
+                        <div class="col-md-2">
+                          <label class="form-label small" for="{{ opt_form.weight.id_for_label }}">Weight</label>
+                          {{ opt_form.weight }}
+                          {{ opt_form.weight.errors }}
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                          {% if opt_form.instance.pk %}
+                            {{ opt_form.DELETE }}
+                            <label class="btn btn-outline-danger btn-sm w-100" for="{{ opt_form.DELETE.id_for_label }}">
+                              <span class="wm-icon-trash" aria-hidden="true"></span> Delete
+                            </label>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                  <button type="submit" name="add_option" value="{{ forloop.counter0 }}" class="btn btn-sm btn-outline-primary mt-2"
+                          hx-post="" hx-target="#container-config" hx-select="#container-config" hx-swap="outerHTML" hx-include="closest form">
+                    Add option
+                  </button>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        
+        <button type="submit" name="add_slot" value="1" class="btn btn-outline-primary mt-3"
+                hx-post="" hx-target="#container-config" hx-select="#container-config" hx-swap="outerHTML" hx-include="closest form">
+          Add slot
+        </button>
+      {% endif %}
+    </div>
+  </div>
+</div>

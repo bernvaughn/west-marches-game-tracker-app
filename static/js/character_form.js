@@ -1,4 +1,4 @@
-// Show each "Other" freetext input only when "Other" is picked in its dropdown.
+// Show each "Other" freetext input and flag only when "Other" is picked in its dropdown.
 document.addEventListener("DOMContentLoaded", () => {
   const pairs = [
     ["id_char_class", "id_char_class_freetext"],
@@ -13,8 +13,15 @@ document.addEventListener("DOMContentLoaded", () => {
       continue;
     }
     const wrapper = freetext.closest(".wm-field");
+    const flag = document.querySelector(`[data-other-for="${selectId}"]`);
     const update = () => {
-      wrapper.style.display = select.value === "Other" ? "" : "none";
+      const show = select.value === "Other";
+      if (wrapper) {
+        wrapper.style.display = show ? "" : "none";
+      }
+      if (flag) {
+        flag.style.display = show ? "" : "none";
+      }
     };
     select.addEventListener("change", update);
     update();

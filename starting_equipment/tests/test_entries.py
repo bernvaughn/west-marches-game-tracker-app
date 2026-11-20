@@ -48,10 +48,8 @@ class TestClassEntry:
 
     def test_create(self, login, club_admin, club, template, class_item, class_option_fighter):
         c = login(club_admin)
-        # Create a separate class option for Paladin to test creation
-        paladin_class = CharacterClass.objects.create(
-            club=club, name="Paladin", is_active=True, sort_order=30
-        )
+        # Reuse the seeded Paladin class option to test creation
+        paladin_class = CharacterClass.objects.get(club=club, name="Paladin")
         data = {
             "class_option": str(paladin_class.pk),
             "min_level": 1,

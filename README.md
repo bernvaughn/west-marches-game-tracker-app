@@ -33,6 +33,18 @@ Run it with `uv run playwright install chromium` once, then `uv run pytest -m br
 For a list of problems per page, run `uv run python scripts/console_sweep.py`.
 For the UI audit, `uv run python scripts/screenshots.py --audit --out <dir>` captures every page at 1920, 1280, 768 and 390 px (see the Method section of `docs/design/AUDIT-2.md`).
 
+## New clubs
+
+The site admin "new club" form seeds each new club.
+It seeds the XP table, the character options and the club admin.
+The club admin gets a temporary password.
+It also seeds the default item catalogue (about 100 items).
+It also seeds an active "2024 D&D Default" starting equipment template.
+It does not seed characters, shops, quests, maps, downtime actions or messages.
+The GM creates those.
+Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`.
+See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
+
 ## Running targeted tests
 
 The full test suite (1700+ tests) can take several minutes. For faster feedback during development, run targeted subsets:

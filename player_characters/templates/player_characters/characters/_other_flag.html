@@ -1,0 +1,15 @@
+{% comment %}
+_other_flag: a flag shown next to the "Other" freetext input.
+Context: field_name (string, required) - one of "char_class", "species", "background"
+{% endcomment %}
+{% if field_name == "char_class" or field_name == "background" %}
+  <div class="wm-other-flag" data-other-for="id_{{ field_name }}">
+    <span class="wm-other-flag-icon" aria-hidden="true">{% include "components/icon.html" with name="alert-triangle" size="14" %}</span>
+    <span class="wm-other-flag-text">Custom value: no starting equipment for this {{ field_name }}.</span>
+  </div>
+{% elif field_name == "species" %}
+  <div class="wm-other-flag" data-other-for="id_{{ field_name }}">
+    <span class="wm-other-flag-icon" aria-hidden="true">{% include "components/icon.html" with name="alert-triangle" size="14" %}</span>
+    <span class="wm-other-flag-text">Custom value</span>
+  </div>
+{% endif %}

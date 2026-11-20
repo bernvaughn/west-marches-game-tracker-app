@@ -1,0 +1,10 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}Container opened{% endblock %}
+{% block body %}{% include "player_characters/characters/_open_result_body.html" with container=container rows=rows error=error %}{% endblock %}
+{% block footer %}
+{% if error %}
+  <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" data-wm-tooltip title="Close the result and return to the character sheet.">Close</button>
+{% else %}
+  <a class="btn btn-primary" href="{% url 'characters:detail' club.slug character.pk %}" data-wm-tooltip title="Close the result and return to the character sheet.">Done</a>
+{% endif %}
+{% endblock %}
