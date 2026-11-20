@@ -25,11 +25,7 @@ def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look)
         shop.description = look["description"]
         shop.save(update_fields=["description"])
     for item_name, qty in stock:
-        item, _ = Item.objects.get_or_create(
-            club=club,
-            name=item_name,
-            defaults={"value_cp": 100, "symbol": "📦", "retired": False, "is_container": False},
-        )
+        item = Item.objects.get(club=club, name=item_name)
         ShopStock.objects.get_or_create(shop=shop, item=item, defaults={"quantity": qty})
     rotation, _ = Rotation.objects.get_or_create(
         club=club,
