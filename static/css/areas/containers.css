@@ -1,0 +1,120 @@
+/* Container opening animation (slice C).
+   Every rule is scoped under [data-wm-open-result] so it only affects the
+   stored-result modal / page, never other UI. */
+
+/* Chest stage: CSS-drawn closed chest (decorative, aria-hidden).
+   Hidden by default; only shown while the reveal is armed. */
+[data-wm-open-result] .wm-chest {
+  display: none;
+  position: relative;
+  width: 140px;
+  height: 80px;
+  margin: 1rem auto;
+  border-radius: var(--wm-radius-md, 8px) var(--wm-radius-md, 8px) 0 0;
+  overflow: hidden;
+  background: var(--wm-surface-sunken, #f3ede3);
+  border: 3px solid var(--wm-accent, #b8322e);
+}
+[data-wm-open-result] .wm-chest__base {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 54px;
+  background: var(--wm-accent, #b8322e);
+  border-bottom: 4px solid rgba(0, 0, 0, 0.15);
+}
+[data-wm-open-result] .wm-chest__lid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 26px;
+  background: var(--wm-accent-hover, #932825);
+  border: 3px solid var(--wm-accent, #b8322e);
+  border-bottom: 0;
+  border-radius: var(--wm-radius-md, 8px) var(--wm-radius-md, 8px) 0 0;
+  transform-origin: top center;
+  transform: rotateX(0);
+}
+
+/* Armed state: JS adds .wm-reveal--armed only when motion is allowed.
+   No-JS and reduced-motion users skip straight to the final visible list. */
+[data-wm-open-result].wm-reveal--armed .wm-chest {
+  display: block;
+  animation: wm-shake 450ms ease-in-out both;
+}
+[data-wm-open-result].wm-reveal--armed .wm-chest__lid {
+  animation: wm-lid-pop 350ms ease-in-out both;
+}
+[data-wm-open-result].wm-reveal--armed [data-wm-reveal-item] {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: wm-item-in 300ms ease-out both;
+  animation-delay: calc(var(--wm-i, 0) * 120ms);
+}
+
+@keyframes wm-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-6px);
+  }
+  40%,
+  80% {
+    transform: translateX(6px);
+  }
+}
+@keyframes wm-lid-pop {
+  0% {
+    transform: rotateX(0) translateY(0);
+  }
+  50% {
+    transform: rotateX(70deg) translateY(-8px);
+  }
+  100% {
+    transform: rotateX(55deg) translateY(-4px);
+  }
+}
+@keyframes wm-item-in {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Replay button added by JS. */
+[data-wm-open-result] .wm-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-wm-open-result] .wm-chest,
+  [data-wm-open-result] .wm-chest__lid,
+  [data-wm-open-result] [data-wm-reveal-item] {
+    animation: none !important;
+    transition: none !important;
+  }
+  [data-wm-open-result] .wm-chest {
+    display: none !important;
+  }
+  [data-wm-open-result] [data-wm-reveal-item] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  /* If the user flips to reduce while armed, nothing stays hidden. */
+  [data-wm-open-result].wm-reveal--armed [data-wm-reveal-item] {
+    opacity: 1 !important;
+    animation: none !important;
+  }
+}
