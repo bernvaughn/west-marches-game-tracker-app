@@ -3,81 +3,82 @@
 import pytest
 from django.urls import reverse
 
-from items.tests.factories import (
-    ItemFactory,
-    ContainerSlotFactory,
-    ContainerSlotOptionFactory,
-)
-from quests.tests.factories import QuestFactory, QuestRewardFactory, QuestRequirementFactory
-from accounts.tests.factories import UserFactory, ClubFactory, CharacterFactory
+from items.models import ContainerOpening
+from items.tests.factories import _get_or_create_item, add_slot, make_container
+from ledger.services import Line, available_items, record
+from quests.models import Quest, QuestRequirement, QuestReward
+
+
+@pytest.fixture
+def container_quest_chest(club):
+    """Container for quest chest."""
+    container = make_container(club, name="Quest Chest")
+    sword = _get_or_create_item(club, "Quest Sword")
+    add_slot(container, [(sword, 1, 1, 1)], chance_pct=100, unknown=False)
+    return container
+
+
+@pytest.fixture
+def quest_dragon_slayer(club, container_quest_chest):
+    """Quest with container reward."""
+    quest = Quest.objects.create(club=club, name="Dragon Slayer", start_date="2024-01-01")
+    QuestReward.objects.create(quest=quest, item=container_quest_chest, quantity=1)
+    scale = _get_or_create_item(club, "Dragon Scale")
+    QuestRequirement.objects.create(quest=quest, item=scale, quantity=1)
+    return quest
 
 
 @pytest.mark.django_db
 class TestQuestTurnInGrantsContainerUnopened:
     """Tests that quest turn-in grants container unopened."""
 
-    def test_turn_in_with_container_reward_grants_unopened(self, client, club, gm_user, character):
+    def test_turn_in_with_container_reward_grants_unopened(
+        self, client, club, game_master, character, quest_dragon_slayer
+    ):
         """Turn in with container reward grants container unopened."""
         from quests.services import turn_in
-        from ledger.services import available_items
-        from items.models import ContainerOpening
-
-        container = ItemFactory(club=club, name="Quest Chest", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Quest Sword", qty_min=1, qty_max=1)
-
-        quest = QuestFactory(club=club, name="Dragon Slayer")
-        QuestRewardFactory(quest=quest, item=container, quantity=1)
-        QuestRequirementFactory(quest=quest, item__name="Dragon Scale", quantity=1)
 
         # Give character the requirement
-        from ledger.services import record, Line
-        scale = ItemFactory(club=club, name="Dragon Scale")
-        record(character, "award", [Line(item=scale, quantity=1)], actor=gm_user)
+        scale = _get_or_create_item(club, "Dragon Scale")
+        record(character, "award", [Line(item=scale, quantity=1)], actor=game_master)
 
         # Turn in the quest
-        turn_in(quest, character, actor=gm_user)
+        turn_in(quest_dragon_slayer, character, actor=game_master)
 
         # Check ledger: one line for container +1
         avail = available_items(character)
-        assert avail[container.pk] == 1
+        assert avail[container_quest_chest.pk] == 1
 
         # No ContainerOpening created
         assert not ContainerOpening.objects.filter(character=character).exists()
 
         # Contents not in inventory
-        sword = ItemFactory(club=club, name="Quest Sword")
+        sword = _get_or_create_item(club, "Quest Sword")
         assert avail.get(sword.pk, 0) == 0
 
-    def test_turn_in_with_container_reward_via_view(self, client, club, user, character):
+    def test_turn_in_with_container_reward_via_view(
+        self, client, club, player, character, quest_dragon_slayer
+    ):
         """Turn in via view with container reward grants container unopened."""
-        from ledger.services import available_items, record, Line
         from items.models import ContainerOpening
-
-        container = ItemFactory(club=club, name="Quest Chest", is_container=True)
-        slot = ContainerSlotFactory(container=container, chance_pct=100, unknown=False)
-        ContainerSlotOptionFactory(slot=slot, item__name="Quest Sword", qty_min=1, qty_max=1)
-
-        quest = QuestFactory(club=club, name="Dragon Slayer")
-        QuestRewardFactory(quest=quest, item=container, quantity=1)
-        QuestRequirementFactory(quest=quest, item__name="Dragon Scale", quantity=1)
+        from ledger.services import Line, available_items, record
 
         # Give character the requirement
-        scale = ItemFactory(club=club, name="Dragon Scale")
-        record(character, "award", [Line(item=scale, quantity=1)], actor=user)
+        scale = _get_or_create_item(club, "Dragon Scale")
+        record(character, "award", [Line(item=scale, quantity=1)], actor=player)
 
-        client.force_login(user)
-        url = reverse("quests:turn_in", args=[club.slug, quest.pk])
+        client.force_login(player)
+        url = reverse("quests:turn_in", args=[club.slug, quest_dragon_slayer.pk])
         response = client.post(url)
         assert response.status_code == 302
 
         # Check ledger: one line for container +1
         avail = available_items(character)
-        assert avail[container.pk] == 1
+        assert avail[container_quest_chest.pk] == 1
 
         # No ContainerOpening created
         assert not ContainerOpening.objects.filter(character=character).exists()
 
         # Contents not in inventory
-        sword = ItemFactory(club=club, name="Quest Sword")
+        sword = _get_or_create_item(club, "Quest Sword")
         assert avail.get(sword.pk, 0) == 0
