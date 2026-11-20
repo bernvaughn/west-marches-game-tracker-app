@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q
 from django.db.models.functions import Lower
 
 from accounts.scoping import ClubScopedManager
@@ -74,6 +75,7 @@ class ShopStock(models.Model):
 
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name="stock")
     item = models.ForeignKey("items.Item", on_delete=models.PROTECT, related_name="stock_entries")
+    bundle_units = models.PositiveIntegerField(default=1)
     quantity = models.PositiveIntegerField(null=True, blank=True)
     sell_percent = models.PositiveIntegerField(null=True, blank=True)
     buy_percent = models.PositiveIntegerField(null=True, blank=True)
@@ -83,7 +85,12 @@ class ShopStock(models.Model):
     class Meta:
         verbose_name_plural = "shop stock"
         constraints = [
-            models.UniqueConstraint(fields=["shop", "item"], name="unique_shop_item"),
+            models.UniqueConstraint(
+                fields=["shop", "item", "bundle_units"], name="unique_shop_item_bundle"
+            ),
+            models.CheckConstraint(
+                check=Q(bundle_units__gte=1), name="shop_stock_bundle_units_ge_1"
+            ),
         ]
 
     def __str__(self):
