@@ -51,46 +51,23 @@
   // setInterval and a visibilitychange listener dispatch shopStockPoll on #stock,
   // which #stock's hx-trigger listens for. The refresh only runs while the tab
   // is visible.
-  var POLL_INTERVAL = 5000;
-  var timer = null;
+  //
+  // The shop switcher swaps the shop page into #main with htmx, and the fragment
+  // loads this script again. Set up the poll only once per page, or each switch
+  // adds another interval and another visibilitychange listener. Each tick looks
+  // up #stock fresh, so a swapped-in #stock is picked up with no restart.
+  if (window.wmShopStockPollBound) return;
+  window.wmShopStockPollBound = true;
 
-  function stockEl() {
-    return document.getElementById("stock");
-  }
+  var POLL_INTERVAL = 5000;
 
   function poll() {
-    var el = stockEl();
-    if (!el) return;
-    if (document.visibilityState === "visible") {
-      el.dispatchEvent(new Event("shopStockPoll"));
-    }
+    if (document.visibilityState !== "visible") return;
+    var el = document.getElementById("stock");
+    if (el) el.dispatchEvent(new Event("shopStockPoll"));
   }
 
-  function start() {
-    stop();
-    timer = setInterval(poll, POLL_INTERVAL);
-  }
+  setInterval(poll, POLL_INTERVAL);
 
-  function stop() {
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
-
-  document.addEventListener("visibilitychange", function () {
-    if (document.visibilityState === "visible") {
-      poll();
-    }
-  });
-
-  // (Re)start whenever the shop content is swapped, e.g. by the shop switcher,
-  // so a detached #stock is never polled and a fresh #stock is picked up.
-  document.body.addEventListener("htmx:afterSwap", function (e) {
-    if (e.target.id === "stock" || e.target.id === "main" || e.target.querySelector("#stock")) {
-      start();
-    }
-  });
-
-  start();
+  document.addEventListener("visibilitychange", poll);
 })();
