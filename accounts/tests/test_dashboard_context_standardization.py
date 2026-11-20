@@ -12,10 +12,13 @@ header via explicit include with flat keys.
 
 import pytest
 
-from accounts.dashboard_providers import get_provider
+from accounts.dashboard_providers import QuickActionsProvider, get_provider
+from accounts.models import Membership, User
 from downtime.models import DowntimeAction, DowntimeEntry
+from items.models import Item
 from ledger.services import Line, record_many
 from player_characters.junk import set_junk
+from player_characters.models import Character
 
 
 @pytest.fixture
@@ -88,6 +91,47 @@ def test_dashboard_partial_downtime_shows_action_row(
         "Downtime partial should show action row, not empty message"
     )
     assert "Spend" in content, "Spend button should be visible in downtime partial"
+
+
+@pytest.mark.django_db
+def test_quick_actions_uses_provider_context_has_junk():
+    """QuickActionsProvider.get_context returns flat keys wrapped in provider_context."""
+    provider = QuickActionsProvider()
+
+    class MockRequest:
+        pass
+
+    request = MockRequest()
+    request.user = None
+
+    # Get context - it returns flat keys
+    from accounts.models import Club
+
+    club = Club.objects.create(name="Test", slug="test")
+    user = User.objects.create_user("test@test.com", password="pw", display_name="Test")
+    membership = Membership.objects.create(user=user, club=club)
+    character = Character.objects.create(club=club, owner=membership, name="Test")
+    item = Item.objects.create(club=club, name="Test Item", value_cp=100)
+    # Award items so junk_rows returns non-empty
+    record_many(
+        [
+            dict(
+                character=character,
+                kind="award",
+                lines=[Line(item=item, quantity=5)],
+                note="Test",
+                actor=user,
+            )
+        ]
+    )
+    set_junk(character, item, 2, user)
+
+    ctx = provider.get_context(request, club, character, membership)
+
+    # Verify the context contains the expected flat keys
+    assert "has_junk" in ctx
+    assert "has_potions" in ctx
+    assert "junk_count" in ctx
 
 
 @pytest.mark.django_db

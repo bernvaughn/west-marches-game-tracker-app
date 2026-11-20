@@ -174,6 +174,15 @@ def test_message_detail_shows_admin_response(club, player, character, player_wit
 
 
 @pytest.mark.story("S9")
+def test_my_messages_provider_attributes():
+    """MyMessagesDashboardProvider keeps its key and order."""
+    from accounts.dashboard_providers import MyMessagesDashboardProvider
+
+    assert MyMessagesDashboardProvider.key == "my_messages"
+    assert MyMessagesDashboardProvider.order == 7
+
+
+@pytest.mark.story("S9")
 def test_message_detail_404_for_nonexistent(club, player, login):
     """Message detail returns 404 for non-existent message."""
     c = login(player)
