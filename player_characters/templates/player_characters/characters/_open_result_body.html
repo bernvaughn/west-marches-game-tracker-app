@@ -1,7 +1,8 @@
-{# _open_result_body: the stored result of opening a container.
+{% comment %}_open_result_body: the stored result of opening a container.
    Used by the result modal and the full result page.
    Context: container, rows, error.
-   Slice C adds the animation include inside the data-wm-reveal region. #}
+   Slice C adds the animation include inside the data-wm-reveal region.
+{% endcomment %}
 <div data-wm-open-result>
 {% if error %}
   {% include "components/alert.html" with level="danger" title="Could not open" text=error %}

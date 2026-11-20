@@ -35,6 +35,12 @@ def fixed_container(club, name="Pack", item_name="Rope"):
     return container, item
 
 
+def assert_no_raw_template_syntax(content):
+    """Catch template tags or comments that Django printed as text."""
+    for token in ("{%", "%}", "{#", "#}", "{{", "}}"):
+        assert token not in content, f"raw template syntax {token!r} in response"
+
+
 # ---------------------------------------------------------------------------
 # permissions
 # ---------------------------------------------------------------------------
@@ -109,6 +115,7 @@ def test_owner_htmx_open_shows_result(login, player, club, character, club_admin
     assert "data-wm-reveal" in content
     assert "data-wm-reveal-item" in content
     assert f"+1 {rope.name}" in content
+    assert_no_raw_template_syntax(content)
     assert LedgerEntry.objects.filter(kind="opened").count() == 1
     assert ContainerOpening.objects.count() == 1
 
@@ -122,6 +129,8 @@ def test_owner_plain_open_shows_result(login, player, club, character, club_admi
     assert "data-wm-reveal" in content
     assert "data-wm-reveal-item" in content
     assert rope.name in content
+    assert_no_raw_template_syntax(content)
+    assert content.count('class="wm-card"') == 1
     assert LedgerEntry.objects.filter(kind="opened").count() == 1
     assert ContainerOpening.objects.count() == 1
 
@@ -152,6 +161,9 @@ def test_double_post_htmx_shows_error_without_change(login, player, club, charac
     r = c.post(open_url(club, character, container), HTTP_HX_REQUEST="true")
     assert r.status_code == 200
     assert "has no" in r.content.decode() and container.name in r.content.decode()
+    assert_no_raw_template_syntax(r.content.decode())
+    # The modal shows the error; no flash message is queued for the next page.
+    assert "has no" not in c.get(detail_url(club, character)).content.decode()
     assert LedgerEntry.objects.filter(kind="opened").count() == 1
     assert ContainerOpening.objects.count() == 1
 

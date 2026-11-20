@@ -31,7 +31,6 @@ def open_container_view(request, club_slug, pk, item_pk):
     try:
         opening = open_container(character, container, request.user)
     except OpenError as exc:
-        messages.error(request, str(exc))
         if is_htmx(request):
             return render_modal_or_page(
                 request,
@@ -43,6 +42,7 @@ def open_container_view(request, club_slug, pk, item_pk):
                     "error": str(exc),
                 },
             )
+        messages.error(request, str(exc))
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
 
     rows = opening_view_model(opening)
