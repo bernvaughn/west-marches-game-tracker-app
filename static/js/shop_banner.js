@@ -14,7 +14,7 @@
   function show(open) {
     var pairs = activePairs();
     pairs.forEach(function (p) {
-      var isOpen = p === open;
+      var isOpen = open && p.button === open.button;
       p.box.hidden = !isOpen;
       p.button.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
