@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from items.models import Item
 from ledger.services import Line, record
+from ledger.templatetags.coins import coins
 from shops.models import Rotation, ShopStock
 from shops.services import buy_price
 
@@ -93,3 +94,37 @@ def test_query_count_flat(login, player, club, open_shop, character, django_asse
         record(character, "award", [Line(item=it, quantity=1)])
     with django_assert_max_num_queries(42):
         card(client, club, open_shop)
+
+
+@pytest.mark.story("U46")
+def test_browse_card_shows_sell_price_under_name(login, player, club, open_shop, character, item):
+    gem = Item.objects.create(club=club, name="Gem", value_cp=333)
+    record(character, "award", [Line(item=item, quantity=1), Line(item=gem, quantity=2)])
+    c = card(login(player), club, open_shop)
+    assert "wm-inventory-sell" in c
+    # one sells-for line per row, each priced at the row's buy price
+    assert c.count("wm-inv-sells") == 2
+    assert "sells for " + coins(buy_price(open_shop, item)) in c
+    assert "sells for " + coins(buy_price(open_shop, gem)) in c
+    # the Sells-for column and the Sell form are still present
+    assert "Sells for" in c
+    assert "wm-sell-form" in c
+
+
+@pytest.mark.story("U46")
+def test_player_shop_card_has_no_inventory_sell(
+    login, club, character, other_character, other_player
+):
+    gem = Item.objects.create(club=club, name="Gem", value_cp=333)
+    record(other_character, "award", [Line(item=gem, quantity=1)])
+    from player_characters.models import JunkMark
+
+    JunkMark.objects.create(character=other_character, item=gem, quantity=1)
+    other_character.shop_open = True
+    other_character.save()
+    url = reverse("shops:player_shop", args=[club.slug, other_character.pk])
+    client = login(other_character.owner.user)
+    c = client.get(url).content.decode()
+    start = c.index('id="your-inventory"')
+    c = c[start:]
+    assert "wm-inventory-sell" not in c

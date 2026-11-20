@@ -107,10 +107,21 @@
 .wm-your-inventory-junk { display: flex; flex-wrap: wrap; align-items: center; gap: var(--wm-space-2) var(--wm-space-3); margin-bottom: var(--wm-space-3); }
 .wm-your-inventory-junk .wm-sheet-note { margin: 0; }
 .wm-your-inventory-name, .wm-your-inventory-coins { margin: 0 0 var(--wm-space-2); }
+/* Desktop: the "sells for" line stays hidden; columns show as before. */
+.wm-inv-sells { display: none; }
 @media (max-width: 575.98px) {
   .wm-sell-form input[type="number"] { width: 3.5rem; }
   .wm-dl.wm-shop-sums { grid-template-columns: minmax(7rem, max-content) 1fr; gap: var(--wm-space-2) var(--wm-space-4); }
   .wm-dl.wm-shop-sums dd { margin-bottom: 0; }
+  /* Phone: hide Base value (column 2) and the Sells-for column; the price shows under the item name instead. */
+  .wm-inventory-sell :is(th, td):nth-child(2),
+  .wm-inventory-sell th.wm-col-sells,
+  .wm-inventory-sell td.wm-col-sells { display: none; }
+  /* Keep the info icon on the name's first line (1.75rem = 28px >= 24px tap target). */
+  .wm-inventory-sell .wm-inv-name { display: flex; align-items: flex-start; min-width: 0; overflow-wrap: break-word; }
+  .wm-inventory-sell .wm-item-symbol { margin-right: .25rem; }
+  .wm-inventory-sell .wm-item-info { flex: none; width: 1.75rem; height: 1.75rem; margin-left: 0; }
+  .wm-inv-sells { display: block; font-size: var(--wm-text-xs); color: var(--wm-text-muted); }
 }
 
 /* ---- Shop management (U84 S5) ---- */
