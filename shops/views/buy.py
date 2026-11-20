@@ -26,7 +26,13 @@ def buy(request, club_slug, shop_id, stock_id):
         raise Http404
     character = selected_character(request)
     unit_price = sell_price(stock)
-    base_value = stock.item.value_cp
+    # For stacked items: value of one bundle at 100% for "vs base" comparison
+    if stock.item.is_stacked:
+        from items.stacked import bundle_price
+
+        base_value = bundle_price(stock.item, stock.bundle_units, 100)
+    else:
+        base_value = stock.item.value_cp
     sell_percent = stock.sell_percent if stock.sell_percent is not None else stock.shop.sell_percent
     vs_base = unit_price - base_value
     error = None
@@ -68,6 +74,7 @@ def buy(request, club_slug, shop_id, stock_id):
             quantity = max(int(form.data.get("quantity", 1)), 0)
         except (TypeError, ValueError):
             quantity = 0
+    units = quantity * stock.bundle_units
     before = available_coins(character) if character else None
     total = unit_price * quantity
     after = before - total if character else None
@@ -94,5 +101,7 @@ def buy(request, club_slug, shop_id, stock_id):
             "junk_value": junk_value(character) if character else 0,
             "available": available_coins(character) if character else None,
             "sold_out": stock.quantity == 0,
+            "units": units,
+            "bundle_units": stock.bundle_units,
         },
     )

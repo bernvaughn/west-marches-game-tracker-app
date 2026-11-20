@@ -1,14 +1,14 @@
-{% load coins loot_tags %}
-{% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=stock.item %}</h2>{% endif %}
+{% load coins loot_tags units %}
+{% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=stock.item %}{% if stock.item.is_stacked %} <small class="text-muted">{{ stock.item|bundle_label:stock.bundle_units }}</small>{% endif %}</h2>{% endif %}
 {% if stock.item.description %}<p>{{ stock.item.description }}</p>{% endif %}
 {% loot_preview stock.item as loot_rows %}
 {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
 <dl class="wm-dl wm-shop-sums">
-  <dt>Price each</dt><dd>{{ price|coins }}</dd>
-  <dt>Base value</dt><dd>{{ base_value|coins }}</dd>
+  <dt>Price per bundle</dt><dd>{{ price|coins }}</dd>
+  <dt>Base value (per bundle)</dt><dd>{{ base_value|coins }}</dd>
   <dt>Shop sell %</dt><dd>{{ sell_percent }}%</dd>
   <dt>Vs base</dt><dd>{{ vs_base_text }}</dd>
-  <dt>Remaining</dt><dd>{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</dd>
+  <dt>Bundles remaining</dt><dd>{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</dd>
 </dl>
 {% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
 {% if sold_out %}
@@ -19,12 +19,13 @@
 {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
 {% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
 <p>
-  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">Bundles</label>
   <input type="number" name="quantity" id="{{ form.quantity.id_for_label }}" min="1"{% if stock.quantity is not None %} max="{{ stock.quantity }}"{% endif %} value="{{ quantity }}" class="form-control w-auto"
     hx-get="{% url 'shops:buy' request.club.slug shop.pk stock.pk %}" hx-trigger="input changed delay:300ms" hx-target="#buy-summary" hx-select="#buy-summary" hx-swap="outerHTML" hx-include="closest form">
 </p>
 <div id="buy-summary">
   <dl class="wm-dl wm-shop-sums">
+    <dt>Units gained</dt><dd>{{ stock.item|with_units:units }}</dd>
     <dt>Total</dt><dd>{{ total|coins }}</dd>
     <dt>Coins before</dt><dd>{{ before|coins }}</dd>
     <dt>Coins after</dt><dd>{% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</dd>

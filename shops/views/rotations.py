@@ -114,6 +114,7 @@ def _copy_stock(form, rotation):
                 ShopStock.objects.update_or_create(
                     shop=target,
                     item=source.item,
+                    bundle_units=source.bundle_units,
                     defaults={
                         "quantity": source.quantity,
                         "sell_percent": source.sell_percent,
