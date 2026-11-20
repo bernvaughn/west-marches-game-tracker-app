@@ -129,10 +129,14 @@ def test_seed_demo_twice():
     call_command("seed_demo")
     call_command("seed_demo")
     shops = Shop.objects.all()
-    assert shops.count() == 2
-    assert len({s.building for s in shops}) == 2
-    assert len({s.street_position for s in shops}) == 2
-    assert all(s.street_position > 0 for s in shops)
+    assert shops.count() == 3  # General Store + The Rusty Lantern + Wandering Caravan
+    assert len({s.building for s in shops}) == 3
+    assert len({s.street_position for s in shops}) == 3
+    positions = {s.street_position for s in shops}
+    assert positions == {0, 1, 2}
+    general_store = Shop.objects.get(name="General Store")
+    assert general_store.street_position == 0
+    assert general_store.building == "general_store"
 
 
 def test_seed_demo_backfills_old_shops():

@@ -830,6 +830,20 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - The percentage is the stock's own override when it has one, and the shop's default otherwise. The price is base value × percentage ÷ 100.
 - It also shows the difference from base, for example "vs base: -2 gp" or "+5 gp".
 
+**S16 A General Store on every new street.** As a player, I want every new club to start with a General Store run by Mabel Packwell, so I can buy and sell basic gear on day one. *(shops, items)*
+- Keeper: Mabel Packwell (a halfling grocer).
+- Sells at 100% of base value, buys back at 75%.
+- Stocks every item from the 2024 PHB Adventuring Gear table plus ammunition (Arrows, Crossbow Bolts, Firearm Bullets, Sling Bullets, Needles), with unlimited quantity.
+- Does not stock weapons, armor, tools, or magic items (Potion of Healing, Spell Scrolls are excluded).
+- All stock rows have no quantity limit and no price overrides.
+- The shop sits in an "Always open" rotation, so it shows on the street.
+- Uses the general store building, the halfling grocer silhouette, and street position 0 (first on the street).
+- The demo club has the same General Store beside its other shops.
+- A management command `seed_general_store --club <slug>` adds the shop to an existing club.
+- The command is idempotent and only runs when asked; a shop an admin deleted never returns on its own.
+- Items a club already has (e.g., Ink (1 oz), Parchment (10 sheets)) are not changed, and no duplicate by name appears.
+- If a shop named "General Store" already exists, the seeder skips it entirely.
+
 ### Quests
 
 **Q5 Turn-in feedback and a preview of the reward.** As a player, I want to see what a quest pays before I turn it in, and to get a clear result after, so I know it was worth it and that it worked. *(quests)*
@@ -863,10 +877,10 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 
 ### Site admin
 
-**U120 Create a club with its first admin.** As the site admin, I want to create a new club and its first club admin in one step, so a new group can sign in and start using the app on day one. *(accounts, character_options, starting_equipment, map)*
+**U120 Create a club with its first admin.** As the site admin, I want to create a new club and its first club admin in one step, so a new group can sign in and start using the app on day one. *(accounts, character_options, starting_equipment, shops, map)*
 - Only the site admin sees the "New club" form. It asks for the club name, an optional slug, the first admin's email, and an optional display name for them.
 - If the slug is left blank it comes from the name. A slug that another club already uses is refused with an error on the form.
-- The new club is seeded with the XP table, the species, classes and backgrounds, the default item catalogue, and an active "2024 D&D Default" starting equipment template. It gets no characters, shops, quests, maps, downtime actions or messages. The game master creates those.
+- The new club is seeded with the XP table, the species, classes and backgrounds, the default item catalogue, an active "2024 D&D Default" starting equipment template, and a General Store run by Mabel Packwell. It gets no characters, quests, maps, downtime actions or messages. The game master creates those.
 - The first admin is the email address typed, saved in lower case and matched without regard to case. Their email is also whitelisted for the club, so they can sign in.
 - If no account has that email, the app creates one with a random temporary password. The "Club created" page shows the password once and the page is never cached. The app sends no email, so the site admin hands the password over. On first sign-in the person must choose their own password (U18).
 - If an account with that email already exists, for example from another club, the form first says "This email already has an account." It explains that the person will become an admin of the new club and that their password will not change. Nothing is created yet. The site admin can change the email, or press "Create club" again to go ahead.

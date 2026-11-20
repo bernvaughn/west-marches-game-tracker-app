@@ -5,6 +5,7 @@ from django.utils import timezone
 from items.models import Item
 
 from .models import Rotation, Shop, ShopStock
+from .seeding import seed_default_general_store
 
 
 def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look):
@@ -24,7 +25,11 @@ def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look)
         shop.description = look["description"]
         shop.save(update_fields=["description"])
     for item_name, qty in stock:
-        item = Item.objects.get(club=club, name=item_name)
+        item, _ = Item.objects.get_or_create(
+            club=club,
+            name=item_name,
+            defaults={"value_cp": 100, "symbol": "📦", "retired": False, "is_container": False},
+        )
         ShopStock.objects.get_or_create(shop=shop, item=item, defaults={"quantity": qty})
     rotation, _ = Rotation.objects.get_or_create(
         club=club,
@@ -35,6 +40,9 @@ def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look)
 
 
 def seed(club):
+    # Seed the General Store first so it sits at street position 0.
+    seed_default_general_store(club)
+
     today = timezone.localdate()
     _shop(
         club,

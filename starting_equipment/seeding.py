@@ -96,7 +96,7 @@ CLASS_EQUIPMENT = {
             ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
             ("Javelin", 50, "🏹", "standard", "", 1, True, "ranged"),
             # pack: Priest's pack OR explorer's pack
-            ("Priest's Pack", 1900, "🎒", "standard", "", 1, True, "pack"),
+            ("Priest's Pack", 3300, "🎒", "standard", "", 1, True, "pack"),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
@@ -171,7 +171,7 @@ CLASS_EQUIPMENT = {
             ("Mace", 500, "⚔️", "standard", "", 1, True, "ranged"),
             ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
             # pack: Priest's pack OR explorer's pack
-            ("Priest's Pack", 1900, "🎒", "standard", "", 1, True, "pack"),
+            ("Priest's Pack", 3300, "🎒", "standard", "", 1, True, "pack"),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
         ],
     },
@@ -224,9 +224,9 @@ CLASS_EQUIPMENT = {
             # focus: Component pouch OR arcane focus
             ("Component Pouch", 2500, "💼", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Orb)", 1000, "🔮", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Orb)", 2000, "🔮", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Staff)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Staff)", 500, "🪄", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
             # pack: Dungeoneer's pack OR explorer's pack
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, True, "pack"),
@@ -247,9 +247,9 @@ CLASS_EQUIPMENT = {
             # focus: Component pouch OR arcane focus
             ("Component Pouch", 2500, "💼", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Orb)", 1000, "🔮", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Orb)", 2000, "🔮", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Staff)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Staff)", 500, "🪄", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
             # pack: Scholar's pack OR dungeoneer's pack
             ("Scholar's Pack", 4000, "🎒", "standard", "", 1, True, "pack"),
@@ -266,9 +266,9 @@ CLASS_EQUIPMENT = {
             # focus: Component pouch OR arcane focus
             ("Component Pouch", 2500, "💼", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Orb)", 1000, "🔮", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Orb)", 2000, "🔮", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Staff)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Arcane Focus (Staff)", 500, "🪄", "standard", "", 1, True, "focus"),
             ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
             # pack: Scholar's pack OR explorer's pack
             ("Scholar's Pack", 4000, "🎒", "standard", "", 1, True, "pack"),
@@ -389,8 +389,8 @@ BACKGROUND_EQUIPMENT = {
     "Sage": {
         "coins_cp": 1000,  # 10 gp
         "items": [
-            ("Ink Pen", 20, "🖋️", "trivial", "", 1, False, ""),
-            ("Ink (1 oz)", 100, "🖋️", "trivial", "", 1, False, ""),
+            ("Ink Pen", 2, "🖋️", "trivial", "", 1, False, ""),
+            ("Ink (1 oz)", 1000, "🖋️", "trivial", "", 1, False, ""),
             ("Parchment (10 sheets)", 100, "📜", "trivial", "", 10, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
         ],
