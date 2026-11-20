@@ -104,6 +104,7 @@ A player's email is shown only to club admins (U17).
 ### items
 
 - **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 100 items). **`is_container`** (bool, default false) marks an item as openable.
+- **Stacked item fields**: **`is_stacked`** (bool, default false) marks an item that is sold in bundles but used one unit at a time; an item is a container or stacked, never both. **`unit_name`** (char, 40, blank) names the unit, such as `sheet`, `ft`, or `arrow`; unit names are never pluralised. **`value_units`** (positive int, default 1) is the number of units that `value_cp` covers (1 for normal items). CHECK rules: a stacked item cannot be a container; `value_units` is at least 1; a stacked item must have a non-blank `unit_name`.
 - **Container slot**: belongs to a container item. `chance_pct` (1–100), `unknown` (bool, masks the slot as `???` before opening), `position` (order). At least one slot is required.
 - **Container slot option**: one row per possible outcome in a slot. `item` (FK Item, PROTECT), `qty_min`, `qty_max` (range, min≤max), `weight` (≥1). One option = fixed entry; several = weighted "pick one" table. Roll order: chance check, then weighted pick, then uniform quantity in [min, max].
 - **Container opening**: links one `opened` ledger entry to the container item, the character, and a JSON `result` (per-slot outcomes in slot order). Write-once; drives the replay and result page.
@@ -132,12 +133,12 @@ A player's email is shown only to club admins (U17).
 ### ledger
 
 - **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Notes whether it was recorded through an agent batch. Records what kind of event it was: award, purchase, sale, quest turn-in, quest reward, consumed, manual adjustment, or **opened** (container open).
-- **Ledger line**: part of an entry. Either an item with a signed quantity, or a signed amount of coins. A purchase is one entry with a coin line and an item line. An `opened` entry has the container at `-1` and each rolled item at `+qty` (merged by item).
+- **Ledger line**: part of an entry. Either an item with a signed quantity, or a signed amount of coins. A purchase is one entry with a coin line and an item line. An `opened` entry has the container at `-1` and each rolled item at `+qty` (merged by item). For a stacked item the quantity counts units.
 
 ### shops
 
 - **Shop**: belongs to a club. Name, description, shopkeeper's name and description, a default sell percentage, a default buy percentage (S1), and its look: a preset colour, a symbol, and a preset shopkeeper silhouette (U10, U36).
-- **Shop stock**: a shop, an item, a quantity in stock (empty means unlimited), and optional sell and buy percentage overrides for that item in that shop (U9, S1). Stock lives here and carries over between rotations. Only items with a stock row are purchasable. A shop can still buy items it has no stock row for, using its default buy percentage, and that does not create a stock row.
+- **Shop stock**: a shop, an item, a quantity in stock (empty means unlimited), and optional sell and buy percentage overrides for that item in that shop (U9, S1). **`bundle_units`** (positive int, default 1) is the number of units in one bundle line. Stock lives here and carries over between rotations. Only items with a stock row are purchasable. A shop can still buy items it has no stock row for, using its default buy percentage, and that does not create a stock row. The unique key is now `(shop, item, bundle_units)`, so one shop can stock the same item in several bundle sizes, each with its own stock.
 - **Rotation**: a name, an open date, and an optional close date (S2). An empty close date means always open, which is how always-open shops (U5) work. Links to the shops that are open in it; a shop can be in several rotations.
 
 There is no separate purchase record. A purchase or sale changes the stock and writes a ledger entry that points at the shop.
@@ -214,3 +215,15 @@ Nothing right now.
 11. Agent/MCP output calls `loot_preview(..., viewer_can_see_unknown=False)`. Unknown items never leak.
 12. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere (shops, catalogue) without revealing it is in a box.
 13. Default starting equipment seeding configures the seven standard packs as containers on every run (`items/pack_seeding.py`). The `seed_pack_containers` command uses the same service.
+
+## Decisions: stacked items
+
+1. Pool model: one inventory row per character and stacked item; quantity counts units and combining is automatic (no split or combine button).
+2. Bundle size lives on the shop line (`ShopStock.bundle_units`), not on the item, so one shop can stock several bundle sizes with separate stock.
+3. Buying uses `bundle_price`: `ceil(value_cp * bundle_units * sell_pct / (100 * value_units))`, integer math, no 1 cp minimum.
+4. Selling uses `sale_price`: `floor(value_cp * units * buy_pct / (100 * value_units))`, integer math once from the total units sold, never per unit; a 0 cp sale is refused by slices (the function itself returns 0).
+5. Unit names are never pluralised: "bundle of 100 arrow", "40 ft Rope", "1 sheet Parchment", "105 arrow Arrows".
+6. `value_cp` keeps its name: it is the value that `value_units` units cover (1 for normal items).
+7. `bundle_price` uses ceil with no 1 cp minimum; `percent_price` for normal items is unchanged and keeps its 1 cp minimum.
+8. Non-stacked items keep `bundle_units = 1` on shop lines; a non-stacked item with `bundle_units > 1` is not enforced in the DB (forms/services enforce it).
+9. CHECK `bundle_units >= 1` added on ShopStock; unique constraint renamed `unique_shop_item_bundle`.
