@@ -65,7 +65,7 @@ def test_view_seeds_club(site_admin, login):
     assert memberships.get().is_club_admin
 
     assert Character.objects.filter(club=club).count() == 0
-    assert Shop.objects.filter(club=club).count() == 0
+    assert Shop.objects.filter(club=club).count() == 1
     assert Quest.objects.filter(club=club).count() == 0
     assert HexMap.objects.filter(club=club).count() == 0
     assert DowntimeAction.objects.filter(club=club).count() == 0
@@ -156,5 +156,6 @@ def test_seed_new_club_is_idempotent(club):
 
 def test_seed_new_club_return_value(club):
     result = seed_new_club(club)
-    assert set(result) == {"options", "starting_equipment"}
+    assert set(result) == {"options", "starting_equipment", "general_store"}
     assert result["starting_equipment"].template_created is True
+    assert result["general_store"].shop_created is True

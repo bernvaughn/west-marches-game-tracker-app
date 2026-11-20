@@ -62,13 +62,14 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 | XP table | Default bands from `map/xp.py` (`copy_default_xp_table`). |
 | Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
 | Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
-| Items | Default item catalogue (about 100 items) from the starting-equipment data. |
+| Items | Default item catalogue (about 140 items) from the starting-equipment data and the General Store gear list. |
 | Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. Each "X or Y" option of the 2024 PHB is a choice group (see below). |
 | Starting packs | The seven standard packs (Explorer's, Priest's, Dungeoneer's, Burglar's, Scholar's, Diplomat's, Entertainer's) are containers with their PHB contents as fixed slots. A character can open them. |
+| Shops | General Store run by Mabel Packwell (halfling grocer), sells at 100%/buys at 75%, stocks all Adventuring Gear plus ammunition, unlimited quantity, in "Always open" rotation at street position 0. |
 
 ### Not seeded
 
-Characters, shops, quests, hex maps and locations, downtime actions, ledger entries, messages, demo users. The GM creates these.
+Characters, quests, hex maps and locations, downtime actions, ledger entries, messages, demo users. The GM creates these.
 
 ### Rules
 
@@ -78,6 +79,7 @@ Characters, shops, quests, hex maps and locations, downtime actions, ledger entr
 - A plain run leaves an existing template unchanged. It still adds missing catalogue items and configures packs that have no slots.
 - `--force` upgrades an existing template. It resets entry coins and makes each entry's lines match the default data in order. It deletes stale lines, for example an old fixed line that is now a choice default. A forced run on a template that already matches writes no lines.
 - `seed_pack_containers --club <slug>` configures the packs only. It skips a pack that already has slots.
+- `seed_general_store --club <slug>` adds the General Store to an existing club. It never runs automatically; a deleted shop does not return on its own.
 
 ### Choice groups in the default template
 

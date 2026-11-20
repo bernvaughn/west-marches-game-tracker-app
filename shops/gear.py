@@ -1,0 +1,116 @@
+"""General Store gear list from the 2024 SRD 5.2 Adventuring Gear and Ammunition tables.
+
+Source: https://5e24srd.com/equipment/adventuring-gear.html (mirrors the 2024 PHB).
+Ammunition is sold by the book's bundle (e.g., Arrows (20), not per arrow).
+Magic rows (Potion of Healing, Spell Scrolls) are excluded.
+"""
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class GearItem:
+    """A single gear entry: name, value in copper, icon."""
+
+    name: str
+    value_cp: int
+    icon: str
+
+
+GENERAL_STORE_GEAR = [
+    GearItem("Acid", 2500, "🧪"),
+    GearItem("Alchemist's Fire", 5000, "🔥"),
+    GearItem("Antitoxin", 5000, "🧪"),
+    GearItem("Arcane Focus (Crystal)", 1000, "🔮"),
+    GearItem("Arcane Focus (Orb)", 2000, "🔮"),
+    GearItem("Arcane Focus (Rod)", 1000, "🪄"),
+    GearItem("Arcane Focus (Staff)", 500, "🪄"),
+    GearItem("Arcane Focus (Wand)", 1000, "🪄"),
+    GearItem("Arrows (20)", 100, "🏹"),
+    GearItem("Crossbow Bolts (20)", 100, "🏹"),
+    GearItem("Firearm Bullets (10)", 300, "⚪"),
+    GearItem("Sling Bullets (20)", 4, "⚪"),
+    GearItem("Needles (50)", 100, "📌"),
+    GearItem("Backpack", 200, "🎒"),
+    GearItem("Ball Bearings", 100, "⚪"),
+    GearItem("Barrel", 200, "🛢️"),
+    GearItem("Basket", 40, "🧺"),
+    GearItem("Bedroll", 100, "🛌"),
+    GearItem("Bell", 100, "🔔"),
+    GearItem("Blanket", 50, "🛌"),
+    GearItem("Block and Tackle", 100, "⚙️"),
+    GearItem("Book", 2500, "📖"),
+    GearItem("Bottle, Glass", 200, "🍾"),
+    GearItem("Bucket", 5, "🪣"),
+    GearItem("Burglar's Pack", 1600, "🎒"),
+    GearItem("Caltrops", 100, "📌"),
+    GearItem("Candle", 1, "🕯️"),
+    GearItem("Case, Crossbow Bolt", 100, "🧰"),
+    GearItem("Case, Map or Scroll", 100, "📜"),
+    GearItem("Chain", 500, "⛓️"),
+    GearItem("Chest", 500, "🧰"),
+    GearItem("Climber's Kit", 2500, "🧗"),
+    GearItem("Fine Clothes", 1500, "👔"),
+    GearItem("Traveler's Clothes", 200, "👕"),
+    GearItem("Component Pouch", 2500, "💼"),
+    GearItem("Costume", 500, "🎭"),
+    GearItem("Crowbar", 200, "🔨"),
+    GearItem("Diplomat's Pack", 3900, "🎒"),
+    GearItem("Druidic Focus (Sprig of Mistletoe)", 100, "🌿"),
+    GearItem("Druidic Focus (Staff)", 500, "🪄"),
+    GearItem("Druidic Focus (Yew Wand)", 1000, "🪄"),
+    GearItem("Dungeoneer's Pack", 1200, "🎒"),
+    GearItem("Entertainer's Pack", 4000, "🎒"),
+    GearItem("Explorer's Pack", 1000, "🎒"),
+    GearItem("Flask", 2, "🍶"),
+    GearItem("Grappling Hook", 200, "🪝"),
+    GearItem("Healer's Kit", 500, "🩹"),
+    GearItem("Holy Symbol (Amulet)", 500, "✝️"),
+    GearItem("Holy Symbol (Emblem)", 500, "✝️"),
+    GearItem("Holy Symbol (Reliquary)", 500, "✝️"),
+    GearItem("Holy Water", 2500, "💧"),
+    GearItem("Hunting Trap", 500, "🪤"),
+    GearItem("Ink (1 oz)", 1000, "🖋️"),
+    GearItem("Ink Pen", 2, "🖋️"),
+    GearItem("Jug", 2, "🏺"),
+    GearItem("Ladder", 10, "🪜"),
+    GearItem("Lamp", 50, "🪔"),
+    GearItem("Lantern, Bullseye", 1000, "🔦"),
+    GearItem("Lantern, Hooded", 500, "🏮"),
+    GearItem("Lock", 1000, "🔒"),
+    GearItem("Magnifying Glass", 10000, "🔍"),
+    GearItem("Manacles", 200, "⛓️"),
+    GearItem("Map", 100, "🗺️"),
+    GearItem("Mirror", 500, "🪞"),
+    GearItem("Net", 100, "🕸️"),
+    GearItem("Oil (flask)", 10, "🛢️"),
+    GearItem("Paper (one sheet)", 20, "📄"),
+    GearItem("Parchment (one sheet)", 10, "📜"),
+    GearItem("Perfume (vial)", 500, "🧴"),
+    GearItem("Poison, Basic", 10000, "☠️"),
+    GearItem("Pole", 5, "📏"),
+    GearItem("Pot, Iron", 200, "🍲"),
+    GearItem("Pouch", 50, "👝"),
+    GearItem("Priest's Pack", 3300, "🎒"),
+    GearItem("Quiver", 100, "🏹"),
+    GearItem("Ram, Portable", 400, "🐏"),
+    GearItem("Ration", 50, "🍞"),
+    GearItem("Robe", 100, "👘"),
+    GearItem("Rope", 100, "🪢"),
+    GearItem("Sack", 1, "🎒"),
+    GearItem("Scholar's Pack", 4000, "🎒"),
+    GearItem("Shovel", 200, "⛏️"),
+    GearItem("Signal Whistle", 5, "📯"),
+    GearItem("Spikes, Iron", 100, "⚓"),
+    GearItem("Spyglass", 100000, "🔭"),
+    GearItem("String", 10, "🧵"),
+    GearItem("Tent", 200, "⛺"),
+    GearItem("Tinderbox", 50, "🔥"),
+    GearItem("Torch", 1, "🔦"),
+    GearItem("Vial", 100, "🧪"),
+    GearItem("Waterskin", 20, "💧"),
+]
+
+
+# Convenience: list of (name, value_cp, icon) tuples for compatibility
+GENERAL_STORE_GEAR_TUPLES = [(g.name, g.value_cp, g.icon) for g in GENERAL_STORE_GEAR]
