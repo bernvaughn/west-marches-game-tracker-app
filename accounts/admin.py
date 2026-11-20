@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Club, Membership, Message, SiteSettings, User, WhitelistEntry
+from .models import Club, Membership, Message, SiteFeedback, SiteSettings, User, WhitelistEntry
 
 
 @admin.register(User)
@@ -54,6 +54,14 @@ class MessageAdmin(admin.ModelAdmin):
     list_filter = ["club", "kind", "status"]
     search_fields = ["body", "sender__user__email", "character__name"]
     autocomplete_fields = ["club", "sender", "character"]
+
+
+@admin.register(SiteFeedback)
+class SiteFeedbackAdmin(admin.ModelAdmin):
+    list_display = ["kind", "status", "user", "club", "created"]
+    list_filter = ["kind", "status"]
+    search_fields = ["body", "user__email", "club__name"]
+    autocomplete_fields = ["user", "club"]
 
 
 admin.site.register(SiteSettings)
