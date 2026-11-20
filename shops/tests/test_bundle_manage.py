@@ -3,7 +3,7 @@
 import pytest
 from django.urls import reverse
 
-from items.tests.factories import make_arrows, make_parchment, make_rope
+from items.tests.factories import make_arrows, make_parchment, make_rope, make_stacked
 from shops.models import ShopStock
 from shops.services import sell_price
 
@@ -147,9 +147,16 @@ def test_default_bundle_price_rounds_up(admin_client, club, shop, arrows):
     stock = ShopStock.objects.create(shop=shop, item=arrows, bundle_units=5, quantity=10)
     assert sell_price(stock) == 25
 
-    # Odd value: bundle of 3 at 100% = ceil(100*3*100/(100*20)) = ceil(15) = 15
+    # Exact value: bundle of 3 at 100% = 100*3*100/(100*20) = 15
     stock3 = ShopStock.objects.create(shop=shop, item=arrows, bundle_units=3, quantity=10)
     assert sell_price(stock3) == 15
+
+    # Odd value: 100 cp per 3 units, bundle of 2 at 100% = ceil(66.67) = 67
+    odd = make_stacked(club, "Odd Darts", "dart", 100, 3)
+    stock_odd = ShopStock.objects.create(
+        shop=shop, item=odd, bundle_units=2, quantity=10, sell_percent=100
+    )
+    assert sell_price(stock_odd) == 67
 
 
 def test_line_sell_percent_override_wins(admin_client, club, shop, arrows):

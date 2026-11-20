@@ -6,6 +6,7 @@ from django.views.decorators.http import require_POST
 
 from accounts.permissions import club_admin_required
 from accounts.scoping import club_get_object_or_404, club_queryset
+from items.stacked import sale_price
 from shops.forms.manage import ShopForm, StockAddForm, StockEditForm, StreetSettingsForm
 from shops.models import Shop, ShopStock
 from shops.services import open_shops, ordered_shops, percent_price, sell_price, set_street_order
@@ -90,8 +91,6 @@ def shop_edit(request, club_slug, shop_id):
         form.save()
         messages.success(request, "Shop saved.")
         return _back(club_slug, shop)
-    from items.stacked import sale_price
-
     rows = []
     for stock in shop.stock.select_related("item").order_by("item__name", "bundle_units"):
         buy = stock.buy_percent if stock.buy_percent is not None else shop.buy_percent

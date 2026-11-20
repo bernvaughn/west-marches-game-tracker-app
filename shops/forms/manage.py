@@ -1,5 +1,6 @@
 from django import forms
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Q
 
 from accounts.models import Club
 from items.models import Item
@@ -107,23 +108,11 @@ class StockAddForm(_StockBundleMixin, _StockPercentMixin, forms.ModelForm):
     def __init__(self, *args, shop, **kwargs):
         super().__init__(*args, **kwargs)
         self.shop = shop
-        self.fields["item"].queryset = (
-            Item.objects.for_club(shop.club).filter(retired=False).exclude(stock_entries__shop=shop)
-        )
-        # Allow adding a stacked item again with a different bundle size:
-        # include items that are stacked OR have no line in this shop.
-        # The queryset above already excludes items with any line in this shop.
-        # For stacked items we want to allow re-adding, so we need to adjust.
-        # Rebuild the queryset to exclude only non-stacked items that already have a line.
-        from django.db.models import Q
-
+        # Stacked items may get another line with a new bundle size.
         self.fields["item"].queryset = (
             Item.objects.for_club(shop.club)
             .filter(retired=False)
-            .exclude(
-                # Exclude non-stacked items that already have a line in this shop
-                Q(is_stacked=False) & Q(stock_entries__shop=shop)
-            )
+            .exclude(Q(is_stacked=False) & Q(stock_entries__shop=shop))
         )
         self._setup_percent()
         self._setup_bundle(shop)

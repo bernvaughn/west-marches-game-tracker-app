@@ -327,12 +327,8 @@ def test_rotation_copy_stock_keeps_both_lines(admin_client, club, shop, arrows):
     from shops.models import Shop
 
     other_shop = Shop.objects.create(club=club, name="Elsewhere")
-    ShopStock.objects.create(
-        shop=shop, item=arrows, bundle_units=5, quantity=10, sell_percent=100
-    )
-    ShopStock.objects.create(
-        shop=shop, item=arrows, bundle_units=100, quantity=2, sell_percent=100
-    )
+    ShopStock.objects.create(shop=shop, item=arrows, bundle_units=5, quantity=10, sell_percent=100)
+    ShopStock.objects.create(shop=shop, item=arrows, bundle_units=100, quantity=2, sell_percent=100)
 
     from shops.forms.rotations import CopyStockForm
 
