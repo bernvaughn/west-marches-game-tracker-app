@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -25,12 +26,17 @@ from player_characters.item_cards import CARD_CAP, CARDS_PER_SHEET, build_cards,
 from .availability import available_item_ids
 from .availability import where_to_buy as find_where_to_buy
 from .containers import loot_preview, validate_container_config
-from .forms import ItemForm, SlotFormSet
+from .forms import ConvertToStackedForm, ItemForm, SlotFormSet
 from .magic_types import NONE_LABEL, MagicType
 from .models import Item
 from .rarity import Rarity
 from .references import reference_items
-from .services import delete_or_retire
+from .services import (
+    StackedConversionError,
+    conversion_preview,
+    convert_to_stacked,
+    delete_or_retire,
+)
 from .usage import ownership_counts
 
 
@@ -136,17 +142,16 @@ def _slot_formset(request, instance, data=None):
     )
 
 
-def _render_form(request, form, item, slot_formset, container_errors=None):
-    return render(
-        request,
-        "items/form.html",
-        {
-            "form": form,
-            "item": item,
-            "slot_formset": slot_formset,
-            "container_errors": container_errors,
-        },
-    )
+def _render_form(request, form, item, slot_formset, container_errors=None, convert_url=None):
+    context = {
+        "form": form,
+        "item": item,
+        "slot_formset": slot_formset,
+        "container_errors": container_errors,
+    }
+    if convert_url is not None:
+        context["convert_url"] = convert_url
+    return render(request, "items/form.html", context)
 
 
 def _save_container(item, slot_formset):
@@ -168,14 +173,22 @@ def _save_container(item, slot_formset):
             option.save()
 
 
+def _convert_url(request, item):
+    """URL of the convert page for a saved, non-container, non-stacked item."""
+    if not item.pk or item.is_container or item.is_stacked:
+        return None
+    return reverse("items:convert", args=[request.club.slug, item.pk])
+
+
 def _item_form_view(request, instance):
     """Edit form view with the container config formsets."""
     form = ItemForm(request.POST or None, instance=instance, club=request.club)
     has_container_ui = instance.pk is not None
+    convert_url = _convert_url(request, instance)
 
     if request.method != "POST":
         slot_formset = _slot_formset(request, instance) if has_container_ui else None
-        return _render_form(request, form, instance, slot_formset)
+        return _render_form(request, form, instance, slot_formset, convert_url=convert_url)
 
     if has_container_ui and "add_slot" in request.POST:
         return _handle_add_slot(request, instance, form)
@@ -184,12 +197,12 @@ def _item_form_view(request, instance):
 
     slot_formset = _slot_formset(request, instance, request.POST) if has_container_ui else None
     if not form.is_valid():
-        return _render_form(request, form, instance, slot_formset)
+        return _render_form(request, form, instance, slot_formset, convert_url=convert_url)
 
     # Toggle off: skip the formsets. Existing slots stay in the DB, inert.
     is_container = bool(form.cleaned_data.get("is_container"))
     if is_container and slot_formset is not None and not slot_formset.is_valid():
-        return _render_form(request, form, instance, slot_formset)
+        return _render_form(request, form, instance, slot_formset, convert_url=convert_url)
 
     try:
         with transaction.atomic():
@@ -202,7 +215,9 @@ def _item_form_view(request, instance):
         instance.refresh_from_db()
         form = ItemForm(request.POST, instance=instance, club=request.club)
         slot_formset = _slot_formset(request, instance, request.POST)
-        return _render_form(request, form, instance, slot_formset, e.messages)
+        return _render_form(
+            request, form, instance, slot_formset, e.messages, convert_url=convert_url
+        )
 
     messages.success(request, f"Saved {item.name}.")
     return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
@@ -326,6 +341,72 @@ class EditView(ClubScopedMixin, View):
     def post(self, request, club_slug, pk):
         item = self.get_club_object_or_404(Item, pk=pk)
         return _form_view(request, item)
+
+
+@method_decorator(club_admin_required, name="dispatch")
+class ConvertView(ClubScopedMixin, View):
+    """Preview and confirm conversion of an item to stacked (story U124)."""
+
+    def get(self, request, club_slug, pk):
+        item = self.get_club_object_or_404(Item, pk=pk)
+        if item.is_stacked or item.is_container:
+            return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
+        form = ConvertToStackedForm(item=item)
+        preview = conversion_preview(item)
+        return render(
+            request,
+            "items/convert.html",
+            {"item": item, "form": form, "preview": preview, "confirm": False},
+        )
+
+    def post(self, request, club_slug, pk):
+        item = self.get_club_object_or_404(Item, pk=pk)
+        if item.is_stacked or item.is_container:
+            return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
+        confirm = request.POST.get("confirm") == "1"
+        form = ConvertToStackedForm(request.POST, item=item)
+        if confirm:
+            if not form.is_valid():
+                preview = conversion_preview(item)
+                return render(
+                    request,
+                    "items/convert.html",
+                    {"item": item, "form": form, "preview": preview, "confirm": True},
+                )
+            try:
+                convert_to_stacked(
+                    item,
+                    form.cleaned_data["factor"],
+                    form.cleaned_data["unit_name"],
+                    actor=request.user,
+                )
+            except StackedConversionError as exc:
+                messages.error(request, str(exc))
+                preview = conversion_preview(item)
+                return render(
+                    request,
+                    "items/convert.html",
+                    {"item": item, "form": form, "preview": preview, "confirm": True},
+                )
+            updated = len(conversion_preview(item).holders)
+            messages.success(
+                request, f"Converted {item.name} to stacked. {updated} character(s) updated."
+            )
+            return redirect("items:detail", club_slug=request.club.slug, pk=item.pk)
+        # POST without confirm: validate, then show the confirm step.
+        if not form.is_valid():
+            preview = conversion_preview(item)
+            return render(
+                request,
+                "items/convert.html",
+                {"item": item, "form": form, "preview": preview, "confirm": False},
+            )
+        preview = conversion_preview(item)
+        return render(
+            request,
+            "items/convert.html",
+            {"item": item, "form": form, "preview": preview, "confirm": True},
+        )
 
 
 def _set_retired(view, pk, value, text):

@@ -226,6 +226,7 @@ EXCLUDED = {
     "items:retire": "POST only.",
     "items:restore": "POST only.",
     "items:delete": "POST only.",
+    "items:convert": "Conversion preview/confirm page for stacked items (POST with confirm).",
     "shops:street_settings": "POST only.",
     "shops:stock_remove": "POST only.",
     "shops:rotation_delete": "POST only.",

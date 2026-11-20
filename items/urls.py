@@ -11,6 +11,7 @@ urlpatterns = [
     path("<int:pk>/details-modal/", views.DetailsModalView.as_view(), name="details_modal"),
     path("<int:pk>/where-to-buy/", views.WhereToBuyView.as_view(), name="where_to_buy"),
     path("<int:pk>/edit/", views.EditView.as_view(), name="edit"),
+    path("<int:pk>/convert/", views.ConvertView.as_view(), name="convert"),
     path("<int:pk>/retire/", views.RetireView.as_view(), name="retire"),
     path("<int:pk>/restore/", views.RestoreView.as_view(), name="restore"),
     path("<int:pk>/delete/", views.DeleteView.as_view(), name="delete"),

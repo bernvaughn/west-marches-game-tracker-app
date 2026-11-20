@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
 from ledger.coins import CoinsField
@@ -7,10 +8,33 @@ from ledger.coins import CoinsField
 from . import rarity
 from .magic_types import NONE_LABEL, MagicType
 from .models import ContainerSlot, ContainerSlotOption, Item
+from .services import can_toggle_stacked
 
 
 class ItemForm(forms.ModelForm):
     value = CoinsField(required=False, label="Value")
+    is_stacked = forms.BooleanField(
+        required=False,
+        label="Stacked item",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        help_text="The item is sold in bundles but used one unit at a time "
+        "(parchment by the sheet, rope by the foot).",
+    )
+    unit_name = forms.CharField(
+        required=False,
+        max_length=40,
+        label="Unit name",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        help_text="Name of one unit, e.g. sheet, ft or arrow.",
+    )
+    value_units = forms.IntegerField(
+        required=False,
+        min_value=1,
+        initial=1,
+        label="Units the value covers",
+        widget=forms.NumberInput(attrs={"min": 1, "class": "form-control"}),
+        help_text="How many units the value covers. 1 for a normal item.",
+    )
 
     class Meta:
         model = Item
@@ -23,6 +47,10 @@ class ItemForm(forms.ModelForm):
             "gm_details",
             "rarity",
             "magic_type",
+            "value",
+            "is_stacked",
+            "unit_name",
+            "value_units",
         ]
         field_order = [
             "name",
@@ -34,6 +62,9 @@ class ItemForm(forms.ModelForm):
             "rarity",
             "magic_type",
             "value",
+            "is_stacked",
+            "unit_name",
+            "value_units",
         ]
         widgets = {"rarity": forms.Select(attrs={"data-rarity-select": ""})}
 
@@ -44,20 +75,27 @@ class ItemForm(forms.ModelForm):
         self.fields["magic_type"].choices = [("", NONE_LABEL), *MagicType.choices]
         self.fields["magic_type"].label = "Magic item type"
         self.fields["value"].help_text = format_html(
-            '<span class="wm-rarity-hint" data-rarity-hint>Suggested value:{}'
-            '<span data-rarity-item="special" style="display:block">'
-            "No suggested range.</span></span>",
-            format_html_join(
-                "",
-                '<span data-rarity-item="{}" style="display:block">{} {}{}</span>',
-                (
-                    (key, name, text, f" — e.g. {ex}" if ex else "")
-                    for key, name, text, ex in rarity.ranges()
+            '{}<span class="wm-stacked-hint">This price covers the units entered in '
+            '"Units the value covers" (1 for a normal item).</span>',
+            format_html(
+                '<span class="wm-rarity-hint" data-rarity-hint>Suggested value:{}'
+                '<span data-rarity-item="special" style="display:block">'
+                "No suggested range.</span></span>",
+                format_html_join(
+                    "",
+                    '<span data-rarity-item="{}" style="display:block">{} {}{}</span>',
+                    (
+                        (key, name, text, f" — e.g. {ex}" if ex else "")
+                        for key, name, text, ex in rarity.ranges()
+                    ),
                 ),
             ),
         )
         if self.instance.pk:
             self.initial["value"] = self.instance.value_cp
+            self.initial["is_stacked"] = self.instance.is_stacked
+            self.initial["unit_name"] = self.instance.unit_name
+            self.initial["value_units"] = self.instance.value_units
             # Add is_container field only on edit page (instance exists)
             self.fields["is_container"] = forms.BooleanField(
                 required=False,
@@ -78,12 +116,69 @@ class ItemForm(forms.ModelForm):
             raise forms.ValidationError("An item with this name already exists in this club.")
         return name
 
+    def clean(self):
+        cleaned = super().clean()
+        is_stacked = cleaned.get("is_stacked")
+        is_container = cleaned.get("is_container", False)
+        if is_stacked and is_container:
+            raise forms.ValidationError("An item is a container or stacked, never both.")
+        if is_stacked and not cleaned.get("unit_name"):
+            self.add_error("unit_name", "A stacked item needs a unit name.")
+        if (
+            self.instance.pk
+            and not can_toggle_stacked(self.instance)
+            and "is_stacked" in self.changed_data
+        ):
+            convert_url = reverse("items:convert", args=[self.club.slug, self.instance.pk])
+            self.add_error(
+                "is_stacked",
+                format_html(
+                    'This item is owned or in use, so "stacked" cannot be toggled here. '
+                    '<a href="{}">Convert to stacked&hellip;</a>',
+                    convert_url,
+                ),
+            )
+        return cleaned
+
     def save(self, commit=True):
         self.instance.club = self.club
         self.instance.value_cp = self.cleaned_data.get("value") or 0
+        if self.cleaned_data.get("is_stacked"):
+            self.instance.is_stacked = True
+            self.instance.unit_name = self.cleaned_data.get("unit_name") or ""
+            self.instance.value_units = self.cleaned_data.get("value_units") or 1
+        else:
+            self.instance.is_stacked = False
+            self.instance.unit_name = ""
+            self.instance.value_units = 1
         if "is_container" in self.cleaned_data:
             self.instance.is_container = self.cleaned_data["is_container"]
         return super().save(commit=commit)
+
+
+class ConvertToStackedForm(forms.Form):
+    """Form for the units one existing item is worth (story U124)."""
+
+    unit_name = forms.CharField(
+        required=True,
+        max_length=40,
+        label="Unit name",
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        help_text="Name of one unit after conversion, e.g. sheet, ft or arrow.",
+    )
+    factor = forms.IntegerField(
+        required=True,
+        min_value=1,
+        initial=1,
+        label="Units one existing {item} is worth",
+        widget=forms.NumberInput(attrs={"min": 1, "class": "form-control"}),
+        help_text="Multiplying factor: one old item becomes this many units.",
+    )
+
+    def __init__(self, *args, item=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if item is not None:
+            self.fields["factor"].label = f"Units one existing {item.name} is worth"
 
 
 class SlotForm(forms.ModelForm):

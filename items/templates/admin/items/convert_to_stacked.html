@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+{% block content %}
+{% if action %}
+  <p>Converting <strong>{{ item.name }}</strong> to a stacked item. Enter the unit name and the factor (how many units one old item is worth).</p>
+{% else %}
+  <p>Converting <strong>{{ item.name }}</strong> to a stacked item. Enter the unit name and the factor (how many units one old item is worth).</p>
+{% endif %}
+<form method="post" action="{% url 'admin:items_item_convert' item.pk %}">
+  {% csrf_token %}
+  <fieldset class="module aligned">
+    {{ form.as_p }}
+  </fieldset>
+  <div class="submit-row">
+    <input type="submit" value="Convert" class="default" />
+    <a href="{% url 'admin:items_item_changelist' %}" class="button">Cancel</a>
+  </div>
+</form>
+{% endblock %}

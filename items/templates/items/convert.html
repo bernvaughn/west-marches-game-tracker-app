@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Convert {{ item.name }} to stacked{% endblock %}
+{% block content %}
+{% url 'items:detail' club.slug item.pk as detail_url %}
+{% include "components/page_header_open.html" with title="Convert to stacked" back_url=detail_url back_label="Back to item" %}
+
+{% if item.is_stacked %}
+  <div class="alert alert-info">
+    "{{ item.name }}" is already stacked ({{ item.unit_name }} units, {{ item.value_units }} per value).
+  </div>
+{% elif item.is_container %}
+  <div class="alert alert-danger">
+    "{{ item.name }}" is a container. Containers cannot be stacked.
+  </div>
+{% else %}
+  {% if not confirm %}
+    <form method="post" class="wm-form">
+      {% csrf_token %}
+      {{ form }}
+      <div class="wm-form-actions">
+        <button type="submit" class="btn btn-primary">Preview conversion</button>
+        <a class="btn btn-outline-secondary" href="{{ detail_url }}">Cancel</a>
+      </div>
+    </form>
+
+    <div class="card mt-4">
+      <div class="card-body">
+        <h2 class="h5 mb-3">Conversion impact</h2>
+        {% if preview.refusal_reasons %}
+          <div class="alert alert-danger mb-3">
+            <strong>Conversion would be refused:</strong>
+            <ul class="mb-0 mt-2 small">
+              {% for reason in preview.refusal_reasons %}<li>{{ reason }}</li>{% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+        {% for warning in preview.non_blocking_warnings %}
+          <div class="alert alert-warning mb-3 small">{{ warning }}</div>
+        {% endfor %}
+        <table class="table table-sm mb-3">
+          <thead>
+            <tr>
+              <th>Character</th>
+              <th class="text-end">Owned</th>
+              <th class="text-end">After conversion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for holder in preview.holders %}
+              <tr>
+                <td>{{ holder.name }}</td>
+                <td class="text-end">{{ holder.owned }}</td>
+                <td class="text-end">{{ holder.new }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted">No characters own this item.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="mb-3"><strong>Total owned:</strong> {{ preview.total_owned }} unit{{ preview.total_owned|pluralize }}.</p>
+        <p class="mb-3"><strong>Shop lines:</strong> {{ preview.shop_line_count }} would become bundle lines of the factor size, keeping their stock.</p>
+        <p class="mb-3"><strong>Junk marks (player stall listings):</strong> {{ preview.junk_mark_count }} would be scaled by the factor.</p>
+        {% if preview.refusal_reasons %}
+          <div class="alert alert-warning mt-3">Fix the refusals above, then preview again.</div>
+        {% else %}
+          <p>Enter the unit name and factor above, then preview again to reach the confirm step.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-warning">
+      <strong>Confirm conversion of "{{ item.name }}" to stacked.</strong>
+      <ul class="mb-2 mt-2 small">
+        <li>Unit name: {{ form.unit_name.value }}</li>
+        <li>Units one existing {{ item.name }} is worth: {{ form.factor.value }}</li>
+        <li>Characters updated: {{ preview.holders|length }} (total owned {{ preview.total_owned }})</li>
+        <li>Shop lines converted to bundle size: {{ preview.shop_line_count }}</li>
+        <li>Junk marks scaled: {{ preview.junk_mark_count }}</li>
+      </ul>
+      {% if preview.refusal_reasons %}
+        <div class="alert alert-danger mb-3">
+          <strong>Blocked:</strong>
+          <ul class="mb-0 mt-2 small">
+            {% for reason in preview.refusal_reasons %}<li>{{ reason }}</li>{% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      {% for warning in preview.non_blocking_warnings %}
+        <div class="alert alert-warning mb-3 small">{{ warning }}</div>
+      {% endfor %}
+      <form method="post" class="wm-form">
+        {% csrf_token %}
+        <input type="hidden" name="confirm" value="1">
+        <input type="hidden" name="unit_name" value="{{ form.unit_name.value }}">
+        <input type="hidden" name="factor" value="{{ form.factor.value }}">
+        <div class="wm-form-actions">
+          <button type="submit" class="btn btn-danger{% if preview.refusal_reasons %} disabled{% endif %}">
+            {% include "components/icon.html" with name="arrow-repeat" %} Confirm conversion
+          </button>
+          <a class="btn btn-outline-secondary" href="{{ detail_url }}">Cancel</a>
+        </div>
+      </form>
+      {% if preview.refusal_reasons %}
+        <p class="mt-3 small text-muted">Disabled while refusals exist. Fix them, preview again, then confirm.</p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endif %}
+{% include "components/page_header_close.html" %}
+{% endblock %}
