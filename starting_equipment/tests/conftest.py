@@ -3,7 +3,7 @@
 import pytest
 
 from accounts.models import Club, Membership, User
-from character_options.models import Background, CharacterClass, Species
+from character_options.models import Background, CharacterClass
 from character_options.services import seed_default_options
 from items.models import Item
 from player_characters.models import Character
