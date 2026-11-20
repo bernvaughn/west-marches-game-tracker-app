@@ -1,4 +1,10 @@
 (function () {
+  // The shop switcher swaps the shop page into #main with htmx, and the
+  // fragment loads this script again. Bind the delegated handlers only once,
+  // or each click toggles twice and the box never opens.
+  if (window.wmShopBannerBound) return;
+  window.wmShopBannerBound = true;
+
   function activePairs() {
     return Array.prototype.slice.call(
       document.querySelectorAll(".wm-shop-banner [aria-controls]")

@@ -1,299 +1,228 @@
-"""Browser tests for shop banner toggles (keeper bio and shop description)."""
+"""Browser tests for the shop banner toggles (keeper bio and shop description).
+
+The toggles live in static/js/shop_banner.js. These tests click them in a real
+browser under the app CSP and check aria-expanded and the box hidden state.
+
+Login uses a server-side session cookie, not the login form: the login view
+rate-limits after two logins (accounts/ratelimit.py). Waits use Playwright
+``expect`` assertions, which retry without eval, so they work under the CSP
+(no unsafe-eval). Do not use ``page.wait_for_function`` here.
+"""
 
 import pytest
+from django.core.management import call_command
+from django.test import Client
 
 DEMO_CLUB_SLUG = "demo"
 DEMO_PLAYER_EMAIL = "alice@example.com"
-DEMO_PASSWORD = "demo-password"
+LANTERN_NAME = "The Rusty Lantern"
 
 
 def _seed_demo():
-    """Seed the demo data for browser tests."""
-    from django.core.management import call_command
-
     call_command("seed_demo", verbosity=0)
-    from scripts.screenshot_pages import extra_fixtures
-
-    extra_fixtures()
 
 
-def _shop_detail_url(live_server, shop_id=2):
-    return f"{live_server.url}/c/{DEMO_CLUB_SLUG}/shops/{shop_id}/"  # The Rusty Lantern is ID 2
+def _session_id(user):
+    """Log in server-side and return the session cookie for Playwright."""
+    client = Client()
+    client.force_login(user)
+    return client.cookies["sessionid"].value
 
 
-def _login_url(live_server):
-    return f"{live_server.url}/accounts/login/"
+def _shop_url(live_server, shop):
+    return f"{live_server.url}/c/{DEMO_CLUB_SLUG}/shops/{shop.pk}/"
 
 
-def _login_page(page, live_server):
-    """Log in as demo player."""
-    page.goto(_login_url(live_server))
-    page.fill("input[name=username]", DEMO_PLAYER_EMAIL)
-    page.fill("input[name=password]", DEMO_PASSWORD)
-    page.click("form button[type=submit], form input[type=submit]")
-    page.wait_for_load_state("networkidle")
+@pytest.fixture
+def lantern(transactional_db):
+    """Seed the demo club and return The Rusty Lantern (keeper Old Marta)."""
+    from shops.models import Shop
 
-
-@pytest.mark.browser
-@pytest.mark.django_db
-def test_keeper_toggle_opens_and_closes_bio(live_server):
-    """Clicking the keeper name opens the bio; second click closes it."""
     _seed_demo()
+    return Shop.objects.get(club__slug=DEMO_CLUB_SLUG, name=LANTERN_NAME)
 
+
+@pytest.fixture
+def other_shops_have_banners(lantern):
+    """Give every other demo shop a description and a keeper bio.
+
+    The swapped-in banner then has both toggles, whichever shop the switcher
+    offers. Runs before the browser starts: the ORM cannot run inside the
+    Playwright event loop.
+    """
+    from shops.models import Shop
+
+    Shop.objects.filter(club__slug=DEMO_CLUB_SLUG).exclude(pk=lantern.pk).update(
+        description="Switched shop description.",
+        keeper_description="Switched keeper bio.",
+        keeper_name="Switched Keeper",
+    )
+
+
+@pytest.fixture
+def shop_page(lantern, live_server):
+    """Yield a function that opens a shop page in a logged-in browser page."""
     from playwright.sync_api import sync_playwright
+
+    from accounts.models import User
+
+    session_id = _session_id(User.objects.get(email=DEMO_PLAYER_EMAIL))
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
-        page = context.new_page()
+        contexts = []
+
+        def open_page(shop, width=1280):
+            context = browser.new_context(viewport={"width": width, "height": 800})
+            contexts.append(context)
+            context.add_cookies(
+                [{"name": "sessionid", "value": session_id, "url": live_server.url}]
+            )
+            page = context.new_page()
+            errors = []
+            # Only errors from the banner script count here. The stock poll's
+            # hx-trigger filter has its own CSP EvalError (a separate task).
+            page.on(
+                "pageerror",
+                lambda exc: errors.append(str(exc)) if "shop_banner" in (exc.stack or "") else None,
+            )
+            page.goto(_shop_url(live_server, shop))
+            page.wait_for_load_state("networkidle")
+            page.js_errors = errors
+            return page
 
         try:
-            _login_page(page, live_server)
-
-            # Go to shop detail page (The Rusty Lantern, keeper Old Marta)
-            page.goto(_shop_detail_url(live_server))
-            page.wait_for_load_state("networkidle")
-
-            # Find keeper toggle button
-            keeper_toggle = page.query_selector(".wm-shop-keeper-toggle")
-            assert keeper_toggle, "Keeper toggle button not found"
-
-            # Initially closed: aria-expanded=false, box hidden
-            assert keeper_toggle.get_attribute("aria-expanded") == "false"
-            keeper_box = page.query_selector("#keeper-about")
-            assert keeper_box, "Keeper bio box not found"
-            assert keeper_box.is_hidden()
-
-            # Click keeper toggle - should open
-            keeper_toggle.click()
-            page.wait_for_timeout(100)  # allow JS to run
-
-            assert keeper_toggle.get_attribute("aria-expanded") == "true"
-            assert not keeper_box.is_hidden()
-            assert "flour-dusted" in keeper_box.inner_text()
-
-            # Click again - should close
-            keeper_toggle.click()
-            page.wait_for_timeout(100)
-
-            assert keeper_toggle.get_attribute("aria-expanded") == "false"
-            assert keeper_box.is_hidden()
-
+            yield open_page
         finally:
-            context.close()
+            for context in contexts:
+                context.close()
             browser.close()
 
 
+def _keeper(page):
+    return page.locator(".wm-shop-keeper-toggle"), page.locator("#keeper-about")
+
+
+def _about(page):
+    return page.locator(".wm-shop-about-toggle"), page.locator("#shop-about")
+
+
+def _assert_open(toggle, box):
+    from playwright.sync_api import expect
+
+    expect(toggle).to_have_attribute("aria-expanded", "true")
+    expect(box).to_be_visible()
+
+
+def _assert_closed(toggle, box):
+    from playwright.sync_api import expect
+
+    expect(toggle).to_have_attribute("aria-expanded", "false")
+    expect(box).to_be_hidden()
+
+
+def _check_both_toggles(page):
+    """Open and close each toggle; opening one closes the other."""
+    keeper_toggle, keeper_box = _keeper(page)
+    about_toggle, about_box = _about(page)
+
+    _assert_closed(keeper_toggle, keeper_box)
+    _assert_closed(about_toggle, about_box)
+
+    keeper_toggle.click()
+    _assert_open(keeper_toggle, keeper_box)
+    _assert_closed(about_toggle, about_box)
+
+    about_toggle.click()
+    _assert_open(about_toggle, about_box)
+    _assert_closed(keeper_toggle, keeper_box)
+
+    keeper_toggle.click()
+    _assert_open(keeper_toggle, keeper_box)
+    _assert_closed(about_toggle, about_box)
+
+    keeper_toggle.click()
+    _assert_closed(keeper_toggle, keeper_box)
+
+    about_toggle.click()
+    _assert_open(about_toggle, about_box)
+    about_toggle.click()
+    _assert_closed(about_toggle, about_box)
+
+
 @pytest.mark.browser
-@pytest.mark.django_db
-def test_description_toggle_opens_and_closes(live_server):
-    """Clicking the description icon opens the description; second click closes it."""
-    _seed_demo()
+def test_keeper_toggle_opens_and_closes_bio(lantern, shop_page):
+    """A click on the keeper name opens the bio; a second click closes it."""
+    from playwright.sync_api import expect
 
-    from playwright.sync_api import sync_playwright
+    page = shop_page(lantern)
+    toggle, box = _keeper(page)
 
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
-        page = context.new_page()
-
-        try:
-            _login_page(page, live_server)
-
-            page.goto(_shop_detail_url(live_server))
-            page.wait_for_load_state("networkidle")
-
-            # Find description toggle button
-            desc_toggle = page.query_selector(".wm-shop-about-toggle")
-            assert desc_toggle, "Description toggle button not found"
-
-            # Initially closed
-            assert desc_toggle.get_attribute("aria-expanded") == "false"
-            desc_box = page.query_selector("#shop-about")
-            assert desc_box, "Shop description box not found"
-            assert desc_box.is_hidden()
-
-            # Click description toggle - should open
-            desc_toggle.click()
-            page.wait_for_timeout(100)
-
-            assert desc_toggle.get_attribute("aria-expanded") == "true"
-            assert not desc_box.is_hidden()
-            assert "warm inn" in desc_box.inner_text()
-
-            # Click again - should close
-            desc_toggle.click()
-            page.wait_for_timeout(100)
-
-            assert desc_toggle.get_attribute("aria-expanded") == "false"
-            assert desc_box.is_hidden()
-
-        finally:
-            context.close()
-            browser.close()
+    _assert_closed(toggle, box)
+    toggle.click()
+    _assert_open(toggle, box)
+    expect(box).to_contain_text("flour-dusted")
+    toggle.click()
+    _assert_closed(toggle, box)
+    assert page.js_errors == []
 
 
 @pytest.mark.browser
-@pytest.mark.django_db
-def test_one_box_at_a_time(live_server):
+def test_description_toggle_opens_and_closes(lantern, shop_page):
+    """A click on the description icon opens it; a second click closes it."""
+    from playwright.sync_api import expect
+
+    page = shop_page(lantern)
+    toggle, box = _about(page)
+
+    _assert_closed(toggle, box)
+    toggle.click()
+    _assert_open(toggle, box)
+    expect(box).to_contain_text("warm inn")
+    toggle.click()
+    _assert_closed(toggle, box)
+    assert page.js_errors == []
+
+
+@pytest.mark.browser
+def test_one_box_at_a_time(lantern, shop_page):
     """Opening one box closes the other."""
-    _seed_demo()
-
-    from playwright.sync_api import sync_playwright
-
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
-        page = context.new_page()
-
-        try:
-            _login_page(page, live_server)
-
-            page.goto(_shop_detail_url(live_server))
-            page.wait_for_load_state("networkidle")
-
-            keeper_toggle = page.query_selector(".wm-shop-keeper-toggle")
-            desc_toggle = page.query_selector(".wm-shop-about-toggle")
-            keeper_box = page.query_selector("#keeper-about")
-            desc_box = page.query_selector("#shop-about")
-
-            # Open keeper bio
-            keeper_toggle.click()
-            page.wait_for_timeout(100)
-            assert keeper_toggle.get_attribute("aria-expanded") == "true"
-            assert not keeper_box.is_hidden()
-            assert desc_toggle.get_attribute("aria-expanded") == "false"
-            assert desc_box.is_hidden()
-
-            # Open shop description - should close keeper bio
-            desc_toggle.click()
-            page.wait_for_timeout(100)
-            assert desc_toggle.get_attribute("aria-expanded") == "true"
-            assert not desc_box.is_hidden()
-            assert keeper_toggle.get_attribute("aria-expanded") == "false"
-            assert keeper_box.is_hidden()
-
-            # Open keeper bio again - should close shop description
-            keeper_toggle.click()
-            page.wait_for_timeout(100)
-            assert keeper_toggle.get_attribute("aria-expanded") == "true"
-            assert not keeper_box.is_hidden()
-            assert desc_toggle.get_attribute("aria-expanded") == "false"
-            assert desc_box.is_hidden()
-
-        finally:
-            context.close()
-            browser.close()
+    page = shop_page(lantern)
+    _check_both_toggles(page)
+    assert page.js_errors == []
 
 
 @pytest.mark.browser
-@pytest.mark.django_db
-def test_toggles_work_after_shop_switch(live_server):
-    """Toggles still work after shop switcher swaps in another shop."""
-    _seed_demo()
+def test_toggles_work_after_shop_switch(lantern, other_shops_have_banners, shop_page):
+    """The toggles still work after the shop switcher swaps in another shop."""
+    from playwright.sync_api import expect
 
-    from playwright.sync_api import sync_playwright
+    page = shop_page(lantern)
 
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
-        page = context.new_page()
+    # Leave a box open on the first shop. The swap must reset it.
+    keeper_toggle, keeper_box = _keeper(page)
+    keeper_toggle.click()
+    _assert_open(keeper_toggle, keeper_box)
 
-        try:
-            _login_page(page, live_server)
+    page.locator(".shop-switcher .dropdown-toggle").click()
+    target = page.locator(".shop-switcher .dropdown-item:not(.active)").first
+    expect(target).to_be_visible()
+    target_url = target.get_attribute("href")
+    target_name = target.inner_text().strip()
+    assert target_name != LANTERN_NAME
+    target.click()
 
-            page.goto(_shop_detail_url(live_server))
-            page.wait_for_load_state("networkidle")
+    expect(page).to_have_url(f"{page.url.split('/c/')[0]}{target_url}")
+    expect(page.locator("#keeper-about")).to_contain_text("Switched keeper bio.")
+    expect(page.locator("#shop-about")).to_contain_text("Switched shop description.")
 
-            # Open keeper bio on first shop
-            keeper_toggle = page.query_selector(".wm-shop-keeper-toggle")
-            keeper_box = page.query_selector("#keeper-about")
-            keeper_toggle.click()
-            page.wait_for_timeout(100)
-            assert keeper_toggle.get_attribute("aria-expanded") == "true"
-            assert not keeper_box.is_hidden()
-            assert "flour-dusted" in keeper_box.inner_text()
-
-            # Use shop switcher to go to another shop
-            switcher = page.query_selector(".wm-shop-switcher, [hx-get*='switcher']")
-            if not switcher:
-                # Try finding the select element
-                switcher = page.query_selector("select.wm-shop-switcher, select[name='shop']")
-            if switcher:
-                # Click the switcher and select another option
-                switcher.click()
-                page.wait_for_timeout(100)
-                option = page.query_selector("option[value]:not([value=''])")
-                if option:
-                    value = option.get_attribute("value")
-                    selector = ".wm-shop-switcher, select[name='shop'], select.wm-shop-switcher"
-                    page.select_option(selector, value)
-                    page.wait_for_load_state("networkidle")
-                    page.wait_for_timeout(500)  # wait for HTMX swap
-
-                    # Re-find elements after swap
-                    keeper_toggle = page.query_selector(".wm-shop-keeper-toggle")
-                    keeper_box = page.query_selector("#keeper-about")
-                    desc_toggle = page.query_selector(".wm-shop-about-toggle")
-                    desc_box = page.query_selector("#shop-about")
-
-                    # Toggles should still work
-                    keeper_toggle.click()
-                    page.wait_for_timeout(100)
-                    assert keeper_toggle.get_attribute("aria-expanded") == "true"
-                    assert not keeper_box.is_hidden()
-
-                    desc_toggle.click()
-                    page.wait_for_timeout(100)
-                    assert desc_toggle.get_attribute("aria-expanded") == "true"
-                    assert not desc_box.is_hidden()
-                    assert keeper_toggle.get_attribute("aria-expanded") == "false"
-                    assert keeper_box.is_hidden()
-
-        finally:
-            context.close()
-            browser.close()
+    _check_both_toggles(page)
+    assert page.js_errors == []
 
 
 @pytest.mark.browser
-@pytest.mark.django_db
-def test_toggles_at_mobile_width(live_server):
-    """Toggles work at mobile width (390px)."""
-    _seed_demo()
-
-    from playwright.sync_api import sync_playwright
-
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch()
-        context = browser.new_context(viewport={"width": 390, "height": 800})
-        page = context.new_page()
-
-        try:
-            _login_page(page, live_server)
-
-            page.goto(_shop_detail_url(live_server))
-            page.wait_for_load_state("networkidle")
-
-            keeper_toggle = page.query_selector(".wm-shop-keeper-toggle")
-            desc_toggle = page.query_selector(".wm-shop-about-toggle")
-            keeper_box = page.query_selector("#keeper-about")
-            desc_box = page.query_selector("#shop-about")
-
-            assert keeper_toggle, "Keeper toggle not found at mobile width"
-            assert desc_toggle, "Description toggle not found at mobile width"
-
-            keeper_toggle.click()
-            page.wait_for_timeout(100)
-            assert keeper_toggle.get_attribute("aria-expanded") == "true"
-            assert not keeper_box.is_hidden()
-
-            desc_toggle.click()
-            page.wait_for_timeout(100)
-            assert desc_toggle.get_attribute("aria-expanded") == "true"
-            assert not desc_box.is_hidden()
-            assert keeper_toggle.get_attribute("aria-expanded") == "false"
-            assert keeper_box.is_hidden()
-
-        finally:
-            context.close()
-            browser.close()
+def test_toggles_at_mobile_width(lantern, shop_page):
+    """The toggles work at mobile width (390px)."""
+    page = shop_page(lantern, width=390)
+    _check_both_toggles(page)
+    assert page.js_errors == []
