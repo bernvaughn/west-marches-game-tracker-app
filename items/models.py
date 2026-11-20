@@ -29,11 +29,28 @@ class Item(models.Model):
     value_cp = models.PositiveIntegerField(default=0)
     retired = models.BooleanField(default=False)
     is_container = models.BooleanField(default=False)
+    is_stacked = models.BooleanField(default=False)
+    unit_name = models.CharField(max_length=40, blank=True)
+    value_units = models.PositiveIntegerField(default=1)
 
     objects = ClubScopedManager()
 
     class Meta:
         ordering = ["name"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~Q(is_stacked=True, is_container=True),
+                name="item_not_stacked_and_container",
+            ),
+            models.CheckConstraint(
+                condition=Q(value_units__gte=1),
+                name="item_value_units_ge_1",
+            ),
+            models.CheckConstraint(
+                condition=Q(is_stacked=False) | ~Q(unit_name=""),
+                name="item_stacked_needs_unit_name",
+            ),
+        ]
 
     def __str__(self):
         return self.name
