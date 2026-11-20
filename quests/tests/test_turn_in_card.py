@@ -115,7 +115,7 @@ def test_rewards_show_item_with_quantity_and_name(
     c = login(player)
     body = _body(c, quest)
     assert reward_item.name in body
-    assert "×" in body
+    assert "1 x" in body
 
 
 @pytest.mark.story("U55")

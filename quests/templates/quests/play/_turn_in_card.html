@@ -1,6 +1,6 @@
 <section id="turn-in" class="wm-quest-turnin card" aria-labelledby="turn-in-title">
   <h2 id="turn-in-title" class="h4">Turn in</h2>
-  {% load coins %}
+  {% load coins units %}
   {% if character %}
   <p class="wm-quest-turnin-name"><strong>{{ character.name }}</strong></p>
   <div class="wm-table-scroll">
@@ -28,7 +28,7 @@
           {% if reward.coins %}{{ reward.coins|coins }}{% endif %}
           {% if reward.item %}
             {% if reward.coins %}, {% endif %}
-            {% if reward.item.is_stacked %}{{ reward.quantity }} {{ reward.item.unit_name }}{% else %}{{ reward.quantity }} ×{% endif %} {% include "items/_item_name.html" with item=reward.item %}
+            {{ reward.quantity }}{% if reward.item.is_stacked %} {{ reward.item.unit_name }}{% else %} x{% endif %} {% include "items/_item_name.html" with item=reward.item %}
             {% loot_preview reward.item as loot_rows %}
             {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
           {% endif %}

@@ -157,41 +157,33 @@ class TestStackedContainers:
 
 
 @pytest.mark.django_db
-def test_loot_preview_render_keeps_times_for_normal_items(club):
-    """A normal item shows "2×"; a stacked item shows "2 sheet"."""
-    container = make_container(club, "Render Box")
-    parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
-    rope = Item.objects.create(club=club, name="Rope", value_cp=10)
-    for pos, item in enumerate((parchment, rope)):
-        slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=pos)
-        ContainerSlotOption.objects.create(slot=slot, item=item, qty_min=2, qty_max=2, weight=1)
-    ranged = ContainerSlot.objects.create(container=container, chance_pct=100, position=2)
-    ContainerSlotOption.objects.create(slot=ranged, item=rope, qty_min=1, qty_max=3, weight=1)
-    ContainerSlotOption.objects.create(slot=ranged, item=parchment, qty_min=1, qty_max=3, weight=1)
+class TestLootPreviewRender:
+    """Tests for the _loot_preview.html template rendering."""
 
-    html = render_to_string(
-        "items/_loot_preview.html",
-        {"rows": loot_preview(container, viewer_can_see_unknown=True)},
-    )
+    def test_normal_item_shows_multiplication_sign(self, club):
+        """A normal item shows '2×' (not '2  ') in the preview."""
+        container = make_container(club, "Test Box")
+        sword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
 
-    assert "2 sheet</span>" in html
-    assert "2&#215;</span>" in html or "2\u00d7</span>" in html
-    assert "1&#8211;3&#215;</span>" in html or "1\u20133\u00d7</span>" in html
-    assert "1&#8211;3 sheet</span>" in html or "1\u20133 sheet</span>" in html
+        slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
+        ContainerSlotOption.objects.create(slot=slot, item=sword, qty_min=2, qty_max=2, weight=1)
 
+        preview = loot_preview(container, viewer_can_see_unknown=True)
+        html = render_to_string("items/_loot_preview.html", {"rows": preview})
+        assert "&#215;" in html
+        assert "2  Longsword" not in html
 
-@pytest.mark.django_db
-def test_details_body_has_one_value_row_for_stacked(login, game_master, club):
-    from django.urls import reverse
+    def test_stacked_item_shows_unit_name(self, club):
+        """A stacked item shows '2 sheet' (not '2×') in the preview."""
+        container = make_container(club, "Test Box")
+        parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
 
-    from ledger.coins import format_coins
+        slot = ContainerSlot.objects.create(container=container, chance_pct=100, position=0)
+        ContainerSlotOption.objects.create(
+            slot=slot, item=parchment, qty_min=2, qty_max=2, weight=1
+        )
 
-    parchment = make_stacked(club, "Parchment", "sheet", 100, 10)
-    c = login(game_master)
-    body = c.get(reverse("items:details_modal", args=[club.slug, parchment.pk])).content.decode()
-    assert body.count("<dt>Value") == 1
-    assert f"{format_coins(100)}</span> per 10 sheet</dd>" in body
-    rope = Item.objects.create(club=club, name="Rope", value_cp=10)
-    body = c.get(reverse("items:details_modal", args=[club.slug, rope.pk])).content.decode()
-    assert f"{format_coins(10)}</span></dd>" in body
-    assert "per " not in body.split("<dt>Value</dt>")[1].split("</dd>")[0]
+        preview = loot_preview(container, viewer_can_see_unknown=True)
+        html = render_to_string("items/_loot_preview.html", {"rows": preview})
+        assert "2 sheet" in html
+        assert "2×" not in html

@@ -11,7 +11,7 @@
   <datalist id="item-catalogue">
     {% for item in items %}
     <option value="{{ item.pk }}" data-name="{{ item.name }}" data-value="{{ item.value_cp }}" {% if item.is_stacked %}data-unit="{{ item.unit_name }}"{% endif %}>
-      {% if item.symbol %}{{ item.symbol }} {% endif %}{{ item.name }} ({{ item.value_cp|coins }}{% if item.is_stacked %} per {{ item.value_units }} {{ item.unit_name }}{% endif %})
+      {% if item.symbol %}{{ item.symbol }} {% endif %}{% if item.is_stacked %}{{ item.name }} ({{ item.value_cp|coins }} per {{ item.value_units }} {{ item.unit_name }}){% else %}{{ item.name }} ({{ item.value_cp|coins }}){% endif %}
     </option>
     {% endfor %}
   </datalist>
