@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.html import format_html
 
 from accounts.permissions import admin_or_gm_required
 from accounts.scoping import club_get_object_or_404
@@ -18,7 +19,13 @@ from ledger.services import (
 )
 
 from ..forms import formset_lines, item_line_formset
-from ..forms_adjust import AdjustForm, BulkAwardForm, ConsumeForm
+from ..forms_adjust import (
+    BULK_MAX_ROWS,
+    AdjustForm,
+    BulkAwardForm,
+    ConsumeForm,
+    bulk_item_line_formset,
+)
 from ..models import Character
 
 NO_AMOUNT = "Enter at least one coin or item amount."
@@ -114,11 +121,39 @@ def _is_int(value):
 def _render_bulk_award(request, form, club, items, status=200):
     """Re-render the bulk-award form, keeping checkboxes and posted values."""
     character_data = []
+    post = request.POST
     for character in Character.objects.for_club(club).order_by("name", "id"):
+        prefix = f"items_{character.pk}"
+        # Determine how many rows to show: at least 3, or the posted TOTAL_FORMS (clamped)
+        total_forms = 3
+        if f"{prefix}-TOTAL_FORMS" in post:
+            try:
+                total_forms_raw = post.get(f"{prefix}-TOTAL_FORMS", 3) or 3
+                total_forms = max(3, min(BULK_MAX_ROWS, int(total_forms_raw)))
+            except (TypeError, ValueError):
+                total_forms = 3
+
+        item_rows = []
+        for i in range(total_forms):
+            item_id = post.get(f"{prefix}-{i}-item_id", "")
+            item_text = post.get(f"{prefix}-{i}-item", "")
+            quantity = post.get(f"{prefix}-{i}-quantity", "")
+            value_override = post.get(f"{prefix}-{i}-value_override", "")
+            item_rows.append(
+                {
+                    "index": i,
+                    "item_id": item_id,
+                    "item": item_text,
+                    "quantity": quantity,
+                    "value_override": value_override,
+                }
+            )
+
         character_data.append(
             {
                 "character": character,
-                "checked": str(character.pk) in request.POST.getlist("characters"),
+                "checked": str(character.pk) in post.getlist("characters"),
+                "item_rows": item_rows,
             }
         )
     # Build loot previews for container items (view is admin_or_gm_required, so unmasked)
@@ -174,14 +209,16 @@ def bulk_award(request, club_slug):
             if coins:
                 lines.append(Line(coins=coins))
 
-            # Get per-character items from POST, validated through the existing
-            # formset path (club-scoped item, quantity >= 1, each item once).
+            # Get per-character items from POST, validated through the
+            # bulk formset (club-scoped item, quantity >= 1, each item once).
             prefix = f"items_{character.pk}"
             if f"{prefix}-TOTAL_FORMS" in request.POST:
                 try:
                     total_forms = int(request.POST.get(f"{prefix}-TOTAL_FORMS", 0) or 0)
                 except (TypeError, ValueError):
                     total_forms = 0
+                # Clamp to avoid runaway loops on malicious input.
+                total_forms = max(0, min(BULK_MAX_ROWS, total_forms))
                 for i in range(total_forms):
                     qty_key = f"{prefix}-{i}-quantity"
                     qty = request.POST.get(qty_key, "")
@@ -196,7 +233,7 @@ def bulk_award(request, club_slug):
                     item_id = formset_data.get(f"{prefix}-{i}-item_id", "")
                     if item_id:
                         formset_data[f"{prefix}-{i}-item"] = item_id
-                item_formset = item_line_formset(items, data=formset_data, prefix=prefix)
+                item_formset = bulk_item_line_formset(items, data=formset_data, prefix=prefix)
                 if not item_formset.is_valid():
                     formset_messages = list(item_formset.non_form_errors())
                     for formset_form in item_formset.forms:
@@ -234,10 +271,17 @@ def bulk_award(request, club_slug):
             return _render_bulk_award(request, form, club, items, status=200)
         count = len(entries)
         msg = f"Awarded loot to {count} character{'s' if count != 1 else ''}."
-        messages.success(request, msg)
+        # Add link to award downtime points to the same characters
+        char_pks = ",".join(str(c.pk) for c in characters)
+        points_url = reverse("downtime:points_award", args=[club_slug]) + f"?characters={char_pks}"
+        messages.success(
+            request,
+            format_html(
+                '{} <a href="{}">Award downtime points to these characters</a>', msg, points_url
+            ),
+        )
         # Redirect to club ledger filtered to the new entries
         ledger_url = reverse("ledger:index", args=[club_slug])
-        char_pks = ",".join(str(c.pk) for c in characters)
         filter_qs = f"?character={char_pks}&date_from={shared_date}"
         filter_qs += f"&date_to={shared_date}&kind=award"
         return redirect(f"{ledger_url}{filter_qs}")

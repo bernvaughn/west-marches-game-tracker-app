@@ -171,3 +171,38 @@ class SiteSettings(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class SiteFeedback(models.Model):
+    """A site-level bug report or feature request from any logged-in user.
+
+    Goes to site admins (superusers), not to club admins. Club-scoped
+    messages stay on the Message model.
+    """
+
+    class Kind(models.TextChoices):
+        BUG = "bug", "Bug report"
+        FEATURE = "feature", "Feature request"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Open"
+        HANDLED = "handled", "Handled"
+        CLOSED = "closed", "Closed"
+
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="site_feedback"
+    )
+    club = models.ForeignKey(
+        Club, on_delete=models.SET_NULL, null=True, blank=True, related_name="site_feedback"
+    )
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.BUG)
+    body = models.TextField()
+    page_url = models.CharField(max_length=500, blank=True)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.OPEN)
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created"]
+
+    def __str__(self):
+        return f"SiteFeedback {self.pk} ({self.get_kind_display()})"

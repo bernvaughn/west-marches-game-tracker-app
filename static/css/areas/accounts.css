@@ -74,6 +74,7 @@
 
 .wm-site-footer-copyright,
 .wm-site-footer-credit,
+.wm-site-footer-support,
 .wm-site-footer-links {
   margin: 0;
   white-space: nowrap;
@@ -104,6 +105,19 @@
   height: 14px;
 }
 
+.wm-kofi-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wm-space-1);
+  color: inherit;
+  text-decoration: none;
+}
+
+.wm-kofi-link:hover {
+  color: var(--wm-accent);
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .wm-site-footer-inner {
     flex-direction: column;
@@ -111,6 +125,7 @@
   }
   .wm-site-footer-copyright,
   .wm-site-footer-credit,
+  .wm-site-footer-support,
   .wm-site-footer-links {
     white-space: normal;
   }

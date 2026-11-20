@@ -1,8 +1,10 @@
 """Tests for the print_session_pack view and modal."""
 
+import re
 from datetime import timedelta
 
 import pytest
+from django.test import Client
 from django.urls import reverse
 from django.utils import timezone
 
@@ -329,6 +331,38 @@ def test_detail_view_post_updates_last_printed_at(login, club, player, funded):
     assert funded.last_printed_at is None
     url = reverse("characters:detail", args=[club.slug, funded.pk])
     r = login(player).post(url)
+    assert r.status_code == 200
+    funded.refresh_from_db()
+    assert funded.last_printed_at is not None
+
+
+@pytest.mark.story("S10")
+def test_print_sheet_script_loads_once(login, club, player, funded):
+    """The print handler script loads once, so one click prints once."""
+    url = reverse("characters:detail", args=[club.slug, funded.pk])
+    body = login(player).get(url).content.decode()
+    assert body.count("js/print_sheet.js") == 1
+    assert "hx-on::after-request" not in body
+
+
+@pytest.mark.story("S10")
+def test_print_sheet_post_with_dom_csrf_token(club, player, funded):
+    """The CSRF cookie is HttpOnly, so the JS reads the token from the button.
+
+    A POST with that token passes CSRF checks and records the print.
+    """
+    client = Client(enforce_csrf_checks=True)
+    client.force_login(player)
+    url = reverse("characters:detail", args=[club.slug, funded.pk])
+    body = client.get(url).content.decode()
+    match = re.search(r'data-print-sheet [^>]*data-csrf-token="([^"]+)"', body)
+    assert match, "Print sheet button must carry the CSRF token"
+
+    assert client.post(url, HTTP_X_CSRFTOKEN="").status_code == 403
+    funded.refresh_from_db()
+    assert funded.last_printed_at is None
+
+    r = client.post(url, HTTP_X_CSRFTOKEN=match.group(1))
     assert r.status_code == 200
     funded.refresh_from_db()
     assert funded.last_printed_at is not None

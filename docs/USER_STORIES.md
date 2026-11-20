@@ -771,6 +771,13 @@ Stories for club admins and game masters to manage starting equipment templates 
 - Non-container rows have `is_container: false` and no `loot` key.
 - Other clubs' containers never appear.
 
+**U114 Report bugs and suggest features.** As a player, I want to report bugs and suggest features for the app itself, so the people who run the app can hear about problems and ideas. *(accounts, site-wide)*
+- Any logged-in user can send a bug report or feature request from any page, via a link in the footer.
+- The report goes to the site admins, not to the player's club admins. Messages to club admins stay on the Message model.
+- The form says plainly that it is for app problems and feature ideas, not for asking club admins for loot, corrections, or rulings.
+- Reports are recorded with the page they came from and can be triaged (open, handled, closed) on the site-admin list at /site/feedback/.
+- Sending is rate limited per user.
+
 
 ## Quests
 

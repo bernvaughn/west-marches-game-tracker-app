@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins downtime_points accounts_tags %}
+{% load coins downtime_points accounts_tags static %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
 {% url 'characters:index' club.slug as index_url %}
@@ -17,10 +17,7 @@
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">History</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print an adventurer's pass: name, pronouns, player, species, class, level, AC, passive Perception, Max HP and ability scores.">Print slip</a>
-  <form hx-post="{% url 'characters:detail' club.slug character.pk %}" hx-target="body" hx-on::after-request="window.print()" class="d-inline">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-sm btn-primary" data-wm-tooltip title="Print this character sheet in black and white.">{% include "components/icon.html" with name="printer" %} Print sheet</button>
-  </form>
+  <button type="button" class="btn btn-sm btn-primary" data-print-sheet data-print-sheet-url="{% url 'characters:detail' club.slug character.pk %}" data-csrf-token="{{ csrf_token }}" data-wm-tooltip title="Print this character sheet in black and white.">{% include "components/icon.html" with name="printer" %} Print sheet</button>
 </div>
 {% endif %}
 <article class="wm-sheet wm-sheet--page">
@@ -203,3 +200,4 @@
   {% endif %}
 </article>
 {% endblock %}
+{% block extra_scripts %}<script src="{% static 'js/print_sheet.js' %}" defer></script>{% endblock %}

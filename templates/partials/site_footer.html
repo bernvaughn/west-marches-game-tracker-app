@@ -12,9 +12,24 @@
       </a>
     </p>
     {# end CodeHerder credit block #}
+    <p class="wm-site-footer-support">
+      <a href="https://ko-fi.com/S3O12AYUQM" target="_blank" rel="noopener noreferrer" class="wm-kofi-link">
+        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="14" height="14" fill="none" viewBox="0 0 24 24">
+          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8.5 4a2.5 2.5 0 0 1 5 0M5 7h14l-1 10H6z"/>
+        </svg>
+        Buy me a coffee
+      </a>
+    </p>
     {% if not club %}
     <p class="wm-site-footer-links">
       <a href="{% url 'about' %}">About</a> · <a href="{% url 'plans' %}">Plans</a>
+    </p>
+    {% endif %}
+    {% if user.is_authenticated %}
+    <p class="wm-site-footer-links">
+      <a href="{% url 'feedback_new' %}?kind=bug&from={{ request.path|urlencode }}">Report a bug</a>
+      ·
+      <a href="{% url 'feedback_new' %}?kind=feature&from={{ request.path|urlencode }}">Suggest a feature</a>
     </p>
     {% endif %}
   </div>

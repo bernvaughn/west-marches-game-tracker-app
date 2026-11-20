@@ -84,6 +84,7 @@ Characters, shops, quests, hex maps and locations, downtime actions, ledger entr
 - **Membership**: a user in a club, with two separate yes/no permissions, club admin and game master. Everyone with a membership is also a player and can own characters.
 - **Whitelist entry**: an email address allowed to join a club (U1). Belongs to one club; the same email can be whitelisted in several.
 - **Message**: from a membership to the club's admins, free text, with an optional character it is about (the sender's selected character, U27), and a handled/closed flag set by an admin (U13). No replies are stored. Grants made from a message (U30) are ordinary ledger entries, visits, credit, or found marks that point back at the message, so the message can list what was granted from it.
+- **Site feedback**: a site-level bug report or feature request from any logged-in user, sent to site admins rather than club admins (U114). Records who sent it, the club they were in when they sent it (if any), bug or feature kind, the free-text body, the page they came from, and an open/handled/closed status.
 
 A player's email is shown only to club admins (U17).
 

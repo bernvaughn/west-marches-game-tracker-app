@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Report a bug or suggest a feature{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Report a bug or suggest a feature" subtitle="This goes to the people who run this app, not to your club's admins." %}
+{% include "components/alert.html" with level="info" text="This form is for problems with the app and ideas for new app features. To ask your club admins for loot, a correction, or a ruling, use Message the admins in your club." %}
+<div class="wm-narrow-block">
+{% include "components/card_open.html" with title="New report" %}
+{% include "components/form_layout.html" with form=form submit_label="Send to app admins" %}
+{% include "components/card_close.html" %}
+</div>
+{% include "components/section_open.html" with title="Your earlier reports" %}
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+  <thead><tr><th>Status</th><th>Report</th><th>Club</th><th>Date</th></tr></thead>
+  <tbody>
+  {% for f in earlier_reports %}
+  <tr>
+    <td>{% include "components/status_badge.html" with value=f.status text=f.get_status_display %}</td>
+    <td>{{ f.body|linebreaksbr }}</td>
+    <td>{{ f.club.name|default:"-" }}</td>
+    <td class="wm-date">{{ f.created|date:"DATETIME_FORMAT" }}</td>
+  </tr>
+  {% empty %}
+  {% include "components/data_table_empty.html" with cols=4 text="No reports yet." %}
+  {% endfor %}
+  </tbody>
+</table></div>
+{% include "components/section_close.html" %}
+{% endblock %}
