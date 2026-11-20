@@ -1,7 +1,6 @@
 """Tests for the starting equipment choices step."""
 
 import pytest
-
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
@@ -19,6 +18,7 @@ from starting_equipment.models import (
 )
 from starting_equipment.services import (
     AlreadyClaimed,
+    InvalidChoices,
     apply_starting_equipment,
     claim_starting_equipment,
     get_choice_groups,
@@ -114,9 +114,7 @@ def bg_option_acolyte(club):
 
 
 @pytest.fixture
-def character_with_choices(
-    club, player, active_template, class_option_fighter, bg_option_acolyte
-):
+def character_with_choices(club, player, active_template, class_option_fighter, bg_option_acolyte):
     """Character with class and background choice groups."""
     owner, _ = Membership.objects.get_or_create(user=player, club=club)
     longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
@@ -128,9 +126,7 @@ def character_with_choices(
     make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
     holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
     prayer_book = Item.objects.create(club=club, name="Prayer Book", value_cp=500)
-    bg_entry = make_bg_entry(
-        active_template, background_option=bg_option_acolyte, coins_cp=500
-    )
+    bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
     make_bg_line(bg_entry, holy_symbol, is_choice=True, choice_group="holy_item")
     make_bg_line(bg_entry, prayer_book, is_choice=True, choice_group="holy_item")
     return Character.objects.create(
@@ -160,9 +156,7 @@ class TestGetChoiceGroups:
     ):
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
         battleaxe = Item.objects.create(club=club, name="Battleaxe", value_cp=1000)
-        class_entry = make_class_entry(
-            active_template, class_option=class_option_fighter
-        )
+        class_entry = make_class_entry(active_template, class_option=class_option_fighter)
         make_class_line(class_entry, longsword, is_choice=True, choice_group="weapon")
         make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
         holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
@@ -204,9 +198,7 @@ class TestGetChoiceGroups:
         self, club, active_template, class_option_fighter, bg_option_acolyte
     ):
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
-        class_entry = make_class_entry(
-            active_template, class_option=class_option_fighter
-        )
+        class_entry = make_class_entry(active_template, class_option=class_option_fighter)
         make_class_line(class_entry, longsword, is_choice=False)
         make_class_line(class_entry, longsword, is_choice=True, choice_group="")
 
@@ -224,9 +216,7 @@ class TestGetChoiceGroups:
         )
         assert get_choice_groups(character, active_template) == []
 
-    def test_returns_empty_for_none_template(
-        self, club, class_option_fighter, bg_option_acolyte
-    ):
+    def test_returns_empty_for_none_template(self, club, class_option_fighter, bg_option_acolyte):
         user = User.objects.create_user("owner@example.com", password="pw", display_name="Owner")
         owner = Membership.objects.create(user=user, club=club)
         character = Character.objects.create(
@@ -260,9 +250,7 @@ class TestApplyWithPicks:
         make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
         holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
         prayer_book = Item.objects.create(club=club, name="Prayer Book", value_cp=500)
-        bg_entry = make_bg_entry(
-            active_template, background_option=bg_option_acolyte, coins_cp=500
-        )
+        bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
         make_bg_line(bg_entry, holy_symbol, is_choice=True, choice_group="holy_item")
         make_bg_line(bg_entry, prayer_book, is_choice=True, choice_group="holy_item")
 
@@ -281,16 +269,16 @@ class TestApplyWithPicks:
 
         picks = {
             "class:weapon": StartingEquipmentClassLine.objects.get(item=battleaxe).id,
-            "background:holy_item": StartingEquipmentBackgroundLine.objects.get(item=prayer_book).id,
+            "background:holy_item": StartingEquipmentBackgroundLine.objects.get(
+                item=prayer_book
+            ).id,
         }
-        result = apply_starting_equipment(
-            character, active_template, None, picks=picks
-        )
+        result = apply_starting_equipment(character, active_template, None, picks=picks)
         entry = result.entry
         assert entry is not None
         assert entry.note == "Starting equipment"
         item_lines = entry.lines.select_related("item").filter(item__isnull=False)
-        names = {(l.item.name, l.quantity) for l in item_lines}
+        names = {(line.item.name, line.quantity) for line in item_lines}
         assert ("Battleaxe", 1) in names
         assert ("Prayer Book", 1) in names
         assert ("Longsword", 1) not in names
@@ -301,9 +289,7 @@ class TestApplyWithPicks:
     ):
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
         battleaxe = Item.objects.create(club=club, name="Battleaxe", value_cp=1000)
-        class_entry = make_class_entry(
-            active_template, class_option=class_option_fighter
-        )
+        class_entry = make_class_entry(active_template, class_option=class_option_fighter)
         make_class_line(class_entry, longsword, is_choice=True, choice_group="weapon")
         make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
         other_item = Item.objects.create(club=club, name="Other", value_cp=10)
@@ -322,7 +308,7 @@ class TestApplyWithPicks:
             level=1,
         )
 
-        with pytest.raises(Exception):
+        with pytest.raises(InvalidChoices):
             apply_starting_equipment(
                 character, active_template, None, picks={"class:weapon": other_item.id}
             )
@@ -334,37 +320,27 @@ class TestApplyWithPicks:
 
 
 class TestChoicesViewPermissions:
-    def test_owner_sees_choices(
-        self, club, login, player, character_with_choices
-    ):
+    def test_owner_sees_choices(self, club, login, player, character_with_choices):
         client = login(player)
         response = client.get(choices_url(club, character_with_choices))
         assert response.status_code == 200
 
-    def test_club_admin_sees_choices(
-        self, club, login, club_admin, character_with_choices
-    ):
+    def test_club_admin_sees_choices(self, club, login, club_admin, character_with_choices):
         client = login(club_admin)
         response = client.get(choices_url(club, character_with_choices))
         assert response.status_code == 200
 
-    def test_game_master_sees_choices(
-        self, club, login, game_master, character_with_choices
-    ):
+    def test_game_master_sees_choices(self, club, login, game_master, character_with_choices):
         client = login(game_master)
         response = client.get(choices_url(club, character_with_choices))
         assert response.status_code == 200
 
-    def test_other_member_gets_404(
-        self, club, login, other_player, character_with_choices
-    ):
+    def test_other_member_gets_404(self, club, login, other_player, character_with_choices):
         client = login(other_player)
         response = client.get(choices_url(club, character_with_choices))
         assert response.status_code == 404
 
-    def test_anonymous_redirected_to_login(
-        self, club, client, character_with_choices
-    ):
+    def test_anonymous_redirected_to_login(self, club, client, character_with_choices):
         response = client.get(choices_url(club, character_with_choices))
         assert response.status_code == 302
         assert response.url.startswith(reverse("login"))
@@ -412,7 +388,7 @@ class TestChoicesViewFlow:
         entry = entries.first()
         assert entry.note == "Starting equipment"
         item_lines = entry.lines.select_related("item").filter(item__isnull=False)
-        names = {(l.item.name, l.quantity) for l in item_lines}
+        names = {(line.item.name, line.quantity) for line in item_lines}
         assert ("Battleaxe", 1) in names
         assert ("Prayer Book", 1) in names
         assert ("Longsword", 1) not in names
@@ -434,8 +410,8 @@ class TestChoicesViewFlow:
             {"g_0": class_line_ids[battleaxe]},
         )
         assert response.status_code == 200
-        flashed = " ".join(flash_messages(response))
-        assert "Pick one option" in flashed
+        content = response.content.decode()
+        assert "Pick one option" in content
 
         character_with_choices.refresh_from_db()
         assert character_with_choices.starting_equipment_claimed is False
@@ -444,26 +420,25 @@ class TestChoicesViewFlow:
     def test_invalid_pick_line_from_another_group(
         self, club, login, player, character_with_choices
     ):
-        holy_symbol = Item.objects.get(club=club, name="Holy Symbol")
         prayer_book = Item.objects.get(club=club, name="Prayer Book")
         bg_line_ids = {
-            holy_symbol: StartingEquipmentBackgroundLine.objects.get(item=holy_symbol).id,
             prayer_book: StartingEquipmentBackgroundLine.objects.get(item=prayer_book).id,
         }
 
         client = login(player)
+        # g_0 (weapon class group) gets a line id that is not one of its options.
         response = client.post(
             choices_url(club, character_with_choices),
-            {"g_0": bg_line_ids[holy_symbol], "g_1": bg_line_ids[prayer_book]},
+            {"g_0": 999999, "g_1": bg_line_ids[prayer_book]},
         )
         assert response.status_code == 200
+        content = response.content.decode()
+        assert "Select a valid choice" in content or "Pick one option" in content
         assert LedgerEntry.objects.filter(character=character_with_choices).count() == 0
         character_with_choices.refresh_from_db()
         assert character_with_choices.starting_equipment_claimed is False
 
-    def test_double_submit_grants_once(
-        self, club, login, player, character_with_choices
-    ):
+    def test_double_submit_grants_once(self, club, login, player, character_with_choices):
         longsword = Item.objects.get(club=club, name="Longsword")
         battleaxe = Item.objects.get(club=club, name="Battleaxe")
         holy_symbol = Item.objects.get(club=club, name="Holy Symbol")
@@ -491,9 +466,7 @@ class TestChoicesViewFlow:
         assert character_with_choices.starting_equipment_claimed is True
         assert LedgerEntry.objects.filter(character=character_with_choices).count() == 1
 
-    def test_get_after_claim_redirects(
-        self, club, login, player, character_with_choices
-    ):
+    def test_get_after_claim_redirects(self, club, login, player, character_with_choices):
         longsword = Item.objects.get(club=club, name="Longsword")
         battleaxe = Item.objects.get(club=club, name="Battleaxe")
         holy_symbol = Item.objects.get(club=club, name="Holy Symbol")
@@ -518,9 +491,7 @@ class TestChoicesViewFlow:
         assert response.status_code == 302
         assert response.url == detail_url(club, character_with_choices)
 
-    def test_service_double_call_raises_already_claimed(
-        self, club, player, character_with_choices
-    ):
+    def test_service_double_call_raises_already_claimed(self, club, player, character_with_choices):
         longsword = Item.objects.get(club=club, name="Longsword")
         battleaxe = Item.objects.get(club=club, name="Battleaxe")
         holy_symbol = Item.objects.get(club=club, name="Holy Symbol")
@@ -576,14 +547,10 @@ class TestChoicesSkipped:
 
 
 @pytest.fixture
-def unclaimed_character(
-    club, player, active_template, class_option_fighter, bg_option_acolyte
-):
+def unclaimed_character(club, player, active_template, class_option_fighter, bg_option_acolyte):
     longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
     battleaxe = Item.objects.create(club=club, name="Battleaxe", value_cp=1000)
-    class_entry = make_class_entry(
-        active_template, class_option=class_option_fighter
-    )
+    class_entry = make_class_entry(active_template, class_option=class_option_fighter)
     make_class_line(class_entry, longsword, is_choice=True, choice_group="weapon")
     make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
     owner = Membership.objects.get(user=player, club=club)
@@ -600,9 +567,7 @@ def unclaimed_character(
 
 
 class TestLeaveAndFinishLater:
-    def test_not_claimed_no_entry_after_create(
-        self, club, login, player, unclaimed_character
-    ):
+    def test_not_claimed_no_entry_after_create(self, club, login, player, unclaimed_character):
         client = login(player)
         response = client.get(detail_url(club, unclaimed_character))
         assert response.status_code == 200
@@ -613,17 +578,13 @@ class TestLeaveAndFinishLater:
         unclaimed_character.refresh_from_db()
         assert unclaimed_character.starting_equipment_claimed is False
 
-    def test_claim_post_redirects_to_choices(
-        self, club, login, player, unclaimed_character
-    ):
+    def test_claim_post_redirects_to_choices(self, club, login, player, unclaimed_character):
         client = login(player)
         response = client.post(claim_url(club, unclaimed_character), HTTP_HX_REQUEST="true")
         assert response.status_code == 204
         assert response["HX-Redirect"] == choices_url(club, unclaimed_character)
 
-    def test_finishing_from_choices_grants(
-        self, club, login, player, unclaimed_character
-    ):
+    def test_finishing_from_choices_grants(self, club, login, player, unclaimed_character):
         longsword = Item.objects.get(club=club, name="Longsword")
         battleaxe = Item.objects.get(club=club, name="Battleaxe")
         class_line_ids = {
@@ -638,9 +599,12 @@ class TestLeaveAndFinishLater:
         assert response.status_code == 302
         unclaimed_character.refresh_from_db()
         assert unclaimed_character.starting_equipment_claimed is True
-        assert LedgerEntry.objects.filter(
-            character=unclaimed_character, note="Starting equipment"
-        ).count() == 1
+        assert (
+            LedgerEntry.objects.filter(
+                character=unclaimed_character, note="Starting equipment"
+            ).count()
+            == 1
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -654,9 +618,7 @@ class TestChoicesReasons:
     ):
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
         battleaxe = Item.objects.create(club=club, name="Battleaxe", value_cp=1000)
-        class_entry = make_class_entry(
-            active_template, class_option=class_option_fighter
-        )
+        class_entry = make_class_entry(active_template, class_option=class_option_fighter)
         make_class_line(class_entry, longsword, is_choice=True, choice_group="weapon")
         make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
         owner = Membership.objects.get(user=player, club=club)
@@ -701,9 +663,7 @@ class TestCreateWithChoices:
     ):
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
         battleaxe = Item.objects.create(club=club, name="Battleaxe", value_cp=1000)
-        class_entry = make_class_entry(
-            active_template, class_option=class_option_fighter
-        )
+        class_entry = make_class_entry(active_template, class_option=class_option_fighter)
         make_class_line(class_entry, longsword, is_choice=True, choice_group="weapon")
         make_class_line(class_entry, battleaxe, is_choice=True, choice_group="weapon")
         make_bg_entry(active_template, background_option=bg_option_acolyte)

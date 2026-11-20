@@ -662,6 +662,7 @@ Stories for the player experience of starting equipment: automatic grants on cha
 - Starting coins come from the level coins table per the configured template.
 - Approved magic item requests are granted as part of the starting equipment.
 - Applying starting equipment returns additive reason codes (`no_template`, `empty_template`, `class_missing`, `class_custom`, `class_no_entry`, `class_level_not_covered`, `background_missing`, `background_custom`, `background_no_entry`). Unmatched or custom values surface as warnings instead of blocking a grant.
+- When the active template has choice groups for the character's class/background, the player is sent to the choices page to pick one option per group before the single "Starting equipment" ledger entry is granted. Templates without choice groups grant the default pick immediately.
 
 **U98 Background Choice.** As a player, I want my character's background to be a club-defined option during creation, so my starting equipment includes background-appropriate gear. *(player_characters)*
 - The Character model links `background` to a `Background` option (FK, optional) for starting-equipment matching; the free-text `background` CharField remains only as a display fallback.
@@ -689,9 +690,10 @@ Stories for the player experience of starting equipment: automatic grants on cha
 - Matching uses `class_option` FK to a club-scoped `CharacterClass`; names are unique per club case-insensitively.
 - Players can type class names freely; admin templates use canonical names.
 
-**D3 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), with UI for player selection in a future version, so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
+**D3 Choice groups in data model.** As a developer, I want the data model to support choice groups (e.g., "Weapon A or Weapon B"), so the 2024 PHB equipment choices can be implemented. *(starting_equipment, items)*
 - `StartingEquipmentClassLine` and `StartingEquipmentBackgroundLine` have `is_choice` and `choice_group` fields
-- MVP grants the first option automatically; player-facing choice UI planned for v2
+- `get_choice_groups()` returns the groups a player must pick from; `apply_starting_equipment(picks=...)` grants one picked option per group.
+- The player-facing choice UI is implemented: after character creation, the player picks one option per group on the `starting_equipment:choices` page before gear is granted.
 
 **D4 Level-based coins table.** As a club admin, I want level-based starting coins to follow the 2024 DMG "Starting Equipment at Higher Levels" table, configurable per template, so higher-level characters start with correct wealth. *(starting_equipment)*
 - Separate `StartingEquipmentLevelCoins` model with `level` (2-20) and `coins_cp` fields
@@ -892,6 +894,15 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - Notes never touch the ledger or the item catalogue. Other characters and other clubs never see them.
 - Buy, sell, consume, and move do not change a note. The note hides when the item is gone and returns if the item returns.
 - The form works without JavaScript.
+
+**U123 Choose Starting Equipment.** As a player, I want to pick one option for each starting equipment choice group when my character is created, so I get the gear I want for my class and background. *(player_characters, starting_equipment, ledger)*
+- After saving a character whose active template has choice groups, the player is sent to the choices page and must pick one option per group before any gear is granted.
+- Templates without choice groups skip the step and grant the default pick immediately.
+- The picks, fixed items, and coins arrive in one ledger entry noted "Starting equipment".
+- Reloading or resubmitting cannot grant gear twice; `starting_equipment_claimed` tracks the grant.
+- A player who leaves can finish later from the character sheet via the "Choose starting equipment" link.
+- Only the character owner, a game master, or a club admin can submit the choices.
+- On success the player is sent to the gear reveal (`characters:detail?starting_equipment=1`).
 
 ## Quests
 
