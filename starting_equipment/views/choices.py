@@ -67,12 +67,13 @@ def choices(request, club_slug, character_pk):
             flash.success(request, "Starting equipment claimed.")
             for reason in result.reasons:
                 flash.warning(request, reason.message)
-            detail_url = reverse(
-                "characters:detail",
-                kwargs={"club_slug": club_slug, "pk": character.pk},
-            )
-            reveal_url = f"{detail_url}?starting_equipment=1"
-            return redirect(reveal_url)
+            if result.entry is not None:
+                return redirect(
+                    "characters:starting_reveal",
+                    club_slug=club_slug,
+                    pk=character.pk,
+                )
+            return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
         # Invalid: re-render with errors (HTTP 200, picks preserved by the bound form).
     else:
         form = StartingChoicesForm(groups)

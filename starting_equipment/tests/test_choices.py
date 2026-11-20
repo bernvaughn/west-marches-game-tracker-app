@@ -38,6 +38,13 @@ def detail_url(club, character):
     return reverse("characters:detail", kwargs={"club_slug": club.slug, "pk": character.pk})
 
 
+def reveal_url(club, character):
+    return reverse(
+        "characters:starting_reveal",
+        kwargs={"club_slug": club.slug, "pk": character.pk},
+    )
+
+
 def create_url(club):
     return reverse("characters:create", kwargs={"club_slug": club.slug})
 
@@ -378,7 +385,7 @@ class TestChoicesViewFlow:
             picks,
         )
         assert response.status_code == 302
-        assert response.url == f"{detail_url(club, character_with_choices)}?starting_equipment=1"
+        assert response.url == reveal_url(club, character_with_choices)
 
         character_with_choices.refresh_from_db()
         assert character_with_choices.starting_equipment_claimed is True

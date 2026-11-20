@@ -3,6 +3,13 @@
    Honours prefers-reduced-motion (instant final amount, no animation).
    Re-armed on htmx:afterSwap so a re-rendered sheet re-animates.
    Loaded with defer; CSP script-src 'self' compatible (no inline script).
+
+   The count-up is also callable from other pages (for example the starting
+   gear reveal):
+     window.wmAnimateCoins(container, displayEl, targetCp, onDone)
+       -> returns cancel() when it animates; cancel stops frames and onDone.
+     window.wmFormatCoins(cp)
+   Only containers with #starting-coins-animation auto-start.
  */
 (function () {
   function formatCoins(cp) {
@@ -34,39 +41,50 @@
     return sign + (parts.length ? parts.join(' ') : '0 cp');
   }
 
-  function animateCoins(container) {
-    var targetCp = parseInt(container.dataset.coins, 10);
-    if (isNaN(targetCp)) return;
-    var display = container.querySelector('#starting-coins-display');
-    if (!display) return;
+  window.wmFormatCoins = formatCoins;
 
+  function animateCoins(container, displayEl, targetCp, onDone) {
+    if (isNaN(targetCp)) {
+      if (onDone) onDone();
+      return;
+    }
     var prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) {
-      display.textContent = formatCoins(targetCp);
+      displayEl.textContent = formatCoins(targetCp);
+      if (onDone) onDone();
       return;
     }
 
     var DURATION = 2000;
     var startTime = null;
+    var cancelled = false;
     function step(timestamp) {
+      if (cancelled) return;
       if (!startTime) startTime = timestamp;
       var progress = Math.min((timestamp - startTime) / DURATION, 1);
       var currentCp = Math.floor(progress * targetCp);
-      display.textContent = formatCoins(currentCp);
+      displayEl.textContent = formatCoins(currentCp);
       if (progress < 1) {
         requestAnimationFrame(step);
       } else {
-        display.textContent = formatCoins(targetCp);
+        displayEl.textContent = formatCoins(targetCp);
+        if (onDone) onDone();
       }
     }
     requestAnimationFrame(step);
+    return function cancel() { cancelled = true; };
   }
+
+  window.wmAnimateCoins = animateCoins;
 
   function init(root) {
     root.querySelectorAll('#starting-coins-animation').forEach(function (container) {
       if (container.dataset.started) return;
       container.dataset.started = '1';
-      animateCoins(container);
+      var targetCp = parseInt(container.dataset.coins, 10);
+      var display = container.querySelector('#starting-coins-display');
+      if (!display) return;
+      animateCoins(container, display, targetCp);
     });
   }
 

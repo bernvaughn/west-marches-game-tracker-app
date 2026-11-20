@@ -1,10 +1,12 @@
 /* Container opening animation (slice C).
-   Every rule is scoped under [data-wm-open-result] so it only affects the
-   stored-result modal / page, never other UI. */
+   Every rule is scoped under [data-wm-open-result] or [data-wm-starting-reveal]
+   so it only affects the stored-result modal / page and the starting gear
+   reveal, never other UI. */
 
 /* Chest stage: CSS-drawn closed chest (decorative, aria-hidden).
    Hidden by default; only shown while the reveal is armed. */
-[data-wm-open-result] .wm-chest {
+[data-wm-open-result] .wm-chest,
+[data-wm-starting-reveal] .wm-chest {
   display: none;
   position: relative;
   width: 140px;
@@ -15,7 +17,8 @@
   background: var(--wm-surface-sunken, #f3ede3);
   border: 3px solid var(--wm-accent, #b8322e);
 }
-[data-wm-open-result] .wm-chest__base {
+[data-wm-open-result] .wm-chest__base,
+[data-wm-starting-reveal] .wm-chest__base {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -24,7 +27,8 @@
   background: var(--wm-accent, #b8322e);
   border-bottom: 4px solid rgba(0, 0, 0, 0.15);
 }
-[data-wm-open-result] .wm-chest__lid {
+[data-wm-open-result] .wm-chest__lid,
+[data-wm-starting-reveal] .wm-chest__lid {
   position: absolute;
   top: 0;
   left: 0;
@@ -52,6 +56,37 @@
   transform: translateY(12px);
   animation: wm-item-in 300ms ease-out both;
   animation-delay: calc(var(--wm-i, 0) * 120ms);
+}
+
+/* Starting gear reveal: the chest pops while armed and the items reveal one
+   at a time (driven by static/js/starting_reveal.js, about 600 ms apart,
+   class is-revealed). */
+[data-wm-starting-reveal].wm-reveal--armed .wm-chest {
+  display: block;
+  animation: wm-shake 450ms ease-in-out both;
+}
+[data-wm-starting-reveal].wm-reveal--armed .wm-chest__lid {
+  animation: wm-lid-pop 350ms ease-in-out both;
+}
+[data-wm-starting-reveal].wm-reveal--armed [data-wm-reveal-item] {
+  opacity: 0;
+  transform: translateY(12px);
+}
+[data-wm-starting-reveal] [data-wm-reveal-item] {
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+[data-wm-starting-reveal] [data-wm-reveal-item].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Replay button added by JS. */
+[data-wm-open-result] .wm-replay,
+[data-wm-starting-reveal] .wm-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
 }
 
 @keyframes wm-shake {
@@ -90,30 +125,28 @@
   }
 }
 
-/* Replay button added by JS. */
-[data-wm-open-result] .wm-replay {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1rem;
-}
-
 @media (prefers-reduced-motion: reduce) {
   [data-wm-open-result] .wm-chest,
   [data-wm-open-result] .wm-chest__lid,
-  [data-wm-open-result] [data-wm-reveal-item] {
+  [data-wm-open-result] [data-wm-reveal-item],
+  [data-wm-starting-reveal] .wm-chest,
+  [data-wm-starting-reveal] .wm-chest__lid,
+  [data-wm-starting-reveal] [data-wm-reveal-item] {
     animation: none !important;
     transition: none !important;
   }
-  [data-wm-open-result] .wm-chest {
+  [data-wm-open-result] .wm-chest,
+  [data-wm-starting-reveal] .wm-chest {
     display: none !important;
   }
-  [data-wm-open-result] [data-wm-reveal-item] {
+  [data-wm-open-result] [data-wm-reveal-item],
+  [data-wm-starting-reveal] [data-wm-reveal-item] {
     opacity: 1 !important;
     transform: none !important;
   }
   /* If the user flips to reduce while armed, nothing stays hidden. */
-  [data-wm-open-result].wm-reveal--armed [data-wm-reveal-item] {
+  [data-wm-open-result].wm-reveal--armed [data-wm-reveal-item],
+  [data-wm-starting-reveal].wm-reveal--armed [data-wm-reveal-item] {
     opacity: 1 !important;
     animation: none !important;
   }
