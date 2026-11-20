@@ -1,13 +1,18 @@
 {% comment %}_open_result_body: the stored result of opening a container.
    Used by the result modal and the full result page.
    Context: container, rows, error.
-   Slice C adds the animation include inside the data-wm-reveal region.
+   Slice C adds the .wm-chest stage and the aria-live region; the JS in
+   container_open.js drives the reveal (Replay included).
 {% endcomment %}
 <div data-wm-open-result>
 {% if error %}
   {% include "components/alert.html" with level="danger" title="Could not open" text=error %}
 {% else %}
   <h2>You opened {{ container.name }}</h2>
+  <div class="wm-chest" aria-hidden="true">
+    <div class="wm-chest__base"></div>
+    <div class="wm-chest__lid"></div>
+  </div>
   <div data-wm-reveal>
     {% if rows %}
       <ul>
@@ -19,5 +24,6 @@
       <p class="wm-sheet-note">Nothing was inside.</p>
     {% endif %}
   </div>
+  <p class="visually-hidden" role="status" aria-live="polite" data-wm-live></p>
 {% endif %}
 </div>
