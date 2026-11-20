@@ -18,14 +18,23 @@ class ItemCard:
 
 
 def too_many(pairs, copies):
-    """True when "One card per item" would pass the cap. Checked before building."""
-    return copies == "item" and sum(q for _, q in pairs) > CARD_CAP
+    """True when "One card per item" would pass the cap. Checked before building.
+
+    A stacked item is one card (its total units held), so it counts as one
+    toward the cap regardless of quantity.
+    """
+    if copies == "type":
+        return False
+    return sum(1 if item.is_stacked else qty for item, qty in pairs) > CARD_CAP
 
 
 def build_cards(pairs, copies="type"):
     cards = []
     for item, qty in pairs:
-        if copies == "item":
+        if item.is_stacked:
+            # One card per stacked item, showing the total units held.
+            cards.append(ItemCard(item, qty, range(0), 0))
+        elif copies == "item":
             cards.extend(ItemCard(item, 1, range(1), 0) for _ in range(qty))
         elif qty > 1:
             cards.append(

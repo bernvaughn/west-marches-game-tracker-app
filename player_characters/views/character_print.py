@@ -111,6 +111,10 @@ def print_item(request, club_slug, pk, item_pk):
     copies = request.GET.get("copies", "type")
     if copies not in COPIES:
         return HttpResponseBadRequest("Unknown copies.")
+    # A stacked item prints one card with its total units held; "copies=item"
+    # would not multiply it, so treat it as type without a 400.
+    if row.item.is_stacked:
+        copies = "type"
     pairs = [(row.item, row.owned)]
     over = too_many(pairs, copies)
     cards = [] if over else build_cards(pairs, copies)

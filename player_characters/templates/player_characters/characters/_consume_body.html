@@ -1,7 +1,8 @@
+{% load units %}
 {% if form.non_field_errors %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert"><div>{{ form.non_field_errors|join:" " }}</div></div>{% endif %}
-<p>Consume {% include "items/_item_name.html" with item=item info=True %}. You have {{ available }} available.</p>
+<p>Consume {% include "items/_item_name.html" with item=item info=True %}. You have {% if item.is_stacked %}{{ item|with_units:available }}{% else %}{{ available }}{% endif %} available.</p>
 <p>
-  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">{% if item.is_stacked %}Units ({{ item.unit_name }}){% else %}Quantity{% endif %}</label>
   <span class="wm-short-field d-block">{{ form.quantity }}</span>
   {% if form.quantity.errors %}<span class="error text-danger d-block" role="alert">{{ form.quantity.errors|join:" " }}</span>{% endif %}
 </p>
