@@ -50,14 +50,8 @@ def test_points_preselect_mixed_valid_foreign_invalid(
     html = r.content.decode()
     # Only the valid club character should be checked
     assert "checked" in html.split(f'id="award-{character.pk}"')[1].split(">")[0]
-    # Foreign character should not be checked (not in queryset)
-    # The foreign character won't have a checkbox at all since it's not
-    # in the club queryset
-    char_html = html.split(f'id="award-{character.pk}"')[1].split(">")[0]
-    if "checked" in char_html:
-        assert "checked" not in char_html.split("checked")[1]
-    else:
-        assert True
+    # The foreign character is outside the club, so it has no checkbox.
+    assert f'id="award-{other_club_character.pk}"' not in html
 
 
 @pytest.mark.story("D1")
@@ -108,6 +102,16 @@ def test_points_preselect_empty_and_whitespace_ignored(login, game_master, club,
     """Empty tokens and whitespace are ignored."""
     c = login(game_master)
     r = c.get(url(club), {"characters": f" , {character.pk} , "})
+    assert r.status_code == 200
+    html = r.content.decode()
+    assert "checked" in html.split(f'id="award-{character.pk}"')[1].split(">")[0]
+
+
+@pytest.mark.story("D1")
+def test_points_preselect_singular_unicode_digit_ignored(login, game_master, club, character):
+    """?character=² passes str.isdigit() but is not an ASCII id. It is ignored."""
+    c = login(game_master)
+    r = c.get(url(club), {"character": ["²", str(character.pk)]})
     assert r.status_code == 200
     html = r.content.decode()
     assert "checked" in html.split(f'id="award-{character.pk}"')[1].split(">")[0]

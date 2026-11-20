@@ -62,23 +62,22 @@
   {% endif %}
 
   {% for cd in character_data %}{% with c=cd.character %}
-  <div id="char-section-{{ c.pk }}" class="wm-char-section {% if not cd.checked %}d-none{% endif %}" data-char-pk="{{ c.pk }}">
+  <div id="char-section-{{ c.pk }}" class="wm-char-section" data-char-pk="{{ c.pk }}">
     <hr class="my-3">
     <h3 class="h6 mb-2">{{ c.name }}</h3>
     <div class="row g-3 mb-3">
       <div class="col-md-4">
-        <label class="form-label" for="coins_{{ c.pk }}">Coins</label>
-        <input type="text" class="form-control wm-coins-input" name="coins_{{ c.pk }}" id="coins_{{ c.pk }}"
-               placeholder="e.g. 50gp 10sp 5cp" value="{{ request.POST|get_coins:c.pk }}">
+        <label class="form-label" for="coins_{{ c.pk }}">Coins (cp)</label>
+        <input type="text" inputmode="numeric" class="form-control wm-coins-input" name="coins_{{ c.pk }}" id="coins_{{ c.pk }}"
+               placeholder="Copper pieces, e.g. 250" value="{{ request.POST|get_coins:c.pk|default_if_none:'' }}">
       </div>
     </div>
 
-    <h4 class="h6 mb-2">Items
-      <div class="btn-group btn-group-sm ms-2" role="group" aria-label="Item row actions">
-        <button type="button" class="btn btn-outline-secondary" data-wm-add-item hidden>Add item</button>
-        <button type="button" class="btn btn-outline-secondary" data-wm-copy-loot hidden>Copy this loot to all picked characters</button>
-      </div>
-    </h4>
+    <h4 class="h6 mb-2">Items</h4>
+    <div class="btn-group btn-group-sm mb-2" role="group" aria-label="Item row actions for {{ c.name }}">
+      <button type="button" class="btn btn-outline-secondary" data-wm-add-item hidden>Add item</button>
+      <button type="button" class="btn btn-outline-secondary" data-wm-copy-loot hidden>Copy this loot to all picked characters</button>
+    </div>
     <input type="hidden" name="items_{{ c.pk }}-TOTAL_FORMS" id="id_items_{{ c.pk }}-TOTAL_FORMS" value="{{ cd.item_rows|length }}">
     <input type="hidden" name="items_{{ c.pk }}-INITIAL_FORMS" id="id_items_{{ c.pk }}-INITIAL_FORMS" value="0">
     <input type="hidden" name="items_{{ c.pk }}-MIN_NUM_FORMS" id="id_items_{{ c.pk }}-MIN_NUM_FORMS" value="0">

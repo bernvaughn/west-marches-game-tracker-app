@@ -33,6 +33,20 @@
         }
     }
 
+    // Show a character's coins and items only while that character is ticked.
+    // Sections render visible so the form works without JavaScript.
+    function syncSections() {
+        document.querySelectorAll('input[name="characters"][data-wm-toggle]').forEach(function (box) {
+            var target = document.querySelector(box.dataset.wmToggle);
+            if (target) target.classList.toggle('d-none', !box.checked);
+        });
+    }
+    syncSections();
+    // "Select all" / "Clear" (check_all.js) set .checked without a change event,
+    // so re-sync after clicks as well.
+    document.addEventListener('change', syncSections);
+    document.addEventListener('click', syncSections);
+
     // Delegated listener for item autocomplete inputs (works for dynamically added rows)
     document.addEventListener('input', function (e) {
         var input = e.target.closest('input[list="item-catalogue"]');

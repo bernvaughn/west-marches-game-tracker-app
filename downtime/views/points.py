@@ -17,7 +17,8 @@ def _preselected(request):
     pks = []
     # Parse singular character param
     for p in request.GET.getlist("character"):
-        if p.isdigit():
+        p = p.strip()
+        if p.isascii() and p.isdigit():
             pks.append(p)
     # Parse comma-separated characters param
     characters_param = request.GET.get("characters", "")

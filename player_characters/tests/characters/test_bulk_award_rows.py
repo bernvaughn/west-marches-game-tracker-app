@@ -229,3 +229,27 @@ def test_bulk_award_foreign_character_rejected(
     assert r.status_code == 200
     assert "Select at least one character" in r.content.decode() or "Invalid" in r.content.decode()
     assert not entries(foreign_character).exists()
+
+
+@pytest.mark.story("S8")
+def test_bulk_award_get_is_usable_without_js(login, game_master, club, character):
+    """Without JS every character section shows, and coins start blank (not "None")."""
+    c = login(game_master)
+    html = c.get(bulk_award_url(club)).content.decode()
+    section = html.split(f'id="char-section-{character.pk}"')[1].split(">")[0]
+    assert "d-none" not in section
+    coins = html.split(f'id="coins_{character.pk}"')[1].split(">")[0]
+    assert 'value=""' in coins
+    assert "None" not in coins
+
+
+@pytest.mark.story("S8")
+def test_bulk_award_blank_coins_from_form_are_accepted(login, game_master, club, character):
+    """Posting the GET form's blank coins value with items creates one entry."""
+    items = create_items(club, 1)
+    c = login(game_master)
+    data = bulk_payload_many_items(character, [(items[0], 2)], num_rows=3)
+    data[f"coins_{character.pk}"] = ""
+    r = c.post(bulk_award_url(club), data)
+    assert r.status_code == 302
+    assert entries(character).count() == 1
