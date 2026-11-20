@@ -76,12 +76,12 @@ def inactive_template(club):
 
 @pytest.fixture
 def class_option_fighter(club):
-    return CharacterClass.objects.get(club=club, name="Fighter")
+    return CharacterClass.objects.create(club=club, name="Fighter", is_active=True, sort_order=10)
 
 
 @pytest.fixture
 def bg_option_acolyte(club):
-    return Background.objects.get(club=club, name="Acolyte")
+    return Background.objects.create(club=club, name="Acolyte", is_active=True, sort_order=10)
 
 
 class TestCreateWithStartingEquipment:

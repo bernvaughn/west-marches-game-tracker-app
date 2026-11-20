@@ -2,8 +2,9 @@
 
 import pytest
 
-from accounts.models import Membership, User
-from character_options.models import Background, CharacterClass
+from accounts.models import Club, Membership, User
+from character_options.models import Background, CharacterClass, Species
+from character_options.services import seed_default_options
 from items.models import Item
 from player_characters.models import Character
 from starting_equipment.models import (
@@ -16,6 +17,22 @@ from starting_equipment.models import (
     StartingEquipmentRequest,
     StartingEquipmentTemplate,
 )
+
+
+@pytest.fixture
+def club(db):
+    """Club with default options seeded for starting_equipment tests."""
+    club = Club.objects.create(name="Club A", slug="club-a")
+    seed_default_options(club)
+    return club
+
+
+@pytest.fixture
+def other_club(db):
+    """Second club with default options seeded."""
+    club = Club.objects.create(name="Club B", slug="club-b")
+    seed_default_options(club)
+    return club
 
 
 @pytest.fixture
