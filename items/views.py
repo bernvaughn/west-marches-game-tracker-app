@@ -1,10 +1,9 @@
-import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -12,7 +11,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from accounts.mixins import ClubContextMixin, ClubScopedMixin, PermissionMixin
 from accounts.permissions import (
     admin_or_gm_required,
@@ -304,11 +303,8 @@ class CreateView(ClubScopedMixin, View):
         if form.is_valid():
             item = form.save()
             if is_htmx(request):
-                response = HttpResponse(status=204)
-                response["HX-Trigger"] = json.dumps(
-                    {"appModalClose": True, "itemCreated": {"id": item.pk, "name": item.name}}
-                )
-                return response
+                trigger = {"appModalClose": True, "itemCreated": {"id": item.pk, "name": item.name}}
+                return hx_response(trigger=trigger)
             messages.success(request, f"Saved {item.name}.")
             if next_url:
                 return redirect(_with_item(next_url, item.pk))
@@ -372,7 +368,7 @@ class LootCardsPickerView(ClubScopedMixin, PermissionMixin, View):
     def get(self, request, club_slug):
         is_admin = self.is_club_admin(request.user, request.club)
         show_retired = is_admin and request.GET.get("retired") == "1"
-        items = self.get_club_queryset(Item)
+        items = self.get_club_queryset(Item).filter(retired=False)
         if not show_retired:
             items = items.filter(retired=False)
         q = request.GET.get("q", "").strip()

@@ -1,13 +1,11 @@
 """Downtime spend views for dashboard: HTMX partial endpoints for wheel modal."""
 
-import json
-
 from django.contrib import messages
 from django.http import Http404
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import is_htmx, render_modal_or_page, set_hx_headers
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from downtime import services
@@ -70,11 +68,12 @@ def downtime_spend_partial(request, club_slug, action_pk):
                     toast_msg += f", {ei.quantity}×{ei.item.name}"
             else:
                 toast_msg = "No reward this time."
-            response["HX-Trigger"] = json.dumps(
-                {
+            set_hx_headers(
+                response,
+                trigger={
                     "toast": {"message": toast_msg, "type": "success"},
                     "downtimeSpent": True,
-                }
+                },
             )
             return response
         return redirect("downtime:result", club_slug=club.slug, pk=result.pk)

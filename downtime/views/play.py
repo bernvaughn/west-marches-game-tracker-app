@@ -2,7 +2,7 @@
 
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import path, reverse
 from django.utils import timezone
@@ -10,7 +10,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, is_htmx, render_modal_or_page, set_hx_headers
 from accounts.mixins import (
     CharacterContextMixin,
     ClubContextMixin,
@@ -157,11 +157,7 @@ def _result_response(request, res, spin=False):
 
 def _back_to_play(request):
     url = reverse("downtime:play", args=[request.club.slug])
-    if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Redirect"] = url
-        return response
-    return redirect(url)
+    return htmx_or_redirect(request, url)
 
 
 @method_decorator(club_member_required, name="dispatch")
@@ -180,7 +176,7 @@ class SpendView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
             return _back_to_play(request)
         if is_htmx(request):
             response = _result_response(request, result, spin=True)
-            response["HX-Trigger"] = "downtimeSpent"
+            set_hx_headers(response, trigger="downtimeSpent")
             return response
         return redirect("downtime:result", club_slug=self.club.slug, pk=result.pk)
 

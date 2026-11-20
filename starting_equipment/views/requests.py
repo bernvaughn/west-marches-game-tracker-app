@@ -1,15 +1,13 @@
 """Views for starting equipment magic item requests."""
 
-import json
-
 from django.contrib import messages as flash
-from django.http import Http404, HttpResponse, HttpResponseBadRequest
+from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import hx_response, is_htmx, render_modal_or_page
 from accounts.models import Message
 from accounts.permissions import admin_or_gm_required, club_member_required
 from accounts.scoping import club_get_object_or_404
@@ -133,9 +131,7 @@ def request_new(request, club_slug, character_pk):
     starting_request.save(update_fields=["message"])
 
     if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps({"appModalClose": True, "inboxChanged": True})
-        return response
+        return hx_response(trigger={"appModalClose": True, "inboxChanged": True})
 
     flash.success(request, "Starting equipment request submitted.")
     return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
@@ -228,9 +224,7 @@ def request_decide(request, club_slug, pk, decision):
         starting_request.message.save(update_fields=["status"])
 
     if is_htmx(request):
-        response = HttpResponse(status=204)
-        response["HX-Trigger"] = json.dumps({"appModalClose": True, "inboxChanged": True})
-        return response
+        return hx_response(trigger={"appModalClose": True, "inboxChanged": True})
 
     flash.success(request, f"Request {decision}d.")
     return redirect("accounts:message_inbox", club_slug=club_slug)

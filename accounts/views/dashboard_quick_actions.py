@@ -1,13 +1,12 @@
 """Quick action views for dashboard: Sell Junk and Buy Potions modals."""
 
 from django.contrib import messages
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
+from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 
 from accounts.dashboard_providers import get_healing_potion_stock
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
@@ -55,12 +54,7 @@ def quick_action_sell_junk(request, club_slug):
                 )
                 messages.success(request, f"Sold junk to {shop} for {format_coins(total)}.")
                 dashboard_url = reverse("accounts:player_dashboard", args=[club_slug])
-                if is_htmx(request):
-                    response = HttpResponse(status=204)
-                    response["HX-Redirect"] = dashboard_url
-                    response["HX-Trigger"] = "junkChanged"
-                    return response
-                return redirect(dashboard_url)
+                return htmx_or_redirect(request, dashboard_url, trigger="junkChanged")
     elif request.GET.get("recalc"):
         _, _, posted = _parse_sell(request.GET, character, shop)
 
@@ -208,11 +202,7 @@ def quick_action_buy_potions(request, club_slug):
                 else:
                     messages.success(request, entry.note)
                     dashboard_url = reverse("accounts:player_dashboard", args=[club_slug])
-                    if is_htmx(request):
-                        response = HttpResponse(status=204)
-                        response["HX-Redirect"] = dashboard_url
-                        return response
-                    return redirect(dashboard_url)
+                    return htmx_or_redirect(request, dashboard_url)
     else:
         # GET - check for stock_id in query params or use first
         selected_stock_id = request.GET.get("stock_id", selected_stock_id)

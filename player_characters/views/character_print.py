@@ -2,6 +2,7 @@ from django.http import Http404, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils import timezone
 
+from accounts.htmx import is_htmx
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from map.hexgrid import DEFAULT_RADIUS
@@ -174,7 +175,7 @@ def print_session_pack(request, club_slug, pk):
     maps = character_maps(request, character) if include_map else []
 
     # Check if request is from htmx (modal flow)
-    from_htmx = request.headers.get("HX-Request") == "true"
+    from_htmx = is_htmx(request)
 
     return render(
         request,
