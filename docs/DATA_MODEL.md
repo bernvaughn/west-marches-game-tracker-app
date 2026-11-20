@@ -51,12 +51,36 @@ Reading it: a person (user) joins clubs through memberships, and a membership ow
 - **Holds are not a separate record.** The code returns held_coins=0 and held_items={}, so nothing is held; everything owned is available. The lock on selling, transferring, turning in, and consuming still applies (U16).
 - **Dates on manual changes default to today** and can be changed (U14).
 
+## What a new club is seeded with
+
+The site admin "new club" form creates a club and seeds it in one transaction.
+
+### Seeded
+
+| Area | Details |
+| --- | --- |
+| XP table | Default bands from `map/xp.py` (`copy_default_xp_table`). |
+| Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
+| Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
+| Items | Default item catalogue (about 100 items) from the starting-equipment data. |
+| Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. |
+
+### Not seeded
+
+Characters, shops, quests, hex maps and locations, downtime actions, ledger entries, messages, demo users. The GM creates these.
+
+### Rules
+
+- Seeding runs in the club-creation transaction. A failure rolls back the whole club.
+- Every seeder is idempotent. It never overwrites edited rows.
+- Existing clubs are not backfilled. They can run `uv run python manage.py seed_starting_equipment --club <slug>`.
+
 ## By app
 
 ### accounts
 
 - **User**: a login (email, password, display name, and a flag that the person must choose a new password at next sign-in). Accounts are created by club admins (U20) and passwords reset by them when they administer every club the person belongs to (U21); the app sends no email. One person has one user, even with characters in several clubs. The site admin is a flag on the user.
-- **Club**: a name. The unit that separates data.
+- **Club**: a name. The unit that separates data. See [What a new club is seeded with](#what-a-new-club-is-seeded-with).
 - **Membership**: a user in a club, with two separate yes/no permissions, club admin and game master. Everyone with a membership is also a player and can own characters.
 - **Whitelist entry**: an email address allowed to join a club (U1). Belongs to one club; the same email can be whitelisted in several.
 - **Message**: from a membership to the club's admins, free text, with an optional character it is about (the sender's selected character, U27), and a handled/closed flag set by an admin (U13). No replies are stored. Grants made from a message (U30) are ordinary ledger entries, visits, credit, or found marks that point back at the message, so the message can list what was granted from it.
@@ -65,7 +89,7 @@ A player's email is shown only to club admins (U17).
 
 ### items
 
-- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually.
+- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 100 items).
 
 ### player_characters
 
