@@ -728,6 +728,40 @@ Stories for club admins and game masters to manage starting equipment templates 
 - Exactly one template per club is active; activating a template clears the active flag on the club's other templates.
 
 
+### Containers
+
+**U109 Open a pack like a loot box.** As a player, I want to open a container item (such as a Diplomat's Pack) from my inventory and see a random set of items added to my inventory, so packs feel like loot boxes. *(items, player_characters, ledger)*
+- Only the owner, a game master, or a club admin can open a container. The container is consumed (quantity −1).
+- The server rolls the container's slots: each slot has a chance (1–100%), then a weighted "pick one" from its options, then a quantity in the option's range.
+- One `opened` ledger entry is written: container −1, each rolled item +qty (merged by item). A `ContainerOpening` record stores the per-slot result for replay.
+- A second open on the same container instance fails (no quantity left). Concurrency is handled by row locking.
+- Nested containers are allowed (max depth 3, no cycles). A rolled container lands in inventory unopened.
+
+**U110 Preview container contents with unknowns masked.** As a player, I want to see what might come out of a container before I open or buy it, with surprises shown as `???`, so I can decide whether it's worth it. *(items, shops, quests, starting_equipment)*
+- The preview shows one row per slot: fixed items, ranges (1–4), percentage chances, and "One of" tables with weights.
+- Slots flagged `unknown` show `???` with no item name, quantity, or options to players. Game masters and club admins see the real contents.
+- The preview is used on the item details modal, inventory, shop buy cards, quest rewards, starting equipment, and award forms.
+- All player-facing previews go through `loot_preview(viewer_can_see_unknown=False)`. Code never reads slots directly for players.
+
+**U111 Configure container contents (admin).** As a club admin, I want to add, edit, and remove slots and options on an item, so I can model packs, treasure chests, and mystery boxes. *(items)*
+- Only club admins can toggle `is_container` and manage slots.
+- Form validates: chance 1–100, qty_min ≤ qty_max, weight ≥ 1, at least one slot, at least one option per slot, no cycles, max nesting depth 3, no retired items in options.
+- Slots are ordered by `position`; options within a slot are weighted.
+
+**U112 Seed 5e packs as containers.** As a club admin, I want a management command to turn existing 5e packs (Diplomat's Pack, Explorer's Pack, etc.) into containers with fixed slots, so characters who already own them can open them. *(items)*
+- `manage.py seed_pack_containers --club <slug> [--dry-run]` is idempotent: a second run adds nothing.
+- Only configures packs already in the club's catalogue; never creates pack items.
+- Reuses content items by case-insensitive name; creates missing ones with 2024 PHB values.
+- Skips packs that already have slots (admin edits preserved). Touches only the named club.
+- No ledger writes, no inventory changes. `--dry-run` rolls back.
+- Every seeded pack passes `validate_container_config`.
+
+**U113 Agent sees container loot with unknowns masked.** As a game master's agent, I want `search_items` to return `is_container` and, for containers, `loot` rows from `loot_preview(..., False)`, so the agent can describe containers without leaking secrets. *(agent_access, items)*
+- Container rows include `is_container: true` and `loot` array with masked unknowns (`???`, `unknown: true`, no item id or name).
+- Non-container rows have `is_container: false` and no `loot` key.
+- Other clubs' containers never appear.
+
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -920,6 +954,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Magic item type.** Catalogue items carry an optional magic item type (Armor, Potion, Ring, Rod, Scroll, Staff, Wand, Weapon, Wondrous item) instead of a yes/no wondrous tag; treasure themes come later (U91).
 - **Slips and cards.** Slips and item cards share the adventurer's-pass look: double border, notched corners, wordmark font. Players can print one card per item type or one per item (U87, U88, U90).
 - **Footer and item details.** Every page has a small footer with copyright and credits, never printed (U94). Item details open from an "i" icon beside the name; items have a GM-only details field that players never see (U95, U96).
+- **Containers.** Any item can be a container (`is_container`). Slots have chance, weighted options, quantity ranges, and unknown flags. Opening writes an `opened` ledger entry and a `ContainerOpening`. Previews go through `loot_preview()`; unknowns are masked to `???` for players and agents. Nesting allowed (max depth 3, no cycles). Existing packs migrated by idempotent `seed_pack_containers` command. Agent `search_items` returns `is_container` and masked `loot`. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere without revealing it is in a box.
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes

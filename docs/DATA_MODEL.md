@@ -89,7 +89,10 @@ A player's email is shown only to club admins (U17).
 
 ### items
 
-- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 100 items).
+- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 100 items). **`is_container`** (bool, default false) marks an item as openable.
+- **Container slot**: belongs to a container item. `chance_pct` (1–100), `unknown` (bool, masks the slot as `???` before opening), `position` (order). At least one slot is required.
+- **Container slot option**: one row per possible outcome in a slot. `item` (FK Item, PROTECT), `qty_min`, `qty_max` (range, min≤max), `weight` (≥1). One option = fixed entry; several = weighted "pick one" table. Roll order: chance check, then weighted pick, then uniform quantity in [min, max].
+- **Container opening**: links one `opened` ledger entry to the container item, the character, and a JSON `result` (per-slot outcomes in slot order). Write-once; drives the replay and result page.
 
 ### player_characters
 
@@ -99,8 +102,8 @@ A player's email is shown only to club admins (U17).
 
 ### ledger
 
-- **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Notes whether it was recorded through an agent batch. Records what kind of event it was: award, purchase, sale, quest turn-in, quest reward, consumed, or manual adjustment.
-- **Ledger line**: part of an entry. Either an item with a signed quantity, or a signed amount of coins. A purchase is one entry with a coin line and an item line.
+- **Ledger entry**: a character, a date, a note ("traded to a character", "awarded by a game master"), and who made it (a person or the system). Notes whether it was recorded through an agent batch. Records what kind of event it was: award, purchase, sale, quest turn-in, quest reward, consumed, manual adjustment, or **opened** (container open).
+- **Ledger line**: part of an entry. Either an item with a signed quantity, or a signed amount of coins. A purchase is one entry with a coin line and an item line. An `opened` entry has the container at `-1` and each rolled item at `+qty` (merged by item).
 
 ### shops
 
@@ -166,3 +169,18 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 ## Still open
 
 Nothing right now.
+
+## Decisions: containers
+
+1. Any item can become a container via `is_container`; no separate type.
+2. Slot chance is 1–100; quantity is a range with min≤max.
+3. Weighted "pick one" via multiple slot options; weight ≥ 1.
+4. Unknown slots show `???` to players; GMs/admins see contents via `loot_preview(viewer_can_see_unknown=True)`.
+5. Nesting allowed, no cycles, max depth 3 (A in B in C). Opening is one level only.
+6. `opened` ledger kind: container −1, rolled items +qty (merged). One entry per open.
+7. Opening only from inventory (owner, GM, or club admin). Not from shops.
+8. Server-only roll; result stored in `ContainerOpening.result` and ledger lines. No reroll.
+9. Player-facing previews always go through `loot_preview()`; never read slots directly.
+10. Existing packs migrated by idempotent `seed_pack_containers` command; no ledger rewrite.
+11. Agent/MCP output calls `loot_preview(..., viewer_can_see_unknown=False)`. Unknown items never leak.
+12. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere (shops, catalogue) without revealing it is in a box.
