@@ -1,10 +1,9 @@
 from django.contrib import messages
-from django.http import Http404, HttpResponse
-from django.shortcuts import redirect
+from django.http import Http404
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from ledger.coins import format_coins
@@ -51,13 +50,10 @@ def buy(request, club_slug, shop_id, stock_id):
             else:
                 messages.success(request, entry.note)
                 add_recent_shop(request, shop.pk)
-                if is_htmx(request):
-                    response = HttpResponse(status=204)
-                    response["HX-Redirect"] = reverse(
-                        "shops:detail", kwargs={"club_slug": club_slug, "shop_id": shop.pk}
-                    )
-                    return response
-                return redirect("shops:detail", club_slug=club_slug, shop_id=shop.pk)
+                return htmx_or_redirect(
+                    request,
+                    reverse("shops:detail", kwargs={"club_slug": club_slug, "shop_id": shop.pk}),
+                )
     elif "quantity" in request.GET:
         form = BuyForm(request.GET, max_quantity=stock.quantity)
     else:
