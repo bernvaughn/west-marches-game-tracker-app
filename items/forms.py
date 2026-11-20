@@ -175,80 +175,80 @@ class SlotOptionForm(forms.ModelForm):
         return cleaned
 
 
-class BaseSlotFormSet(BaseInlineFormSet):
+class _OwnedFormSetMixin:
+    """Shared helpers for the nested container formsets."""
+
+    def _should_delete_form(self, form):
+        if not hasattr(form, "cleaned_data"):
+            return False
+        return super()._should_delete_form(form)
+
+    def in_use(self, form):
+        """True for a row that is kept: not deleted and not an untouched blank row."""
+        if self._should_delete_form(form):
+            return False
+        return not (form.empty_permitted and not form.has_changed())
+
+    def kept_forms(self):
+        return [f for f in self.forms if self.in_use(f)]
+
+    def check_owned_ids(self):
+        """Reject a posted row id that belongs to another parent."""
+        owner = self.instance.pk
+        for form in self.forms:
+            obj = getattr(form, "cleaned_data", {}).get("id")
+            if obj is not None and (owner is None or getattr(obj, self.fk.attname) != owner):
+                raise forms.ValidationError(self.foreign_id_message)
+
+
+class BaseSlotFormSet(_OwnedFormSetMixin, BaseInlineFormSet):
     """Formset for container slots. Each slot form owns a nested options formset."""
 
+    foreign_id_message = "A posted slot does not belong to this container."
+
     def __init__(self, *args, club=None, container=None, **kwargs):
-        super().__init__(*args, **kwargs)
         self.club = club
         self.container = container
+        super().__init__(*args, **kwargs)
 
     def add_fields(self, form, index):
         super().add_fields(form, index)
-        # Prevent empty_permitted from skipping validation when form data matches model defaults
-        form.empty_permitted = False
-        # Build the nested options formset for this slot
         prefix = f"{self.prefix}-{index}-opts"
+        # A slot added in the browser has no nested management form yet.
+        data = self.data if self.is_bound and f"{prefix}-TOTAL_FORMS" in self.data else None
         form.options = OptionFormSet(
-            self.data if self.is_bound else None,
+            data,
             instance=form.instance,
             prefix=prefix,
             club=self.club,
             container=self.container,
         )
-
-    def _should_delete_form(self, form):
-        """Check if form should be deleted, handling forms without cleaned_data."""
-        if not hasattr(form, "cleaned_data"):
-            return False
-        return super()._should_delete_form(form)
+        # A new slot that keeps its default values still counts when it has an option.
+        if form.empty_permitted and form.options.is_bound:
+            if any(f.has_changed() for f in form.options.forms):
+                form.empty_permitted = False
 
     def clean(self):
         super().clean()
-        # Validate that any posted slot IDs belong to this container's club
-        if self.container and self.club:
-            valid_slot_ids = set(
-                ContainerSlot.objects.filter(container__club=self.club).values_list("pk", flat=True)
-            )
-            for form in self.forms:
-                if self.can_delete and self._should_delete_form(form):
-                    continue
-                # Check raw form data for ID field (works even if form validation fails)
-                id_field_name = form.add_prefix("id")
-                slot_id = form.data.get(id_field_name)
-                if slot_id:
-                    try:
-                        slot_id = int(slot_id)
-                    except (TypeError, ValueError):
-                        slot_id = None
-                    if slot_id and slot_id not in valid_slot_ids:
-                        raise forms.ValidationError(
-                            "A posted slot ID does not belong to this club."
-                        )
-        # Every kept slot needs at least one kept option
-        # Note: nested option formsets are validated in the view before calling is_valid()
-        for form in self.forms:
-            if self.can_delete and self._should_delete_form(form):
+        self.check_owned_ids()
+        for form in self.kept_forms():
+            opts = form.options
+            if not opts.is_bound:
+                raise forms.ValidationError("Every slot must have at least one option.")
+            if not opts.is_valid():
                 continue
-            # Check if form has been validated (has cleaned_data attr and it's not empty)
-            if not hasattr(form, "cleaned_data") or not form.cleaned_data:
-                continue
-            opts = getattr(form, "options", None)
-            if opts is None:
-                continue
-            # Check if opts forms have been validated (have cleaned_data attr and it's not empty)
-            kept = []
-            for f in opts.forms:
-                if opts.can_delete and opts._should_delete_form(f):
-                    continue
-                if hasattr(f, "cleaned_data") and f.cleaned_data:
-                    kept.append(f)
-            if not kept:
+            if not opts.kept_forms():
                 raise forms.ValidationError("Every slot must have at least one option.")
 
+    def is_valid(self):
+        valid = super().is_valid()
+        return valid and all(f.options.is_valid() for f in self.kept_forms())
 
-class BaseOptionFormSet(BaseInlineFormSet):
+
+class BaseOptionFormSet(_OwnedFormSetMixin, BaseInlineFormSet):
     """Formset for slot options."""
+
+    foreign_id_message = "A posted option does not belong to this slot."
 
     def __init__(self, *args, club=None, container=None, **kwargs):
         self.club = club
@@ -259,11 +259,9 @@ class BaseOptionFormSet(BaseInlineFormSet):
         kwargs.update({"club": self.club, "container": self.container})
         return super()._construct_form(i, **kwargs)
 
-    def _should_delete_form(self, form):
-        """Check if form should be deleted, handling forms without cleaned_data."""
-        if not hasattr(form, "cleaned_data"):
-            return False
-        return super()._should_delete_form(form)
+    def clean(self):
+        super().clean()
+        self.check_owned_ids()
 
 
 SlotFormSet = inlineformset_factory(
@@ -271,7 +269,7 @@ SlotFormSet = inlineformset_factory(
     ContainerSlot,
     form=SlotForm,
     formset=BaseSlotFormSet,
-    extra=1,
+    extra=0,
     can_delete=True,
     can_order=False,
 )
