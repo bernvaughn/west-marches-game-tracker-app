@@ -883,6 +883,19 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - Every shortcut keeps its tooltip and aria-label.
 - This changes U32 (the club name, player name, character picker and approvals indicator must stay visible at 390 px) and U61 (the top bar is one row, never wraps).
 
+## Round 15: item notes (2026-11-20)
+
+### Character sheet
+
+**U122 Notes on my inventory items.** As a player, I want to record my own notes on the items in my character's inventory, so I can add my own info to items I have gathered and remind myself about things concerning them. *(player_characters, items)*
+- Each row in the sheet's inventory table has a "Notes" icon button, beside Consume, Mark as junk, and Print card. It opens a small form with one text box, a Save button, and a Cancel button. A row that already has a note shows a filled icon, and the note's first line appears on hover.
+- A note belongs to one character and one item, like a junk mark (U45). A stack of three potions has one note, not three.
+- Only the owner of the character can add, change, or clear a note. A game master or club admin who is not the owner sees the note on the sheet but cannot edit it. This matches who can see the inventory (U19).
+- Saving an empty box clears the note. A note can hold up to 1,000 characters of plain text. The app shows line breaks and never runs HTML in a note.
+- Notes are the player's own text. They never touch the ledger or the item catalogue, and no other character or club ever sees them.
+- Buying, selling, consuming, or moving items does not change a note. If the character no longer has the item, the note is hidden. If the character gets that item again, the note comes back.
+- The form works as a plain page without JavaScript, like the other inventory actions.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
