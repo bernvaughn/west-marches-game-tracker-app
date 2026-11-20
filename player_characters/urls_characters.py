@@ -4,6 +4,7 @@ from .views import (
     character_adjust,
     character_consume,
     character_junk,
+    character_notes,
     character_open,
     character_print,
     character_shop,
@@ -35,6 +36,7 @@ urlpatterns = [
         name="player_consume",
     ),
     path("<int:pk>/items/<int:item_pk>/junk/", character_junk.junk, name="junk"),
+    path("<int:pk>/items/<int:item_pk>/note/", character_notes.note, name="note"),
     path(
         "<int:pk>/items/<int:item_pk>/open/",
         character_open.open_container_view,

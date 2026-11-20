@@ -23,6 +23,7 @@ from starting_equipment.services import apply_starting_equipment, explain_starti
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
 from ..models import Character
+from ..notes import item_notes
 from ..player_shop import listed_quantity
 from ..sheet import (
     ability_rows,
@@ -194,6 +195,18 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             ctx["coins"] = char_ctx["coin_summary"]
             ctx["junk"] = {r.item.pk: r.quantity for r in char_ctx["junk_rows"]}
             ctx["junk_value"] = char_ctx["junk_value"]
+            raw_notes = item_notes(character)
+            notes = {}
+            for item_pk, text in raw_notes.items():
+                first = text.split("\n")[0] if text else ""
+                notes[item_pk] = {
+                    "text": text,
+                    "first": first[:120],
+                    "icon": "sticky-fill" if text else "sticky",
+                    "title": first[:120] if text else "Add your own note about this item.",
+                    "aria": "Edit note" if text else "Add note",
+                }
+            ctx["notes"] = notes
             needs = needed_by_open_quests(character) if char_ctx["junk_rows"] else {}
             ctx["quest_needs"] = {pk: needs[pk] for pk in ctx["junk"] if pk in needs}
             if character.shop_open:

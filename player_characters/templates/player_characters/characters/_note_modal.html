@@ -1,0 +1,13 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{% url 'characters:note' request.club.slug character.pk item.pk %}" hx-post="{% url 'characters:note' request.club.slug character.pk item.pk %}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Add a note{% endblock %}
+{% block body %}{% include "player_characters/characters/_note_body.html" %}{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">Save</button>
+{% endblock %}

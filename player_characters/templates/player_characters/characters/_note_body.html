@@ -1,0 +1,7 @@
+<p><strong>{{ character.name }}</strong> &mdash; {% include "items/_item_name.html" with item=item info=True %}</p>
+{% if form.non_field_errors %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert"><div>{{ form.non_field_errors|join:" " }}</div></div>{% endif %}
+<p>
+  <label class="form-label" for="{{ form.text.id_for_label }}">Your note</label>
+  {{ form.text }}
+  {% if form.text.errors %}<span class="error text-danger d-block" role="alert">{{ form.text.errors|join:" " }}</span>{% endif %}
+</p>
