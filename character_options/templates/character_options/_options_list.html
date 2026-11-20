@@ -1,113 +1,113 @@
 {% load accounts_tags %}
 
-<table class="table table-striped align-middle sm">
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th class="text-center">Status</th>
-      <th class="text-center">Characters</th>
-      <th class="text-center">Equipment entries</th>
-      <th class="text-end">Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for option in options %}
-    <tr>
-      <td>
-        {{ option.name }}
-        {% if not option.is_active %}
-        <span class="badge bg-secondary ms-2">Archived</span>
-        {% endif %}
-      </td>
-      <td class="text-center">
-        {% if option.is_active %}
-        <span class="badge bg-success">Active</span>
-        {% else %}
-        <span class="badge bg-secondary">Archived</span>
-        {% endif %}
-      </td>
-      <td class="text-center">{{ option.character_count }}</td>
-      <td class="text-center">{{ option.entry_count }}</td>
-      <td class="text-end">
-        <a href="{% url 'character_options:edit' club.slug kind option.pk %}"
-           hx-get="{% url 'character_options:edit' club.slug kind option.pk %}"
-           hx-target="#app-modal .modal-content"
-           hx-swap="innerHTML"
-           data-app-modal
-           class="btn btn-sm btn-outline-secondary"
-           title="Edit {{ option }}"
-           aria-label="Edit {{ option }}">
-          Edit
-        </a>
+<div class="wm-table-scroll">
+  <table class="table table-striped align-middle wm-data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th class="text-center">Characters</th>
+        <th class="text-center wm-col-optional">Equipment entries</th>
+        <th class="actions"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for option in options %}
+      <tr>
+        <td>
+          {{ option.name }}
+          {% if not option.is_active %}
+          <span class="badge bg-secondary ms-2">Archived</span>
+          {% endif %}
+        </td>
+        <td class="text-center">{{ option.character_count }}</td>
+        <td class="text-center wm-col-optional">{{ option.entry_count }}</td>
+        <td class="actions wm-row-actions-cell">
+          <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for {{ option }}">
+            <a href="{% url 'character_options:edit' club.slug kind option.pk %}"
+               hx-get="{% url 'character_options:edit' club.slug kind option.pk %}"
+               hx-target="#app-modal .modal-content"
+               hx-swap="innerHTML"
+               data-app-modal
+               class="btn btn-sm btn-outline-secondary"
+               data-wm-tooltip
+               title="Edit {{ option }}"
+               aria-label="Edit {{ option }}">
+              {% include "components/icon.html" with name="pencil" %}
+            </a>
 
-        {% if option.is_active %}
-        <form method="post" action="{% url 'character_options:archive' club.slug kind option.pk %}"
-              class="d-inline">
-          {% csrf_token %}
-          <button type="submit"
-                  class="btn btn-sm btn-outline-warning"
-                  title="Archive {{ option }}"
-                  aria-label="Archive {{ option }}">
-            Archive
-          </button>
-        </form>
-        {% else %}
-        <form method="post" action="{% url 'character_options:restore' club.slug kind option.pk %}"
-              class="d-inline">
-          {% csrf_token %}
-          <button type="submit"
-                  class="btn btn-sm btn-outline-success"
-                  title="Restore {{ option }}"
-                  aria-label="Restore {{ option }}">
-            Restore
-          </button>
-        </form>
-        {% endif %}
+            {% if option.is_active %}
+            <form method="post" action="{% url 'character_options:archive' club.slug kind option.pk %}"
+                  class="d-inline-flex">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn btn-sm btn-outline-secondary"
+                      data-wm-tooltip
+                      title="Archive {{ option }}"
+                      aria-label="Archive {{ option }}">
+                {% include "components/icon.html" with name="archive" %}
+              </button>
+            </form>
+            {% else %}
+            <form method="post" action="{% url 'character_options:restore' club.slug kind option.pk %}"
+                  class="d-inline-flex">
+              {% csrf_token %}
+              <button type="submit"
+                      class="btn btn-sm btn-outline-success"
+                      data-wm-tooltip
+                      title="Restore {{ option }}"
+                      aria-label="Restore {{ option }}">
+                {% include "components/icon.html" with name="archive" %}
+              </button>
+            </form>
+            {% endif %}
 
-        <a href="{% url 'character_options:delete' club.slug kind option.pk %}"
-           hx-get="{% url 'character_options:delete' club.slug kind option.pk %}"
-           hx-target="#app-modal .modal-content"
-           hx-swap="innerHTML"
-           data-app-modal
-           class="btn btn-sm btn-outline-danger"
-           title="Delete {{ option }}"
-           aria-label="Delete {{ option }}">
-          Delete
-        </a>
+            <a href="{% url 'character_options:delete' club.slug kind option.pk %}"
+               hx-get="{% url 'character_options:delete' club.slug kind option.pk %}"
+               hx-target="#app-modal .modal-content"
+               hx-swap="innerHTML"
+               data-app-modal
+               class="btn btn-sm btn-outline-danger"
+               data-wm-tooltip
+               title="Delete {{ option }}"
+               aria-label="Delete {{ option }}">
+              {% include "components/icon.html" with name="trash" %}
+            </a>
 
-        <form method="post" action="{% url 'character_options:move' club.slug kind option.pk %}"
-              class="d-inline">
-          {% csrf_token %}
-          <input type="hidden" name="direction" value="up">
-          <button type="submit"
-                  class="btn btn-sm btn-outline-primary"
-                  title="Move up"
-                  aria-label="Move {{ option }} up"
-                  {% if forloop.first %}disabled{% endif %}>
-            {% include "components/icon.html" with name="chevron-up" %}
-          </button>
-        </form>
+            <form method="post" action="{% url 'character_options:move' club.slug kind option.pk %}"
+                  class="d-inline-flex">
+              {% csrf_token %}
+              <input type="hidden" name="direction" value="up">
+              <button type="submit"
+                      class="btn btn-sm btn-outline-primary"
+                      title="Move up"
+                      aria-label="Move {{ option }} up"
+                      {% if forloop.first %}disabled{% endif %}>
+                {% include "components/icon.html" with name="chevron-up" %}
+              </button>
+            </form>
 
-        <form method="post" action="{% url 'character_options:move' club.slug kind option.pk %}"
-              class="d-inline">
-          {% csrf_token %}
-          <input type="hidden" name="direction" value="down">
-          <button type="submit"
-                  class="btn btn-sm btn-outline-primary"
-                  title="Move down"
-                  aria-label="Move {{ option }} down"
-                  {% if forloop.last %}disabled{% endif %}>
-            {% include "components/icon.html" with name="chevron-down" %}
-          </button>
-        </form>
-      </td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="5" class="text-center text-muted py-4">
-        No {{ kind_obj.plural|lower }} yet.
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+            <form method="post" action="{% url 'character_options:move' club.slug kind option.pk %}"
+                  class="d-inline-flex">
+              {% csrf_token %}
+              <input type="hidden" name="direction" value="down">
+              <button type="submit"
+                      class="btn btn-sm btn-outline-primary"
+                      title="Move down"
+                      aria-label="Move {{ option }} down"
+                      {% if forloop.last %}disabled{% endif %}>
+                {% include "components/icon.html" with name="chevron-down" %}
+              </button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="text-center text-muted py-4">
+          No {{ kind_obj.plural|lower }} yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
