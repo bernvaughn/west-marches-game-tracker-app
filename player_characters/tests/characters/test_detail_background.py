@@ -3,6 +3,8 @@
 import pytest
 from django.urls import reverse
 
+from character_options.models import Background, CharacterClass, Species
+
 pytestmark = [pytest.mark.django_db]
 
 
@@ -10,12 +12,20 @@ def detail_url(club, character):
     return reverse("characters:detail", kwargs={"club_slug": club.slug, "pk": character.pk})
 
 
+def link(character, **values):
+    """Set the text fields and link each to a club record, so no "custom" badge shows."""
+    models = {"char_class": CharacterClass, "species": Species, "background": Background}
+    fks = {"char_class": "class_option", "species": "species_option"}
+    for field, name in values.items():
+        setattr(character, field, name)
+        record = models[field].objects.create(club=character.club, name=name) if name else None
+        setattr(character, fks.get(field, "background_option"), record)
+
+
 class TestDetailBackgroundDisplay:
     def test_renders_background_in_header_when_set(self, club, login, player, character):
         """Detail view renders background in header when character has background set."""
-        character.background = "Acolyte"
-        character.char_class = "Cleric"
-        character.species = "Human"
+        link(character, background="Acolyte", char_class="Cleric", species="Human")
         character.save()
 
         client = login(player)
@@ -47,9 +57,7 @@ class TestDetailBackgroundDisplay:
 
     def test_background_position(self, club, login, player, character):
         """Background appears in correct position: after species, before pronouns."""
-        character.background = "Soldier"
-        character.char_class = "Fighter"
-        character.species = "Elf"
+        link(character, background="Soldier", char_class="Fighter", species="Elf")
         character.pronouns = "they/them"
         character.alignment = "Lawful good"
         character.save()
@@ -64,9 +72,7 @@ class TestDetailBackgroundDisplay:
 
     def test_background_with_only_some_fields(self, club, login, player, character):
         """Background renders correctly when only some header fields are set."""
-        character.background = "Hermit"
-        character.char_class = "Wizard"
-        character.species = ""
+        link(character, background="Hermit", char_class="Wizard", species="")
         character.pronouns = ""
         character.alignment = ""
         character.save()
@@ -78,3 +84,12 @@ class TestDetailBackgroundDisplay:
         content = response.content.decode()
         # Should show: Level · Class · Background (no species, pronouns, alignment)
         assert "Wizard &middot; Hermit" in content
+
+
+def test_custom_values_show_a_badge_in_the_header(club, login, player, character):
+    """Text with no linked record is custom and gets a badge."""
+    character.background = "Hedge Knight"
+    character.save()
+    content = login(player).get(detail_url(club, character)).content.decode()
+    assert "Hedge Knight" in content
+    assert 'wm-badge--warning">custom</span>' in content

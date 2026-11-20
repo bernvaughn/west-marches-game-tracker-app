@@ -3,12 +3,36 @@ from bs4 import BeautifulSoup
 from django.urls import reverse
 
 from character_options.models import Background, CharacterClass, Species
+from character_options.services import seed_default_options
 from player_characters.models import (
     ALIGNMENT_CHOICES,
     OTHER,
     PRONOUNS_CHOICES,
     Character,
 )
+
+
+# These tests need the club's default lists. The shared fixtures stay unseeded,
+# so seed here and read the seeded records instead of creating duplicates.
+@pytest.fixture
+def club(club):
+    seed_default_options(club)
+    return club
+
+
+@pytest.fixture
+def species(club):
+    return Species.objects.for_club(club).get(name__iexact="Elf")
+
+
+@pytest.fixture
+def char_class(club):
+    return CharacterClass.objects.for_club(club).get(name__iexact="Fighter")
+
+
+@pytest.fixture
+def background(club):
+    return Background.objects.for_club(club).get(name__iexact="Soldier")
 
 
 def create_url(club):

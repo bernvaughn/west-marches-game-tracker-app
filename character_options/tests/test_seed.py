@@ -2,7 +2,6 @@
 
 import pytest
 
-from accounts.models import Club
 from character_options.defaults import (
     DEFAULT_BACKGROUNDS,
     DEFAULT_CLASSES,
@@ -13,18 +12,18 @@ from character_options.services import seed_default_options
 
 
 @pytest.mark.django_db
-def test_seed_creates_all_defaults(unseeded_club):
+def test_seed_creates_all_defaults(club):
     """Seed creates all default records with correct counts."""
-    result = seed_default_options(unseeded_club)
+    result = seed_default_options(club)
 
     assert result == {
         "species": len(DEFAULT_SPECIES),
         "classes": len(DEFAULT_CLASSES),
         "backgrounds": len(DEFAULT_BACKGROUNDS),
     }
-    assert Species.objects.for_club(unseeded_club).count() == len(DEFAULT_SPECIES)
-    assert CharacterClass.objects.for_club(unseeded_club).count() == len(DEFAULT_CLASSES)
-    assert Background.objects.for_club(unseeded_club).count() == len(DEFAULT_BACKGROUNDS)
+    assert Species.objects.for_club(club).count() == len(DEFAULT_SPECIES)
+    assert CharacterClass.objects.for_club(club).count() == len(DEFAULT_CLASSES)
+    assert Background.objects.for_club(club).count() == len(DEFAULT_BACKGROUNDS)
 
 
 @pytest.mark.django_db
@@ -76,12 +75,9 @@ def test_seed_recreates_renamed(club):
 
 
 @pytest.mark.django_db
-def test_seed_per_club_isolation(club):
+def test_seed_per_club_isolation(club, other_club):
     """Seeding club A leaves club B empty."""
     seed_default_options(club)
-
-    # Create an unseeded club
-    other_club = Club.objects.create(name="Club B", slug="club-b")
 
     assert Species.objects.for_club(club).count() == len(DEFAULT_SPECIES)
     assert Species.objects.for_club(other_club).count() == 0
