@@ -39,25 +39,25 @@
       </div>
     </div>
     <hr class="my-3">
-    <div class="row g-3 text-center">
-      <div class="col-6 col-md-3">
+    <div class="wm-dashboard-stats text-center">
+      <div class="wm-dashboard-stat">
         <div class="wm-stat-value text-success">{{ coin_summary.available|coins }}</div>
         <div class="wm-stat-label text-muted small">Coins (available)</div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="wm-dashboard-stat">
         <div class="wm-stat-value text-primary">{{ downtime_balance }}</div>
         <div class="wm-stat-label text-muted small">Downtime Points</div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="wm-dashboard-stat">
         <div class="wm-stat-value text-warning">{{ junk_count }}</div>
         <div class="wm-stat-label text-muted small">Junk Items</div>
       </div>
-      <div class="col-6 col-md-3">
+      <div class="wm-dashboard-stat">
         <div class="wm-stat-value text-info">{{ junk_value|coins }}</div>
         <div class="wm-stat-label text-muted small">Junk Value</div>
       </div>
       {% if character.xp %}
-      <div class="col-6 col-md-3">
+      <div class="wm-dashboard-stat">
         <div class="wm-stat-value">{{ character.xp|intcomma }}</div>
         <div class="wm-stat-label text-muted small">XP</div>
       </div>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load accounts_tags coins static %}
 {% block content %}
-{% include "components/page_header.html" with title="Dashboard" subtitle="Quick actions for " %}
+{% include "components/page_header.html" with title="Dashboard" subtitle="Quick actions" %}
 {% include "accounts/_dashboard_header.html" with character=character coin_summary=coin_summary downtime_balance=downtime_balance junk_count=junk_count junk_value=junk_value %}
 
 <div class="wm-dashboard-grid">

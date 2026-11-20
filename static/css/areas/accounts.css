@@ -148,6 +148,9 @@
   gap: var(--wm-space-4);
 }
 
+.wm-dashboard-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: var(--wm-space-3); }
+.wm-dashboard-stat { min-width: 0; }
+.min-width-0 { min-width: 0; }
 .wm-dashboard-section { display: flex; flex-direction: column; }
 .wm-dashboard-section .card-header { background: var(--wm-surface-sunken); border-bottom: 1px solid var(--wm-border); }
 .wm-dashboard-section .card-header h3 { display: flex; align-items: center; gap: var(--wm-space-2); }
@@ -162,6 +165,8 @@
   .wm-dashboard-grid { grid-template-columns: 1fr; }
   .wm-dashboard-header .wm-avatar-lg { width: 3rem; height: 3rem; font-size: var(--wm-text-xl); }
   .wm-dashboard-header .wm-stat-value { font-size: var(--wm-text-lg); }
+  .wm-dashboard-stats { grid-template-columns: repeat(2, 1fr); }
+  .wm-dashboard-stat:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 /* Session desk (GM/admin club home) */
