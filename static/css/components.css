@@ -291,6 +291,7 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .site-header .wm-shortcut { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem var(--wm-space-2); min-height: var(--wm-size-touch); }
 .site-header .wm-shortcut .wm-icon { width: 1.1em; height: 1.1em; }
 .wm-shortcut-label { display: none; }
+@media (min-width: 992px) { .wm-shortcut-rank-1 .wm-shortcut-label { display: inline; } }
 @media (min-width: 1200px) { .wm-shortcut-label { display: inline; } }
 .site-header .site-header-fixed { flex: 0 1 auto; min-width: 0; flex-wrap: nowrap; }
 .site-header-fixed > * { min-width: 0; }
@@ -302,25 +303,35 @@ a.wm-chip:hover { color: var(--wm-accent); }
 .site-header .site-header-fixed > .dropdown { flex: none; }
 .site-header .character-selector select { width: auto; max-width: 12rem; min-width: 0; text-overflow: ellipsis; }
 .site-header .character-name { display: inline-block; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The character picker button shrinks and cuts a long name with an ellipsis (U121). */
+.site-header .character-selector .dropdown { display: flex; min-width: 0; max-width: 100%; }
+.site-header .character-selector .dropdown-toggle { display: inline-flex; align-items: center; min-width: 0; max-width: 12rem; }
+.site-header .character-selector .character-name-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-header .approvals-menu { white-space: nowrap; }
-/* Shortcut icons leave from the right: Map, Downtime, Quests, Shops, Character. */
-@media (max-width: 991.98px) { .wm-shortcut-rank-6 { display: none; } }
-@media (max-width: 767.98px) { .wm-shortcut-rank-5 { display: none; } }
-@media (max-width: 575.98px) { .wm-shortcut-rank-4 { display: none; } }
-@media (max-width: 479.98px) { .wm-shortcut-rank-3 { display: none; } }
+/* Shortcut icons leave from the right: Map, Downtime, Quests, Shops, Character.
+   Dashboard (rank 1) always stays. Only Dashboard shows below 400px. */
+@media (max-width: 767.98px) { .wm-shortcut-rank-6 { display: none; } }
+@media (max-width: 639.98px) { .wm-shortcut-rank-5 { display: none; } }
+@media (max-width: 519.98px) { .wm-shortcut-rank-4 { display: none; } }
+@media (max-width: 459.98px) { .wm-shortcut-rank-3 { display: none; } }
 @media (max-width: 399.98px) { .wm-shortcut-rank-2 { display: none; } }
-@media (max-width: 359.98px) { .wm-shortcut-rank-1 { display: none; } }
+@media (max-width: 1199.98px) { .site-header .character-selector .dropdown-toggle { max-width: 9rem; } }
 @media (max-width: 575.98px) {
   .site-header > .wm-topbar { gap: var(--wm-space-1); }
-  .site-header .club-switcher { display: none; }
+  .site-header .club-switcher { flex: 0 1 auto; min-width: 2.5rem; }
+  .site-header .club-name { max-width: 6rem; padding: 0 .4rem; line-height: calc(var(--wm-size-touch) - 2px); }
   .site-header .character-selector select, .site-header .character-name { max-width: 9rem; }
+  .site-header .character-selector .dropdown-toggle { max-width: 7rem; padding-inline: .4rem; }
+  .site-header .character-selector .dropdown-toggle .wm-avatar { display: none; }
   .site-header .approvals-menu { font-size: 0; padding-inline: .4rem; }
   .site-header .approvals-menu .badge { font-size: .75rem; }
   .site-header .approvals-menu::after { margin-left: .15rem; }
   .site-header .wm-shortcut { padding-inline: .4rem; }
+  .site-header .site-header-fixed { gap: var(--wm-space-1) !important; }
 }
-@media (max-width: 359.98px) {
-  .site-header .character-selector select, .site-header .character-name { max-width: 4.5rem; }
+@media (max-width: 399.98px) {
+  .site-header .club-name { max-width: 4.5rem; }
+  .site-header .character-selector select, .site-header .character-name, .site-header .character-selector .dropdown-toggle { max-width: 4.5rem; }
 }
 
 /* ---- Skip link (B-115) ---- */

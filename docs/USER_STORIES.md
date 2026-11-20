@@ -874,6 +874,15 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - The club, the seed data and the admin are created together. If anything fails, none of it is kept.
 - A lost temporary password is reset the same way as any other (U19).
 
+**U121 Dashboard button in the top bar.** As a player, I want a Dashboard shortcut in the top bar that takes me back to my club's dashboard, so I can always reach it without opening a menu. *(accounts, site-wide)*
+- The Dashboard button sits first among the icon shortcuts, before Character, Shops, Quests, Downtime, and Map.
+- It shows for every signed-in club member, in the top bar and in the side menu's Character group.
+- It is marked as the current page when the player is on the dashboard, and also for game masters and club admins on the club home page (which they see instead of the dashboard when they have no selected character).
+- At wide widths it shows its icon and label. As the bar narrows, the labels drop first. Then the icons leave from the right: Map, Downtime, Quests, Shops, Character. Below 400 px only the Dashboard icon shows. The Dashboard icon never leaves.
+- The character picker cuts a long character name short with an ellipsis. On a phone the club name is cut short, not hidden. The top bar never scrolls sideways, from 320 px to wide screens.
+- Every shortcut keeps its tooltip and aria-label.
+- This changes U32 (the club name, player name, character picker and approvals indicator must stay visible at 390 px) and U61 (the top bar is one row, never wraps).
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -1059,7 +1068,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Found locations.** A character has found a location if it is credited with discovering or exploring it, or has a found mark from a game master or club admin. A found mark gives no XP and only makes the location visible; players can ask for one like other map credit (M12, M16). On visited tiles, players see an unnamed "?" for each location someone has discovered but their characters have not found, and can ask for credit on it. Undiscovered locations show nothing, and only a game master or club admin records first discovery.
 - **Shop and character pages.** A shop page is a banner in the shop's preset colour with a preset shopkeeper silhouette over a counter-style item table (U34). A character page is a printable character sheet (U35).
 - **Look.** The Bootswatch Journal theme (MIT) for Bootstrap 5 across the whole site, served by the app, with compact tables and forms on dense pages (U21).
-- **Navigation.** Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U27, U32).
+- **Navigation.** Dashboard, Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U27, U32, U121).
 - **Modals.** Buying (U31), map tiles (M17), and inbox grants (U28) open in modals. Each still has a plain page that works without JavaScript.
 - **Inbox grants.** Club admins can grant coins, items, and map credit from a message, through the same rules and ledger as manual adjustments and map credit, and mark the message handled in the same step (U28).
 - **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each location has one credited discovery group (the first) and one credited explored group (which may differ). Game masters and club admins can correct them, and everyone who sees the location sees the credited characters (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants, with no automatic declines (M12). A party is only a list of characters picked at the time, not a stored record.

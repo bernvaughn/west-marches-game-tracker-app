@@ -104,3 +104,37 @@ def test_unknown_group_and_no_club(registry, rf, player):
         navigation.register("nope", "X", "club_home")
     navigation.register("primary", "X", "club_home")
     assert all(v == [] for v in navigation.entries_for(_req(rf, player, None)).values())
+
+
+def _match(view_name):
+    return type("Match", (), {"view_name": view_name})()
+
+
+@pytest.mark.story("U121")
+def test_also_current_marks_dashboard_on_club_home(rf, club, player):
+    # apps.py registers Dashboard with also_current=("club_home",).
+    from accounts.models import Membership
+
+    req = _req(rf, player, club)
+    req.membership = Membership.objects.get(user=player, club=club)
+
+    def dash(view_name):
+        req.resolver_match = _match(view_name)
+        links = navigation.entries_for(req)["primary"]
+        return next(link for link in links if link.url_name == "accounts:player_dashboard")
+
+    assert dash("accounts:player_dashboard").active is True
+    assert dash("club_home").active is True
+    assert dash("characters:mine").active is False
+    # The match uses the full name, so a club_home in another namespace does not count.
+    assert dash("shops:club_home").active is False
+
+
+@pytest.mark.story("U121")
+def test_namespaced_entry_is_current(registry, rf, club, player):
+    navigation.register("primary", "Shops", "shops:index")
+    req = _req(rf, player, club)
+    req.resolver_match = _match("shops:index")
+    assert [link.active for link in navigation.entries_for(req)["primary"]] == [True]
+    req.resolver_match = None
+    assert [link.active for link in navigation.entries_for(req)["primary"]] == [False]

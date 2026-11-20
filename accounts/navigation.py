@@ -29,6 +29,7 @@ class NavEntry(NamedTuple):
     icon: object = None
     shortcut_order: object = None
     shortcut_label: object = None
+    also_current: tuple = ()
 
 
 class NavLink(NamedTuple):
@@ -51,13 +52,16 @@ def register(
     icon=None,
     shortcut_order=None,
     shortcut_label=None,
+    also_current=(),
 ):
     if group not in GROUPS:
         raise ValueError(f"Unknown navigation group: {group!r}")
     for existing in _entries:
         if existing.group == group and existing.url_name == url_name:
             return existing
-    entry = NavEntry(group, label, url_name, check, order, icon, shortcut_order, shortcut_label)
+    entry = NavEntry(
+        group, label, url_name, check, order, icon, shortcut_order, shortcut_label, also_current
+    )
     _entries.append(entry)
     return entry
 
@@ -69,16 +73,18 @@ def entries_for(request):
     if club is None or user is None or not user.is_authenticated:
         return result
     match = getattr(request, "resolver_match", None)
-    current = match.url_name if match else None
+    # Compare full names ("shops:index"), so entries in a namespace can match.
+    current = match.view_name if match else None
     shortcuts = []
     for entry in sorted(_entries, key=lambda e: (e.order, e.label)):
         if entry.check is not None and not entry.check(request):
             continue
+        active = current is not None and current in (entry.url_name, *entry.also_current)
         link = NavLink(
             entry.label,
             reverse(entry.url_name, args=[club.slug]),
             entry.url_name,
-            entry.url_name == current,
+            active,
             entry.icon,
         )
         result[entry.group].append(link)
