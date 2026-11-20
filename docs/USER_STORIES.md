@@ -778,14 +778,109 @@ Stories for club admins and game masters to manage starting equipment templates 
 - Reports are recorded with the page they came from and can be triaged (open, handled, closed) on the site-admin list at /site/feedback/.
 - Sending is rate limited per user.
 
-**U115 Dashboard button in the top bar.** As a player, I want a Dashboard shortcut in the top bar that takes me back to my club's dashboard, so I can always reach it without opening a menu. *(accounts, site-wide)*
+## Round 14: stories for features that were built without one (2026-11-20)
+
+These features shipped in the week of 2026-11-13 to 2026-11-20 without a written story. Each story below describes what the build does today, so the next round can check it and change it.
+
+### Character sheet
+
+**U115 See my XP progress and when I can level up.** As a player, I want my character sheet to show how far my XP is toward the next level, and tell me when I have enough XP to level up, so I know when to update my character. *(player_characters)*
+- Under XP the sheet shows slim progress, for example "6,500 / 14,000 XP to level 6", using the standard 5e XP thresholds.
+- At level 20, or at the top XP threshold, it shows "Max level" instead.
+- When the saved level is lower than the level the XP earns, a "Level up ready" badge appears and links to the edit form. The sheet never changes the level by itself.
+- When XP is blank, nothing new shows.
+- The progress bar and the badge link do not print.
+
+**U116 New characters start with 10 in every ability.** As a player, I want the six ability scores to start at 10 on the new-character form, so I only change the ones that differ. *(player_characters)*
+- The new-character form pre-fills Strength, Dexterity, Constitution, Intelligence, Wisdom and Charisma with 10. This is the same for players and for game masters or club admins creating a character for someone else.
+- Players can change any score or clear it. A blank score still shows "—" on the sheet, the edit form and the slips.
+- Characters made before this change keep their saved values, including blanks.
+
+**U117 Sell junk from the character sheet.** As a player, I want a "Sell junk" button on my character sheet that asks which shop to sell in, so I can clear junk without walking the street first. *(player_characters, shops)*
+- The button acts for the selected character. It opens a modal that lists the club's open shops in street order. Picking one continues into that shop's junk selling modal from U45.
+- If only one shop is open, it goes straight to that shop's junk selling modal. If no shop is open, the modal says "No shops are open right now."
+- Everything else follows U45 and U56: nothing sells until the player confirms.
+- The button only shows when the character has at least one item marked as junk.
+
+### Club home
+
+**U118 A session desk for game masters and club admins.** As a game master or club admin, I want my club home page to show what is waiting for me and what to do after a session, so I do not have to open each page to find out. *(accounts)*
+- The club home page shows a desk with three sections: "Waiting for you", "After the session" and "My character dashboard".
+- "Waiting for you" uses the same pending approvals as the rest of the app, so the counts match the approvals page.
+- Players without a game master or admin role see their player dashboard as before.
+- A game master or club admin who has no character of their own is sent to the desk instead of an empty player dashboard.
+- The layout works on a phone first.
+
+### Shops
+
+**S13 Closing soon ribbons.** As a player, I want shops that are about to leave the street to say so, so I can buy before they close. *(shops)*
+- A shop leaves the street on the latest close date of its open rotations. If any open rotation has no close date, the shop never leaves.
+- "Closing soon" means the leave date is within 3 days, counting the leave date itself.
+- A club shop on the street shows a "Closing soon" ribbon. Player shops never show it.
+- The shop page shows "Leaves the street on <date>" under the Closed badge area while the shop is open and closing soon.
+- Dates use the house format, for example 24 Nov 2026.
+
+**S14 Switch shops from the shop banner.** As a player, I want a shop picker in the shop banner, so I can move to another open shop without going back to the street. *(shops)*
+- The picker sits next to "Leave" and lists the club's open shops in street order. The current shop is marked.
+- Picking a shop swaps the page in place and keeps the scroll position. The acting character does not change.
+- Each choice is a real link, so the picker also works without JavaScript. Back and Forward restore the shops visited.
+
+**S15 Compare the price before I buy.** As a player, I want the buy confirmation to show how the price compares with the item's base value, so I can judge the deal. *(shops)*
+- The modal shows the base value, the shop's sell percentage, and the price I pay.
+- The percentage is the stock's own override when it has one, and the shop's default otherwise. The price is base value × percentage ÷ 100.
+- It also shows the difference from base, for example "vs base: -2 gp" or "+5 gp".
+
+### Quests
+
+**Q5 Turn-in feedback and a preview of the reward.** As a player, I want to see what a quest pays before I turn it in, and to get a clear result after, so I know it was worth it and that it worked. *(quests)*
+- The turn-in card lists the quest's reward (coins and items) under the requirements. It is hidden when the quest has no reward.
+- After a turn-in, the player returns to the quest board, which refreshes by itself. A toast names the character, the quest and the reward.
+- Without JavaScript, the player goes to the quest page and sees the usual message.
+
+### Downtime
+
+**D11 Replay the wheel, with some extra flair.** As a player, I want to watch my downtime result again and feel the near misses, so the spin is fun without changing the result. *(downtime)*
+- The result modal has a "Spin again" button. It replays the wheel animation with the same stored result. It never rolls again.
+- Slices the wheel nearly landed on glow briefly. Particles burst from the wheel's center when it stops.
+- A sound toggle is off by default. The page remembers the choice in the browser.
+- With no JavaScript, or with reduced motion, the result shows straight away.
+
+### Site-wide
+
+**U119 Support link in the footer.** As a visitor or player, I want a small link in the footer to support the app, so I can chip in if I want to. *(accounts, site-wide)*
+- The standard footer, on public, club and sign-in pages, has a "Buy me a coffee" link to ko-fi.com.
+- It is a plain link with an inline icon. It does not load the Ko-fi widget, because the content security policy blocks that script and image.
+- The link is fixed in the page template, on purpose. The site admin does not set the address or turn it off. This is the donate button U11 asks for.
+
+### Agent access
+
+**A8 Agent tokens expire, and every use is logged.** As a game master, I want my agent's access token to expire, and as a site admin I want a log of what happened to each token, so a lost token stops working and I can see how it was used. *(agent_access)*
+- A new token expires after `AGENT_TOKEN_EXPIRY_DAYS` days. The default is 365, and the setting can be changed.
+- An expired token is refused and the refusal is logged.
+- A log records each token's creation, use, revocation and expiry.
+- The connections list shows an "Expires" column and an Active or Expired badge.
+- The site admin can search and filter the log in Django admin.
+
+### Site admin
+
+**U120 Create a club with its first admin.** As the site admin, I want to create a new club and its first club admin in one step, so a new group can sign in and start using the app on day one. *(accounts, character_options, starting_equipment, map)*
+- Only the site admin sees the "New club" form. It asks for the club name, an optional slug, the first admin's email, and an optional display name for them.
+- If the slug is left blank it comes from the name. A slug that another club already uses is refused with an error on the form.
+- The new club is seeded with the XP table, the species, classes and backgrounds, the default item catalogue, and an active "2024 D&D Default" starting equipment template. It gets no characters, shops, quests, maps, downtime actions or messages. The game master creates those.
+- The first admin is the email address typed, saved in lower case and matched without regard to case. Their email is also whitelisted for the club, so they can sign in.
+- If no account has that email, the app creates one with a random temporary password. The "Club created" page shows the password once and the page is never cached. The app sends no email, so the site admin hands the password over. On first sign-in the person must choose their own password (U18).
+- If an account with that email already exists, for example from another club, the form first says "This email already has an account." It explains that the person will become an admin of the new club and that their password will not change. Nothing is created yet. The site admin can change the email, or press "Create club" again to go ahead.
+- After the site admin goes ahead, that account is not changed and no password is shown. The "Club created" page says "Existing user. Their password is unchanged." The person becomes a club admin of the new club and signs in as before.
+- The club, the seed data and the admin are created together. If anything fails, none of it is kept.
+- A lost temporary password is reset the same way as any other (U19).
+
+**U121 Dashboard button in the top bar.** As a player, I want a Dashboard shortcut in the top bar that takes me back to my club's dashboard, so I can always reach it without opening a menu. *(accounts, site-wide)*
 - The Dashboard button sits first among the icon shortcuts, before Character, Shops, Quests, Downtime, and Map.
 - It shows for every signed-in club member, in the top bar and in the side menu's Character group.
 - It is marked as the current page when the player is on the dashboard, and also for game masters and club admins on the club home page (which they see instead of the dashboard when they have no selected character).
 - At wide widths it shows its icon and label; as the bar narrows the label drops first, and the icon leaves last (after Map, Downtime, Quests, Shops, Character).
 - Every shortcut keeps its tooltip and aria-label.
 - This changes U32 (the club name, player name, character picker and approvals indicator must stay visible at 390 px) and U61 (the top bar is one row, never wraps).
-
 
 ## Quests
 
@@ -972,7 +1067,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Found locations.** A character has found a location if it is credited with discovering or exploring it, or has a found mark from a game master or club admin. A found mark gives no XP and only makes the location visible; players can ask for one like other map credit (M12, M16). On visited tiles, players see an unnamed "?" for each location someone has discovered but their characters have not found, and can ask for credit on it. Undiscovered locations show nothing, and only a game master or club admin records first discovery.
 - **Shop and character pages.** A shop page is a banner in the shop's preset colour with a preset shopkeeper silhouette over a counter-style item table (U34). A character page is a printable character sheet (U35).
 - **Look.** The Bootswatch Journal theme (MIT) for Bootstrap 5 across the whole site, served by the app, with compact tables and forms on dense pages (U21).
-- **Navigation.** Dashboard, Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U27, U32, U115).
+- **Navigation.** Dashboard, Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U27, U32, U121).
 - **Modals.** Buying (U31), map tiles (M17), and inbox grants (U28) open in modals. Each still has a plain page that works without JavaScript.
 - **Inbox grants.** Club admins can grant coins, items, and map credit from a message, through the same rules and ledger as manual adjustments and map credit, and mark the message handled in the same step (U28).
 - **Target level and XP.** A location has a target level band; the XP table is editable per club and shown for reference (M11, M13). Each location has one credited discovery group (the first) and one credited explored group (which may differ). Game masters and club admins can correct them, and everyone who sees the location sees the credited characters (M14, M15). Players can ask for visits, discovered, or explored credit, which a game master or club admin grants, with no automatic declines (M12). A party is only a list of characters picked at the time, not a stored record.
