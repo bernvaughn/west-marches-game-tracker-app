@@ -54,6 +54,7 @@ class TestDetailTemplateAnimationRendering:
         content = response.content.decode()
         assert 'id="starting-coins-animation"' in content
         assert 'data-coins="' in content
+        assert "js/starting_coins_animation.js" in content
 
     def test_does_not_render_animation_container_when_flag_false(
         self, club, login, player, character
