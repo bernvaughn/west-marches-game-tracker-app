@@ -35,7 +35,7 @@
   <tbody>
   {% for i in items %}
     <tr>
-      <td><a href="{% url 'items:detail' club.slug i.pk %}">{% if i.symbol %}<span class="wm-item-symbol" aria-hidden="true">{{ i.symbol }}</span> {% endif %}{{ i.name }}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}{% if i.traits %}<div class="small text-muted">{{ i.traits|truncatewords:12 }}</div>{% endif %}{% url 'items:details_modal' club.slug i.pk as modal_url %}<a class="wm-item-info no-print" href="{% url 'items:detail' club.slug i.pk %}" hx-get="{{ modal_url }}" hx-target="#app-modal .modal-content" data-app-modal aria-label="Details for {{ i.name }}" onclick="event.stopPropagation()">{% include "components/icon.html" with name="info-circle" %}</a></td>
+      <td><a href="{% url 'items:detail' club.slug i.pk %}">{% if i.symbol %}<span class="wm-item-symbol" aria-hidden="true">{{ i.symbol }}</span> {% endif %}{{ i.name }}</a>{% if i.retired %} {% include "components/badge.html" with status="neutral" text="Retired" %}{% endif %}{% if i.traits %}<div class="small text-muted">{{ i.traits|truncatewords:12 }}</div>{% endif %}{% url 'items:details_modal' club.slug i.pk as modal_url %}<a class="wm-item-info no-print" href="{% url 'items:detail' club.slug i.pk %}" hx-get="{{ modal_url }}" hx-target="#app-modal .modal-content" data-app-modal aria-label="Details for {{ i.name }}">{% include "components/icon.html" with name="info-circle" %}</a></td>
       <td class="wm-col-optional">{{ i.get_rarity_display|default:"—" }}</td>
       <td class="wm-col-optional">{{ i.get_magic_type_display|default:"—" }}</td>
       <td class="num">{{ i.value_cp|coins }}</td>

@@ -157,12 +157,10 @@ def test_posting_foreign_slot_id_rejected(login, club_admin, club, other_club):
     )
     r = c.post(url("edit", club, container.pk), post)
     assert r.status_code == 200
-    content = r.content.lower()
-    assert (
-        b"does not belong to this club" in content
-        or b"invalid choice" in content
-        or b"not in the same club" in content
-    )
+    assert b"does not belong to this container" in r.content
+    assert container.slots.count() == 1
+    foreign_slot.refresh_from_db()
+    assert foreign_slot.container == foreign_container
 
 
 # ---------------------------------------------------------------------------
@@ -806,3 +804,212 @@ def test_toggle_off_container_no_longer_counts_as_container(login, club_admin, c
     # This should not raise because we don't call it for non-containers
     # But if we did call it, it would fail - so we just verify the flag is off
     assert not container.is_container
+
+
+# ---------------------------------------------------------------------------
+# Round trips through the rendered page
+# ---------------------------------------------------------------------------
+
+
+def rendered_post(content):
+    """Return the POST data a browser sends for the item form, without a button."""
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(content, "html.parser")
+    data = {}
+    root = soup.select_one("#item-form")
+    for el in root.select("input[name], select[name], textarea[name]"):
+        name = el["name"]
+        if el.name == "select":
+            chosen = el.select_one("option[selected]")
+            data[name] = chosen["value"] if chosen else ""
+        elif el.name == "textarea":
+            data[name] = el.text
+        elif el.get("type") == "checkbox":
+            if el.has_attr("checked"):
+                data[name] = el.get("value", "on")
+        elif el.get("type") != "submit":
+            data[name] = el.get("value", "")
+    return data
+
+
+def test_resave_rendered_page_unchanged(login, club_admin, club):
+    c = login(club_admin)
+    gem = Item.objects.create(club=club, name="Gem", value_cp=1)
+    box = make_container(club, "Box")
+    slot = add_slot(box, [(gem, 1, 2, 1)], chance_pct=50, position=0)
+
+    page = c.get(url("edit", club, box.pk))
+    assert page.content.count(b'id="id_is_container"') == 1
+    r = c.post(url("edit", club, box.pk), rendered_post(page.content))
+    assert r.status_code == 302
+    box.refresh_from_db()
+    assert box.is_container is True
+    assert list(box.slots.values_list("pk", "chance_pct")) == [(slot.pk, 50)]
+    assert list(slot.options.values_list("item", "qty_min", "qty_max")) == [(gem.pk, 1, 2)]
+
+
+def test_add_slot_then_add_option_then_save_resave_and_delete(login, club_admin, club):
+    c = login(club_admin)
+    gem = Item.objects.create(club=club, name="Gem", value_cp=1)
+    coin = Item.objects.create(club=club, name="Coin", value_cp=1)
+    box = make_container(club, "Box")
+    add_slot(box, [(gem, 1, 1, 1)], position=0)
+    edit = url("edit", club, box.pk)
+
+    # Add a slot. The new slot renders a valid nested management form.
+    r = c.post(edit, {**rendered_post(c.get(edit).content), "add_slot": "1"})
+    assert r.status_code == 200
+    data = rendered_post(r.content)
+    assert data["slots-TOTAL_FORMS"] == "2"
+    assert data["slots-1-opts-TOTAL_FORMS"] == "1"
+    assert data["slots-1-opts-INITIAL_FORMS"] == "0"
+
+    # Add an option on the new slot.
+    r = c.post(edit, {**data, "add_option": "1"})
+    assert r.status_code == 200
+    data = rendered_post(r.content)
+    assert data["slots-1-opts-TOTAL_FORMS"] == "2"
+
+    # Fill both options and save.
+    data["slots-1-chance_pct"] = "25"
+    data["slots-1-opts-0-item"] = str(gem.pk)
+    data["slots-1-opts-1-item"] = str(coin.pk)
+    data["slots-1-opts-1-weight"] = "3"
+    assert c.post(edit, data).status_code == 302
+    assert box.slots.count() == 2
+    new_slot = box.slots.get(chance_pct=25)
+    assert sorted(new_slot.options.values_list("item__name", "weight")) == [
+        ("Coin", 3),
+        ("Gem", 1),
+    ]
+
+    # Re-save unchanged.
+    assert c.post(edit, rendered_post(c.get(edit).content)).status_code == 302
+    assert box.slots.count() == 2
+    assert new_slot.options.count() == 2
+
+    # Delete one option.
+    data = rendered_post(c.get(edit).content)
+    idx = next(
+        k.split("-")[3]
+        for k, v in data.items()
+        if k.startswith("slots-1-opts-") and k.endswith("-item") and v == str(coin.pk)
+    )
+    data[f"slots-1-opts-{idx}-DELETE"] = "on"
+    assert c.post(edit, data).status_code == 302
+    assert list(new_slot.options.values_list("item__name", flat=True)) == ["Gem"]
+
+
+def test_untouched_new_slot_is_skipped(login, club_admin, club):
+    c = login(club_admin)
+    gem = Item.objects.create(club=club, name="Gem", value_cp=1)
+    box = make_container(club, "Box")
+    add_slot(box, [(gem, 1, 1, 1)], position=0)
+    edit = url("edit", club, box.pk)
+
+    r = c.post(edit, {**rendered_post(c.get(edit).content), "add_slot": "1"})
+    assert c.post(edit, rendered_post(r.content)).status_code == 302
+    assert box.slots.count() == 1
+
+
+def test_add_option_with_blank_count_does_not_crash(login, club_admin, club):
+    c = login(club_admin)
+    box = make_container(club, "Box")
+    edit = url("edit", club, box.pk)
+    data = {
+        **rendered_post(c.get(edit).content),
+        "slots-TOTAL_FORMS": "1",
+        "slots-0-chance_pct": "100",
+        "slots-0-position": "0",
+        "slots-0-opts-TOTAL_FORMS": "",
+        "slots-0-opts-INITIAL_FORMS": "",
+        "add_option": "0",
+    }
+    r = c.post(edit, data)
+    assert r.status_code == 200
+    assert b"slots-0-opts-0-item" in r.content
+
+
+def test_cycle_failure_saves_nothing(login, club_admin, club):
+    c = login(club_admin)
+    crate = Item.objects.create(club=club, name="Crate A", value_cp=1)
+    box = make_container(club, "Diplomat Box")
+    add_slot(box, [(crate, 1, 1, 1)], position=0)
+    edit = url("edit", club, crate.pk)
+
+    data = rendered_post(c.get(edit).content)
+    data.update(name="Crate A RENAMED", is_container="on", add_slot="1")
+    data = rendered_post(c.post(edit, data).content)
+    data["slots-0-opts-0-item"] = str(box.pk)
+    r = c.post(edit, data)
+    assert r.status_code == 200
+    assert b"contains itself" in r.content
+    crate.refresh_from_db()
+    assert crate.name == "Crate A"
+    assert crate.is_container is False
+    assert crate.slots.count() == 0
+
+
+def test_same_club_foreign_slot_id_rejected(login, club_admin, club):
+    c = login(club_admin)
+    gem = Item.objects.create(club=club, name="Gem", value_cp=1)
+    box = make_container(club, "Box")
+    foreign_slot = add_slot(box, [(gem, 1, 1, 1)], position=0)
+    crate = make_container(club, "Crate C")
+    post = form(
+        is_container="on",
+        name="Crate C",
+        **{
+            "slots-TOTAL_FORMS": "1",
+            "slots-INITIAL_FORMS": "1",
+            "slots-0-id": str(foreign_slot.pk),
+            "slots-0-chance_pct": "100",
+            "slots-0-position": "0",
+            "slots-0-opts-TOTAL_FORMS": "1",
+            "slots-0-opts-INITIAL_FORMS": "0",
+            "slots-0-opts-0-item": str(gem.pk),
+            "slots-0-opts-0-qty_min": "1",
+            "slots-0-opts-0-qty_max": "1",
+            "slots-0-opts-0-weight": "1",
+        },
+    )
+    r = c.post(url("edit", club, crate.pk), post)
+    assert r.status_code == 200
+    assert b"does not belong to this container" in r.content
+    assert crate.slots.count() == 0
+    assert box.slots.count() == 1
+
+
+def test_foreign_option_id_rejected(login, club_admin, club):
+    c = login(club_admin)
+    gem = Item.objects.create(club=club, name="Gem", value_cp=1)
+    box = make_container(club, "Box")
+    other = add_slot(box, [(gem, 1, 1, 1)], position=0)
+    crate = make_container(club, "Crate")
+    slot = add_slot(crate, [(gem, 1, 1, 1)], position=0)
+    foreign_opt = other.options.get()
+    post = form(
+        is_container="on",
+        name="Crate",
+        **{
+            "slots-TOTAL_FORMS": "1",
+            "slots-INITIAL_FORMS": "1",
+            "slots-0-id": str(slot.pk),
+            "slots-0-chance_pct": "100",
+            "slots-0-position": "0",
+            "slots-0-opts-TOTAL_FORMS": "1",
+            "slots-0-opts-INITIAL_FORMS": "1",
+            "slots-0-opts-0-id": str(foreign_opt.pk),
+            "slots-0-opts-0-item": str(gem.pk),
+            "slots-0-opts-0-qty_min": "2",
+            "slots-0-opts-0-qty_max": "2",
+            "slots-0-opts-0-weight": "1",
+        },
+    )
+    r = c.post(url("edit", club, crate.pk), post)
+    assert r.status_code == 200
+    assert b"does not belong to this slot" in r.content
+    foreign_opt.refresh_from_db()
+    assert foreign_opt.slot == other and foreign_opt.qty_min == 1
+    assert slot.options.get().qty_min == 1
