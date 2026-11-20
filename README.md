@@ -40,10 +40,25 @@ It seeds the XP table, the character options and the club admin.
 The club admin gets a temporary password.
 It also seeds the default item catalogue (about 100 items).
 It also seeds an active "2024 D&D Default" starting equipment template.
+Each "X or Y" option of the 2024 PHB is a choice group in that template.
+All 12 classes have choice groups, and so do the Artisan, Entertainer and Soldier backgrounds.
+A claim grants the first option of each group.
+The seven standard starting packs are containers with their PHB contents, so a character can open them.
 It does not seed characters, shops, quests, maps, downtime actions or messages.
 The GM creates those.
 Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`.
+A plain run configures the packs but leaves an existing template unchanged.
+Add `--force` to upgrade an existing template to the choice groups.
+`--force` replaces admin edits to the default template's lines and coins.
+To configure the packs only, run `uv run python manage.py seed_pack_containers --club <slug>`.
 See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
+
+## Demo data
+
+`seed_demo` runs `seed_starting_equipment --force`, so the demo template always has the choice groups and the packs are containers.
+It also creates "Tilda Brightwater", a level 1 Cleric owned by bob@example.com.
+She holds one unopened Priest's Pack and has not claimed her starting equipment.
+`seed_demo` is safe to run more than once.
 
 ## Running targeted tests
 

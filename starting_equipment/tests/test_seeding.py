@@ -82,16 +82,24 @@ class TestSeedDefaultStartingEquipment:
             assert lc.coins_cp == coins_cp
 
         # Check items were created
-        # Count unique items across class and background equipment
-        expected_items = set()
+        # Count unique items across class and background equipment, plus pack contents
+        # Use case-insensitive deduplication since seed_pack reuses by name__iexact
+        from items.pack_seeding import PACKS
+
+        expected_items_lower = set()
         for class_data in CLASS_EQUIPMENT.values():
             for item_data in class_data["items"]:
-                expected_items.add(item_data[0])
+                expected_items_lower.add(item_data[0].lower())
         for bg_data in BACKGROUND_EQUIPMENT.values():
             for item_data in bg_data["items"]:
-                expected_items.add(item_data[0])
+                expected_items_lower.add(item_data[0].lower())
+        # Add pack content items (case-insensitive matching via name__iexact)
+        for contents in PACKS.values():
+            for content_name, *_ in contents:
+                expected_items_lower.add(content_name.lower())
         items = Item.objects.for_club(club).all()
-        assert items.count() == len(expected_items)
+        actual_items_lower = {item.name.lower() for item in items}
+        assert len(actual_items_lower) == len(expected_items_lower)
 
     def test_second_run_skipped_when_not_forced(self, club):
         """Second run without force returns skipped=True and creates nothing."""

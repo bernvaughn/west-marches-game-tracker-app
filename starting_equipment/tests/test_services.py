@@ -293,7 +293,7 @@ class TestApplyStartingEquipment:
         assert len(item_lines) == 1
         assert item_lines[0].item.name == "Longsword"
 
-    def test_choice_groups_skipped_in_class_lines(
+    def test_choice_groups_grant_default_pick_in_class_lines(
         self,
         character_with_class_bg,
         template,
@@ -302,7 +302,7 @@ class TestApplyStartingEquipment:
         class_line_choice,
         game_master_user,
     ):
-        """Choice groups in class lines are skipped (is_choice=True)."""
+        """Choice groups in class lines grant the first option (by id) as default pick."""
         from starting_equipment.services import apply_starting_equipment
 
         result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
@@ -312,12 +312,14 @@ class TestApplyStartingEquipment:
         lines = entry.lines.select_related("item")
         item_lines = [line for line in lines if line.item is not None]
 
-        # Should only get the non-choice item (Longsword), not the choice item (Chain Mail)
-        assert len(item_lines) == 1
-        assert item_lines[0].item.name == "Longsword"
-        assert "Chain Mail" not in [line.item.name for line in item_lines]
+        # Should get the non-choice item (Longsword) PLUS the default
+        # pick from choice group (Chain Mail)
+        assert len(item_lines) == 2
+        item_names = {line.item.name for line in item_lines}
+        assert "Longsword" in item_names
+        assert "Chain Mail" in item_names
 
-    def test_choice_groups_skipped_in_background_lines(
+    def test_choice_groups_grant_default_pick_in_background_lines(
         self,
         character_with_class_bg,
         template,
@@ -328,7 +330,12 @@ class TestApplyStartingEquipment:
         bg_line_choice,
         game_master_user,
     ):
-        """Choice groups in background lines are skipped (is_choice=True)."""
+        """Choice groups in background lines grant the first option (by id) as default pick.
+
+        Note: bg_line and bg_line_choice both use Holy Symbol (same item), so the default pick
+        is the same item. The ledger will have two lines for Holy Symbol (one from non-choice,
+        one from choice default), but the set of item names only shows it once.
+        """
         from starting_equipment.services import apply_starting_equipment
 
         result = apply_starting_equipment(character_with_class_bg, template, game_master_user)
@@ -338,12 +345,15 @@ class TestApplyStartingEquipment:
         lines = entry.lines.select_related("item")
         item_lines = [line for line in lines if line.item is not None]
 
-        # Should only get the non-choice background item
-        # (Holy Symbol) - but also class item (Longsword)
-        assert len(item_lines) == 2
+        # Should get class item (Longsword), background non-choice (Holy Symbol),
+        # and background choice default (also Holy Symbol, same item)
+        # The set of names has 2 items, but there are 3 ledger lines
         item_names = {line.item.name for line in item_lines}
+        assert len(item_names) == 2
         assert "Longsword" in item_names
         assert "Holy Symbol" in item_names
+        # Verify the choice default was also granted (3 lines total)
+        assert len(item_lines) == 3
 
     def test_background_equipment_only_when_character_has_background_option(
         self,

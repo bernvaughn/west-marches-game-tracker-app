@@ -208,6 +208,23 @@ def explain_starting_equipment(
 # ---------------------------------------------------------------------------
 
 
+def _granted_lines(entry_lines) -> list[LedgerLine]:
+    """Return the ledger lines a claim grants from one class/background entry.
+
+    Every fixed line (is_choice=False) is granted. For each non-empty
+    choice_group, only the first line by id (the seeded default) is granted.
+    """
+    granted = []
+    seen_groups = set()
+    for line in entry_lines.select_related("item").order_by("id"):
+        if line.is_choice:
+            if not line.choice_group or line.choice_group in seen_groups:
+                continue
+            seen_groups.add(line.choice_group)
+        granted.append(LedgerLine(item=line.item, quantity=line.quantity, coins=0))
+    return granted
+
+
 def apply_starting_equipment(
     character: "Character",
     template: "StartingEquipmentTemplate | None",
@@ -219,6 +236,10 @@ def apply_starting_equipment(
     Creates one ledger entry with all granted items and coins.
     Returns a StartingEquipmentResult with the ledger entry (or None) and
     a list of reasons explaining why any gear was not granted.
+
+    Choice groups: for each class/background entry, all non-choice lines are
+    granted, plus the first line (by id) of each distinct non-empty choice_group
+    among the is_choice=True lines. This provides a deterministic default pick.
 
     Args:
         character: The new character to grant equipment to.
@@ -255,15 +276,7 @@ def apply_starting_equipment(
         # Add class coins
         total_coins += class_entry.coins_cp
 
-        # Add class lines (skip choice groups)
-        for line in class_entry.lines.filter(is_choice=False).select_related("item"):
-            lines.append(
-                LedgerLine(
-                    item=line.item,
-                    quantity=line.quantity,
-                    coins=0,
-                )
-            )
+        lines.extend(_granted_lines(class_entry.lines))
 
     # 2. Background equipment - only if character has background_option
     if character.background_option:
@@ -275,15 +288,7 @@ def apply_starting_equipment(
             # Add background coins
             total_coins += bg_entry.coins_cp
 
-            # Add background lines (skip choice groups)
-            for line in bg_entry.lines.filter(is_choice=False).select_related("item"):
-                lines.append(
-                    LedgerLine(
-                        item=line.item,
-                        quantity=line.quantity,
-                        coins=0,
-                    )
-                )
+            lines.extend(_granted_lines(bg_entry.lines))
 
     # 3. Level coins for level > 1
     if character_level > 1:
