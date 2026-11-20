@@ -2,9 +2,7 @@ from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import render
 
-from character_options.services import seed_default_options
-from map.xp import copy_default_xp_table
-
+from ..club_seeding import seed_new_club
 from ..forms.clubs import ClubCreateForm
 from ..models import Club
 from ..passwords import get_or_create_member
@@ -24,8 +22,7 @@ def club_new(request):
         data = form.cleaned_data
         with transaction.atomic():
             club = Club.objects.create(name=data["name"], slug=data["slug"])
-            copy_default_xp_table(club)
-            seed_default_options(club)
+            seed_new_club(club)
             membership, temp = get_or_create_member(
                 club,
                 data["admin_email"],
