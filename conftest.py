@@ -3,7 +3,6 @@ from django.test import Client
 
 from accounts.models import Club, Membership, User
 from character_options.models import Background, CharacterClass, Species
-from character_options.services import seed_default_options
 from items.models import Item
 from items.tests.factories import make_container as _make_container
 from items.tests.factories import make_diplomats_pack
@@ -22,21 +21,12 @@ def _fast_password_hasher(settings):
 
 @pytest.fixture
 def club(db):
-    club = Club.objects.create(name="Club A", slug="club-a")
-    seed_default_options(club)
-    return club
-
-
-@pytest.fixture
-def unseeded_club(db):
-    return Club.objects.create(name="Unseeded Club", slug="unseeded-club")
+    return Club.objects.create(name="Club A", slug="club-a")
 
 
 @pytest.fixture
 def other_club(db):
-    club = Club.objects.create(name="Club B", slug="club-b")
-    seed_default_options(club)
-    return club
+    return Club.objects.create(name="Club B", slug="club-b")
 
 
 def _user(email, name, **extra):
@@ -114,17 +104,14 @@ def diplomats_pack(db, club):
 
 @pytest.fixture
 def species(club):
-    # Get the seeded Elf species
-    return Species.objects.for_club(club).get(name__iexact="Elf")
+    return Species.objects.create(club=club, name="Elf")
 
 
 @pytest.fixture
 def char_class(club):
-    # Get the seeded Fighter class
-    return CharacterClass.objects.for_club(club).get(name__iexact="Fighter")
+    return CharacterClass.objects.create(club=club, name="Fighter")
 
 
 @pytest.fixture
 def background(club):
-    # Get the seeded Soldier background
-    return Background.objects.for_club(club).get(name__iexact="Soldier")
+    return Background.objects.create(club=club, name="Soldier")
