@@ -44,6 +44,7 @@ class _EntryListView(StartingEquipmentBaseView):
 
     template_name = "starting_equipment/entry_list.html"
     related_name = None  # attribute on the template holding the entries
+    select_related = ()  # FKs the list template reads per row
     page_title = None
     entry_type = None  # "class" | "background" | "level-coins" | "magic-options"
     create_url_name = None
@@ -52,7 +53,7 @@ class _EntryListView(StartingEquipmentBaseView):
 
     def get(self, request, club_slug, template_pk):
         template = self.get_club_template_or_404(pk=template_pk)
-        entries = getattr(template, self.related_name).all()
+        entries = getattr(template, self.related_name).select_related(*self.select_related)
         ctx = self.get_template_context(template=template)
         ctx.update(
             {
@@ -234,6 +235,7 @@ class _EntryDeleteView(StartingEquipmentBaseView):
 
 class ClassEntryListView(_EntryListView):
     related_name = "class_entries"
+    select_related = ("class_option",)
     page_title = "Class entries"
     entry_type = "class"
     create_url_name = "class_entry_create"
@@ -267,6 +269,7 @@ class ClassEntryDeleteView(_EntryDeleteView):
 
 class BackgroundEntryListView(_EntryListView):
     related_name = "background_entries"
+    select_related = ("background_option",)
     page_title = "Background entries"
     entry_type = "background"
     create_url_name = "background_entry_create"
