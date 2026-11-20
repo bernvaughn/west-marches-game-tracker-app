@@ -51,7 +51,13 @@
         {% for entry in class_entries %}
         <div class="mb-3 pb-3 border-bottom">
           <div class="d-flex justify-content-between align-items-start">
-            <strong>{{ entry.char_class }}</strong>
+            <strong>
+              {% if entry.class_option %}
+              {{ entry.class_option.name }}
+              {% else %}
+              <span class="text-muted">{{ entry.char_class }} (unlinked)</span>
+              {% endif %}
+            </strong>
             <span class="badge bg-info text-dark">L{{ entry.min_level }}–{{ entry.max_level }}</span>
           </div>
           {% if entry.coins_cp %}
@@ -87,7 +93,13 @@
       <div class="card-body">
         {% for entry in background_entries %}
         <div class="mb-3 pb-3 border-bottom">
-          <strong>{{ entry.background }}</strong>
+          <strong>
+            {% if entry.background_option %}
+            {{ entry.background_option.name }}
+            {% else %}
+            <span class="text-muted">{{ entry.background }} (unlinked)</span>
+            {% endif %}
+          </strong>
           {% if entry.coins_cp %}
           <div class="text-muted small">Coins: {{ entry.coins_cp|coins }}</div>
           {% endif %}

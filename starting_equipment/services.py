@@ -43,17 +43,19 @@ def apply_starting_equipment(
     lines: list[LedgerLine] = []
     total_coins = 0
 
-    # 1. Class equipment - match case-insensitively
+    # 1. Class equipment - match by class_option FK + level range
     character_level = character.level or 1
-    class_entry = (
-        template.class_entries.filter(
-            char_class__iexact=character.char_class,
+    class_entry = None
+    if character.class_option:
+        class_entry = (
+            template.class_entries.filter(
+                class_option=character.class_option,
+            )
+            .filter(
+                Q(min_level__lte=character_level) & Q(max_level__gte=character_level),
+            )
+            .first()
         )
-        .filter(
-            Q(min_level__lte=character_level) & Q(max_level__gte=character_level),
-        )
-        .first()
-    )
 
     if class_entry:
         # Add class coins
@@ -69,10 +71,10 @@ def apply_starting_equipment(
                 )
             )
 
-    # 2. Background equipment - only if character has background set
-    if character.background:
+    # 2. Background equipment - only if character has background_option
+    if character.background_option:
         bg_entry = template.background_entries.filter(
-            background__iexact=character.background,
+            background_option=character.background_option,
         ).first()
 
         if bg_entry:

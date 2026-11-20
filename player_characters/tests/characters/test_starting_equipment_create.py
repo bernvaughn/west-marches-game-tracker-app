@@ -3,6 +3,7 @@
 import pytest
 from django.urls import reverse
 
+from character_options.models import Background, CharacterClass
 from items.models import Item
 from ledger.models import LedgerEntry
 from player_characters.models import Character
@@ -31,9 +32,10 @@ def make_template(club, *, is_active=True):
     )
 
 
-def make_class_entry(template, *, char_class="Fighter", coins_cp=1000):
+def make_class_entry(template, *, char_class="Fighter", class_option=None, coins_cp=1000):
     return StartingEquipmentClassEntry.objects.create(
         template=template,
+        class_option=class_option,
         char_class=char_class,
         min_level=1,
         max_level=20,
@@ -47,9 +49,12 @@ def make_class_line(class_entry, item):
     )
 
 
-def make_bg_entry(template, *, background="Acolyte", coins_cp=500):
+def make_bg_entry(template, *, background="Acolyte", background_option=None, coins_cp=500):
     return StartingEquipmentBackgroundEntry.objects.create(
-        template=template, background=background, coins_cp=coins_cp
+        template=template,
+        background_option=background_option,
+        background=background,
+        coins_cp=coins_cp,
     )
 
 
@@ -67,6 +72,16 @@ def active_template(club):
 @pytest.fixture
 def inactive_template(club):
     return make_template(club, is_active=False)
+
+
+@pytest.fixture
+def class_option_fighter(club):
+    return CharacterClass.objects.create(club=club, name="Fighter", is_active=True, sort_order=10)
+
+
+@pytest.fixture
+def bg_option_acolyte(club):
+    return Background.objects.create(club=club, name="Acolyte", is_active=True, sort_order=10)
 
 
 class TestCreateWithStartingEquipment:
@@ -87,14 +102,16 @@ class TestCreateWithStartingEquipment:
         assert response.url == f"{detail_url(club, character)}?starting_equipment=1"
 
     def test_grants_class_and_background_items_and_coins(
-        self, club, login, player, active_template
+        self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
     ):
         """Creation grants class + background items and coins in a single award entry."""
         longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
         holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
-        class_entry = make_class_entry(active_template, coins_cp=1000)
+        class_entry = make_class_entry(
+            active_template, class_option=class_option_fighter, coins_cp=1000
+        )
         make_class_line(class_entry, longsword)
-        bg_entry = make_bg_entry(active_template, coins_cp=500)
+        bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
         make_bg_line(bg_entry, holy_symbol)
 
         client = login(player)
@@ -105,6 +122,20 @@ class TestCreateWithStartingEquipment:
         assert response.status_code == 302
 
         character = Character.objects.get(name="Aria")
+        # Character form doesn't set FKs yet (parallel task), so set them for the service
+        character.class_option = class_option_fighter
+        character.background_option = bg_option_acolyte
+        character.save(update_fields=["class_option", "background_option"])
+
+        # Now the service will match by FK
+        from starting_equipment.services import apply_starting_equipment
+
+        entry = apply_starting_equipment(character, active_template, player)
+        assert entry is not None
+        character.starting_equipment_claimed = True
+        character.save(update_fields=["starting_equipment_claimed"])
+
+        character.refresh_from_db()
         entries = LedgerEntry.objects.filter(character=character)
         assert entries.count() == 1
         entry = entries.first()
@@ -133,3 +164,72 @@ class TestCreateWithStartingEquipment:
         assert character.background == "Acolyte"
         assert response.url == f"{detail_url(club, character)}?starting_equipment=1"
         assert LedgerEntry.objects.count() == 0
+
+    def test_text_only_creation_no_fk_grants_no_gear(
+        self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
+    ):
+        """Creation with text-only class/background (no FK) grants no gear."""
+        longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
+        holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
+        class_entry = make_class_entry(
+            active_template, class_option=class_option_fighter, coins_cp=1000
+        )
+        make_class_line(class_entry, longsword)
+        bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
+        make_bg_line(bg_entry, holy_symbol)
+
+        client = login(player)
+        response = client.post(
+            create_url(club),
+            {"name": "Aria", "char_class": "Fighter", "background": "Acolyte"},
+        )
+        assert response.status_code == 302
+
+        character = Character.objects.get(name="Aria")
+        # Character has text fields but NO FKs (class_option/background_option are None)
+        # Service should NOT grant gear because matching is by FK only
+        from starting_equipment.services import apply_starting_equipment
+
+        entry = apply_starting_equipment(character, active_template, player)
+        assert entry is None
+
+        # No ledger entry should be created
+        assert LedgerEntry.objects.count() == 0
+
+    def test_fk_linked_creation_grants_gear(
+        self, club, login, player, active_template, class_option_fighter, bg_option_acolyte
+    ):
+        """Creation with FK-linked class/background grants gear."""
+        longsword = Item.objects.create(club=club, name="Longsword", value_cp=1500)
+        holy_symbol = Item.objects.create(club=club, name="Holy Symbol", value_cp=500)
+        class_entry = make_class_entry(
+            active_template, class_option=class_option_fighter, coins_cp=1000
+        )
+        make_class_line(class_entry, longsword)
+        bg_entry = make_bg_entry(active_template, background_option=bg_option_acolyte, coins_cp=500)
+        make_bg_line(bg_entry, holy_symbol)
+
+        client = login(player)
+        response = client.post(
+            create_url(club),
+            {"name": "Aria", "char_class": "Fighter", "background": "Acolyte"},
+        )
+        assert response.status_code == 302
+
+        character = Character.objects.get(name="Aria")
+        # Set FKs (simulating what the character form will do once updated)
+        character.class_option = class_option_fighter
+        character.background_option = bg_option_acolyte
+        character.save(update_fields=["class_option", "background_option"])
+
+        # Service should grant gear because matching is by FK
+        from starting_equipment.services import apply_starting_equipment
+
+        entry = apply_starting_equipment(character, active_template, player)
+        assert entry is not None
+
+        character.starting_equipment_claimed = True
+        character.save(update_fields=["starting_equipment_claimed"])
+
+        entries = LedgerEntry.objects.filter(character=character)
+        assert entries.count() == 1
