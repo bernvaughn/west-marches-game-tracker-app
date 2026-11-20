@@ -885,15 +885,18 @@ These features shipped in the week of 2026-11-13 to 2026-11-20 without a written
 - Every shortcut keeps its tooltip and aria-label.
 - This changes U32 (the club name, player name, character picker and approvals indicator must stay visible at 390 px) and U61 (the top bar is one row, never wraps).
 
-**U122 Notes on my inventory items.** As a player, I want to record my own notes on the items in my character's inventory, so I can add my own info to items I have gathered and remind myself about things concerning them. *(player_characters)*
-- Each inventory row on the character sheet has a Notes icon button that opens a form with one text box, Save, and Cancel.
-- A row with a note shows a filled icon, and the first line shows on hover.
-- One note per character and item, not per unit in a stack.
-- Only the owner can add, change, or clear a note. Game masters and club admins can read it, not edit it.
-- Saving an empty box clears the note. Notes are plain text, up to 1,000 characters, with line breaks kept and no HTML run.
-- Notes never touch the ledger or the item catalogue. Other characters and other clubs never see them.
-- Buy, sell, consume, and move do not change a note. The note hides when the item is gone and returns if the item returns.
-- The form works without JavaScript.
+## Round 15: item notes (2026-11-20)
+
+### Character sheet
+
+**U122 Notes on my inventory items.** As a player, I want to record my own notes on the items in my character's inventory, so I can add my own info to items I have gathered and remind myself about things concerning them. *(player_characters, items)*
+- Each row in the sheet's inventory table has a "Notes" icon button, beside Consume, Mark as junk, and Print card. It opens a small form with one text box, a Save button, and a Cancel button. A row that already has a note shows a filled icon, and the note's first line appears on hover.
+- A note belongs to one character and one item, like a junk mark (U45). A stack of three potions has one note, not three.
+- Only the owner of the character can add, change, or clear a note. A game master or club admin who is not the owner sees the note on the sheet but cannot edit it. This matches who can see the inventory (U19).
+- Saving an empty box clears the note. A note can hold up to 1,000 characters of plain text. The app shows line breaks and never runs HTML in a note.
+- Notes are the player's own text. They never touch the ledger or the item catalogue, and no other character or club ever sees them.
+- Buying, selling, consuming, or moving items does not change a note. If the character no longer has the item, the note is hidden. If the character gets that item again, the note comes back.
+- The form works as a plain page without JavaScript, like the other inventory actions.
 
 **U123 Choose Starting Equipment.** As a player, I want to pick one option for each starting equipment choice group when my character is created, so I get the gear I want for my class and background. *(player_characters, starting_equipment, ledger)*
 - After saving a character whose active template has choice groups, the player is sent to the choices page and must pick one option per group before any gear is granted.

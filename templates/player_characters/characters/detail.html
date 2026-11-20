@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins downtime_points accounts_tags static %}
+{% load coins downtime_points accounts_tags static character_tags %}
 {% block title %}{{ character.name }}{% endblock %}
 {% block content %}
 {% url 'characters:index' club.slug as index_url %}
@@ -121,12 +121,20 @@
               {% if is_owner and r.available > 0 %}{% url 'characters:player_consume' club.slug character.pk r.item.pk as consume_url %}<a class="btn btn-sm btn-outline-secondary" href="{{ consume_url }}" hx-get="{{ consume_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark items as lost or used up, based on what happened during the session." aria-label="Consume">{% include "components/icon.html" with name="dash-circle" %}</a>{% endif %}
               {% if r.item.is_container and r.available > 0 and can_edit %}{% url 'characters:open_container' club.slug character.pk r.item.pk as open_url %}<form method="post" action="{{ open_url }}" hx-post="{{ open_url }}" hx-target="#app-modal .modal-content" hx-swap="innerHTML" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit" aria-label="Open {{ r.item.name }}" data-wm-tooltip title="Open this container and add what is inside to the inventory.">{% include "components/icon.html" with name="box" %} Open</button></form>{% endif %}
               <a class="btn btn-sm btn-outline-secondary" href="{{ junk_url }}" hx-get="{{ junk_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Set aside items to sell later, in shops or your own stall." aria-label="Mark as junk">{% include "components/icon.html" with name="tag" %}</a>
-              {% if is_owner %}{% for pk, note in notes.items %}{% if pk == r.item.pk %}
+              {% if is_owner %}
                 {% url 'characters:note' club.slug character.pk r.item.pk as note_url %}
-                <a class="btn btn-sm btn-outline-secondary no-print" href="{{ note_url }}" hx-get="{{ note_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="{{ note.title }}" aria-label="{{ note.aria }}">
-                  {% include "components/icon.html" with name=note.icon label=note.aria %}
-                </a>
-              {% endif %}{% endfor %}{% endif %}
+                {% with notes|get_item:r.item.pk as note %}
+                  {% if note %}
+                    <a class="btn btn-sm btn-outline-secondary no-print" href="{{ note_url }}" hx-get="{{ note_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="{{ note.title }}" aria-label="{{ note.aria }}">
+                      {% include "components/icon.html" with name=note.icon label=note.aria %}
+                    </a>
+                  {% else %}
+                    <a class="btn btn-sm btn-outline-secondary no-print" href="{{ note_url }}" hx-get="{{ note_url }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Add your own note about this item." aria-label="Add note">
+                      {% include "components/icon.html" with name="sticky" label="Add note" %}
+                    </a>
+                  {% endif %}
+                {% endwith %}
+              {% endif %}
               <div class="btn-group btn-group-sm" role="group">
                 <a class="btn btn-sm btn-outline-secondary dropdown-toggle" href="{{ print_url }}" data-bs-toggle="dropdown" data-bs-popper-config='{"strategy":"fixed"}' aria-expanded="false" data-wm-tooltip title="Print this one item's card, as a full page or in one spot of a card sheet." aria-label="Print card">{% include "components/icon.html" with name="printer" %}</a>
                 <ul class="dropdown-menu dropdown-menu-end">
