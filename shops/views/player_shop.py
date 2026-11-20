@@ -7,12 +7,19 @@ from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
+from items.stacked import unit_label
 from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
 from player_characters.access import owns_character
 from player_characters.inventory import coin_summary, inventory_rows
 from player_characters.models import Character
-from player_characters.player_shop import PlayerShopError, buy_from, has_listing, listed_rows
+from player_characters.player_shop import (
+    PlayerShopError,
+    buy_from,
+    has_listing,
+    listed_rows,
+    stall_price,
+)
 from player_characters.selection import selected_character
 from shops.forms.buy import BuyForm
 
@@ -54,7 +61,6 @@ def buy(request, club_slug, character_id, item_id):
     if not is_own and not listed:
         raise Http404("Not listed.")
     buyer = selected_character(request)
-    unit_price = item.value_cp
     error = None
     if is_own or (buyer is not None and buyer.owner_id == seller.owner_id):
         error = "This is your shop."
@@ -72,7 +78,7 @@ def buy(request, club_slug, character_id, item_id):
             except InsufficientFunds:
                 error = (
                     f"{buyer} cannot afford this: needs "
-                    f"{format_coins(unit_price * quantity)}, has "
+                    f"{format_coins(stall_price(item, quantity))}, has "
                     f"{format_coins(available_coins(buyer))} available."
                 )
             except PlayerShopError as exc:
@@ -98,8 +104,9 @@ def buy(request, club_slug, character_id, item_id):
             quantity = max(int(form.data.get("quantity", 1)), 0)
         except (TypeError, ValueError):
             quantity = 0
+    price = stall_price(item, quantity) if quantity >= 1 else 0
+    total = price
     before = available_coins(buyer) if buyer else None
-    total = unit_price * quantity
     after = before - total if buyer else None
     return render_modal_or_page(
         request,
@@ -109,9 +116,10 @@ def buy(request, club_slug, character_id, item_id):
             "seller": seller,
             "item": item,
             "listed": listed,
-            "price": unit_price,
+            "price": price,
             "quantity": quantity,
             "total": total,
+            "unit_text": unit_label(item, quantity) if quantity >= 1 else "",
             "before": before,
             "after": after,
             "short": buyer is not None and after < 0,

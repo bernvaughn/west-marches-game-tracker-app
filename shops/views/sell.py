@@ -9,11 +9,13 @@ from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
+from items.stacked import unit_label
 from ledger.coins import format_coins
 from ledger.services import InsufficientItems, available_items, held_items
 from player_characters.junk import junk_rows, reduce_junk
 from player_characters.selection import selected_character
 from shops.models import Shop
+from shops.selling import sale_total
 from shops.selling import sell as do_sell
 from shops.services import ShopError, buy_price, is_open
 from shops.views.browse import add_recent_shop
@@ -47,23 +49,28 @@ def sell_item(request, club_slug, shop_id, item_id):
         if quantity > available:
             error = f"Not enough {item} available to sell."
         elif quantity > junk.get(item.pk, 0) and request.POST.get("confirmed") != "1":
-            unit = buy_price(shop, item)
-            return render_modal_or_page(
-                request,
-                "shops/sell/_confirm_modal.html",
-                "shops/sell/confirm.html",
-                {
-                    "shop": shop,
-                    "character": character,
-                    "item": item,
-                    "quantity": quantity,
-                    "price": unit,
-                    "total": unit * quantity,
-                    "junk_quantity": junk.get(item.pk, 0),
-                    "held": held_items(character).get(item.pk, 0),
-                    "available": available,
-                },
-            )
+            total = sale_total(shop, item, quantity)
+            if item.is_stacked and total == 0:
+                unit_text = unit_label(item, quantity)
+                error = f"{unit_text} is worth less than 1 cp here. Set it aside instead."
+            else:
+                return render_modal_or_page(
+                    request,
+                    "shops/sell/_confirm_modal.html",
+                    "shops/sell/confirm.html",
+                    {
+                        "shop": shop,
+                        "character": character,
+                        "item": item,
+                        "quantity": quantity,
+                        "price": buy_price(shop, item),
+                        "total": total,
+                        "unit_text": unit_label(item, quantity),
+                        "junk_quantity": junk.get(item.pk, 0),
+                        "held": held_items(character).get(item.pk, 0),
+                        "available": available,
+                    },
+                )
         else:
             try:
                 with transaction.atomic():
@@ -76,7 +83,8 @@ def sell_item(request, club_slug, shop_id, item_id):
             else:
                 total = sum(line.coins for line in entry.lines.all())
                 messages.success(
-                    request, f"Sold {quantity} × {item} to {shop} for {format_coins(total)}."
+                    request,
+                    f"Sold {unit_label(item, quantity)} to {shop} for {format_coins(total)}.",
                 )
                 add_recent_shop(request, shop.pk)
     if error:

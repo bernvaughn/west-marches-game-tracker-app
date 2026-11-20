@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins units %}
 {% block title %}{{ seller.name }}'s stall{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title=seller.name|add:"'s stall" %}
@@ -13,13 +13,13 @@
 <div class="wm-shop-counter">
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
-  <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
+  <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Units</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
   <tbody>
   {% for row in rows %}
     <tr>
-      <td>{% include "items/_item_name.html" with item=row.item info=True %}{% if row.item.description %}<small class="d-block text-muted">{{ row.item.description }}</small>{% endif %}</td>
+      <td>{% include "items/_item_name.html" with item=row.item info=True %}{% if row.item.description %}<small class="d-block text-muted">{{ row.item.description }}</small>{% endif %}{% if row.item.is_stacked %}<small class="d-block text-muted">{{ row.item.value_cp|coins }} per {{ row.item.value_units }} {{ row.item.unit_name }}</small>{% endif %}</td>
       <td class="num">{{ row.price|coins }}</td>
-      <td class="num">{{ row.quantity }}</td>
+      <td class="num">{{ row.item|with_units:row.quantity }}</td>
       <td class="actions">{% if not is_own %}{% url 'shops:player_shop_buy' club.slug seller.pk row.item.pk as buy_url %}<a class="btn btn-sm btn-primary" href="{{ buy_url }}" hx-get="{{ buy_url }}" hx-target="#app-modal .modal-content" data-app-modal>Buy</a>{% endif %}</td>
     </tr>
   {% endfor %}

@@ -1,8 +1,34 @@
 from django.db import transaction
 from django.utils import timezone
 
+from items.stacked import sale_price as stacked_sale_price
+from items.stacked import unit_label
 from ledger.services import LedgerError, Line, record
-from shops.services import ShopClosed, ShopError, buy_price, is_open
+from shops.models import ShopStock
+from shops.services import ShopClosed, ShopError, is_open, percent_price
+
+
+def buy_percent_for(shop, item):
+    """Buy percent of the item's smallest bundle line, as shops.services.buy_price uses.
+
+    A null override on that line, or no line at all, falls back to the shop default.
+    """
+    stock = ShopStock.objects.filter(shop=shop, item=item).order_by("bundle_units", "pk").first()
+    if stock is not None and stock.buy_percent is not None:
+        return stock.buy_percent
+    return shop.buy_percent
+
+
+def sale_total(shop, item, units):
+    """What the shop pays for `units` of `item`, computed once from the total units sold.
+
+    Stacked items use sale_price (floor once from the total, no 1 cp minimum).
+    Normal items keep percent_price per unit (1 cp minimum), unchanged.
+    """
+    pct = buy_percent_for(shop, item)
+    if item.is_stacked:
+        return stacked_sale_price(item, units, pct)
+    return percent_price(item.value_cp, pct) * units
 
 
 def sell(character, shop, item, quantity=1, actor=None, today=None):
@@ -15,7 +41,11 @@ def sell(character, shop, item, quantity=1, actor=None, today=None):
     with transaction.atomic():
         if not is_open(shop, today):
             raise ShopClosed()
-        price = buy_price(shop, item) * quantity
+        price = sale_total(shop, item, quantity)
+        if price == 0 and item.is_stacked:
+            raise ShopError(
+                f"{unit_label(item, quantity)} is worth less than 1 cp here. Set it aside instead."
+            )
         lines = [Line(item=item, quantity=-quantity)]
         if price > 0:
             lines.append(Line(coins=price))
@@ -23,7 +53,7 @@ def sell(character, shop, item, quantity=1, actor=None, today=None):
             character,
             "sale",
             lines,
-            note=f"Sold {quantity} × {item} to {shop}",
+            note=f"Sold {unit_label(item, quantity)} to {shop}",
             actor=actor,
             shop=shop,
         )

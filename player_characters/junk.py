@@ -2,8 +2,10 @@
 
 from dataclasses import dataclass
 
+from items.stacked import sale_price as stacked_sale_price
+from items.stacked import unit_label
 from ledger.services import item_quantities
-from shops.services import percent_price
+from shops.selling import sale_total
 
 from .access import require_inventory_access
 from .models import JunkMark
@@ -36,27 +38,24 @@ def junk_rows(character):
     return rows
 
 
+def _base_value(item, qty):
+    """Value of `qty` units of `item` at full price (buy percent 100)."""
+    if item.is_stacked:
+        return stacked_sale_price(item, qty, 100)
+    return item.value_cp * qty
+
+
 def junk_value(character, rows=None):
     rows = junk_rows(character) if rows is None else rows
-    return sum(r.item.value_cp * r.quantity for r in rows)
+    return sum(_base_value(r.item, r.quantity) for r in rows)
 
 
 def junk_value_at(character, shop, rows=None):
     """Total this shop pays for the junk, using its buy percentages."""
-    from shops.models import ShopStock
-
     rows = junk_rows(character) if rows is None else rows
     if not rows:
         return 0
-    overrides = dict(
-        ShopStock.objects.filter(
-            shop=shop, item__in=[r.item for r in rows], buy_percent__isnull=False
-        ).values_list("item_id", "buy_percent")
-    )
-    return sum(
-        percent_price(r.item.value_cp, overrides.get(r.item.pk, shop.buy_percent)) * r.quantity
-        for r in rows
-    )
+    return sum(sale_total(shop, r.item, r.quantity) for r in rows)
 
 
 def set_junk(character, item, quantity, actor):
@@ -68,7 +67,9 @@ def set_junk(character, item, quantity, actor):
         raise JunkError("Junk quantity cannot be negative.")
     owned = item_quantities(character).get(item.pk, 0)
     if quantity > owned:
-        raise JunkError(f"{character} owns only {max(owned, 0)} of {item}.")
+        if owned < 1:
+            raise JunkError(f"{character} owns no {item.name}.")
+        raise JunkError(f"{character} owns only {unit_label(item, owned)}.")
     if quantity == 0:
         JunkMark.objects.filter(character=character, item=item).delete()
         return None

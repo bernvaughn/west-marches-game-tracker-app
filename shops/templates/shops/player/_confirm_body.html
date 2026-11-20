@@ -1,10 +1,11 @@
-{% load coins loot_tags %}
+{% load coins loot_tags units %}
 {% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=item %}</h2>{% endif %}
 {% if item.description %}<p>{{ item.description }}</p>{% endif %}
 {% loot_preview item as loot_rows %}
 {% if loot_rows %}{% include "components/loot_rows.html" with rows=loot_rows %}{% endif %}
 <dl class="wm-dl wm-shop-sums">
-  <dt>Price each</dt><dd>{{ price|coins }}</dd>
+  <dt>Units</dt><dd>{{ unit_text }}</dd>
+  <dt>Price</dt><dd>{{ price|coins }}</dd>
   <dt>Remaining</dt><dd>{{ listed }} listed</dd>
 </dl>
 {% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
