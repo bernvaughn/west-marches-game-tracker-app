@@ -316,11 +316,11 @@ class TestFavoriteTabOrder:
     """Tests for tab ordering."""
 
     def test_tab_order_all_my_shops_favorites(self, client_without_recent_shops, club, shop_a):
-        """Test that tab order is All Shops, My Shops, Favorites."""
+        """Test that tab order is All Shops, Player Shops, Favorites."""
         body = client_without_recent_shops.get(url("index", club)).content.decode()
         # Find positions of tabs
         all_pos = body.find("All Shops")
-        my_shops_pos = body.find("My Shops")
+        my_shops_pos = body.find("Player Shops")
         favorites_pos = body.find("Favorites")
 
         assert all_pos != -1

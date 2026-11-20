@@ -59,9 +59,9 @@ def client_without_recent_shops(logged_in_client, character):
 
 @pytest.mark.story("S11")
 def test_my_shops_tab_exists(client_without_recent_shops, club, shop_a, shop_b, shop_c):
-    """Test that the My Shops tab appears on the shop street page."""
+    """Test that the Player Shops tab appears on the shop street page."""
     body = client_without_recent_shops.get(url("index", club)).content.decode()
-    assert "My Shops" in body
+    assert "Player Shops" in body
     assert "All Shops" in body
 
 
@@ -69,8 +69,8 @@ def test_my_shops_tab_exists(client_without_recent_shops, club, shop_a, shop_b, 
 def test_my_shops_tab_filters_to_recent_shops(
     client_without_recent_shops, club, shop_a, shop_b, shop_c, character
 ):
-    """Test that My Shops tab shows only recent shops."""
-    # Initially no recent shops, My Shops should show empty state
+    """Test that Player Shops tab shows only recent shops."""
+    # Initially no recent shops, Player Shops should show empty state
     body = client_without_recent_shops.get(url("index", club) + "?tab=my_shops").content.decode()
     assert "No shops are open today." in body
 
@@ -80,7 +80,7 @@ def test_my_shops_tab_filters_to_recent_shops(
     session[session_key] = [shop_a.pk]
     session.save()
 
-    # Now My Shops should show only shop_a
+    # Now Player Shops should show only shop_a
     body = client_without_recent_shops.get(url("index", club) + "?tab=my_shops").content.decode()
     assert "Shop A" in body
     assert "Shop B" not in body
@@ -117,9 +117,9 @@ def test_active_tab_highlighted(client_without_recent_shops, club, shop_a):
     assert 'class="wm-shop-tab active"' in body
     assert f'href="{url("index", club)}?tab=all"' in body
 
-    # My Shops tab active
+    # Player Shops tab active
     body = client_without_recent_shops.get(url("index", club) + "?tab=my_shops").content.decode()
-    # Should have active class on My Shops tab
+    # Should have active class on Player Shops tab
     assert 'class="wm-shop-tab active"' in body
     assert f'href="{url("index", club)}?tab=my_shops"' in body
 
@@ -178,13 +178,13 @@ def test_no_character_no_tabs(login, club, shop_a):
     c.force_login(user_no_char)
 
     body = c.get(url("index", club)).content.decode()
-    assert "My Shops" not in body
+    assert "Player Shops" not in body
     assert "All Shops" not in body
 
 
 @pytest.mark.story("S11")
 def test_my_shops_empty_when_no_recent(client_without_recent_shops, club, shop_a, shop_b, shop_c):
-    """Test that My Shops shows empty state when no recent shops."""
+    """Test that Player Shops shows empty state when no recent shops."""
     body = client_without_recent_shops.get(url("index", club) + "?tab=my_shops").content.decode()
     assert "No shops are open today." in body
 

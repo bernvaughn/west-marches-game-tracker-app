@@ -158,7 +158,7 @@ class IndexView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
 
         shops_qs = ordered_shops(open_shops(self.club, timezone.localdate()))
 
-        # Filter shops for "My Shops" tab
+        # Filter shops for "Player Shops" tab
         if active_tab == "my_shops":
             if recent_shop_ids:
                 shops_qs = shops_qs.filter(pk__in=recent_shop_ids)

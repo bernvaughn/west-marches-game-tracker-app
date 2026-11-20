@@ -1,4 +1,4 @@
-"""Browser tests for S11: Shop Street Favorites (My Shops filter).
+"""Browser tests for S11: Shop Street Favorites (Player Shops filter).
 
 Note: The third test (test_recent_badge_on_all_shops_tab) is skipped due to
 a flaky interaction with HTMX form submission in the test environment.
@@ -37,7 +37,7 @@ def _login_url(live_server):
 @pytest.mark.browser
 @pytest.mark.django_db
 def test_my_shops_filter_buy_flow(live_server):
-    """Test that buying from a shop adds it to My Shops with Recent badge."""
+    """Test that buying from a shop adds it to Player Shops with Recent badge."""
     _seed_demo()
 
     from playwright.sync_api import sync_playwright
@@ -97,17 +97,17 @@ def test_my_shops_filter_buy_flow(live_server):
             page.goto(_shop_street_url(live_server))
             page.wait_for_load_state("networkidle")
 
-            # Check that My Shops tab exists
-            my_shops_tab = page.query_selector('a:has-text("My Shops")')
-            assert my_shops_tab, "My Shops tab not found"
+            # Check that Player Shops tab exists
+            my_shops_tab = page.query_selector('a:has-text("Player Shops")')
+            assert my_shops_tab, "Player Shops tab not found"
 
-            # Click My Shops tab
+            # Click Player Shops tab
             my_shops_tab.click()
             page.wait_for_load_state("networkidle")
 
-            # The shop should appear in My Shops
+            # The shop should appear in Player Shops
             shop_name = page.query_selector(".wm-street-name")
-            assert shop_name, "No shop found in My Shops"
+            assert shop_name, "No shop found in Player Shops"
 
             # Check for Recent badge
             recent_badge = page.query_selector(".wm-recent-badge")
@@ -122,7 +122,7 @@ def test_my_shops_filter_buy_flow(live_server):
 @pytest.mark.browser
 @pytest.mark.django_db
 def test_my_shops_filter_sell_flow(live_server):
-    """Test that selling to a shop adds it to My Shops with Recent badge."""
+    """Test that selling to a shop adds it to Player Shops with Recent badge."""
     _seed_demo()
 
     from playwright.sync_api import sync_playwright
@@ -183,17 +183,17 @@ def test_my_shops_filter_sell_flow(live_server):
             page.goto(_shop_street_url(live_server))
             page.wait_for_load_state("networkidle")
 
-            # Check that My Shops tab exists
-            my_shops_tab = page.query_selector('a:has-text("My Shops")')
-            assert my_shops_tab, "My Shops tab not found"
+            # Check that Player Shops tab exists
+            my_shops_tab = page.query_selector('a:has-text("Player Shops")')
+            assert my_shops_tab, "Player Shops tab not found"
 
-            # Click My Shops tab
+            # Click Player Shops tab
             my_shops_tab.click()
             page.wait_for_load_state("networkidle")
 
-            # The shop should appear in My Shops
+            # The shop should appear in Player Shops
             shop_name = page.query_selector(".wm-street-name")
-            assert shop_name, "No shop found in My Shops"
+            assert shop_name, "No shop found in Player Shops"
 
             # Check for Recent badge
             recent_badge = page.query_selector(".wm-recent-badge")
