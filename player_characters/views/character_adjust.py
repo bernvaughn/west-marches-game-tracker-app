@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from accounts.permissions import admin_or_gm_required
 from accounts.scoping import club_get_object_or_404
+from items.containers import loot_preview
 from items.models import Item
 from ledger.services import (
     LedgerError,
@@ -120,6 +121,11 @@ def _render_bulk_award(request, form, club, items, status=200):
                 "checked": str(character.pk) in request.POST.getlist("characters"),
             }
         )
+    # Build loot previews for container items (view is admin_or_gm_required, so unmasked)
+    loot_previews = {}
+    for item in items:
+        if item.is_container:
+            loot_previews[item.pk] = loot_preview(item, True)
     return render(
         request,
         "player_characters/characters/bulk_award.html",
@@ -128,6 +134,7 @@ def _render_bulk_award(request, form, club, items, status=200):
             "character_data": character_data,
             "items": items,
             "club": club,
+            "loot_previews": loot_previews,
         },
         status=status,
     )

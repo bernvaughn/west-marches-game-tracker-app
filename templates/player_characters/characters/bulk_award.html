@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static character_tags coins %}
+{% load static character_tags coins loot_tags %}
 {% block title %}Award Loot to Party{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Award Loot to Party" %}
@@ -15,6 +15,13 @@
     </option>
     {% endfor %}
   </datalist>
+
+  <!-- Hidden loot preview templates for container items -->
+  {% for item_pk, rows in loot_previews.items %}
+    <template id="loot-preview-{{ item_pk }}">
+      {% include "components/loot_rows.html" with rows=rows %}
+    </template>
+  {% endfor %}
 
   <h2 class="h6">Characters</h2>
   {{ form.characters.errors }}
@@ -97,6 +104,13 @@
       </div>
       {% endfor %}
     </div>
+
+    <!-- Loot preview slot for this character's item rows -->
+    <div class="wm-loot-preview-slot" style="display: none;">
+      <hr class="my-2">
+      <h4 class="h6">Preview</h4>
+      <div class="wm-loot-slot"></div>
+    </div>
   </div>
   {% endwith %}{% endfor %}
 
@@ -138,11 +152,35 @@ document.addEventListener('DOMContentLoaded', function() {
       var selectedOption = document.querySelector('#item-catalogue option[value="' + this.value + '"]');
       if (selectedOption) {
         hiddenField.value = selectedOption.value;
+        // Show loot preview if this is a container item
+        showLootPreview(this, selectedOption.value);
       } else {
         hiddenField.value = '';
+        // Hide loot preview
+        showLootPreview(this, null);
       }
     });
   });
+
+  function showLootPreview(inputElement, itemId) {
+    // Find the loot preview slot for this character's section
+    var charSection = inputElement.closest('.wm-char-section');
+    if (!charSection) return;
+    var lootSlot = charSection.querySelector('.wm-loot-slot');
+    var previewContainer = charSection.querySelector('.wm-loot-preview-slot');
+    if (!lootSlot || !previewContainer) return;
+
+    if (itemId) {
+      var template = document.getElementById('loot-preview-' + itemId);
+      if (template) {
+        lootSlot.innerHTML = template.innerHTML;
+        previewContainer.style.display = 'block';
+        return;
+      }
+    }
+    lootSlot.innerHTML = '';
+    previewContainer.style.display = 'none';
+  }
 });
 </script>
 {% endblock %}
