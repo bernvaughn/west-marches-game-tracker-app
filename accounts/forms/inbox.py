@@ -20,7 +20,9 @@ TEMPLATE_TEXTS = {
 
 
 class MessageForm(forms.ModelForm):
-    body = forms.CharField(max_length=2000, widget=forms.Textarea(attrs={"rows": 4}))
+    body = forms.CharField(
+        label="Message", max_length=2000, widget=forms.Textarea(attrs={"rows": 4})
+    )
     template = forms.ChoiceField(choices=TEMPLATE_CHOICES, required=False)
 
     class Meta:

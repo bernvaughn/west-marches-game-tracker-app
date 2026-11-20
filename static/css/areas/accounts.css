@@ -306,3 +306,8 @@
 .wm-dashboard-header .wm-avatar { background: var(--wm-surface-sunken); color: var(--wm-text-muted); display: flex; align-items: center; justify-content: center; border-radius: 50%; }
 .wm-dashboard-header .wm-avatar-sm { width: 2rem; height: 2rem; font-size: var(--wm-text-sm); }
 .wm-dashboard-header .wm-avatar-lg { width: 4rem; height: 4rem; font-size: var(--wm-text-2xl); }
+
+/* message_new page: prevent overflow at small widths by relaxing min-width */
+@media (max-width: 575.98px) {
+  .wm-msg-col--fluid { min-width: 0; }
+}
