@@ -3,46 +3,53 @@
 {% block content %}
 {% include "components/page_header.html" with title="Site feedback" subtitle="Bug reports and feature requests sent by players." %}
 <div class="wm-narrow-block">
-<form method="get" class="wm-form d-inline-flex gap-2 align-items-end mb-3">
-  <label class="form-label mb-0 me-2">Status</label>
-  <select name="status" class="form-select form-select-sm">
-    {% for value, label in status_choices %}
-    <option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-    <option value="all"{% if status == "all" %} selected{% endif %}>All</option>
-  </select>
-  <label class="form-label mb-0 me-2">Kind</label>
-  <select name="kind" class="form-select form-select-sm">
-    {% for value, label in kind_choices %}
-    <option value="{{ value }}"{% if value == kind %} selected{% endif %}>{{ label }}</option>
-    {% endfor %}
-    <option value="all"{% if kind == "all" %} selected{% endif %}>All</option>
-  </select>
-  <button class="btn btn-primary btn-sm" type="submit">Filter</button>
-  <a href="{% url 'site_feedback' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+<form method="get" class="wm-form wm-feedback-filter d-flex flex-wrap gap-2 align-items-end mb-3">
+  <div class="wm-feedback-filter__field">
+    <label for="feedback-status" class="form-label small mb-1">Status</label>
+    <select id="feedback-status" name="status" class="form-select form-select-sm">
+      {% for value, label in status_choices %}
+      <option value="{{ value }}"{% if value == status %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+      <option value="all"{% if status == "all" %} selected{% endif %}>All</option>
+    </select>
+  </div>
+  <div class="wm-feedback-filter__field">
+    <label for="feedback-kind" class="form-label small mb-1">Kind</label>
+    <select id="feedback-kind" name="kind" class="form-select form-select-sm">
+      {% for value, label in kind_choices %}
+      <option value="{{ value }}"{% if value == kind %} selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+      <option value="all"{% if kind == "all" %} selected{% endif %}>All</option>
+    </select>
+  </div>
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary btn-sm" type="submit">Filter</button>
+    <a href="{% url 'site_feedback' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+  </div>
 </form>
+</div>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Kind</th><th>Status</th><th>User</th><th>Club</th><th>Page</th><th>Report</th><th>Date</th></tr></thead>
+  <thead><tr><th class="wm-col-optional">Kind</th><th>Status</th><th class="wm-col-optional">User</th><th class="wm-col-optional">Club</th><th class="wm-col-optional">Page</th><th>Report</th><th class="wm-col-optional">Date</th><th class="actions"><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for f in feedback_list %}
   <tr>
-    <td>{% include "components/badge.html" with status="neutral" text=f.get_kind_display %}</td>
+    <td class="wm-col-optional">{% include "components/badge.html" with status="neutral" text=f.get_kind_display %}</td>
     <td>{% include "components/status_badge.html" with value=f.status text=f.get_status_display %}</td>
-    <td>{{ f.user.email|default:"-" }}</td>
-    <td>{{ f.club.name|default:"-" }}</td>
-    <td><a href="{{ f.page_url }}" class="text-truncate" title="{{ f.page_url }}">{{ f.page_url|default:"-" }}</a></td>
+    <td class="wm-col-optional">{{ f.user.email|default:"-" }}</td>
+    <td class="wm-col-optional">{{ f.club.name|default:"-" }}</td>
+    <td class="wm-col-optional"><a href="{{ f.page_url }}" class="wm-feedback-page text-truncate" title="{{ f.page_url }}">{{ f.page_url|default:"-" }}</a></td>
     <td>{{ f.body|linebreaksbr }}</td>
-    <td class="wm-date">{{ f.created|date:"DATETIME_FORMAT" }}</td>
-    <td class="text-end">
+    <td class="wm-col-optional wm-date">{{ f.created|date:"DATETIME_FORMAT" }}</td>
+    <td class="text-end actions">
       {% if f.status == "open" %}
-        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-inline">
+        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-block d-sm-inline mb-1 mb-sm-0">
           {% csrf_token %}<input type="hidden" name="status" value="handled"><button class="btn btn-sm btn-outline-success">Mark handled</button>
         </form>
-        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-inline">
+        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-block d-sm-inline mb-1 mb-sm-0">
           {% csrf_token %}<input type="hidden" name="status" value="closed"><button class="btn btn-sm btn-outline-danger">Close</button>
         </form>
       {% else %}
-        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-inline">
+        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-block d-sm-inline mb-1 mb-sm-0">
           {% csrf_token %}<input type="hidden" name="status" value="open"><button class="btn btn-sm btn-outline-secondary">Reopen</button>
         </form>
       {% endif %}
@@ -53,5 +60,4 @@
   {% endfor %}
   </tbody>
 </table></div>
-</div>
 {% endblock %}
