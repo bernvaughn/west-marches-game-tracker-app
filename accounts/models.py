@@ -1,8 +1,30 @@
+from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
 from .scoping import ClubScopedManager
+
+try:
+    from zoneinfo import ZoneInfo
+    from zoneinfo import ZoneInfoNotFoundError
+except ImportError:  # pragma: no cover - Python < 3.9
+    from backports.zoneinfo import ZoneInfo
+    from backports.zoneinfo import ZoneInfoNotFoundError
+
+
+def default_timezone():
+    """Return the default timezone string from settings."""
+    return getattr(settings, "TIME_ZONE", "UTC")
+
+
+def validate_timezone(value):
+    """Validate that the value is a valid IANA timezone."""
+    try:
+        ZoneInfo(value)
+    except ZoneInfoNotFoundError as e:
+        raise ValidationError(f"Invalid timezone: {value}") from e
 
 
 class UserManager(BaseUserManager):
@@ -65,6 +87,12 @@ class Club(models.Model):
     )
     street_stall_gap = models.PositiveSmallIntegerField(
         "Minimum empty buildings before player stalls", default=1
+    )
+    timezone = models.CharField(
+        max_length=64,
+        default=default_timezone,
+        validators=[validate_timezone],
+        help_text="IANA timezone name (e.g., America/New_York)",
     )
 
     class Meta:
