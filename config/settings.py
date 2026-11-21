@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "downtime",
     "agent_access",
     "starting_equipment",
+    "play_sessions",
 ]
 
 MIDDLEWARE = [
