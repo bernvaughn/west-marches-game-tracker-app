@@ -124,6 +124,7 @@ class PlayView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
             "avail_now": "now" in avails,
             "avail_upcoming": "upcoming" in avails,
             "has_filters": bool(costs or reward_types or avails),
+            "is_htmx": is_htmx(request),
         }
         return render_modal_or_page(
             request,

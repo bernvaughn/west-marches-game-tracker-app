@@ -1,5 +1,6 @@
 {% load coins %}
 <div id="downtime-jobs">
+  {% if character and is_htmx %}<p id="downtime-balance" class="wm-chalk-balance wm-downtime-balance" hx-swap-oob="true">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>{% endif %}
   {% if cards %}
   <ul class="wm-chalk-list">
     {% for card in cards %}
