@@ -1,8 +1,10 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 
-from accounts.scoping import ClubScopedManager
+from accounts.scoping import ClubScopedManager, ClubScopedQuerySet
+from ledger.models import AppendOnlyModel, AppendOnlyManager
 
 ABILITIES = [
     ("strength", "STR", "Strength"),
@@ -43,6 +45,23 @@ def _ability_field():
         validators=[MinValueValidator(1), MaxValueValidator(30)],
         help_text="Optional. Whole number from 1 to 30.",
     )
+
+
+class CharacterQuerySet(ClubScopedQuerySet):
+    def not_archived(self):
+        """Characters that are not archived."""
+        return self.filter(archived_at__isnull=True)
+
+    def living(self):
+        """Characters that are not dead (regardless of archive state)."""
+        return self.filter(died_on__isnull=True)
+
+    def dead(self):
+        """Characters that are dead (regardless of archive state)."""
+        return self.filter(died_on__isnull=False)
+
+
+CharacterManager = models.Manager.from_queryset(CharacterQuerySet)
 
 
 class Character(models.Model):
@@ -121,8 +140,12 @@ class Character(models.Model):
     starting_equipment_claimed = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     last_printed_at = models.DateTimeField(null=True, blank=True)
+    # Death and archive
+    died_on = models.DateField(null=True, blank=True)
+    death_note = models.TextField(blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
-    objects = ClubScopedManager()
+    objects = CharacterManager()
 
     class Meta:
         ordering = ["name"]
@@ -133,6 +156,18 @@ class Character(models.Model):
     def clean(self):
         if self.owner_id and self.owner.club_id != self.club_id:
             raise ValidationError("Owner must be a member of the character's club.")
+
+    @property
+    def is_dead(self):
+        return self.died_on is not None
+
+    @property
+    def is_archived(self):
+        return self.archived_at is not None
+
+    @property
+    def is_active(self):
+        return self.archived_at is None
 
 
 class SelectedCharacter(models.Model):
@@ -198,3 +233,41 @@ class ItemNote(models.Model):
 
     def __str__(self):
         return f"{self.character}: note on {self.item}"
+
+
+class CharacterStatusChange(AppendOnlyModel):
+    """Append-only history of a character's death/archive state changes."""
+
+    club_path = "character__club"
+
+    class Kind(models.TextChoices):
+        DIED = "died", "Died"
+        REVIVED = "revived", "Revived"
+        ARCHIVED = "archived", "Archived"
+        UNARCHIVED = "unarchived", "Unarchived"
+
+    character = models.ForeignKey(
+        Character, on_delete=models.PROTECT, related_name="status_changes"
+    )
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    by = models.ForeignKey(
+        "accounts.Membership",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    at = models.DateTimeField(default=timezone.now)
+    note = models.TextField(blank=True)
+    date = models.DateField(default=timezone.localdate)
+
+    objects = AppendOnlyManager()
+
+    class Meta:
+        ordering = ["-at", "-id"]
+        indexes = [
+            models.Index(fields=["character", "at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.character} {self.kind} at {self.at}"

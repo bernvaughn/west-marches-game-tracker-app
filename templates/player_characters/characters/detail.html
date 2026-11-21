@@ -18,11 +18,14 @@
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:print_items' club.slug character.pk %}" data-wm-tooltip title="Print cards for all items, nine to a page, to bring to the table.">Print item cards</a>
   <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:slips_print' club.slug %}?characters={{ character.pk }}&from=sheet&character={{ character.pk }}" data-wm-tooltip title="Print an adventurer's pass: name, pronouns, player, species, class, level, AC, passive Perception, Max HP and ability scores.">Print slip</a>
   <button type="button" class="btn btn-sm btn-primary" data-print-sheet data-print-sheet-url="{% url 'characters:detail' club.slug character.pk %}" data-csrf-token="{{ csrf_token }}" data-wm-tooltip title="Print this character sheet in black and white.">{% include "components/icon.html" with name="printer" %} Print sheet</button>
+  {% include "player_characters/characters/_death_actions.html" with character=character %}
+  {% include "player_characters/characters/_archive_actions.html" with character=character %}
 </div>
 {% endif %}
 <article class="wm-sheet wm-sheet--page">
   <header class="wm-sheet-header">
     <h1>{{ character.name }}</h1>
+    {% include "player_characters/characters/_life_badge.html" with character=character %}
     <p>{% if character.level %}Level {{ character.level }}{% else %}Level &mdash;{% endif %}{% if character.char_class %} &middot; {{ character.char_class }}{% if not character.class_option_id %} {% include "components/badge.html" with text="custom" status="warning" %}{% endif %}{% endif %}{% if character.species %} &middot; {{ character.species }}{% if not character.species_option_id %} {% include "components/badge.html" with text="custom" status="warning" %}{% endif %}{% endif %}{% if character.background %} &middot; {{ character.background }}{% if not character.background_option_id %} {% include "components/badge.html" with text="custom" status="warning" %}{% endif %}{% endif %}{% if character.pronouns %} &middot; {{ character.pronouns }}{% endif %}{% if character.alignment %} &middot; {{ character.alignment }}{% endif %}</p>
     <p>Played by {{ owner_name }} &middot; {{ club.name }}</p>
   </header>
