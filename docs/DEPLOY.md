@@ -113,6 +113,12 @@ Log in to the site admin and use the "new club" form to create the first club; i
 
 **Never run `seed_demo` in production.** It creates a known login (`admin@example.com` / `demo-password`) and a known agent token (`wm_demo_local_token_change_me`). It is for local use only and must never exist on a hosted site.
 
+**After deploying a version that includes stacked ammunition changes (v0.3.0+):**
+Run the bundle converter for each existing club to migrate old "Arrows (20)" etc. to stacked items:
+```bash
+.venv/bin/python manage.py convert_seeded_bundles --club <slug> --apply
+```
+
 ## 4. Release flow
 
 Publish a GitHub release with a tag such as `v0.1.0`. The workflow `.github/workflows/deploy.yml` (owned by the owner) connects to the Droplet as `deploy` and runs the same command, streaming the release's own `deploy/deploy.sh`:

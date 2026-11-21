@@ -361,12 +361,25 @@ def test_demo_new_club_parity():
 
 
 def test_new_club_has_no_demo_only_rows():
-    """A new club must not have stacked items, ItemNote, requests or feedback rows."""
+    """A new club must not have demo-only rows (ItemNote, requests, feedback).
+    Stacked ammunition items are now part of standard seeding."""
     new_club = Club.objects.create(name="Parity Club", slug="parity-club-2")
     seed_new_club(new_club)
 
-    # No stacked items
-    assert not Item.objects.filter(club=new_club, is_stacked=True).exists()
+    # Stacked ammunition items ARE expected (Arrows, Crossbow Bolts, etc.)
+    stacked = Item.objects.filter(club=new_club, is_stacked=True)
+    stacked_names = {item.name for item in stacked}
+    expected_stacked = {
+        "Arrows",
+        "Crossbow Bolts",
+        "Firearm Bullets",
+        "Sling Bullets",
+        "Needles",
+        "Caltrops",
+        "Ball Bearings",
+        "Spikes, Iron",
+    }
+    assert stacked_names == expected_stacked
 
     # No ItemNote
     assert not ItemNote.objects.filter(character__club=new_club).exists()
