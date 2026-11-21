@@ -168,3 +168,30 @@ def test_cross_club_isolation(
 def test_anonymous_redirects(client, club):
     assert client.get(_url("requests", club)).status_code == 302
     assert client.get(_url("request_new", club)).status_code == 302
+
+
+@pytest.mark.story("D4")
+def test_queue_shows_summary_cell_for_gm(login, club, game_master, character, point_request):
+    """GM queue page: phone summary cell shows note, status and points."""
+    page = login(game_master).get(_url("requests", club)).content.decode()
+    assert "wm-req-summary" in page
+    assert point_request.note in page
+    assert point_request.get_status_display() in page
+    assert f"{point_request.points} pts" in page
+
+
+@pytest.mark.story("D4")
+def test_queue_marks_optional_columns(login, club, game_master, character, point_request):
+    """Characters, Status, Points, Note carry wm-col-optional on th and td."""
+    page = login(game_master).get(_url("requests", club)).content.decode()
+    assert 'class="wm-col-optional"' in page
+    assert page.count("wm-col-optional") >= 8
+
+
+@pytest.mark.story("D4")
+def test_queue_shows_actions_for_pending(login, club, game_master, character, point_request):
+    """Action buttons still render for pending requests."""
+    page = login(game_master).get(_url("requests", club)).content.decode()
+    assert "wm-row-actions" in page
+    assert 'aria-label="Approve"' in page
+    assert 'aria-label="Decline"' in page
