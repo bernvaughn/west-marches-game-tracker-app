@@ -1,4 +1,5 @@
 import pytest
+from datetime import timezone as dt_timezone
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -133,7 +134,7 @@ def test_moment_stored_utc_shown_in_club_zone_across_dst():
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
 
     # March 9, 2024 19:00 EST (UTC-5) -> 2024-03-10 00:00 UTC
-    starts_est = timezone.datetime(2024, 3, 9, 19, 0, tzinfo=timezone.utc)
+    starts_est = timezone.datetime(2024, 3, 10, 0, 0, tzinfo=dt_timezone.utc)
     session1 = PlaySession.objects.create(
         club=club, title="Before DST", starts_at=starts_est, game_master=membership
     )
@@ -142,7 +143,7 @@ def test_moment_stored_utc_shown_in_club_zone_across_dst():
     assert local1.hour == 19
 
     # March 10, 2024 19:00 EDT (UTC-4) -> 2024-03-10 23:00 UTC
-    starts_edt = timezone.datetime(2024, 3, 10, 23, 0, tzinfo=timezone.utc)
+    starts_edt = timezone.datetime(2024, 3, 10, 23, 0, tzinfo=dt_timezone.utc)
     session2 = PlaySession.objects.create(
         club=club, title="After DST", starts_at=starts_edt, game_master=membership
     )
@@ -160,7 +161,7 @@ def test_changing_club_zone_keeps_moment_changes_display():
     user = User.objects.create_user(email="gm4@test.com", password="pass12345678")
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
 
-    utc_moment = timezone.datetime(2024, 6, 15, 12, 0, tzinfo=timezone.utc)
+    utc_moment = timezone.datetime(2024, 6, 15, 12, 0, tzinfo=dt_timezone.utc)
     session = PlaySession.objects.create(
         club=club, title="Zone Test", starts_at=utc_moment, game_master=membership
     )

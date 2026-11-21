@@ -197,7 +197,7 @@ def test_load_hooks_calls_register(monkeypatch):
         def register(self):
             called["yes"] = True
 
-    monkeypatch.setattr(core_module, "discover_module", lambda f, p, pkg: FakeModule() if f == "schedule" else None)
+    monkeypatch.setattr(core_module, "discover_module", lambda f, p, pkg=None: FakeModule() if f == "schedule" else None)
     core_module.load_hooks()
     assert called.get("yes") is True
 

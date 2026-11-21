@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone as dt_timezone
 from django.template import TemplateDoesNotExist
 from django.urls import reverse
 from django.utils import timezone
@@ -25,7 +25,7 @@ def club_and_session():
     session = PlaySession.objects.create(
         club=club,
         title="Test Session",
-        starts_at=timezone.datetime(2024, 6, 15, 18, 0, tzinfo=timezone.utc),
+        starts_at=timezone.datetime(2024, 6, 15, 18, 0, tzinfo=dt_timezone.utc),
         game_master=membership,
         location="The Tavern",
         notes="Bring dice.",
@@ -85,7 +85,7 @@ def test_detail_sections_render_in_order(client, club_and_session, monkeypatch, 
     original_sections = core._sections.copy()
     core._sections.clear()
     core.register_session_section("b_section", 20, "section_b.html", lambda r, s: {})
-    core.register_section_a = core.register_session_section("a_section", 10, "section_a.html", lambda r, s: {})
+    core.register_session_section("a_section", 10, "section_a.html", lambda r, s: {})
 
     try:
         url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
@@ -150,7 +150,7 @@ def test_detail_time_shows_in_club_zone_across_dst(client):
     session_before = PlaySession.objects.create(
         club=club,
         title="Before DST",
-        starts_at=timezone.datetime(2024, 3, 10, 0, 0, tzinfo=timezone.utc),
+        starts_at=timezone.datetime(2024, 3, 10, 0, 0, tzinfo=dt_timezone.utc),
         game_master=membership,
     )
 
@@ -158,7 +158,7 @@ def test_detail_time_shows_in_club_zone_across_dst(client):
     session_after = PlaySession.objects.create(
         club=club,
         title="After DST",
-        starts_at=timezone.datetime(2024, 3, 10, 23, 0, tzinfo=timezone.utc),
+        starts_at=timezone.datetime(2024, 3, 10, 23, 0, tzinfo=dt_timezone.utc),
         game_master=membership,
     )
 
