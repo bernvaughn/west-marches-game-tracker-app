@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    club_settings,
     dashboard,
     dashboard_consumables,
     dashboard_downtime,
@@ -99,4 +100,5 @@ urlpatterns = [
         inbox.message_detail,
         name="message_detail",
     ),
+    path("settings/", club_settings.club_settings, name="club_settings"),
 ]

@@ -1,7 +1,8 @@
 from django import forms
 from django.utils.text import slugify
 
-from ..models import Club
+from ..forms.club_settings import TimezoneChoiceField, timezone_choices
+from ..models import Club, default_timezone
 
 
 class ClubCreateForm(forms.Form):
@@ -9,8 +10,13 @@ class ClubCreateForm(forms.Form):
     slug = forms.SlugField(required=False, max_length=50)
     admin_email = forms.EmailField()
     admin_display_name = forms.CharField(required=False, max_length=150)
+    timezone = TimezoneChoiceField(initial=default_timezone)
     # Set when the site admin has seen the "already has an account" notice.
     confirm_existing = forms.BooleanField(required=False, widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["timezone"].choices = timezone_choices(default_timezone())
 
     def clean_admin_email(self):
         return self.cleaned_data["admin_email"].strip().lower()
