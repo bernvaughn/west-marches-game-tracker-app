@@ -1,4 +1,5 @@
 import pytest
+from django.conf import settings
 
 from map.models import Tile
 from map.services import add_found_marks
@@ -75,6 +76,14 @@ def test_hex_links_open_modal(login, club, hex_map, player, placeholder_world, p
     assert 'hx-target="#app-modal .modal-content"' in link
     assert "data-app-modal" in link and "hx-on" not in link
     assert "hx-push-url" not in link
+
+
+@pytest.mark.story("M17")
+def test_modal_js_cancels_svg_link_click():
+    """htmx does not cancel a click on an SVG <a>, so modal.js must (no hx-on under the CSP)."""
+    js = (settings.BASE_DIR / "static" / "js" / "modal.js").read_text()
+    assert 'addEventListener("click"' in js
+    assert "a[data-app-modal]" in js and "preventDefault()" in js
 
 
 @pytest.mark.story("M17")
