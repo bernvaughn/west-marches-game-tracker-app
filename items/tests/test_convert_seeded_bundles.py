@@ -219,7 +219,7 @@ def test_net_zero_mixed_with_positive_holder(club):
     arrows = Item.objects.get(club=club, name="Arrows")
     assert arrows.is_stacked and arrows.unit_name == "arrow" and arrows.value_units == 20
     assert item_quantities(pos_char)[arrows.pk] == 60  # 3 * 20
-    assert item_quantities(zero_char)[arrows.pk] == 0
+    assert arrows.pk not in item_quantities(zero_char)  # zero net means not in dict
     # Only one adjustment entry (for Aria)
     adjustments = LedgerEntry.objects.filter(kind="adjustment")
     assert adjustments.count() == 1
@@ -227,11 +227,17 @@ def test_net_zero_mixed_with_positive_holder(club):
 
 def test_negative_net_refuses_whole_run(club):
     """Negative net total refuses the whole conversion, naming only negative holders."""
+    from ledger.models import LedgerEntry, LedgerLine
+    from django.utils import timezone
     old_arrows = Item.objects.create(club=club, name="Arrows (20)", value_cp=100)
     neg_char = make_character(club, "Srorthen")
     pos_char = make_character(club, "Aria")
     record(neg_char, "award", [Line(item=old_arrows, quantity=1)])
-    record(neg_char, "consumed", [Line(item=old_arrows, quantity=-2)])  # net -1
+    # Create a negative net total directly via ledger entries (bypassing validation)
+    entry = LedgerEntry.objects.create(
+        character=neg_char, club=club, kind=LedgerEntry.Kind.ADJUSTMENT, note="test", date=timezone.localdate()
+    )
+    LedgerLine.objects.create(entry=entry, item=old_arrows, quantity=-2)  # net -1
     record(pos_char, "award", [Line(item=old_arrows, quantity=3)])  # net +3
 
     before = snapshot()

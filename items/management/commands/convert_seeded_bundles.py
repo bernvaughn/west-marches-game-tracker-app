@@ -225,6 +225,10 @@ class Command(BaseCommand):
         if preview.refusal_reasons:
             raise Refusal(f'"{old_name}": ' + " ".join(preview.refusal_reasons))
 
+        if non_skipped == 0:
+            self.stdout.write(f'    No holders with positive net; skipping conversion of "{old_name}"')
+            return 0
+
         if old_name != new_name:
             old_item.name = new_name
             old_item.save(update_fields=["name"])
