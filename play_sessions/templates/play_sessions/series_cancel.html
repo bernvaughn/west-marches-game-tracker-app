@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load tz %}
+
+{% block title %}Cancel series{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+
+{% block content %}
+{% include "components/page_header.html" with title="Cancel this and later sessions" %}
+{% include "components/alert.html" with level="warning" text="This cannot be undone." %}
+<p>The following {{ count }} session(s) in this series will be cancelled:</p>
+<ul class="mb-3">
+{% timezone club.timezone %}
+{% for s in later_sessions %}
+<li>{{ s.title }} &ndash; {{ s.starts_at|date:"D, M j, Y" }} at {{ s.starts_at|time:"g:i A" }}</li>
+{% empty %}
+<li>{{ session.title }}</li>
+{% endfor %}
+<li>{{ session.title }} &ndash; {{ session.starts_at|date:"D, M j, Y" }} at {{ session.starts_at|time:"g:i A" }}</li>
+{% endtimezone %}
+</ul>
+<form method="post" class="wm-form">
+{% csrf_token %}
+<div class="wm-form-actions">
+  <button class="btn btn-danger" type="submit">Yes, cancel these sessions</button>
+  <a class="btn btn-outline-secondary" href="{% url 'play_sessions:session_detail' club_slug=club.slug pk=session.pk %}">Cancel</a>
+</div>
+</form>
+{% endblock %}
