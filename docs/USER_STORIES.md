@@ -1172,7 +1172,7 @@ Rules for every story in this round:
 ### Foundation
 
 **E1 Send email.** As a site admin, I want the app to send email through Resend, so the other stories can use it. *(core, config)*
-- Settings come from the server environment: the Resend API key, the "from" address, and a reply-to address. With no key set, the app logs emails to the console as it does today and never fails because of it.
+- Settings come from the server environment: the Resend API key, and the "from" address. There is no reply-to for now: a reply-to would be set per club by the app, and how is still undecided. With no key set, the app logs emails to the console as it does today and never fails because of it.
 - The "from" address is on a domain verified in Resend, for example `Downtime Market <noreply@mail.downtimemarket.com>`. The site admin does the DNS setup once, and the README says how.
 - Every email goes through one place in the code. It sends in the background, so a slow or failing Resend never makes a page slow or fail. A failed send is retried a few times, then marked failed.
 - A site admin command sends a test email to an address, and says plainly whether the key and domain work.
