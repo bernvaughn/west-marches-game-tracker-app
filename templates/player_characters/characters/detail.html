@@ -85,7 +85,7 @@
       {% if character.description %}{{ character.description|linebreaks }}
       {% else %}<p class="wm-sheet-note">No description yet.{% if can_edit %} <a class="no-print" href="{% url 'characters:edit' club.slug character.pk %}" data-wm-tooltip title="Change this character's details: name, level, class, ability scores and more.">Edit</a>{% endif %}</p>{% endif %}
     </section>
-    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-items">
+    <section class="wm-sheet-box wm-sheet-full" aria-labelledby="sheet-items" id="sheet-inventory">
       <h2 class="wm-sheet-box-title" id="sheet-items">Inventory</h2>
       {% if can_view %}
       <div class="no-print wm-sheet-shop">
