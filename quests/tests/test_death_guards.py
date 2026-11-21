@@ -78,7 +78,7 @@ def test_living_character_still_turns_in(login, club, quest, character, item, gi
     give(character, item, 2)
     before = LedgerEntry.objects.count()
     c = login(character.owner.user)
-    r = c.post(_url("turn_in", quest.pk), follow=True)
+    r = c.post(_url("turn_in", quest.pk))
     assert r.status_code == 302
     assert QuestCompletion.objects.count() == 1
     assert LedgerEntry.objects.count() == before + 2
@@ -91,4 +91,7 @@ def test_gm_adjust_items_for_dead_character_still_works(character, item):
     ledger_services.record(
         character, "award", [ledger_services.Line(item=item, quantity=1)], note="gm adjustment"
     )
-    assert ledger_services.item_quantities(character) == {**before, item.pk: before.get(item.pk, 0) + 1}
+    assert ledger_services.item_quantities(character) == {
+        **before,
+        item.pk: before.get(item.pk, 0) + 1,
+    }
