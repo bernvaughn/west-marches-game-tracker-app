@@ -17,17 +17,10 @@
           {% if award.note %}<span class="text-muted small ms-2">{{ award.note }}</span>{% endif %}
         </div>
         <div class="wm-award-lines mt-1 small">
-          {% if award.points %}
-            +{{ award.points }} downtime points
-          {% elif award.coins %}
-            {{ award.coins|coins }}
-          {% else %}
-            {% for name, qty in award.items %}
-              {{ qty }} x {{ name }}{% if not forloop.last %}, {% endif %}
-            {% empty %}
-              —
-            {% endfor %}
-          {% endif %}
+          {% if award.points %}+{{ award.points }} downtime points{% endif %}
+          {% if award.coins %}{% if award.points %}, {% endif %}{{ award.coins|coins }}{% endif %}
+          {% for name, qty in award.items %}{% if award.points or award.coins or not forloop.first %}, {% endif %}{{ qty }} x {{ name }}{% endfor %}
+          {% if not award.points and not award.coins and not award.items %}—{% endif %}
         </div>
       </li>
       {% endfor %}

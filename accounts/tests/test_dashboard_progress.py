@@ -284,3 +284,20 @@ def test_no_print_on_new_blocks(club, player, character, login):
     assert "wm-dashboard-header card wm-card-raised mb-4 no-print" in html
     if "Latest awards" in html:
         assert "wm-card-raised mb-4 no-print" in html
+
+
+@pytest.mark.django_db
+def test_recent_awards_shows_coins_and_items_together(club, player, character, item, login):
+    """One entry holding a coin line and an item line shows both."""
+    record(
+        character,
+        "award",
+        [Line(coins=500), Line(item=item, quantity=2)],
+        note="Crypt loot",
+        date=timezone.localdate(),
+    )
+    c = login(player)
+    html = _dashboard(c, club.slug).content.decode()
+    assert "2 x Rope" in html
+    assert "Crypt loot" in html
+    assert "5 gp" in html or "500" in html
