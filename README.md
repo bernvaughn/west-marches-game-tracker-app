@@ -4,7 +4,7 @@ Downtime Market is a game tracker for West Marches style D&D clubs.
 
 Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Prices come from DigitalOcean's own docs where noted and otherwise from third-party summaries; confirm them on the signup page.
 
-Scope has since grown to eight Django apps (see [Django apps](#django-apps)), clubs, maps, quests, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+Scope has since grown to a dozen Django apps (see [Django apps](#django-apps)), clubs, maps, quests, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
 ## Run locally
 
@@ -15,7 +15,7 @@ uv run python manage.py seed_demo
 uv run python manage.py runserver
 ```
 
-Static URLs carry `?v=<content hash>` automatically, so edited CSS and JS show up without a hard refresh. Runserver and the tests need no `collectstatic`; production runs it as usual.
+Static URLs carry `?v=<content hash>` automatically, so edited CSS and JS show up without a hard refresh. Runserver and the tests need no `collectstatic`; production still runs it so Caddy can serve the files from `staticfiles`.
 
 Open http://127.0.0.1:8000/ and sign in with a demo login. The password for all of them is `demo-password`.
 
@@ -32,6 +32,10 @@ The browser console guard is slow and needs Chromium, so `uv run pytest` skips i
 Run it with `uv run playwright install chromium` once, then `uv run pytest -m browser`.
 For a list of problems per page, run `uv run python scripts/console_sweep.py`.
 For the UI audit, `uv run python scripts/screenshots.py --audit --out <dir>` captures every page at 1920, 1280, 768 and 390 px (see the Method section of `docs/design/AUDIT-2.md`).
+
+## Deploying
+
+The app runs on one Droplet behind Caddy and gunicorn, with nightly SQLite backups. See [docs/DEPLOY.md](docs/DEPLOY.md) for server setup, the first deploy, releases, rollback, backups, and restore.
 
 ## New clubs
 
@@ -176,7 +180,7 @@ The app is a plain Django site: game masters and players use server-rendered pag
 flowchart LR
     B["Browsers<br/>GM and players<br/>htmx, every 5s"] --> C
     subgraph D["One DigitalOcean Droplet, $6/month"]
-        C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>all eight apps"] --> S[("SQLite<br/>one database file")]
+        C["Caddy<br/>HTTPS certificates"] --> G["Django (gunicorn)<br/>all apps"] --> S[("SQLite<br/>one database file")]
     end
     S --> O["Offsite copy<br/>nightly backup of the file"]
 ```
@@ -195,20 +199,24 @@ How the larger scope fits this architecture:
 
 ## Django apps
 
-Planned split. Names are tentative; a Django app name must be a valid Python name, so `player-characters` becomes `player_characters`.
+These are the 12 project apps installed in `INSTALLED_APPS` today. Most of their data belongs to a single club. The exceptions: user accounts in `accounts` are site-wide, and `core` holds no data.
 
 | App | What it holds |
 | --- | --- |
 | `accounts` | User accounts, each club's email whitelist, who holds which permission in which club, and messages to club admins (a separate messaging app may make sense later) |
+| `character_options` | Each club's lists of species, classes, and backgrounds that players pick from on a character sheet |
 | `player_characters` | The characters players play as (a player can have several; game masters can have them too): sheet details (ability scores, class, species), coins, owned items |
 | `items` | Each club's item catalogue: names, descriptions, traits and other details, and prices |
+| `core` | Shared service base classes (transaction handling and same-club checks) used by the other apps; no models |
 | `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), shop rotations (open and close dates only; inventory and stock stay with the shop), and buying and selling at percentages of an item's value, with per-item overrides |
 | `ledger` | The history of every gain or loss of items or coins for a character, each with a note and a date |
 | `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
 | `quests` | Small side quests, such as gathering items during a session and trading them in for a reward or more money |
-| `agent_access` | An MCP endpoint so a game master's AI agent can propose awards from session notes, which the game master reviews and confirms on the site (the app is not named `mcp`, which would clash with the `mcp` Python package) |
+| `downtime` | Downtime points and actions characters spend between sessions, with requests, results, and entries |
+| `agent_access` | OAuth sign-in (`django-oauth-toolkit`) and the MCP endpoint at `/mcp`: a game master's AI agent can propose awards from session notes, which the game master reviews and confirms on the site (the app is not named `mcp`, which would clash with the `mcp` Python package) |
+| `starting_equipment` | Starting equipment templates by class and background, with choice groups, packs, and coins for new characters |
 
-All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist for all eight apps. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
+All data belongs to a club (a group of people and their game data), and one club never sees another's. Stories exist for all the apps. A site admin runs the whole site; inside a club, admin and game master are separate permissions that one account can hold together. Each club has its own item catalogue, so clubs can add their own homebrew items. The `items` app defines items; the `shops` app only holds inventories that point at a club's catalogue (a shop sees only its own club's items) and handles buying and selling. Loot and quests use the same catalogue. Coins are stored as copper and shown as copper, silver, gold, and platinum. The `ledger` app records every gain or loss of items or coins for a character with a note and a date, such as `traded to <character name>` or `awarded by <game master name>`.
 
 Later: a `lore` app is out of scope for now. The world notes in the [dnd-world-keeper](https://github.com/bernvaughn/dnd-world-keeper) repo should eventually live in this app instead of that separate repo.
 
@@ -234,14 +242,14 @@ Do not run your own mail server on the Droplet.
 
 ## Agent access (MCP)
 
-Decided in outline: propose-then-confirm for everything in the first version, with map updates from notes coming soon. Stories A1 to A7 are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
+Propose-then-confirm for everything in the first version, with map updates from notes coming soon. Stories A1 to A7 are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
 
-MCP is an open standard that lets an AI agent call named actions ("tools") on another program. The app would serve an MCP endpoint over HTTPS, and a game master's agent would connect to it with a personal token, look up characters and catalogue items, and propose a batch of awards from session notes. The game master confirms the batch on the site before anything is applied.
+MCP is an open standard that lets an AI agent call named actions ("tools") on another program. The app serves an MCP endpoint at `/mcp` over HTTPS, and a game master's agent connects to it, looks up characters and catalogue items, and proposes awards from session notes. The game master confirms the batch on the site before anything is applied.
 
-- **Fits the plan.** A Django library, `django-mcp-server`, serves an MCP endpoint inside an existing Django app on WSGI or ASGI and supports token authentication ([PyPI](https://pypi.org/project/django-mcp-server/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
+- **Fits the plan.** Sign-in uses OAuth through `django-oauth-toolkit`, and the endpoint is served with the `mcp` package ([PyPI](https://pypi.org/project/mcp/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
 - **Spec moves quickly.** The MCP specification is dated and changes between revisions; the 2025-03-26 revision added OAuth 2.1 authorization and Streamable HTTP, and a later revision reportedly removed protocol sessions ([summary](https://www.getmaxim.ai/topics/mcp-gateway/mcp-specification)). Choose a library that tracks the current revision, and re-check before building.
 - **Which agents.** Some game masters use Claude and some use Meta's Muse. Claude connects to a remote MCP server by URL as a custom connector, from Anthropic's cloud, and Claude's docs describe both OAuth sign-in and fixed request headers such as a bearer token, though one of Claude's own pages lists fixed headers as beta ([Claude custom connectors](https://claude.com/docs/connectors/custom), [Claude authentication](https://claude.com/docs/connectors/building/authentication)). Muse is less clear: Meta's documentation does not mention MCP in the consumer app, while several third-party guides show a remote server added as a custom connector over Streamable HTTP with OAuth sign-in, and Meta's coding agent supports MCP directly ([guide](https://anythingmcp.com/guides/clients/muse), [Meta Muse MCP summary](https://www.aiagentslibrary.com/blog/meta-muse-connectors/)). Treat Muse support as unconfirmed until tested with a real account.
-- **Authentication.** Both can use OAuth sign-in, so the plan is OAuth with the game master's own app account as the sign-in step: they log in, pick a club, and approve. A fixed token is a fallback for agent software that cannot sign in. The Django pieces for OAuth with MCP's discovery rules have not been checked, so verify this before building.
+- **Authentication.** Both can use OAuth sign-in, so the plan is OAuth with the game master's own app account as the sign-in step: they log in, pick a club, and approve. A fixed token is a fallback for agent software that cannot sign in.
 - **A domain is now required.** Claude and Muse call the server from their own clouds, so the app needs a public HTTPS address ([Claude custom connectors](https://claude.com/docs/connectors/custom)). A bare IP address is not enough in practice; buy a domain.
 - **Safety.** The agent only proposes; the game master confirms; the ledger stays append-only. The agent has the connecting game master's permissions in one club, cannot see player emails or messages, and its tool results are treated as data. Session notes and character text can contain instructions, and the confirm step is what keeps a stray instruction from changing anyone's coins.
 
@@ -270,7 +278,7 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 - [ ] Create a DigitalOcean account, finish any verification, and add a payment method
 - [ ] Set an email billing alert
 - [ ] Create one Basic Droplet (1 GiB RAM) in the region nearest your players, and turn on backups if you want them
-- [ ] Buy a domain and point it at the Droplet (required for agent access)
+- [x] Buy a domain and point it at the Droplet (`app.downtimemarket.com`, required for agent access)
 - [ ] Install Python, Caddy and the app; run Django under gunicorn behind Caddy
 - [ ] Set up the nightly offsite copy of the SQLite file and test restoring it once
 - [ ] Create the first club, add its game masters and players to the email whitelist, and add the first campaign's characters
@@ -278,4 +286,4 @@ The realistic risk is a lockout or a lost server, not a surprise bill, and an of
 Open questions:
 
 - How many clubs and regular players will use the app? Hundreds of regular users, rather than a few tables, would justify another look at sizing.
-- Which domain name should the app use? A domain is needed for agent access.
+- Which domain name should the app use? — `app.downtimemarket.com`, with DNS pointing at the Droplet. A domain is needed for agent access.
