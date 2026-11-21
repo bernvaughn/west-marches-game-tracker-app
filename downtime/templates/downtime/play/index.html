@@ -4,6 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
 <script src="{% static 'js/downtime_wheel.js' %}" defer></script>
+<script src="{% static 'js/downtime_filters.js' %}" defer></script>
 {% include "components/page_header.html" with title="Downtime" subtitle="Spend downtime points on an action." %}
 {% if not character %}
 {% include "components/alert.html" with text="You need a character to spend downtime points." %}
