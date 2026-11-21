@@ -10,8 +10,8 @@
   <!-- Datalist for item autocomplete -->
   <datalist id="item-catalogue">
     {% for item in items %}
-    <option value="{{ item.pk }}" data-name="{{ item.name }}" data-value="{{ item.value_cp }}">
-      {% if item.symbol %}{{ item.symbol }} {% endif %}{{ item.name }} ({{ item.value_cp|coins }})
+    <option value="{{ item.pk }}" data-name="{{ item.name }}" data-value="{{ item.value_cp }}" {% if item.is_stacked %}data-unit="{{ item.unit_name }}"{% endif %}>
+      {% if item.symbol %}{{ item.symbol }} {% endif %}{% if item.is_stacked %}{{ item.name }} ({{ item.value_cp|coins }} per {{ item.value_units }} {{ item.unit_name }}){% else %}{{ item.name }} ({{ item.value_cp|coins }}){% endif %}
     </option>
     {% endfor %}
   </datalist>
@@ -95,7 +95,7 @@
                  id="id_items_{{ c.pk }}-{{ row.index }}-item_id" value="{{ row.item_id }}">
         </div>
         <div class="col-md-3">
-          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row.index }}-quantity">Quantity</label>
+          <label class="form-label mb-1" for="id_items_{{ c.pk }}-{{ row.index }}-quantity">Quantity (units for stacked)</label>
           <input type="number" class="form-control form-control-sm" name="items_{{ c.pk }}-{{ row.index }}-quantity"
                  id="id_items_{{ c.pk }}-{{ row.index }}-quantity" min="1" value="{{ row.quantity }}">
         </div>

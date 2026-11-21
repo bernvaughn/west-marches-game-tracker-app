@@ -8,6 +8,17 @@
   {% csrf_token %}
   {{ form }}
   <h2 class="h5">Items</h2>
+  {% if stacked_units %}
+  <div class="wm-form-hint mb-3">
+    <strong>Stacked items:</strong>
+    <ul class="mb-0">
+      {% for su in stacked_units %}
+      <li>{{ su.name }} (unit: {{ su.unit_name }})</li>
+      {% endfor %}
+    </ul>
+    <p class="mb-0 small text-muted">Quantity is in units for stacked items.</p>
+  </div>
+  {% endif %}
   {% include "player_characters/characters/_item_rows.html" %}
   <div class="wm-form-actions">
     <button class="btn btn-primary" type="submit">Save</button>
