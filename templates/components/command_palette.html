@@ -23,7 +23,7 @@
       </div>
     </div>
     <div class="wm-command-list" role="listbox">
-      <template x-for="(entry, index) in filtered" :key="entry.url + index">
+      <template x-for="(entry, index) in filtered" :key="index">
         <div
           class="wm-command-item"
           :class="{ 'wm-command-item-selected': index === selectedIndex }"
@@ -46,5 +46,5 @@
   </div>
 </div>
 
-<script src="{% static 'vendor/alpinejs/alpine.min.js' %}" defer></script>
 <script src="{% static 'js/command_palette.js' %}" defer></script>
+<script src="{% static 'vendor/alpinejs/alpine.min.js' %}" defer></script>

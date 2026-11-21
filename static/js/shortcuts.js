@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", function () {
       tag === "textarea" ||
       tag === "select" ||
       el.isContentEditable ||
-      el.closest('[contenteditable="true"]')
+      el.closest('[contenteditable="true"]') !== null
     );
   }
 
@@ -71,11 +71,17 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     
     if (!shortcut) return;
-    
+
     // A shortcut that requires a modifier (Cmd/Ctrl) must not fire on the bare key.
     // Without this, pressing plain "g" in an input field triggers the command
     // palette and swallows the keystroke.
     if (shortcut.meta && !(e.metaKey || e.ctrlKey)) {
+      return;
+    }
+
+    // A modifier (Cmd/Ctrl) plus a bare-key nav or next/prev shortcut must not
+    // also move focus or navigate; leave it to the command palette (Ctrl+K, Ctrl+G).
+    if ((e.metaKey || e.ctrlKey) && ["nav", "nextItem", "prevItem"].includes(shortcut.action)) {
       return;
     }
     
