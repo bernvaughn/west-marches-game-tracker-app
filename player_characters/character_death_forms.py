@@ -8,7 +8,7 @@ class DeathForm(forms.Form):
     """Form for marking a character as dead."""
 
     died_on = forms.DateField(
-        widget=forms.DateInput(attrs={"type": "date", "max": timezone.localdate().isoformat()}),
+        widget=forms.DateInput(attrs={"type": "date"}),
         initial=timezone.localdate,
         required=True,
         help_text="Date of death. Cannot be in the future.",
@@ -19,6 +19,11 @@ class DeathForm(forms.Form):
         max_length=1000,
         help_text="Optional. A brief note about the circumstances.",
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Computed per request so a long-running server never keeps a stale max date.
+        self.fields["died_on"].widget.attrs["max"] = timezone.localdate().isoformat()
 
     def clean_died_on(self):
         died_on = self.cleaned_data["died_on"]

@@ -6,10 +6,9 @@ from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from accounts.htmx import htmx_or_redirect, is_htmx
-from accounts.permissions import can_see_gm_details, club_member_required
+from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 
-from ..access import owns_character
 from ..character_death_forms import DeathForm
 from ..death_permissions import can_mark_dead, can_undo_death
 from ..life import LifeError, mark_dead, undo_death
@@ -88,16 +87,14 @@ def death_undo(request, club_slug, pk):
     """Undo a character's death (POST only)."""
     character = club_get_object_or_404(request, Character, pk=pk)
 
-    # Basic permission: owner, GM, club admin, or site admin
-    user = request.user
-    is_owner = owns_character(user, character)
-    is_gm_or_admin = can_see_gm_details(user, character.club)
-    if not (user.is_superuser or is_owner or is_gm_or_admin):
-        raise PermissionDenied
-
-    # If character is not dead, allow through to undo_death which will raise LifeError
-    # If character is dead, enforce the 24h/own-mark rules via can_undo_death
-    if character.is_dead and not can_undo_death(user, character):
+    # A dead character follows the 24-hour / own-mark rules. A living one is refused by
+    # undo_death with a message, but only people who could mark it dead may reach that.
+    allowed = (
+        can_undo_death(request.user, character)
+        if character.is_dead
+        else can_mark_dead(request.user, character)
+    )
+    if not allowed:
         raise PermissionDenied
 
     sheet_url = redirect("characters:detail", club_slug=club_slug, pk=character.pk).url

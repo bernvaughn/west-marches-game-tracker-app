@@ -10,12 +10,8 @@ from datetime import timedelta
 from django.utils import timezone
 
 from accounts.permissions import can_see_gm_details
+from player_characters.access import owns_character
 from player_characters.models import CharacterStatusChange
-
-
-def owns_character(user, character):
-    """True only for the owning player. No superuser bypass."""
-    return bool(user.is_authenticated and character.owner.user_id == user.id)
 
 
 def can_mark_dead(user, character):
