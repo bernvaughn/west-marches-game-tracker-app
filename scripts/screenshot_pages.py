@@ -372,6 +372,8 @@ def _build_pages() -> list[Page]:
         P("site-design", "site_admin", lambda d: reverse("site_design")),
         P("site-feedback", "site_admin", lambda d: reverse("site_feedback")),
         P("site-feedback-new", "alice", lambda d: reverse("feedback_new")),
+        # accounts club settings
+        P("accounts-club-settings", "gm", _c("accounts:club_settings")),
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
