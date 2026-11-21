@@ -1015,6 +1015,20 @@ Rules for both stories:
 - The password reset rules (U19) do not change.
 - Each role change shows a confirmation message to the admin who made it.
 
+## Round 18: player progress and quest hints (2026-11-21)
+
+**U135 See my level progress and latest awards on the dashboard.** As a player, I want my dashboard to show my XP progress and the last things my game master gave me, so I know when to level up and what I got. *(accounts, player_characters)*
+- The header shows slim XP progress, for example "6,500 / 14,000 XP to level 6", or "Max level", using the same rules as U115. A "Level up ready" badge links to the edit form. Blank XP shows nothing new. XP stays a tracker the player edits; no game master page changes it.
+- A "Latest awards" card lists up to 5 recent awards (coins, items, downtime points), newest first, with date and note. It is hidden when there are none. Nothing here prints.
+
+**U136 See my quest progress on the board.** As a player, I want each quest notice to show how many of each required item my selected character has, so I know what is left without opening every quest. *(quests)*
+- Each requirement shows "have of need", for example "2 of 3 Wolf pelt". A short quest shows "1 more" and a slim bar. A ready quest keeps its "Ready to turn in" stamp.
+- Without a selected character, no progress shows. Print Session Pack output does not change.
+
+**U137 Warn before selling an item a quest needs.** As a player, I want a warning when I sell an item that a live quest still needs, so I do not sell quest items by mistake. *(shops, quests)*
+- In the shop "Your inventory" table and in the sell confirm modal, an item needed by a live quest that the selected character has not finished shows "Needed for: <quest name>". The confirm modal adds a warning line.
+- Selling still works. The warning never blocks it.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
