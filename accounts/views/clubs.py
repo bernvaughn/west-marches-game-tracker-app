@@ -32,7 +32,9 @@ def club_new(request):
                 {"form": form, "existing_user": existing},
             )
         with transaction.atomic():
-            club = Club.objects.create(name=data["name"], slug=data["slug"])
+            club = Club.objects.create(
+                name=data["name"], slug=data["slug"], timezone=data["timezone"]
+            )
             seed_new_club(club)
             membership, temp = get_or_create_member(
                 club,

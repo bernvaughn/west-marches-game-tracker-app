@@ -67,6 +67,7 @@ class AccountsConfig(AppConfig):
         reg("admin", "Members", "accounts:index", is_admin, 10)
         reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20)
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30)
+        reg("admin", "Club settings", "accounts:club_settings", is_admin, 40)
 
         # Register built-in dashboard providers
         register_provider(HeaderDashboardProvider())
