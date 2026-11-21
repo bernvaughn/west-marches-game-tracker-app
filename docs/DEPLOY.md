@@ -40,9 +40,22 @@ What already exists on the server (do not recreate it):
 - `uv` at `/home/deploy/.local/bin/uv`; `sqlite3`, `git`, `curl`, `fail2ban` installed
 - `/etc/downtime.env` (root:deploy, 640) with `DJANGO_SECRET_KEY`, `DJANGO_ALLOWED_HOSTS`, `DATABASE_PATH`, `RATELIMIT_TRUST_XFF`, `TIME_ZONE`
 
-Install the unit file (run as the owner's admin account with sudo):
+Do the setup in this order:
+1. Run the first deploy (section 3, first command). It clones the repo into `/srv/app`, installs `/srv/app/.venv`, migrates, and collects static files.
+2. That first deploy then fails at its "restart service" step, because the unit file is not installed yet. This is expected. The health check does not run.
+3. Install the files below from `/srv/app/deploy/`. All paths are absolute, so the working directory does not matter.
+4. Re-run the same deploy command. It now restarts the service, passes the health check, and records the tag.
+
+`deploy` can only run `sudo systemctl restart downtime`. So run the install steps as the owner's admin account, with `sudo`.
+
+Log in to the server as the admin account:
 ```bash
-sudo cp deploy/downtime.service /etc/systemd/system/downtime.service
+ssh <admin-user>@<host>
+```
+
+Install the unit file:
+```bash
+sudo cp /srv/app/deploy/downtime.service /etc/systemd/system/downtime.service
 ```
 ```bash
 sudo systemctl daemon-reload
@@ -53,7 +66,7 @@ sudo systemctl enable --now downtime
 
 Install the Caddyfile:
 ```bash
-sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
+sudo cp /srv/app/deploy/Caddyfile /etc/caddy/Caddyfile
 ```
 ```bash
 caddy validate --config /etc/caddy/Caddyfile
@@ -64,20 +77,20 @@ sudo systemctl reload caddy
 
 Install the cron file and the backup log file:
 ```bash
-sudo install -m 644 -o root -g root deploy/downtime-backup.cron /etc/cron.d/downtime-backup
+sudo install -m 644 -o root -g root /srv/app/deploy/downtime-backup.cron /etc/cron.d/downtime-backup
 ```
 ```bash
 sudo install -m 640 -o deploy -g deploy /dev/null /var/log/downtime-backup.log
 ```
 
-The unit, Caddyfile, and cron files live in `deploy/` (they exist in the repo clone and in `/srv/app/deploy/` after the first deploy). `deploy` itself can only run `sudo systemctl restart downtime`, so these install steps use the owner's admin account, not `deploy`.
-
 ## 3. First deploy and first admin
 
-Stream the deploy script for tag `v0.1.0` onto the Droplet:
+Run this from your own clone of the repo, on your PC. It streams your local `deploy/deploy.sh` onto the Droplet and deploys tag `v0.1.0`:
 ```bash
 ssh deploy@<host> 'bash -s -- v0.1.0' < deploy/deploy.sh
 ```
+
+On the very first run this fails at the restart step. Install the files as section 2 says, then run the same command again.
 
 Then create the first site admin. The app uses `email` as the username field, so `createsuperuser` asks for an email:
 ```bash
@@ -102,7 +115,7 @@ Log in to the site admin and use the "new club" form to create the first club; i
 
 ## 4. Release flow
 
-Publish a GitHub release with a tag such as `v0.1.0`. The workflow in `.github/workflows/` (owned by the owner) connects to the Droplet as `deploy` and runs the same command, streaming the release's own `deploy/deploy.sh`:
+Publish a GitHub release with a tag such as `v0.1.0`. The workflow `.github/workflows/deploy.yml` (owned by the owner) connects to the Droplet as `deploy` and runs the same command, streaming the release's own `deploy/deploy.sh`:
 
 ```bash
 ssh deploy@<host> 'bash -s -- <tag>' < deploy/deploy.sh
@@ -126,39 +139,65 @@ Code rollback is safe only for migrations that add things (new tables, columns, 
 
 `deploy/backup.sh` runs nightly at 03:15 UTC via cron and writes to `/var/backups/downtime/db-<UTC timestamp>.sqlite3`, mode 600, keeping 14 days. It uses SQLite's own `.backup` command (safe while the app writes) and checks each copy with `PRAGMA integrity_check`. Output goes to `/var/log/downtime-backup.log`.
 
-To restore:
+To restore, use the owner's admin account. `deploy` cannot stop or start the service, and the backup files are mode 600. So every step uses `sudo`.
+
+List the backups and pick one:
+```bash
+sudo ls -l /var/backups/downtime
+```
+
+Stop the service:
 ```bash
 sudo systemctl stop downtime
 ```
+
+Copy the backup over the database. Replace `<timestamp>` with the one you picked:
 ```bash
-cp <backup-file> /var/lib/downtime/db.sqlite3
+sudo cp /var/backups/downtime/db-<timestamp>.sqlite3 /var/lib/downtime/db.sqlite3
 ```
+
+Give the file back to `deploy`:
 ```bash
-chown deploy:deploy /var/lib/downtime/db.sqlite3
+sudo chown deploy:deploy /var/lib/downtime/db.sqlite3
 ```
+
+Remove the old write-ahead files, which belong to the replaced database:
 ```bash
-rm -f /var/lib/downtime/db.sqlite3-wal /var/lib/downtime/db.sqlite3-shm
+sudo rm -f /var/lib/downtime/db.sqlite3-wal /var/lib/downtime/db.sqlite3-shm
 ```
+
+Start the service:
 ```bash
 sudo systemctl start downtime
 ```
 
-To test a restore without touching production, copy a backup to a scratch path and check it:
+To test a restore without touching production, copy a backup to a scratch path and check it there.
+
+Make the scratch copy:
 ```bash
-sqlite3 <backup-file> "PRAGMA integrity_check;"
+sudo cp /var/backups/downtime/db-<timestamp>.sqlite3 /tmp/restore-test.sqlite3
 ```
+
+Check that the file is sound. The output must be `ok`:
 ```bash
-cp <backup-file> /tmp/restore-test.sqlite3
+sudo sqlite3 /tmp/restore-test.sqlite3 "PRAGMA integrity_check;"
 ```
+
+Check that it holds real data. The count must be more than zero:
 ```bash
-DATABASE_PATH=/tmp/restore-test.sqlite3 .venv/bin/python manage.py check
+sudo sqlite3 /tmp/restore-test.sqlite3 "SELECT count(*) FROM django_migrations;"
+```
+
+Delete the scratch copy:
+```bash
+sudo rm -f /tmp/restore-test.sqlite3
 ```
 
 Never run the restore commands against the live `/var/lib/downtime/db.sqlite3` unless you intend to replace production data.
 
 ## 7. Offsite copy
 
-The owner's PC pulls `/var/backups/downtime` with `rsync` using a read-only SSH key, into a folder under `/mnt/c/`. That pull script is added separately and is not written here.
+The owner's PC pulls `/var/backups/downtime` with `rsync`, using a read-only SSH key. The script is `deploy/pull-backups.sh`, which runs inside WSL on the owner's PC; read its header comments for its settings.
 
 ## 8. Troubleshooting
 

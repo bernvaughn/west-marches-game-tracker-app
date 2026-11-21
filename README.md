@@ -199,13 +199,15 @@ How the larger scope fits this architecture:
 
 ## Django apps
 
-These are the Django apps installed in `INSTALLED_APPS` today. Each one's data belongs to a single club.
+These are the 12 project apps installed in `INSTALLED_APPS` today. Most of their data belongs to a single club. The exceptions: user accounts in `accounts` are site-wide, and `core` holds no data.
 
 | App | What it holds |
 | --- | --- |
 | `accounts` | User accounts, each club's email whitelist, who holds which permission in which club, and messages to club admins (a separate messaging app may make sense later) |
+| `character_options` | Each club's lists of species, classes, and backgrounds that players pick from on a character sheet |
 | `player_characters` | The characters players play as (a player can have several; game masters can have them too): sheet details (ability scores, class, species), coins, owned items |
 | `items` | Each club's item catalogue: names, descriptions, traits and other details, and prices |
+| `core` | Shared service base classes (transaction handling and same-club checks) used by the other apps; no models |
 | `shops` | Named shops and shopkeepers, their rotating and fixed inventories (a stock amount of items from the club's catalogue), shop rotations (open and close dates only; inventory and stock stay with the shop), and buying and selling at percentages of an item's value, with per-item overrides |
 | `ledger` | The history of every gain or loss of items or coins for a character, each with a note and a date |
 | `map` | Basic hex maps with no art (a club can have several), drawn with plain colors and symbols; which players have visited which tiles; and encounters and locations on those tiles |
@@ -244,7 +246,7 @@ Propose-then-confirm for everything in the first version, with map updates from 
 
 MCP is an open standard that lets an AI agent call named actions ("tools") on another program. The app serves an MCP endpoint at `/mcp` over HTTPS, and a game master's agent connects to it, looks up characters and catalogue items, and proposes awards from session notes. The game master confirms the batch on the site before anything is applied.
 
-Sign-in uses OAuth through `django-oauth-toolkit`, and the endpoint is served with the `mcp` package ([PyPI](https://pypi.org/project/mcp/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
+- **Fits the plan.** Sign-in uses OAuth through `django-oauth-toolkit`, and the endpoint is served with the `mcp` package ([PyPI](https://pypi.org/project/mcp/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
 - **Spec moves quickly.** The MCP specification is dated and changes between revisions; the 2025-03-26 revision added OAuth 2.1 authorization and Streamable HTTP, and a later revision reportedly removed protocol sessions ([summary](https://www.getmaxim.ai/topics/mcp-gateway/mcp-specification)). Choose a library that tracks the current revision, and re-check before building.
 - **Which agents.** Some game masters use Claude and some use Meta's Muse. Claude connects to a remote MCP server by URL as a custom connector, from Anthropic's cloud, and Claude's docs describe both OAuth sign-in and fixed request headers such as a bearer token, though one of Claude's own pages lists fixed headers as beta ([Claude custom connectors](https://claude.com/docs/connectors/custom), [Claude authentication](https://claude.com/docs/connectors/building/authentication)). Muse is less clear: Meta's documentation does not mention MCP in the consumer app, while several third-party guides show a remote server added as a custom connector over Streamable HTTP with OAuth sign-in, and Meta's coding agent supports MCP directly ([guide](https://anythingmcp.com/guides/clients/muse), [Meta Muse MCP summary](https://www.aiagentslibrary.com/blog/meta-muse-connectors/)). Treat Muse support as unconfirmed until tested with a real account.
 - **Authentication.** Both can use OAuth sign-in, so the plan is OAuth with the game master's own app account as the sign-in step: they log in, pick a club, and approve. A fixed token is a fallback for agent software that cannot sign in.
