@@ -1254,6 +1254,51 @@ These stories need play sessions (P1-P4, round 19).
 - Only club admins can send tests. When email is off for the site, the button is disabled and says why.
 - The email is built in one place from the club's settings, so later club customisation (for example a footer or a signature) shows up in the test without extra work.
 
+## Round 21: clearer item names and choices (2026-11-21)
+
+Some seeded items are named in ways that mix several things into one, or read the wrong way round. This round fixes the names, makes the Diplomat's Pack roll a choice, and gives existing clubs a safe way to catch up.
+
+Rules for every story in this round:
+
+- A variant name puts the specific thing first and the kind in brackets: "Drum (Musical Instrument)", not "Musical Instrument (Drum)". The kind stays in the name, so searching for "Musical Instrument" still finds every instrument.
+- Renaming keeps the same item record, so shop lines, quests, starting equipment lines, containers, and every character's inventory keep pointing at it. Nobody's items or coins change.
+- Items a club admin made or renamed themselves are never touched.
+
+**U148 Separate Map Case and Scroll Case.** As a player, I want the General Store to sell a Map Case and a Scroll Case as two items, so I buy the one I mean. *(items, shops)*
+- The "Case, Map or Scroll" item is replaced by "Map Case" and "Scroll Case". Each costs 1 gp, with its own icon and description.
+- Inside packs and elsewhere, the old "Map or Scroll Case" is the same item as the store's, so a club never has two near-duplicates.
+- A character who already owns the old item keeps it as a "Map Case". A game master or club admin can change it to a "Scroll Case" by a manual adjustment (U14).
+
+**U149 The Diplomat's Pack picks its cases.** As a player, I want the Diplomat's Pack to hold two cases that are each a map case or a scroll case, so every pack opened is a little different. *(items)*
+- The pack holds two slots that always drop something. Each slot is a weighted choice between Map Case and Scroll Case, equal weights, one of the chosen item.
+- This replaces the single fixed line of 2 "Map or Scroll Case". Everything else in the pack stays as it is.
+- Opening and the loot preview follow the container rules (U109-U112). A pack opened before the change keeps what it gave.
+- Existing clubs get the change when they run the catch-up command (U152). New clubs get it from the start.
+
+**U150 Name variants "Variant (Kind)".** As a player, I want variant items named with the specific thing first, so lists sort and read naturally, like "Drum (Musical Instrument)". *(items, starting_equipment, shops)*
+- These seeded families are renamed: Musical Instrument (Lute, Flute, Lyre, Horn, Drum), Arcane Focus (Crystal, Orb, Rod, Staff, Wand), Druidic Focus (Sprig of Mistletoe, Staff, Yew Wand), Holy Symbol (Amulet, Emblem, Reliquary), Artisan's Tools (ten trades), and Gaming Set (Dice, Dragonchess, Playing Cards).
+- Example: "Crystal (Arcane Focus)", "Amulet (Holy Symbol)", "Brewer's Supplies (Artisan's Tools)", "Dice (Gaming Set)".
+- Starting equipment choice groups (the lists a player picks from when claiming) are unchanged. Only the names change.
+- Names with a comma or a unit, like "Bottle, Glass", "Lantern, Hooded", "Oil (flask)" and "Ink (1 oz)", stay as they are.
+- Item cards, printouts, the agent's item search (A2), and shop lines show the new names.
+
+**U151 One item per instrument.** As a club admin, I want a Lute to be one item wherever it appears, so inventories and shops do not hold two Lutes. *(items, starting_equipment)*
+- The Bard's plain "Lute", "Flute", "Lyre" and "Horn", the Entertainer background's instruments, and the "Instrument (lute)" in the Entertainer's Pack are all the same item per instrument, named "Lute (Musical Instrument)" and so on.
+- Where a club has more than one record for the same instrument, they are merged into one (U152). Every holder's quantity is added together, with one ledger entry per holder saying so.
+
+**U152 Catch up existing clubs.** As a site admin, I want one command that brings an existing club's items up to the new names and choices, so I can run it on the server like the stacked-bundle conversion. *(items, starting_equipment, shops)*
+- `manage.py rename_seeded_items --club <slug>` is a dry run by default. It lists every rename, every merge, and every refusal, and rolls everything back. `--apply` makes the changes in one transaction. Running it twice changes nothing.
+- It renames seeded items in place (U150), splits "Case, Map or Scroll" (U148), merges duplicates (U151), and updates the Diplomat's Pack slots (U149).
+- It only touches items whose names match the seeded ones. If a club admin has renamed or edited a seeded item, it is skipped and listed as "left alone".
+- A merge that would leave a character with a negative total is refused and writes nothing. A holder whose net total is exactly zero is skipped, as in the stacked-bundle command.
+- Item records keep their ids, so shop lines, quests, starting equipment lines, containers, and notes stay linked. Ledger history keeps its old text.
+- The docs say when to run it (after the release that carries it), like the bundle conversion.
+
+**U153 Seeding and tests use the new names.** As a developer, I want the seed data, tests and docs to use the new names, so new clubs start correct and nothing breaks silently. *(items, starting_equipment, shops)*
+- Seeded clubs get the new names from the start. The seeded item count test is updated to the new count, and a test pins the renamed families and the Diplomat's Pack slots.
+- The starting equipment claim still grants the same things as before (an instrument choice still lets a Bard pick one of the five).
+- The demo club (`seed_demo`) uses the new names.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -1455,6 +1500,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Death and archive (U138-U147).** Dead and archived are separate states on a character. Players can mark their own characters dead. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Coins from the stall keep going to the dead character and just collect there, unusable for now; a way to use them may come later. A replacement character may claim starting equipment as usual. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
 - **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
 - **Email (E1-E11).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
+- **Item names (U148-U153).** A variant item is named "Variant (Kind)", for example "Drum (Musical Instrument)". Renames keep the same item record, so nothing a player owns changes. The store sells "Map Case" and "Scroll Case" separately, and the Diplomat's Pack rolls each of its two cases between them. Existing clubs catch up with a dry-run-by-default command.
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes
