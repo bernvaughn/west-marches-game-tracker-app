@@ -27,7 +27,7 @@
       method="post"
       action="{% url 'play_sessions:feed_reset' club.slug %}"
       class="d-inline mt-2"
-      onsubmit="return confirm('Reset the feed token? This invalidates the old public link.')"
+      data-confirm="Reset the feed token? This invalidates the old public link."
     >
       {% csrf_token %}
       <button type="submit" class="btn btn-sm btn-outline-danger">

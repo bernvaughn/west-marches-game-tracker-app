@@ -6,7 +6,7 @@
   {% for day in upcoming %}
   <div class="sessions-list-day">
     <span class="sessions-list-daynum">
-      {% localtime off %}{{ day.date|date:"l, F j" }}{% endlocaltime %}
+      {% localtime off %}{{ day.date|date:"j M Y" }}{% endlocaltime %}
       {% if day.date == today %} <span class="sessions-today">(today)</span>{% endif %}
     </span>
     {% for s in day.sessions %}

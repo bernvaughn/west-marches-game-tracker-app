@@ -15,7 +15,7 @@
     {% with session=provider_context.session %}
     <p class="card-text mb-1">{{ session.title }}</p>
     <p class="card-text small text-muted mb-3">
-      {% localtime off %}{{ session.local_start|date:"l, F j" }} at {{ session.local_start|time:"g:i A" }} {{ session.zone_name }}{% endlocaltime %}
+      {% localtime off %}{{ session.local_start|date:"j M Y" }} at {{ session.local_start|time:"g:i A" }} {{ session.zone_name }}{% endlocaltime %}
       {% if session.gm_name %} · GM: {{ session.gm_name }}{% endif %}
       {% if session.yes_count %} · {{ session.yes_count }} yes{% endif %}
     </p>
