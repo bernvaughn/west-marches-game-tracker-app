@@ -99,7 +99,7 @@
           <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Save</button></noscript>
         </form>
         {% if character.shop_open %}<p class="wm-sheet-note">Listed in your shop: <a href="{% url 'shops:player_shop' club.slug character.pk %}">{{ shop_listed }} item{{ shop_listed|pluralize }}</a></p>{% endif %}
-        {% if junk %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'shops:sell_junk_pick' club.slug %}" hx-get="{% url 'shops:sell_junk_pick' club.slug %}" hx-target="#app-modal .modal-content" hx-swap="innerHTML" data-app-modal data-wm-tooltip title="Sell your marked junk items to an open shop" aria-label="Sell junk">{% include "components/icon.html" with name="bag" %} Sell junk</a>{% endif %}
+        {% if junk and can_sell_junk %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'shops:sell_junk_pick' club.slug %}" hx-get="{% url 'shops:sell_junk_pick' club.slug %}" hx-target="#app-modal .modal-content" hx-swap="innerHTML" data-app-modal data-wm-tooltip title="Sell your marked junk items to an open shop" aria-label="Sell junk">{% include "components/icon.html" with name="bag" %} Sell junk</a>{% endif %}
       </div>
       {% endif %}
       {% if rows %}
