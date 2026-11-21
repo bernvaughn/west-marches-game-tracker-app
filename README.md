@@ -52,6 +52,7 @@ It also seeds a General Store run by Mabel Packwell (a halfling grocer) on the m
 stocked with all basic adventuring gear at 100%/75% buy/sell.
 It does not seed characters, quests, maps, downtime actions or messages.
 The GM creates those.
+**Stacked items are not seeded**; the GM converts items on the convert page or with `uv run python manage.py convert_to_stacked --club <slug>`.
 Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`.
 A plain run configures the packs but leaves an existing template unchanged.
 Add `--force` to upgrade an existing template to the choice groups.
@@ -65,6 +66,19 @@ See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
 `seed_demo` runs `seed_starting_equipment --force`, so the demo template always has the choice groups and the packs are containers.
 It also creates "Tilda Brightwater", a level 1 Cleric owned by bob@example.com.
 She holds one unopened Priest's Pack and has not claimed her starting equipment.
+
+Additional demo data:
+- **Stacked items**: Parchment (sheets) and Hempen cord (feet) in the catalogue.
+- **Bundle shop lines**: The Rusty Lantern sells Parchment in bundles of 10 (unlimited) and Hempen cord in bundles of 50 (qty 4).
+- **Unit holdings**: Aria Windrunner holds 25 sheets of Parchment and 40 ft of Hempen cord.
+- **Junk mark for units**: Aria has 5 sheets of Parchment marked for sale.
+- **Item note**: Aria has a note on her Rope.
+- **Quest with unit requirement**: "Maps for the Cartographer" needs 10 sheets of Parchment.
+- **Pending downtime point request**: Bob requested 1 point for Borin (navbar indicator demo).
+- **Magic starting option**: Moonstone amulet is available for starting equipment requests.
+- **Pending starting equipment request**: Tilda has a pending request for the Moonstone amulet.
+- **Site feedback**: Alice filed a bug report about tooltip flicker on mobile.
+
 `seed_demo` is safe to run more than once.
 
 ## Running targeted tests

@@ -5,7 +5,7 @@ from django.utils import timezone
 from accounts.models import User
 from items.models import Item
 
-from .models import DowntimeAction, DowntimeEntry, DowntimeEntryItem
+from .models import DowntimeAction, DowntimeEntry, DowntimeEntryItem, DowntimePointRequest
 from .services import award
 
 STARTING_POINTS = {"Aria Windrunner": 2, "Borin Stonefist": 1}
@@ -20,6 +20,7 @@ def seed(club):
         if not character.downtime_point_entries.exists():
             award(character, points, "Starting downtime points", by=gm, club=club)
     seed_actions(club)
+    seed_point_request(club)
 
 
 def seed_actions(club):
@@ -68,3 +69,31 @@ def seed_actions(club):
         )
         for item, quantity in items:
             DowntimeEntryItem.objects.create(entry=entry, item=item, quantity=quantity)
+
+
+def seed_point_request(club):
+    """Add a pending DowntimePointRequest for the navbar indicator demo."""
+    from accounts.models import Membership
+    from player_characters.models import Character
+
+    bob = Membership.objects.get(club=club, user__email="bob@example.com")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+
+    # Only create if this exact request doesn't exist
+    exists = DowntimePointRequest.objects.filter(
+        club=club,
+        requested_by=bob,
+        status=DowntimePointRequest.Status.PENDING,
+        note="Borin earned it at the bakery.",
+    ).exists()
+    if exists:
+        return
+
+    req = DowntimePointRequest.objects.create(
+        club=club,
+        requested_by=bob,
+        points=1,
+        note="Borin earned it at the bakery.",
+        status=DowntimePointRequest.Status.PENDING,
+    )
+    req.characters.add(borin)

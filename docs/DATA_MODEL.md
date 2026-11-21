@@ -70,6 +70,7 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 ### Not seeded
 
 Characters, quests, hex maps and locations, downtime actions, ledger entries, messages, demo users. The GM creates these.
+**Stacked items are not seeded**; the GM converts items on the convert page or with `uv run python manage.py convert_to_stacked --club <slug>`.
 
 ### Rules
 
@@ -80,6 +81,7 @@ Characters, quests, hex maps and locations, downtime actions, ledger entries, me
 - `--force` upgrades an existing template. It resets entry coins and makes each entry's lines match the default data in order. It deletes stale lines, for example an old fixed line that is now a choice default. A forced run on a template that already matches writes no lines.
 - `seed_pack_containers --club <slug>` configures the packs only. It skips a pack that already has slots.
 - `seed_general_store --club <slug>` adds the General Store to an existing club. It never runs automatically; a deleted shop does not return on its own.
+- **Stacked items are not seeded for new clubs**. Existing clubs can run `uv run python manage.py convert_to_stacked --club <slug>` to convert items.
 
 ### Choice groups in the default template
 
