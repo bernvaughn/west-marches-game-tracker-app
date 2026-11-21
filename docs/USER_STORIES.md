@@ -1044,16 +1044,16 @@ Rules for every story in this round:
 A **play session** is one scheduled game night run by a game master. The club keeps a calendar of them and a record of who came.
 
 **P1 Schedule a session.** As a game master or club admin, I want to add a play session to the club calendar with a date, a start time, an optional end time, a title, and notes, so players know when we play. *(sessions)*
-- A session also has a game master (defaulting to me), an optional location (a table, a Discord channel, a link), and an optional player cap.
+- A session also has a game master (defaulting to me) and an optional location (a table, a Discord channel, a link).
 - I can change or cancel a session. A cancelled session stays on the calendar, marked cancelled, so nobody turns up.
 - A session in the past can still be edited, to fix its record.
-- Dates and times show in the club's time zone (see Open questions).
+- Dates and times are entered and shown in the club's time zone (P11).
 
 **P2 Repeat sessions.** As a game master or club admin, I want to make a session repeat weekly or every two weeks, so I do not add every Friday by hand. *(sessions)*
 - Repeating makes a set of ordinary sessions. Changing or cancelling one does not change the others, and I can cancel the rest of a set in one step.
 
 **P3 The session calendar.** As a player, game master, or club admin, I want a calendar page showing the club's sessions by month, with an upcoming list on phones, so I can see when we play next. *(sessions)*
-- Each day shows its sessions: title, time, game master, and how many seats are taken.
+- Each day shows its sessions: title, time, game master, and how many characters said yes.
 - The club home page shows the next session (P4).
 - The page offers a link that adds the club's sessions to a phone or desktop calendar app, read-only, that works without signing in to this site. Anyone holding the link can read the schedule, so an admin can reset it.
 - This calendar is separate from the availability agenda (U70), which plans shops, quests, and downtime actions. The agenda may later show sessions too.
@@ -1061,10 +1061,10 @@ A **play session** is one scheduled game night run by a game master. The club ke
 **P4 Say I'm coming.** As a player, I want to say yes, maybe, or no to a session with one of my characters, so my game master knows who to plan for. *(sessions, player_characters)*
 - I answer for a character, because attendance is per character. If I do not pick one, the selected character is used (U25).
 - I can change my answer until the session starts. After that only a game master or club admin can.
-- A session with a cap puts the next "yes" answers on a waiting list, in order. If a seat opens, the first person waiting moves up and the app shows them it happened on their next visit.
+- Sessions have no seat cap. Every "yes" counts.
 - I see my own answers on my dashboard and my sheet.
 
-**P5 Who is coming.** As a game master, I want to see each session's answers, with the waiting list and the players who have not answered, so I know the table before we start. *(sessions)*
+**P5 Who is coming.** As a game master, I want to see each session's answers, with the players who have not answered, so I know the table before we start. *(sessions)*
 - The list shows each character's name, level and class, with the player's name.
 - A GM or club admin can answer for someone, so a player who tells me at the table counts.
 
@@ -1090,6 +1090,12 @@ A **play session** is one scheduled game night run by a game master. The club ke
 **P10 Session notes.** As a game master, I want to write a short recap on a session after it happens, so the club has a record. *(sessions)*
 - Players see the recap on the session page. A separate GM-only note never shows to players, like location notes on the map.
 
+**P11 Club time zone.** As a club admin, I want to set my club's time zone, so session times mean the same thing to everyone, wherever they are. *(accounts, sessions)*
+- A club has one time zone, chosen from the standard list. A new club starts with the site's default, and the site admin's "new club" form can set it.
+- Sessions (P1) store an exact moment and show it in the club's time zone, including daylight saving changes. The calendar feed (P3) carries the same moment, so a phone shows it in the viewer's own time.
+- Changing the time zone later keeps each session's moment, so sessions can shift on the clock. The form warns about this before saving.
+- Other dates in the app (ledger, awards) are unchanged.
+
 ### Characters: death and archiving
 
 A character can be **dead**, which is part of its story and keeps it visible. A character can be **archived**, which only tucks it out of the way. They are separate: a dead character is not archived unless someone also archives it, and an archived character is not dead.
@@ -1113,6 +1119,7 @@ A character can be **dead**, which is part of its story and keeps it visible. A 
 **U141 A dead character can still sell.** As a player, I want my dead character to keep selling its junk, so its things still earn coins for the club's economy. *(shops, player_characters)*
 - A dead character can set items aside as junk (U45), sell junk to club shops, and keep its player stall open (U64), including receiving payment when others buy.
 - A dead character's coins and items stay on its sheet and in reports.
+- Coins that a dead character earns, from junk sales or from its stall, keep going to that character. They collect on its sheet and cannot be spent, because a dead character cannot buy (U140). A game master or club admin can still adjust them (U14).
 - A dead character cannot make new claims, such as starting equipment or map credit requests (M12), and cannot be sent into a party for a new session (P6).
 
 **U142 Show the death on the shop.** As a player browsing the street, I want a dead character's stall to show clearly that its owner has died, so I understand why it is still there. *(shops, player_characters)*
@@ -1148,14 +1155,6 @@ A character can be **dead**, which is part of its story and keeps it visible. A 
 - Every change (U138, U139, U144, U145) is one history entry with who, when, and the note.
 - A "Fallen" page lists dead characters with the date, owner, and note, newest first, including archived ones. Players can see it too.
 - The Fallen page can show each character's sessions played (P7), once sessions exist.
-
-### Open questions for this round
-
-- **Time zone.** Should each club have one time zone for session times, or do we only store dates? (P1, P3)
-- **Seat caps.** Is a seat cap needed at all, or is a plain yes/maybe/no list enough? (P4)
-- **Who can mark death.** Should a player be allowed to mark their own character dead, or only game masters and club admins? (U138)
-- **Starting equipment.** Should a character that dies and is replaced be eligible for starting equipment again? That is a decision about the new character, which is already allowed, so this round assumes nothing changes.
-- **Death and the stall coins.** Should coins from a dead character's stall keep coming to that character? This round assumes yes (U141).
 
 ## Quests
 
@@ -1355,8 +1354,8 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Slips and cards.** Slips and item cards share the adventurer's-pass look: double border, notched corners, wordmark font. Players can print one card per item type or one per item (U87, U88, U90).
 - **Footer and item details.** Every page has a small footer with copyright and credits, never printed (U94). Item details open from an "i" icon beside the name; items have a GM-only details field that players never see (U95, U96).
 - **Containers.** Any item can be a container (`is_container`). Slots have chance, weighted options, quantity ranges, and unknown flags. Opening writes an `opened` ledger entry and a `ContainerOpening`. Previews go through `loot_preview()`; unknowns are masked to `???` for players and agents. Nesting allowed (max depth 3, no cycles). Existing packs migrated by idempotent `seed_pack_containers` command. Agent `search_items` returns `is_container` and masked `loot`. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere without revealing it is in a box.
-- **Death and archive (U138-U147).** Dead and archived are separate states on a character. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
-- **Play sessions (P1-P10).** Sessions are club-scoped calendar entries. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
+- **Death and archive (U138-U147).** Dead and archived are separate states on a character. Players can mark their own characters dead. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Coins from the stall keep going to the dead character and just collect there, unusable for now; a way to use them may come later. A replacement character may claim starting equipment as usual. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
+- **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes
