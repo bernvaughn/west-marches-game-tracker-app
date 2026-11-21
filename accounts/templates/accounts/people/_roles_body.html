@@ -1,0 +1,3 @@
+{% csrf_token %}
+{% if error %}{% include "components/alert.html" with level="danger" text=error %}{% endif %}
+{{ form }}

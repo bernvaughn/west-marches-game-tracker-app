@@ -3,15 +3,17 @@ from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect, render
 from django.utils.cache import add_never_cache_headers
+from django.views.decorators.http import require_http_methods
 
 from player_characters.models import Character
 
-from ..forms.people import WhitelistForm
+from ..forms.people import RolesForm, WhitelistForm
+from ..htmx import hx_response, is_htmx, render_modal_or_page
 from ..models import Membership, WhitelistEntry
 from ..passwords import get_or_create_member
 from ..permissions import can_see_email, club_admin_required, club_member_required
 from ..ratelimit import rate_limit
-from ..scoping import club_queryset
+from ..scoping import club_get_object_or_404, club_queryset
 
 
 @club_member_required
@@ -71,3 +73,77 @@ def whitelist(request, club_slug):
     )
     add_never_cache_headers(response)
     return response
+
+
+class _LastAdmin(Exception):
+    """Raised inside the atomic block when a change would leave the club with no admin."""
+
+
+@club_admin_required
+@require_http_methods(["GET", "POST"])
+def member_roles(request, club_slug, pk):
+    membership = club_get_object_or_404(request, Membership, pk=pk)
+    who = membership.user.display_name or membership.user.email
+
+    if request.method == "POST":
+        form = RolesForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    memberships = list(
+                        Membership.objects.select_for_update().filter(club=request.club)
+                    )
+                    target = next(m for m in memberships if m.pk == membership.pk)
+                    was_admin = target.is_club_admin
+                    target.is_club_admin = form.cleaned_data["is_club_admin"]
+                    target.is_game_master = form.cleaned_data["is_game_master"]
+                    admins = sum(1 for m in memberships if m.is_club_admin)
+                    if was_admin and not target.is_club_admin and admins == 0:
+                        raise _LastAdmin(
+                            "This club needs at least one club admin. "
+                            "Make someone else a club admin first."
+                        )
+                    target.save(update_fields=["is_club_admin", "is_game_master"])
+            except _LastAdmin as exc:
+                return render_modal_or_page(
+                    request,
+                    "accounts/people/_roles_modal.html",
+                    "accounts/people/roles.html",
+                    {
+                        "form": form,
+                        "membership": membership,
+                        "who": who,
+                        "error": str(exc),
+                    },
+                )
+            if is_htmx(request):
+                return hx_response(
+                    trigger={
+                        "appModalClose": True,
+                        "peopleChanged": True,
+                        "toast": {
+                            "message": f"Roles updated for {who}.",
+                            "type": "success",
+                        },
+                    }
+                )
+            messages.success(request, f"Roles updated for {who}.")
+            return redirect("accounts:index", club_slug=request.club.slug)
+    else:
+        form = RolesForm(
+            initial={
+                "is_club_admin": membership.is_club_admin,
+                "is_game_master": membership.is_game_master,
+            }
+        )
+    ctx = {
+        "form": form,
+        "membership": membership,
+        "who": who,
+    }
+    return render_modal_or_page(
+        request,
+        "accounts/people/_roles_modal.html",
+        "accounts/people/roles.html",
+        ctx,
+    )

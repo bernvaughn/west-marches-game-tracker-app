@@ -39,6 +39,7 @@ MODAL_SELECTORS = {
     "details_modal": 'a[data-app-modal][href*="/details-modal/"]',
     "agenda_add_modal": "a.agenda-plus[data-app-modal]",
     "print_session_pack_modal": 'a[data-app-modal][href*="print-session-pack-modal/"]',
+    "roles_modal": 'a[data-app-modal][href*="/roles/"]',
 }
 # `sell_modal` submits a form (the confirm modal comes from a POST), so it has no link selector.
 MODAL_ACTIONS = set(MODAL_SELECTORS) | {"sell_modal"}
@@ -675,6 +676,15 @@ def _build_pages() -> list[Page]:
         P("agent-index-gm-only", "gm_only", _c("agent_access:index")),
         P("agent-batches-gm-only", "gm_only", _c("agent_access:batches")),
         P("accounts-index-club-admin", "club_admin", _c("accounts:index")),
+        P(
+            "people-roles-modal",
+            "club_admin",
+            _c("accounts:index"),
+            action="roles_modal",
+            modal_url=lambda d: reverse(
+                "accounts:member_roles", args=[d.slug, d.alice_membership.pk]
+            ),
+        ),
         P("accounts-message-inbox-club-admin", "club_admin", _c("accounts:message_inbox")),
         P("shops-manage-list-club-admin", "club_admin", _c("shops:manage_list")),
         P("shops-street-editor", "club_admin", _c("shops:street_editor")),
