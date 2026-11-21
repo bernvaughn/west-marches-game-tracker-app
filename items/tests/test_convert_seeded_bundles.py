@@ -199,9 +199,11 @@ def test_net_zero_only_skipped(club):
 
     out = run(club, apply=True)
     assert "skipped (owns none)" in out
-    assert snapshot() == before  # still nothing changed
     old_arrows.refresh_from_db()
-    assert old_arrows.name == "Arrows (20)" and not old_arrows.is_stacked
+    assert old_arrows.name == "Arrows"
+    assert old_arrows.is_stacked
+    assert old_arrows.unit_name == "arrow" and old_arrows.value_units == 20
+    assert not LedgerEntry.objects.filter(kind="adjustment").exists()
 
 
 def test_net_zero_mixed_with_positive_holder(club):

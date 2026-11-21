@@ -224,12 +224,6 @@ class Command(BaseCommand):
         if preview.refusal_reasons:
             raise Refusal(f'"{old_name}": ' + " ".join(preview.refusal_reasons))
 
-        # If there are holders but all are skipped (zero net), don't convert.
-        # If there are no holders at all, still convert (e.g., for starting equipment).
-        if preview.holders and non_skipped == 0:
-            self.stdout.write(f'    All holders have zero net; skipping conversion of "{old_name}"')
-            return 0
-
         if old_name != new_name:
             old_item.name = new_name
             old_item.save(update_fields=["name"])
