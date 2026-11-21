@@ -103,6 +103,9 @@ if ! git -C "$APP_DIR" rev-parse -q --verify "refs/tags/$TAG^{commit}" >/dev/nul
 fi
 git -C "$APP_DIR" checkout --detach "refs/tags/$TAG" </dev/null
 
+step "write version"
+printf '%s\n' "$TAG" > "$APP_DIR/VERSION"
+
 # 5. Install dependencies.
 step "sync dependencies"
 cd "$APP_DIR"

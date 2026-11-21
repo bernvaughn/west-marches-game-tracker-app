@@ -3,7 +3,30 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+
+def load_app_version(base_dir: Path = BASE_DIR, environ: dict | None = None) -> str:
+    """Load the application version.
+
+    Priority: DJANGO_APP_VERSION env var (if non-empty after stripping),
+    then the first line of base_dir/VERSION (stripped), then empty string.
+    Never raises.
+    """
+    if environ is None:
+        environ = os.environ
+    env_val = environ.get("DJANGO_APP_VERSION", "").strip()
+    if env_val:
+        return env_val
+    version_file = base_dir / "VERSION"
+    try:
+        content = version_file.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return ""
+    first_line = content.splitlines()[0].strip() if content.splitlines() else ""
+    return first_line
+
+
 APP_NAME = "Downtime Market"
+APP_VERSION = load_app_version()
 APP_TAGLINE = "Spend your loot between sessions."
 SITE_COPYRIGHT_YEAR = 2026
 

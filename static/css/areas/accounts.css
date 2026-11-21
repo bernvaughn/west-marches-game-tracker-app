@@ -76,7 +76,8 @@
 .wm-site-footer-copyright,
 .wm-site-footer-credit,
 .wm-site-footer-support,
-.wm-site-footer-links {
+.wm-site-footer-links,
+.wm-site-footer-version {
   margin: 0;
   white-space: nowrap;
 }
@@ -119,6 +120,12 @@
   text-decoration: underline;
 }
 
+.wm-site-footer-version {
+  margin-left: auto;
+  color: var(--wm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 640px) {
   .wm-site-footer-inner {
     flex-direction: column;
@@ -127,8 +134,12 @@
   .wm-site-footer-copyright,
   .wm-site-footer-credit,
   .wm-site-footer-support,
-  .wm-site-footer-links {
+  .wm-site-footer-links,
+  .wm-site-footer-version {
     white-space: normal;
+  }
+  .wm-site-footer-version {
+    margin-left: 0;
   }
 }
 

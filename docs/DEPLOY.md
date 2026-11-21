@@ -121,6 +121,8 @@ Publish a GitHub release with a tag such as `v0.1.0`. The workflow `.github/work
 ssh deploy@<host> 'bash -s -- <tag>' < deploy/deploy.sh
 ```
 
+The deploy writes the tag to `/srv/app/VERSION`, and the footer shows it after the service restarts.
+
 Do not change the workflow internals here; that file is the owner's.
 
 ## 5. Rollback

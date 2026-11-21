@@ -32,5 +32,6 @@
       <a href="{% url 'feedback_new' %}?kind=feature&from={{ request.path|urlencode }}">Suggest a feature</a>
     </p>
     {% endif %}
+    {% if APP_VERSION %}<p class="wm-site-footer-version">{{ APP_VERSION }}</p>{% endif %}
   </div>
 </footer>
