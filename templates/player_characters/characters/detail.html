@@ -210,6 +210,7 @@
       </ul>
       <a class="no-print" href="{% url 'ledger:character_history' club.slug character.pk %}" data-wm-tooltip title="See every change to this character's coins and items.">Full ledger</a>
     </section>
+    {% sheet_sections %}
   </div>
   {% else %}
   <p class="wm-sheet-note">Only the owner, game masters and club admins see this sheet.</p>
