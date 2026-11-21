@@ -3,7 +3,7 @@ from django.http import Http404
 from django.shortcuts import redirect
 from django.views.decorators.http import require_POST
 
-from accounts.htmx import is_htmx, render_modal_or_page
+from accounts.htmx import is_htmx, render_modal_or_page, set_hx_headers
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
@@ -52,9 +52,10 @@ def open_container_view(request, club_slug, pk, item_pk):
         "opening": opening,
         "rows": rows,
     }
-    return render_modal_or_page(
+    response = render_modal_or_page(
         request,
         "player_characters/characters/_open_result_modal.html",
         "player_characters/characters/open_result.html",
         ctx,
     )
+    return set_hx_headers(response, trigger="containerOpened")

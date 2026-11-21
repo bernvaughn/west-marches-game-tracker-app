@@ -167,4 +167,27 @@
   document.body.addEventListener("htmx:afterSettle", function () {
     init(document);
   });
+
+  /* After a successful container open the server sends HX-Trigger:
+   * containerOpened. When the modal closes (X, Esc or backdrop) refresh the
+   * inventory section so the sheet shows the opened pack gone and its
+   * contents added, without a full page reload. No inline JS; CSP unchanged. */
+  var containerOpened = false;
+
+  document.body.addEventListener("containerOpened", function () {
+    containerOpened = true;
+  });
+
+  var modalEl = document.getElementById(MODAL_ID);
+  if (modalEl) {
+    modalEl.addEventListener("hidden.bs.modal", function () {
+      if (!containerOpened) return;
+      containerOpened = false;
+      htmx.ajax("GET", location.href, {
+        target: "#sheet-inventory",
+        select: "#sheet-inventory",
+        swap: "outerHTML",
+      });
+    });
+  }
 })();
