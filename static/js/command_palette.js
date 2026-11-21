@@ -1,7 +1,11 @@
 /* Command Palette (Contract): Client-side only, indexes nav entries.
    Activated with Cmd/Ctrl+K. Searches navigation entries from the side menu.
 */
-document.addEventListener("DOMContentLoaded", function () {
+// Register before Alpine starts: alpine.min.js queues Alpine.start() in a
+// microtask that runs right after it executes, before DOMContentLoaded.
+// command_palette.js is ordered before alpine.min.js so this listener exists
+// when alpine:init fires inside Alpine.start().
+document.addEventListener("alpine:init", function () {
   if (!window.Alpine) {
     console.warn("Alpine.js not loaded; command palette disabled");
     return;
