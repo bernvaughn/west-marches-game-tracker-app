@@ -24,6 +24,7 @@ DEMO_CLUB_SLUG = "demo"
 DEMO_PLAYER_EMAIL = "alice@example.com"
 BAKERY_NAME = "Work at a bakery"
 MODAL = "#app-modal .modal-content"
+SPIN_AGAIN = ".wm-spin-again"
 
 
 def _seed_demo():
@@ -45,6 +46,87 @@ def _wait_for(page, expression, timeout=5.0):
             return
         page.wait_for_timeout(50)
     raise AssertionError(f"Timed out waiting for: {expression}")
+
+
+def _set_balance(character, amount):
+    """Set character's downtime balance to exactly `amount` by awarding/spending."""
+    current = services.balance(character)
+    if amount > current:
+        services.award(character, amount - current)
+    elif amount < current:
+        # Spend down by recording a negative adjustment entry
+        from ledger.services import record, Line
+        record(
+            character=character,
+            kind="adjustment",
+            lines=[Line(coins=amount - current)],  # negative delta
+            note="Test adjust",
+        )
+
+
+@pytest.mark.browser
+@pytest.mark.parametrize("width", [1280, 390])
+def test_spin_again_enabled_at_zero_points(transactional_db, live_server, width):
+    """
+    Spin again is enabled when balance is 0 after spending the last point.
+    Clicking it replays the wheel without changing balance, ledger, or result count.
+    """
+    _seed_demo()
+
+    from playwright.sync_api import sync_playwright
+
+    # Use Borin Stonefist who starts with exactly 1 downtime point (per seed_demo)
+    # Borin is owned by bob@example.com
+    user = User.objects.get(email="bob@example.com")
+    character = Character.objects.get(club__slug=DEMO_CLUB_SLUG, name__startswith="Borin")
+    action = DowntimeAction.objects.get(club__slug=DEMO_CLUB_SLUG, name=BAKERY_NAME)
+    assert action.cost == 1, "Test expects a 1-point action"
+
+    session_id = _session_id(user)
+    initial_balance = services.balance(character)
+    initial_results = DowntimeResult.objects.filter(character=character).count()
+    initial_ledger = character.ledger_entries.count()
+    assert initial_balance == 1, "Borin should start with 1 point"
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        context = browser.new_context(viewport={"width": width, "height": 800})
+        context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
+        page = context.new_page()
+        try:
+            page.goto(f"{live_server.url}/c/{DEMO_CLUB_SLUG}/downtime/")
+            page.wait_for_load_state("networkidle")
+
+            # Click "Take the job" on the bakery job card
+            page.locator(
+                f'li.wm-chalk-job:has(h3:has-text("{BAKERY_NAME}")) button[type=submit]'
+            ).click()
+
+            # Wait for result modal to appear with wheel
+            page.wait_for_selector(MODAL, state="visible", timeout=5000)
+            page.wait_for_selector("[data-downtime-wheel]", state="attached", timeout=5000)
+
+            # "Spin again" button should be enabled (not disabled)
+            spin_again = page.locator(SPIN_AGAIN)
+            assert spin_again.is_enabled(), "Spin again should be enabled at 0 balance"
+
+            # Click "Spin again"
+            spin_again.click()
+
+            # Wait for modal to re-render with wheel (result replays)
+            page.wait_for_selector("[data-downtime-wheel]", state="attached", timeout=5000)
+        finally:
+            browser.close()
+
+    # Verify balance, result count, and ledger count unchanged (outside Playwright context)
+    character.refresh_from_db()
+    assert services.balance(character) == 0, "Balance should be 0 after spend"
+    assert (
+        DowntimeResult.objects.filter(character=character).count() == initial_results + 1
+    ), "No new result should be created on replay"
+    assert (
+        character.ledger_entries.count() == initial_ledger + 1
+    ), "Ledger should not change on replay (only the initial spend adds a ledger entry)"
 
 
 @pytest.mark.browser
