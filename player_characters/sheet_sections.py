@@ -5,8 +5,8 @@ without editing the sheet template. Sections render in order after the
 ledger box, and only on screen (they carry ``no-print``).
 """
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +90,7 @@ def get_sheet_sections(request, character) -> list[dict]:
         result.append(
             {
                 "key": section.key,
+                "order": section.order,
                 "template": section.template,
                 "context": ctx,
             }
