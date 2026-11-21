@@ -214,7 +214,7 @@ The records for every app are outlined in [docs/DATA_MODEL.md](docs/DATA_MODEL.m
 How the larger scope fits this architecture:
 
 - **Purchases and sales** stay single database transactions: check stock and balance, then write ledger rows. When two players click Buy on the last item together, the second gets an "already sold" message.
-- **Live updates** use htmx polling, as before: a fragment the page re-requests every 5 seconds, skipped while the browser tab is hidden. Poll only the pages where freshness matters (shop stock); the map and character sheets can load once and refresh on demand.
+- **Live updates** refresh a fragment when the page loads and after the player's own purchase or sale; there is no background timer. The map and character sheets load once and refresh on demand.
 - **Printing** (item cheat sheets, maps) uses ordinary web pages with a print stylesheet and the browser's own print dialog. Do not add server-side PDF generation; it needs more memory than this Droplet should spare.
 - **The map** can grow forever, but only tiles with something on them are stored, so storage and rendering depend on what exists, not on how far the map extends. Show only the part of the map in view.
 - **SQLite** should run in write-ahead mode so reads do not block the occasional write, which is fine at this scale: writes are short and come from a handful of people.
@@ -247,7 +247,7 @@ Later: a `lore` app is out of scope for now. The world notes in the [dnd-world-k
 Rough estimates for the full scope, not measurements. Nothing has been load-tested.
 
 - **People.** Assume up to 50 people logged in at once, far more than a few game tables.
-- **Traffic.** If every one of them polled the shop every 5 seconds around the clock, with a 5 KB fragment each time (an assumed size), that is about 130 GB of outbound transfer a month, around 13% of the 1 TB included. Real use, with hidden tabs skipped and sessions of a few hours, will be a small fraction of that.
+- **Traffic.** Pages refresh on load and after the player's own purchase or sale; there is no background shop-stock polling, so outbound transfer is driven by page views, not a 5-second timer.
 - **Server load.** Those 50 people make at most about 10 requests per second. One vCPU running a few gunicorn workers should handle that when each request takes tens of milliseconds, which a small query against SQLite normally does.
 - **Storage.** A ledger row is a few hundred bytes. Even 100,000 rows is tens of megabytes against the 25 GB disk, and the database file stays small enough to copy offsite nightly in seconds.
 - **Backups.** Weekly Droplet backups are billed by Droplet price, not data size, so they stay at about $1.20/month.

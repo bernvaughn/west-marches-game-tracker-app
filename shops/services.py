@@ -7,6 +7,7 @@ from django.db.models.functions import Lower
 from django.utils import timezone
 
 from items.stacked import bundle_price
+from ledger.coins import format_coins
 from shops.models import Shop, ShopStock
 
 
@@ -167,3 +168,16 @@ class NotStocked(ShopError):
 
 class AlreadySold(ShopError):
     default_message = "Already sold: someone bought the last one."
+
+
+class PriceChanged(ShopError):
+    """The item's price changed since the player was shown it."""
+
+    def __init__(self, expected=None, current=None):
+        self.expected = expected
+        self.current = current
+        if expected is not None and current is not None:
+            message = f"The price changed from {format_coins(expected)} to {format_coins(current)}."
+        else:
+            message = "The price changed."
+        super().__init__(message)

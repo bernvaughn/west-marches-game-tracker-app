@@ -49,31 +49,3 @@
     }
   });
 })();
-
-(function () {
-  // Live refresh of the shop stock without reloading the page.
-  // The CSP blocks Function() (no unsafe-eval), so the htmx [..] trigger filters
-  // were removed from the template. The poll is driven from here instead: a
-  // setInterval and a visibilitychange listener dispatch shopStockPoll on #stock,
-  // which #stock's hx-trigger listens for. The refresh only runs while the tab
-  // is visible.
-  //
-  // The shop switcher swaps the shop page into #main with htmx, and the fragment
-  // loads this script again. Set up the poll only once per page, or each switch
-  // adds another interval and another visibilitychange listener. Each tick looks
-  // up #stock fresh, so a swapped-in #stock is picked up with no restart.
-  if (window.wmShopStockPollBound) return;
-  window.wmShopStockPollBound = true;
-
-  var POLL_INTERVAL = 5000;
-
-  function poll() {
-    if (document.visibilityState !== "visible") return;
-    var el = document.getElementById("stock");
-    if (el) el.dispatchEvent(new Event("shopStockPoll"));
-  }
-
-  setInterval(poll, POLL_INTERVAL);
-
-  document.addEventListener("visibilitychange", poll);
-})();

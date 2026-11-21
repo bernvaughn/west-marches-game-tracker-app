@@ -57,7 +57,9 @@ def test_wrapper_polls_when_visible(login, player, club, shop, always_open):
     assert f'hx-get="{url("stock_fragment", club, shop.id)}"' in body
     stock = body.split('id="stock"', 1)[1]
     trigger = stock.split('hx-trigger="', 1)[1].split('"', 1)[0]
-    assert trigger == "shopStockChanged from:body, shopStockPoll"
+    # The live-refresh poll was removed: the stock only re-fetches after the
+    # player's own buy/sell (shopStockChanged from:body).
+    assert trigger == "shopStockChanged from:body"
     # No [..] trigger filters: they need unsafe-eval, which the CSP does not allow.
     assert "[" not in trigger
 
