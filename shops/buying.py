@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from items.stacked import unit_label
 from ledger.services import Line, record
+from player_characters.life import require_can_buy
 from shops.models import ShopStock
 from shops.services import (
     AlreadySold,
@@ -26,6 +27,7 @@ def buy(character, stock, quantity=1, actor=None, today=None, expected_price=Non
     the purchase is refused if the current price differs, so a stale page can
     never buy at a price that is no longer valid.
     """
+    require_can_buy(character)
     today = today or timezone.localdate()
     if quantity < 1:
         raise ValueError("quantity must be at least 1")
