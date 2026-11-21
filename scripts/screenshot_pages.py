@@ -169,6 +169,7 @@ def demo_objects() -> SimpleNamespace:
     owned_item = Item.objects.filter(
         pk__in=[i for i, q in available_items(aria).items() if q > 0]
     ).first()
+    play_session = PlaySession.objects.filter(club=club).first()
     return SimpleNamespace(
         owned_item=owned_item,
         club=club,
@@ -195,7 +196,7 @@ def demo_objects() -> SimpleNamespace:
         result=DowntimeResult.objects.first(),
         point_request=DowntimePointRequest.objects.first(),
         bakery=DowntimeAction.objects.get(club=club, name="Work at a bakery"),
-        play_session=PlaySession.objects.filter(club=club).first(),
+        play_session=play_session,
     )
 
 
