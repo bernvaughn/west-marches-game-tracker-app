@@ -16,12 +16,8 @@ def _manage_context(request, session):
         return {}
 
     ctx = {
-        "edit_url": reverse(
-            "play_sessions:session_edit", args=[club.slug, session.pk]
-        ),
-        "cancel_url": reverse(
-            "play_sessions:session_cancel", args=[club.slug, session.pk]
-        ),
+        "edit_url": reverse("play_sessions:session_edit", args=[club.slug, session.pk]),
+        "cancel_url": reverse("play_sessions:session_cancel", args=[club.slug, session.pk]),
     }
     if session.series_id:
         remaining = remaining_in_series(session)

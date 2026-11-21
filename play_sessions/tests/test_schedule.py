@@ -36,6 +36,7 @@ def login_client(client, user):
 # Permission tests
 # ---------------------------------------------------------------------------
 
+
 def test_create_302_for_gm_and_admin(client):
     club = make_club()
     gm = make_user("gm@test.com")
@@ -96,6 +97,7 @@ def test_anonymous_redirect_to_login(client):
 # ---------------------------------------------------------------------------
 # Create tests
 # ---------------------------------------------------------------------------
+
 
 def test_create_stores_utc_and_shows_club_zone(client):
     club = make_club(timezone="America/New_York")
@@ -183,6 +185,7 @@ def test_create_repeat_none_makes_one_session_no_series(client):
 # DST tests
 # ---------------------------------------------------------------------------
 
+
 def test_weekly_dst_spring_forward(client):
     """Weekly sessions from March 1 across DST start March 8, 2026 (NY).
 
@@ -260,6 +263,7 @@ def test_every_two_weeks_dst_fall_back(client):
 # Count validation tests
 # ---------------------------------------------------------------------------
 
+
 def test_count_refused_outside_2_to_26(client):
     club = make_club()
     gm = make_user("gm@test.com")
@@ -323,6 +327,7 @@ def test_count_default_is_4(client):
 # ---------------------------------------------------------------------------
 # Edit tests
 # ---------------------------------------------------------------------------
+
 
 def test_edit_past_session(client):
     """A past session can still be edited."""
@@ -441,6 +446,7 @@ def test_cancel_one_series_member_leaves_others(client):
 # Cancel tests
 # ---------------------------------------------------------------------------
 
+
 def test_cancel_keeps_row_and_marks_cancelled(client):
     club = make_club()
     gm = make_user("gm@test.com")
@@ -480,6 +486,7 @@ def test_cancel_keeps_row_and_marks_cancelled(client):
 # ---------------------------------------------------------------------------
 # Cancel the rest tests
 # ---------------------------------------------------------------------------
+
 
 def test_cancel_rest_touches_only_this_and_later(client):
     club = make_club(timezone="America/New_York")
@@ -584,9 +591,7 @@ def test_series_cancel_404_without_series(client):
         starts_at=timezone.now(),
         game_master=gm_membership,
     )
-    url = reverse(
-        "play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk}
-    )
+    url = reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
     response = client.get(url)
     assert response.status_code == 404
 
@@ -595,7 +600,7 @@ def test_series_cancel_404_for_another_club(client):
     club = make_club()
     other_club = make_club(slug="other-club")
     gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
+    make_membership(gm, club, is_gm=True)
     other_gm = make_user("other@test.com")
     other_gm_membership = make_membership(other_gm, other_club, is_gm=True)
 
@@ -612,9 +617,7 @@ def test_series_cancel_404_for_another_club(client):
     )
 
     login_client(client, gm)
-    url = reverse(
-        "play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk}
-    )
+    url = reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
     response = client.get(url)
     assert response.status_code == 404
 
@@ -622,6 +625,7 @@ def test_series_cancel_404_for_another_club(client):
 # ---------------------------------------------------------------------------
 # Form validation tests
 # ---------------------------------------------------------------------------
+
 
 def test_end_time_before_start_time_refused(client):
     club = make_club()
@@ -648,9 +652,9 @@ def test_end_time_before_start_time_refused(client):
 def test_game_master_choices_exclude_players(client):
     club = make_club()
     gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
+    make_membership(gm, club, is_gm=True)
     player = make_user("player@test.com", display_name="Player One")
-    player_membership = make_membership(player, club)
+    make_membership(player, club)
     login_client(client, gm)
 
     url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
@@ -665,6 +669,7 @@ def test_game_master_choices_exclude_players(client):
 # ---------------------------------------------------------------------------
 # Manage section tests
 # ---------------------------------------------------------------------------
+
 
 def test_manage_section_shows_for_gm_not_player(client):
     club = make_club(timezone="America/New_York")
@@ -745,6 +750,7 @@ def test_manage_section_series_link_only_for_series_member(client):
 # Nav entry tests
 # ---------------------------------------------------------------------------
 
+
 def test_new_session_nav_entry_for_gm_not_player(client):
     from types import SimpleNamespace
 
@@ -757,13 +763,17 @@ def test_new_session_nav_entry_for_gm_not_player(client):
     player_membership = make_membership(player_user, club)
 
     # GM request
-    gm_request = SimpleNamespace(user=gm_user, club=club, membership=gm_membership, resolver_match=None)
+    gm_request = SimpleNamespace(
+        user=gm_user, club=club, membership=gm_membership, resolver_match=None
+    )
     gm_nav = navigation.entries_for(gm_request)
-    gm_labels = [l.label for l in gm_nav.get("gm", [])]
+    gm_labels = [entry.label for entry in gm_nav.get("gm", [])]
     assert "New session" in gm_labels
 
     # Player request
-    player_request = SimpleNamespace(user=player_user, club=club, membership=player_membership, resolver_match=None)
+    player_request = SimpleNamespace(
+        user=player_user, club=club, membership=player_membership, resolver_match=None
+    )
     player_nav = navigation.entries_for(player_request)
-    player_labels = [l.label for l in player_nav.get("gm", [])]
+    player_labels = [entry.label for entry in player_nav.get("gm", [])]
     assert "New session" not in player_labels

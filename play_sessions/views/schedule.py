@@ -91,9 +91,7 @@ def session_edit(request, club_slug, pk):
             "club": club,
             "title": "Edit session",
             "session": session,
-            "back_url": reverse(
-                "play_sessions:session_detail", args=[club.slug, session.pk]
-            ),
+            "back_url": reverse("play_sessions:session_detail", args=[club.slug, session.pk]),
         },
     )
 

@@ -24,12 +24,8 @@ class SessionForm(forms.Form):
     title = forms.CharField(max_length=200)
     date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
     start_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}))
-    end_time = forms.TimeField(
-        widget=forms.TimeInput(attrs={"type": "time"}), required=False
-    )
-    game_master = forms.ModelChoiceField(
-        queryset=Membership.objects.none(), required=False
-    )
+    end_time = forms.TimeField(widget=forms.TimeInput(attrs={"type": "time"}), required=False)
+    game_master = forms.ModelChoiceField(queryset=Membership.objects.none(), required=False)
     location = forms.CharField(max_length=200, required=False)
     notes = forms.CharField(widget=forms.Textarea, required=False)
 
