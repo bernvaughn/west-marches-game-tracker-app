@@ -5,6 +5,7 @@ from django.contrib.staticfiles.views import serve
 from django.test import Client, RequestFactory
 from django.urls import reverse
 
+from accounts.tests._cdn_assert import assert_no_cdn
 from config.form_renderer import BootstrapFormRenderer
 from ledger.coins import CoinsField
 
@@ -25,7 +26,7 @@ def test_login_page_has_theme_and_no_cdn():
     html = Client().get(reverse("login")).content.decode()
     assert CSS in html and JS in html
     assert "form-control" in html
-    assert "googleapis" not in html and "cdn" not in html.lower()
+    assert_no_cdn(html)
 
 
 @pytest.mark.story("U23")
