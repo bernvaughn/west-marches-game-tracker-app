@@ -27,28 +27,29 @@
     <a href="{% url 'site_feedback' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
   </div>
 </form>
+</div>
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
-  <thead><tr><th>Kind</th><th>Status</th><th class="wm-col-optional">User</th><th class="wm-col-optional">Club</th><th class="wm-col-optional">Page</th><th>Report</th><th class="wm-col-optional">Date</th><th class="actions"><span class="visually-hidden">Actions</span></th></tr></thead>
+  <thead><tr><th class="wm-col-optional">Kind</th><th>Status</th><th class="wm-col-optional">User</th><th class="wm-col-optional">Club</th><th class="wm-col-optional">Page</th><th>Report</th><th class="wm-col-optional">Date</th><th class="actions"><span class="visually-hidden">Actions</span></th></tr></thead>
   <tbody>
   {% for f in feedback_list %}
   <tr>
-    <td>{% include "components/badge.html" with status="neutral" text=f.get_kind_display %}</td>
+    <td class="wm-col-optional">{% include "components/badge.html" with status="neutral" text=f.get_kind_display %}</td>
     <td>{% include "components/status_badge.html" with value=f.status text=f.get_status_display %}</td>
     <td class="wm-col-optional">{{ f.user.email|default:"-" }}</td>
     <td class="wm-col-optional">{{ f.club.name|default:"-" }}</td>
-    <td class="wm-col-optional"><a href="{{ f.page_url }}" class="text-truncate" title="{{ f.page_url }}">{{ f.page_url|default:"-" }}</a></td>
+    <td class="wm-col-optional"><a href="{{ f.page_url }}" class="wm-feedback-page text-truncate" title="{{ f.page_url }}">{{ f.page_url|default:"-" }}</a></td>
     <td>{{ f.body|linebreaksbr }}</td>
     <td class="wm-col-optional wm-date">{{ f.created|date:"DATETIME_FORMAT" }}</td>
     <td class="text-end actions">
       {% if f.status == "open" %}
-        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-inline">
+        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-block d-sm-inline mb-1 mb-sm-0">
           {% csrf_token %}<input type="hidden" name="status" value="handled"><button class="btn btn-sm btn-outline-success">Mark handled</button>
         </form>
-        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-inline">
+        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-block d-sm-inline mb-1 mb-sm-0">
           {% csrf_token %}<input type="hidden" name="status" value="closed"><button class="btn btn-sm btn-outline-danger">Close</button>
         </form>
       {% else %}
-        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-inline">
+        <form method="post" action="{% url 'site_feedback_status' f.pk %}" class="d-block d-sm-inline mb-1 mb-sm-0">
           {% csrf_token %}<input type="hidden" name="status" value="open"><button class="btn btn-sm btn-outline-secondary">Reopen</button>
         </form>
       {% endif %}
@@ -59,5 +60,4 @@
   {% endfor %}
   </tbody>
 </table></div>
-</div>
 {% endblock %}

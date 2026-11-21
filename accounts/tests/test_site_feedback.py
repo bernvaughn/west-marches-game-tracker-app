@@ -175,17 +175,21 @@ def test_site_admin_feedback_filters_are_labelled_and_table_is_phone_ready(
     assert "flex-wrap" in body
     assert "d-inline-flex" not in body
 
-    # Low-value columns are optional; Report, Status and Kind stay visible.
+    # Low-value columns are optional; Report and Status stay visible.
     th_tags = re.findall(r"<th[^>]*>.*?</th>", body, re.S)
     optional = [t for t in th_tags if "wm-col-optional" in t]
-    assert len(optional) == 4
-    for label in ("User", "Club", "Page", "Date"):
+    assert len(optional) == 5
+    for label in ("Kind", "User", "Club", "Page", "Date"):
         assert any(label in t for t in optional), label
-    for label in ("Kind", "Status", "Report"):
+    for label in ("Status", "Report"):
         assert not any(label in t and "wm-col-optional" in t for t in th_tags), label
 
     # Action column has a visually hidden header.
     assert re.search(r'<th class="actions"><span class="visually-hidden">Actions</span></th>', body)
+
+    # Row action forms stack on a phone so the action column is one button wide.
+    assert body.count("d-block d-sm-inline") == 2
+    assert 'class="d-inline"' not in body
 
 
 @pytest.mark.django_db
