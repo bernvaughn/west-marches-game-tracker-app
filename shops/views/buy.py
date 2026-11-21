@@ -12,6 +12,7 @@ from ledger.services import InsufficientFunds, available_coins
 from player_characters.inventory import coin_summary
 from player_characters.junk import junk_value
 from player_characters.selection import selected_character
+from player_characters.life import buy_block_reason, LifeError
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import Shop, ShopStock
@@ -81,6 +82,8 @@ def buy(request, club_slug, shop_id, stock_id):
                 vs_base = unit_price - base_value
             except ShopError as exc:
                 error = str(exc)
+            except LifeError as exc:
+                error = str(exc)
             else:
                 messages.success(request, entry.note)
                 add_recent_shop(request, shop.pk)
@@ -92,6 +95,11 @@ def buy(request, club_slug, shop_id, stock_id):
         form = BuyForm(request.GET, max_quantity=stock.quantity)
     else:
         form = BuyForm(max_quantity=stock.quantity)
+
+    if error is None and request.method != "POST":
+        reason = buy_block_reason(character)
+        if reason:
+            error = reason
 
     stock.refresh_from_db()
     quantity = 1

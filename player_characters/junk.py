@@ -8,6 +8,7 @@ from ledger.services import item_quantities
 from shops.selling import sale_total
 
 from .access import require_inventory_access
+from .life import require_can_sell
 from .models import JunkMark
 
 
@@ -61,6 +62,7 @@ def junk_value_at(character, shop, rows=None):
 def set_junk(character, item, quantity, actor):
     """Mark, change or (quantity 0) unmark junk. Owner, GM or club admin only."""
     require_inventory_access(actor, character)
+    require_can_sell(character)
     if item.club_id != character.club_id:
         raise JunkError("This item is not in the character's club.")
     if quantity < 0:
