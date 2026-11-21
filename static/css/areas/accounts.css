@@ -341,3 +341,28 @@
 @media (max-width: 575.98px) {
   .wm-msg-col--fluid { min-width: 0; }
 }
+
+/* Request queues on phones: shared block for inbox, downtime and map queues.
+   Kept separate and appended so a rebase is trivial when other children edit this file. */
+
+/* Checkbox size: header and row checkboxes match, measured in rem. */
+.wm-check-sm { width: var(--wm-size-touch); height: var(--wm-size-touch); }
+
+/* Phone-only summary cell: text wraps, no clipping, small gap between children. */
+.wm-req-summary { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+.wm-req-summary > * + * { margin-top: var(--wm-space-1); }
+
+/* Tap targets on action buttons below the 576 px phone breakpoint. */
+@media (max-width: 575.98px) {
+  .wm-queue-table td.actions .btn,
+  .wm-queue-table .wm-row-actions-cell .btn {
+    min-height: var(--wm-size-touch);
+    min-width: var(--wm-size-touch);
+  }
+
+  /* Inbox: fixed 2-column grid so every row has the same sticky width regardless of icon count. */
+  #inbox-list .wm-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, var(--wm-size-touch));
+  }
+}

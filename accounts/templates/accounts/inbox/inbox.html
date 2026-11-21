@@ -22,42 +22,35 @@
         <option value="closed">Close</option>
         <option value="open">Reopen</option>
       </select>
-      <input type="checkbox" class="form-check-input" id="inbox-select-all"
+      <input type="checkbox" class="form-check-input wm-check-sm" id="inbox-select-all"
              data-wm-check-all data-wm-check-all-for="message_ids" hidden
              title="Select all" aria-label="Select all messages">
-      <label class="form-check-label" for="inbox-select-all">Select all</label>
+      <label class="form-check-label text-nowrap" for="inbox-select-all">Select all</label>
       <button class="btn btn-sm btn-outline-secondary" type="submit">Apply</button>
     </div>
 
     <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
-    <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table">
+    <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-queue-table">
       <thead><tr>
         <th scope="col" class="text-center" style="width: 2rem;"></th>
-        <th>From</th><th class="d-none d-sm-table-cell">Character</th><th class="wm-msg-col d-none d-sm-table-cell">Message</th><th class="d-none d-sm-table-cell">Date</th><th>Status</th><th class="actions">Actions</th>
+        <th>From</th><th class="d-none d-sm-table-cell">Character</th><th class="wm-msg-col d-none d-sm-table-cell">Message</th><th class="d-none d-sm-table-cell">Date</th><th class="wm-col-optional">Status</th><th class="actions">Actions</th>
       </tr></thead>
   <tbody>
   {% for m in messages_list %}
   <tr>
-    <td class="text-center"><label class="d-inline-flex p-2"><input type="checkbox" name="message_ids" value="{{ m.pk }}" class="form-check-input" aria-label="Select message from {{ m.sender.user.display_name }} #{{ m.pk }}"></label></td>
-    <td>{{ m.sender.user.display_name }}<div class="wm-muted-line">{% member_email m.sender.user %}</div>
-      <div class="d-sm-none">{{ m.body|linebreaksbr }}</div>
+    <td class="text-center"><label class="d-inline-flex p-2"><input type="checkbox" name="message_ids" value="{{ m.pk }}" class="form-check-input wm-check-sm" aria-label="Select message from {{ m.sender.user.display_name }} #{{ m.pk }}"></label></td>
+    <td>{{ m.sender.user.display_name }}
+      <div class="wm-muted-line d-none d-sm-block">{% member_email m.sender.user %}</div>
+      <div class="d-sm-none">
+        {% if m.character %}{{ m.character.name|default:"-" }}{% endif %}
+        {% include "accounts/inbox/_message_body.html" with message=m %}
+        {% include "components/status_badge.html" with value=m.status text=m.get_status_display %}
+      </div>
     </td>
     <td class="d-none d-sm-table-cell">{{ m.character.name|default:"-" }}</td>
-    <td class="wm-msg-col d-none d-sm-table-cell">{% if m.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% elif m.kind == "starting_request" %}<span class="badge text-bg-primary">Starting request</span><br>{% endif %}{{ m.body|linebreaksbr }}
-      {% if m.granted_entries.all or m.granted_visits.all or m.granted_credits.all or m.granted_found_marks.all %}
-      <div class="wm-granted"><strong>Granted</strong>
-        <ul>
-          {% for e in m.granted_entries.all %}{% for l in e.lines.all %}
-          <li>{{ e.character.name }}: {% if l.item %}{{ l.item.name }} × {{ l.quantity }}{% else %}{{ l.coins|coins }}{% endif %}</li>
-          {% endfor %}{% endfor %}
-          {% for v in m.granted_visits.all %}<li>{{ v.character.name }}: Visit ({{ v.q }}, {{ v.r }}) on {{ v.map.name }}</li>{% endfor %}
-          {% for g in m.granted_credits.all %}<li>{{ g.character.name }}: {{ g.credit.get_kind_display }}: {{ g.credit.location.name }}</li>{% endfor %}
-          {% for f in m.granted_found_marks.all %}<li>{{ f.character.name }}: Found: {{ f.location.name }}</li>{% endfor %}
-        </ul></div>
-      {% endif %}
-    </td>
+    <td class="wm-msg-col d-none d-sm-table-cell">{% include "accounts/inbox/_message_body.html" with message=m %}</td>
     <td class="wm-date d-none d-sm-table-cell">{{ m.created|date:"DATETIME_FORMAT" }}</td>
-    <td>{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
+    <td class="wm-col-optional">{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>
     <td class="actions"><div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for this message from {{ m.sender.user.display_name }}">
       {% if m.status == "open" %}
       {% url 'accounts:message_status_confirm' request.club.slug m.pk "handled" as u %}<a class="btn btn-sm btn-outline-secondary" href="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-get="{{ u }}?filter={{ status }}&kind={{ kind }}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark handled" aria-label="Mark handled">{% include "components/icon.html" with name="check-lg" %}</a>

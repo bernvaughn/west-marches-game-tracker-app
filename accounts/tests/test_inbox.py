@@ -452,3 +452,37 @@ def test_inbox_select_all_apply_and_row_labels(club, club_admin, player, login):
     # Responsive utilities: message text in the From cell below 576px, other columns hide.
     assert "d-sm-none" in page
     assert "d-none d-sm-table-cell" in page
+
+    # Select-all stays on one line.
+    assert 'class="form-check-label text-nowrap"' in page
+
+
+@pytest.mark.story("U13")
+def test_inbox_phone_block_hides_email_shows_status(club, club_admin, player, msg, login):
+    """Below 576px the email is hidden, the status is in the phone block."""
+    _, inbox = _urls(club)
+    page = login(club_admin).get(inbox).content.decode()
+    assert 'class="wm-muted-line d-none d-sm-block"' in page
+    assert "wm-req-summary" not in page
+    assert "status_badge" not in page
+    # The phone block shows the sender, body and status.
+    assert "Missing ring" in page
+    assert "Open" in page
+
+
+@pytest.mark.story("U13")
+def test_inbox_starting_request_shows_badge_in_phone_block(
+    club, club_admin, player, character, login
+):
+    """A starting-request message shows its badge in the phone block."""
+    sender = _mem(player, club)
+    Message.objects.create(
+        club=club,
+        sender=sender,
+        kind=SR,
+        body="Request magic starting item",
+        character=character,
+    )
+    _, inbox = _urls(club)
+    page = login(club_admin).get(inbox).content.decode()
+    assert 'class="badge text-bg-primary">Starting request</span>' in page

@@ -57,3 +57,27 @@ def test_queue_row_checkboxes_named(login, club, game_master, hex_map, player):
     labels = {box.get("aria-label") for box in boxes}
     assert "Select request from Player" in labels
     assert "Select request from Bea" in labels
+
+
+def test_queue_summary_cell_has_character_kind_position_status(
+    login, club, game_master, hex_map, player
+):
+    """Phone summary cell holds character, kind, (q, r) and status."""
+    owner = Membership.objects.get(user=player, club=club)
+    req = _create_request(club, hex_map, owner, 5, 9)
+    body = login(game_master).get(_url(club)).content.decode()
+    assert "wm-req-summary" in body
+    assert "Visit" in body
+    assert "(5, 9)" in body
+    assert req.get_status_display() in body
+
+
+def test_queue_header_checkbox_has_wm_check_sm(login, club, game_master, hex_map, player):
+    """Header checkbox has wm-check-sm class."""
+    owner = Membership.objects.get(user=player, club=club)
+    _create_request(club, hex_map, owner, 1, 1)
+    body = login(game_master).get(_url(club)).content.decode()
+    soup = BeautifulSoup(body, "html.parser")
+    header_box = soup.select_one("#bulk-select-all")
+    assert header_box is not None
+    assert "wm-check-sm" in header_box.get("class", [])
