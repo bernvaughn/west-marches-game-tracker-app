@@ -1,0 +1,48 @@
+{% comment %}_month_grid: calendar month grid, Sunday first.
+   Context: grid (weeks, prev_month, next_month), year, month, today, club, zone_name, class.
+   Each day holds date, in_month, is_today, sessions. Each session has local_start
+   (aware, club zone), title, game_master, yes_count, cancelled, pk.
+{% endcomment %}
+{% load tz %}
+<div class="sessions-grid {{ class|default:'' }}">
+  <div class="sessions-nav">
+    <a class="sessions-nav-link" href="?month={{ grid.prev_month }}">&lsaquo;</a>
+    <span class="sessions-month">{{ year }} {{ month_name }}</span>
+    <a class="sessions-nav-link" href="?month={{ grid.next_month }}">&rsaquo;</a>
+  </div>
+  <div class="sessions-week sessions-week--head">
+    <div class="sessions-cell sessions-cell--head">Sun</div>
+    <div class="sessions-cell sessions-cell--head">Mon</div>
+    <div class="sessions-cell sessions-cell--head">Tue</div>
+    <div class="sessions-cell sessions-cell--head">Wed</div>
+    <div class="sessions-cell sessions-cell--head">Thu</div>
+    <div class="sessions-cell sessions-cell--head">Fri</div>
+    <div class="sessions-cell sessions-cell--head">Sat</div>
+  </div>
+  {% for week in grid.weeks %}
+  <div class="sessions-week">
+    {% for day in week %}
+    {% with day.sessions as sessions %}
+    <div class="sessions-cell sessions-day{% if not day.in_month %} sessions-day--other{% endif %}{% if day.is_today %} sessions-day--today{% endif %}">
+      <div class="sessions-daynum">{{ day.date.day }}</div>
+      {% for s in sessions %}
+      <div class="sessions-session{% if s.cancelled %} sessions-session--cancelled{% endif %}">
+        <a class="sessions-title" href="{% url 'play_sessions:session_detail' club.slug s.pk %}">{{ s.title }}</a>
+        <span class="sessions-time">
+          {% localtime off %}{{ s.local_start|time:"g:i A" }}{% endlocaltime %} {{ zone_name }}
+        </span>
+        <span class="sessions-gm">
+          {% if s.game_master %}{{ s.game_master.user.display_name|default:s.game_master.user.email }}{% endif %}
+        </span>
+        <span class="sessions-yes">{{ s.yes_count }} yes</span>
+        {% if s.cancelled %}
+        {% include "components/badge.html" with status="danger" text="Cancelled" %}
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>

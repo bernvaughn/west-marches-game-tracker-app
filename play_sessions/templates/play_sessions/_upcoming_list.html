@@ -1,0 +1,31 @@
+{% comment %}_upcoming_list: sessions of the shown month, grouped by day.
+   Context: upcoming (list of {date, sessions}), today, club, zone_name, class.
+{% endcomment %}
+{% load tz %}
+<div class="sessions-list {{ class|default:'' }}">
+  {% for day in upcoming %}
+  <div class="sessions-list-day">
+    <span class="sessions-list-daynum">
+      {% localtime off %}{{ day.date|date:"l, F j" }}{% endlocaltime %}
+      {% if day.date == today %} <span class="sessions-today">(today)</span>{% endif %}
+    </span>
+    {% for s in day.sessions %}
+    <div class="sessions-list-row{% if s.cancelled %} sessions-list-row--cancelled{% endif %}">
+      <a class="sessions-title" href="{% url 'play_sessions:session_detail' club.slug s.pk %}">{{ s.title }}</a>
+      <span class="sessions-time">
+        {% localtime off %}{{ s.local_start|time:"g:i A" }}{% endlocaltime %} {{ zone_name }}
+      </span>
+      <span class="sessions-gm">
+        {% if s.game_master %}{{ s.game_master.user.display_name|default:s.game_master.user.email }}{% endif %}
+      </span>
+      <span class="sessions-yes">{{ s.yes_count }} yes</span>
+      {% if s.cancelled %}
+      {% include "components/badge.html" with status="danger" text="Cancelled" %}
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% empty %}
+  <p class="text-muted small">No sessions this month.</p>
+  {% endfor %}
+</div>
