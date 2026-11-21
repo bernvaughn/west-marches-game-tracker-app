@@ -1,6 +1,7 @@
+from datetime import UTC
+
 import pytest
-from datetime import datetime, timezone as dt_timezone
-from django.template import TemplateDoesNotExist
+from django.test import override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -8,7 +9,6 @@ from accounts.models import Club, Membership, User
 from play_sessions import core
 from play_sessions.models import PlaySession
 from player_characters.models import Character
-
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P1")]
 
@@ -25,7 +25,7 @@ def club_and_session():
     session = PlaySession.objects.create(
         club=club,
         title="Test Session",
-        starts_at=timezone.datetime(2024, 6, 15, 18, 0, tzinfo=dt_timezone.utc),
+        starts_at=timezone.datetime(2024, 6, 15, 18, 0, tzinfo=UTC),
         game_master=membership,
         location="The Tavern",
         notes="Bring dice.",
@@ -51,7 +51,9 @@ def test_detail_404_for_another_club(client, club_and_session):
     other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
     Membership.objects.create(user=other_user, club=other_club)
     client.force_login(other_user)
-    url = reverse("play_sessions:session_detail", kwargs={"club_slug": other_club.slug, "pk": session.pk})
+    url = reverse(
+        "play_sessions:session_detail", kwargs={"club_slug": other_club.slug, "pk": session.pk}
+    )
     response = client.get(url)
     assert response.status_code == 404
 
@@ -64,7 +66,7 @@ def test_detail_login_redirect(client, club_and_session):
     assert "/accounts/login/" in response.url
 
 
-def test_detail_sections_render_in_order(client, club_and_session, monkeypatch, tmp_path):
+def test_detail_sections_render_in_order(client, club_and_session, tmp_path):
     club, membership, character, session = club_and_session
     user = membership.user
     client.force_login(user)
@@ -75,11 +77,11 @@ def test_detail_sections_render_in_order(client, club_and_session, monkeypatch, 
     (template_dir / "section_a.html").write_text("Section A content")
     (template_dir / "section_b.html").write_text("Section B content")
 
-    # Add to TEMPLATES DIRS
+    # Add to TEMPLATES DIRS using override_settings
     from django.conf import settings
 
     original_dirs = settings.TEMPLATES[0]["DIRS"]
-    settings.TEMPLATES[0]["DIRS"] = [*original_dirs, str(template_dir)]
+    new_dirs = [*original_dirs, str(template_dir)]
 
     # Swap core._sections
     original_sections = core._sections.copy()
@@ -88,21 +90,24 @@ def test_detail_sections_render_in_order(client, club_and_session, monkeypatch, 
     core.register_session_section("a_section", 10, "section_a.html", lambda r, s: {})
 
     try:
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
-        response = client.get(url)
-        assert response.status_code == 200
-        content = response.content.decode()
-        # A should appear before B
-        a_pos = content.index("Section A content")
-        b_pos = content.index("Section B content")
-        assert a_pos < b_pos
+        with override_settings(TEMPLATES=[{**settings.TEMPLATES[0], "DIRS": new_dirs}]):
+            url = reverse(
+                "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk}
+            )
+            response = client.get(url)
+            assert response.status_code == 200
+            content = response.content.decode()
+            # A should appear before B
+            a_pos = content.index("Section A content")
+            b_pos = content.index("Section B content")
+            assert a_pos < b_pos
     finally:
         core._sections.clear()
         core._sections.update(original_sections)
         settings.TEMPLATES[0]["DIRS"] = original_dirs
 
 
-def test_detail_visible_fn_false_hides_section(client, club_and_session, monkeypatch, tmp_path):
+def test_detail_visible_fn_false_hides_section(client, club_and_session, tmp_path):
     club, membership, character, session = club_and_session
     user = membership.user
     client.force_login(user)
@@ -114,7 +119,7 @@ def test_detail_visible_fn_false_hides_section(client, club_and_session, monkeyp
     from django.conf import settings
 
     original_dirs = settings.TEMPLATES[0]["DIRS"]
-    settings.TEMPLATES[0]["DIRS"] = [*original_dirs, str(template_dir)]
+    new_dirs = [*original_dirs, str(template_dir)]
 
     original_sections = core._sections.copy()
     core._sections.clear()
@@ -127,13 +132,15 @@ def test_detail_visible_fn_false_hides_section(client, club_and_session, monkeyp
     )
 
     try:
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
-        response = client.get(url)
-        assert b"Hidden content" not in response.content
+        with override_settings(TEMPLATES=[{**settings.TEMPLATES[0], "DIRS": new_dirs}]):
+            url = reverse(
+                "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk}
+            )
+            response = client.get(url)
+            assert b"Hidden content" not in response.content
     finally:
         core._sections.clear()
         core._sections.update(original_sections)
-        settings.TEMPLATES[0]["DIRS"] = original_dirs
 
 
 def test_detail_time_shows_in_club_zone_across_dst(client):
@@ -150,7 +157,7 @@ def test_detail_time_shows_in_club_zone_across_dst(client):
     session_before = PlaySession.objects.create(
         club=club,
         title="Before DST",
-        starts_at=timezone.datetime(2024, 3, 10, 0, 0, tzinfo=dt_timezone.utc),
+        starts_at=timezone.datetime(2024, 3, 10, 0, 0, tzinfo=UTC),
         game_master=membership,
     )
 
@@ -158,17 +165,21 @@ def test_detail_time_shows_in_club_zone_across_dst(client):
     session_after = PlaySession.objects.create(
         club=club,
         title="After DST",
-        starts_at=timezone.datetime(2024, 3, 10, 23, 0, tzinfo=dt_timezone.utc),
+        starts_at=timezone.datetime(2024, 3, 10, 23, 0, tzinfo=UTC),
         game_master=membership,
     )
 
-    url_before = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session_before.pk})
+    url_before = reverse(
+        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session_before.pk}
+    )
     response_before = client.get(url_before)
     content_before = response_before.content.decode()
     assert "7:00 PM" in content_before or "19:00" in content_before
     assert "EDT" not in content_before  # Should be EST or just the zone abbreviation
 
-    url_after = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session_after.pk})
+    url_after = reverse(
+        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session_after.pk}
+    )
     response_after = client.get(url_after)
     content_after = response_after.content.decode()
     assert "7:00 PM" in content_after or "19:00" in content_after
@@ -191,7 +202,7 @@ def test_detail_gm_notes_never_in_shell_for_player(client):
     gm_user = User.objects.create_user(email="gm@test.com", password="pass12345678")
     player_user = User.objects.create_user(email="player@test.com", password="pass12345678")
     gm_membership = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
-    player_membership = Membership.objects.create(user=player_user, club=club)
+    Membership.objects.create(user=player_user, club=club)
 
     session = PlaySession.objects.create(
         club=club,

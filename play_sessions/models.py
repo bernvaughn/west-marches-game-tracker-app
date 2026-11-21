@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.db import models
 from django.db.models import CheckConstraint, Q
-from django.utils import timezone
 
 from accounts.scoping import ClubScopedManager
 from ledger.models import AppendOnlyManager, AppendOnlyModel
@@ -99,9 +98,7 @@ class SessionRSVP(models.Model):
         MAYBE = "maybe", "Maybe"
         NO = "no", "No"
 
-    session = models.ForeignKey(
-        PlaySession, on_delete=models.CASCADE, related_name="rsvps"
-    )
+    session = models.ForeignKey(PlaySession, on_delete=models.CASCADE, related_name="rsvps")
     character = models.ForeignKey(
         "player_characters.Character", on_delete=models.CASCADE, related_name="session_rsvps"
     )
@@ -133,9 +130,7 @@ class SessionAttendance(models.Model):
 
     club_path = "session__club"
 
-    session = models.ForeignKey(
-        PlaySession, on_delete=models.CASCADE, related_name="attendance"
-    )
+    session = models.ForeignKey(PlaySession, on_delete=models.CASCADE, related_name="attendance")
     character = models.ForeignKey(
         "player_characters.Character", on_delete=models.PROTECT, related_name="session_attendance"
     )
@@ -199,9 +194,7 @@ class SessionAward(models.Model):
 
     club_path = "session__club"
 
-    session = models.ForeignKey(
-        PlaySession, on_delete=models.CASCADE, related_name="awards"
-    )
+    session = models.ForeignKey(PlaySession, on_delete=models.CASCADE, related_name="awards")
     character = models.ForeignKey(
         "player_characters.Character", on_delete=models.PROTECT, related_name="session_awards"
     )
