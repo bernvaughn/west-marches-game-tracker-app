@@ -999,7 +999,7 @@ Rules for both stories:
 - Club admin and game master stay two separate permissions in a club (see Roles and permissions). A person can hold neither (a player), either, or both.
 - Roles belong to one club. Changing them in one club never changes another.
 - Only a club admin of that club can add people or change roles there. The site admin can do both in any club.
-- The app still sends no email.
+- The app still sends no email (round 20 changes this).
 
 **U133 Add a club admin.** As a club admin, I want to tick "Club admin" as well as "Game master" when I add a person, so a co-organiser can manage the club from their first sign-in, without the site admin or Django admin. *(accounts)*
 - The add-person form (U1) gets a "Club admin" checkbox next to "Game master". Both can be ticked together. With neither ticked the person is a player.
@@ -1155,6 +1155,104 @@ A character can be **dead**, which is part of its story and keeps it visible. A 
 - Every change (U138, U139, U144, U145) is one history entry with who, when, and the note.
 - A "Fallen" page lists dead characters with the date, owner, and note, newest first, including archived ones. Players can see it too.
 - The Fallen page can show each character's sessions played (P7), once sessions exist.
+
+## Round 20: email (2026-11-21)
+
+Until now the app sent no email (see Decisions). This round adds email through Resend, a transactional email service reached over HTTPS, because DigitalOcean blocks the usual mail ports. The club has about 20 players and plays about once a month, so volume is tiny: a few dozen emails a month.
+
+Rules for every story in this round:
+
+- The app never runs a mail server. It sends through the Resend HTTPS API only.
+- Email is a convenience, never a requirement. Every flow that works today (an admin hands out a temporary password, an admin resets a password) keeps working when email is off or fails.
+- Emails are plain, short, and work as text. No tracking pixels and no tracked links.
+- An email never contains a password in clear text. It carries a one-time link instead (E2, E3).
+- Everything is per club where it makes sense (U12). A person in two clubs gets each club's emails separately, marked with the club's name.
+- The Resend key lives only in the server's environment, never in the code, the database, or the logs.
+
+### Foundation
+
+**E1 Send email.** As a site admin, I want the app to send email through Resend, so the other stories can use it. *(core, config)*
+- Settings come from the server environment: the Resend API key, and the "from" address. The reply-to is set per club by the app (E10), never by the server environment. With no key set, the app logs emails to the console as it does today and never fails because of it.
+- The "from" address is on a domain verified in Resend, for example `Downtime Market <noreply@mail.downtimemarket.com>`. The site admin does the DNS setup once, and the README says how.
+- Every email goes through one place in the code. It sends in the background, so a slow or failing Resend never makes a page slow or fail. A failed send is retried a few times, then marked failed.
+- A site admin command sends a test email to an address, and says plainly whether the key and domain work.
+- Tests use no network.
+
+**E2 See what was sent.** As a club admin, I want a page listing emails the app sent for my club, with who, what kind, when, and whether it was delivered, failed, or bounced, so I know when someone did not get theirs. *(core, accounts)*
+- Each row shows the recipient, the kind (welcome, password reset, session reminder), the time, and the status. It never shows the body or any link.
+- A failed or bounced row has a "Show them the link instead" button where it makes sense (E3, E4), so the admin can hand it over by hand.
+- Resend tells the app about delivery, bounces, and complaints through a signed webhook. The app checks the signature and ignores anything else.
+- Addresses that bounce hard or mark an email as spam get a "do not email" flag, so the app stops sending to them. A club admin can clear the flag.
+- Old rows are dropped after 90 days.
+
+### Accounts
+
+**E3 Welcome email with a sign-in link.** As a club admin, I want the person I add to get an email with a one-time link to set their own password, so I do not have to message them a password. *(accounts)*
+- The add-person form (U1, U18) gets an "Email them a sign-in link" checkbox, ticked by default when email is on.
+- With it ticked, the app emails a link that opens a "choose your password" page. The link works once, expires after 7 days, and is useless after the password is set.
+- With it unticked, or when email is off, nothing changes: the admin sees the temporary password once (U18) and hands it over.
+- The email says the club's name, who added them, and the site address. An existing account that is only added to a new club gets a short "you were added to <club>" email with no link.
+- If the send fails, the admin sees it right away and can still show the temporary password.
+- An admin can resend the link from the People page. Resending cancels the older link.
+
+**E4 Forgot my password.** As a player, I want a "Forgot password?" link on the sign-in page that emails me a reset link, so I can get back in without asking an admin. *(accounts)*
+- The page asks for an email address. The answer is always the same message ("If that address has an account, we sent a link"), so nobody can find out who has an account.
+- The link works once, expires after 1 hour, and opens a "choose a new password" page that follows the password rules (U20). Setting a password signs the person out everywhere else.
+- Requests are rate limited per address and per visitor. People with no email on file, or flagged "do not email" (E2), get nothing.
+- An email also goes to the account's address after any password change, saying "your password was changed", with no link.
+- The admin reset (U19) is unchanged.
+
+### Sessions
+
+These stories need play sessions (P1-P4, round 19).
+
+**E5 Session reminder.** As a player, I want an email a few days before a play session, with the date, time, and place, so I do not forget. *(play_sessions, core)*
+- A club admin chooses when reminders go, from a short list: for example 7 days and 2 days before. The default is one reminder, 3 days before.
+- The email says the session's title, date, and time in the club's time zone (P11), the game master, and the location. It goes to every member who has a character that has not said "no" to the session.
+- A cancelled session sends a short "cancelled" email to people who were sent a reminder or said "yes". A changed date or time sends one "changed" email.
+- Reminders go out once, even if the job runs twice. A session that is already past never sends one.
+- The server runs the job on a schedule. A site admin can see when it last ran.
+
+**E6 Answer from the email.** As a player, I want to say "yes", "maybe", or "no" from the reminder email with one click, so I do not have to sign in to RSVP. *(play_sessions)*
+- The email has three buttons per character the person owns, for example "Aria: Yes / Maybe / No". Each link answers that one session for that one character (P4).
+- A link opens a small page that shows the answer and asks the person to press "Confirm". Nothing changes on a plain page load, so mail scanners that open links cannot answer for people.
+- Links expire when the session starts. They work only for that person and that character, and a signed-in person who follows a link for someone else gets nothing.
+- The page shows the current answer and lets the person change it.
+- A player can answer more than once; the latest answer wins and is recorded like any RSVP.
+
+**E7 A digest for the game master.** As a game master, I want one email the day before a session, listing who said yes, maybe, no, and who has not answered, so I know the table. *(play_sessions)*
+- It goes to the session's game master only, and only if they opt in (E8).
+- It lists characters with the player's name, like the "Who is coming" page (P5).
+
+### Preferences
+
+**E8 My email settings.** As a player, I want to choose which emails I get, so I only get the ones I want. *(accounts)*
+- A "My email" page lists the optional kinds: session reminders (E5), cancel and change notices, and the game master digest (E7, game masters only). Each can be turned on or off per club.
+- Welcome and password emails (E3, E4) are not optional, because they are things the person asked for. The page says so.
+- Every optional email has a one-click "unsubscribe" link at the bottom. It opens a confirm page and turns off that kind only, with no sign-in needed.
+- Players with no email address on file see a short note that email is off for them.
+
+**E9 Add an email address later.** As a player, I want to add or change my own email address, so I can start getting email after being added without one. *(accounts)*
+- Changing the address sends a confirmation link to the new address. The old address stays in use until the link is opened, and the old address gets a notice.
+- An address is already used by another account: the page gives the same neutral answer as E4.
+- Whitelisted addresses (U1) are unchanged by this. A club admin can still add people by email.
+
+**E10 Club contact email.** As a club admin, I want to set an optional contact email for my club, so replies to the club's emails reach me or my game masters and not nobody. *(accounts, core)*
+- The club settings page gets an optional "Contact email" field. It must be a valid address and is shown to club admins only.
+- When it is set, every email the app sends for that club (E3, E4, E5, E7) carries it as the reply-to. The "from" address stays the site's address, so delivery is unchanged.
+- When it is blank, those emails have no reply-to. The email footer says replies are not read and names the club.
+- Emails about an account that is not tied to one club, such as a password reset (E4) for a person in several clubs, have no reply-to.
+- The contact email is never shown to players, other clubs, or agents. It is only used as the reply-to header.
+- The "new club" form (site admin) can set it, but does not need to.
+
+**E11 Send a test email.** As a club admin, I want to send a test email from my club's settings to myself or another admin, so I can check that sending works and see what my club's emails look like. *(accounts, core)*
+- The club settings page gets a "Send a test email" button next to the contact email (E10). It asks which kind to send: a plain test, a sample welcome email (E3), or a sample session reminder (E5). The first version needs only the plain test.
+- The test goes to the signed-in admin's own address by default. The admin can pick another admin of the same club from a list, but cannot type any other address, so the button cannot be used to send mail to strangers.
+- The test email looks like a real one for this club: same "from" address, the club's contact email as reply-to (E10), the club's name, and a clear "This is a test" line. Samples use made-up names, and contain no working links.
+- The page says what happened: queued, sent, or failed, with the plain reason when Resend refuses (no key, domain not verified, address flagged "do not email"). The result also shows in the email log (E2) as kind "test".
+- Each club can send a few tests per hour. More are refused with a clear message.
+- Only club admins can send tests. When email is off for the site, the button is disabled and says why.
+- The email is built in one place from the club's settings, so later club customisation (for example a footer or a signature) shows up in the test without extra work.
 
 ## Quests
 
@@ -1356,6 +1454,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Containers.** Any item can be a container (`is_container`). Slots have chance, weighted options, quantity ranges, and unknown flags. Opening writes an `opened` ledger entry and a `ContainerOpening`. Previews go through `loot_preview()`; unknowns are masked to `???` for players and agents. Nesting allowed (max depth 3, no cycles). Existing packs migrated by idempotent `seed_pack_containers` command. Agent `search_items` returns `is_container` and masked `loot`. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere without revealing it is in a box.
 - **Death and archive (U138-U147).** Dead and archived are separate states on a character. Players can mark their own characters dead. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Coins from the stall keep going to the dead character and just collect there, unusable for now; a way to use them may come later. A replacement character may claim starting equipment as usual. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
 - **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
+- **Email (E1-E11).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes
