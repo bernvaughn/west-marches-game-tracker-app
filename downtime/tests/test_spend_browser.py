@@ -55,7 +55,8 @@ def _set_balance(character, amount):
         services.award(character, amount - current)
     elif amount < current:
         # Spend down by recording a negative adjustment entry
-        from ledger.services import record, Line
+        from ledger.services import Line, record
+
         record(
             character=character,
             kind="adjustment",
@@ -121,12 +122,12 @@ def test_spin_again_enabled_at_zero_points(transactional_db, live_server, width)
     # Verify balance, result count, and ledger count unchanged (outside Playwright context)
     character.refresh_from_db()
     assert services.balance(character) == 0, "Balance should be 0 after spend"
-    assert (
-        DowntimeResult.objects.filter(character=character).count() == initial_results + 1
-    ), "No new result should be created on replay"
-    assert (
-        character.ledger_entries.count() == initial_ledger + 1
-    ), "Ledger should not change on replay (only the initial spend adds a ledger entry)"
+    assert DowntimeResult.objects.filter(character=character).count() == initial_results + 1, (
+        "No new result should be created on replay"
+    )
+    assert character.ledger_entries.count() == initial_ledger + 1, (
+        "Ledger should not change on replay (only the initial spend adds a ledger entry)"
+    )
 
 
 @pytest.mark.browser
