@@ -1245,6 +1245,15 @@ These stories need play sessions (P1-P4, round 19).
 - The contact email is never shown to players, other clubs, or agents. It is only used as the reply-to header.
 - The "new club" form (site admin) can set it, but does not need to.
 
+**E11 Send a test email.** As a club admin, I want to send a test email from my club's settings to myself or another admin, so I can check that sending works and see what my club's emails look like. *(accounts, core)*
+- The club settings page gets a "Send a test email" button next to the contact email (E10). It asks which kind to send: a plain test, a sample welcome email (E3), or a sample session reminder (E5). The first version needs only the plain test.
+- The test goes to the signed-in admin's own address by default. The admin can pick another admin of the same club from a list, but cannot type any other address, so the button cannot be used to send mail to strangers.
+- The test email looks like a real one for this club: same "from" address, the club's contact email as reply-to (E10), the club's name, and a clear "This is a test" line. Samples use made-up names, and contain no working links.
+- The page says what happened: queued, sent, or failed, with the plain reason when Resend refuses (no key, domain not verified, address flagged "do not email"). The result also shows in the email log (E2) as kind "test".
+- Each club can send a few tests per hour. More are refused with a clear message.
+- Only club admins can send tests. When email is off for the site, the button is disabled and says why.
+- The email is built in one place from the club's settings, so later club customisation (for example a footer or a signature) shows up in the test without extra work.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -1445,7 +1454,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Containers.** Any item can be a container (`is_container`). Slots have chance, weighted options, quantity ranges, and unknown flags. Opening writes an `opened` ledger entry and a `ContainerOpening`. Previews go through `loot_preview()`; unknowns are masked to `???` for players and agents. Nesting allowed (max depth 3, no cycles). Existing packs migrated by idempotent `seed_pack_containers` command. Agent `search_items` returns `is_container` and masked `loot`. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere without revealing it is in a box.
 - **Death and archive (U138-U147).** Dead and archived are separate states on a character. Players can mark their own characters dead. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Coins from the stall keep going to the dead character and just collect there, unusable for now; a way to use them may come later. A replacement character may claim starting equipment as usual. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
 - **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
-- **Email (E1-E10).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
+- **Email (E1-E11).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes
