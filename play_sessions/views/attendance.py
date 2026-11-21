@@ -27,7 +27,7 @@ def attendance(request, club_slug, pk):
         form = AttendanceForm(club, request.POST)
         if form.is_valid():
             selected_ids = set(form.cleaned_data["characters"].values_list("pk", flat=True))
-            changed = save_attendance(session, selected_ids, request.user, club)
+            save_attendance(session, selected_ids, request.user, club)
             messages.success(request, "Attendance saved.")
             return redirect("play_sessions:session_detail", club_slug=club.slug, pk=session.pk)
     else:

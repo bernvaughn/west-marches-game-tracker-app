@@ -286,7 +286,7 @@ def test_save_attendance_new_character_after_first_save_writes_old_null():
 def test_save_attendance_unchanged_rows_not_touched():
     club, gm, player, session = _make_club_and_session()
     char1 = Character.objects.create(name="Char 1", club=club, owner=player)
-    char2 = Character.objects.create(name="Char 2", club=club, owner=player)
+    _ = Character.objects.create(name="Char 2", club=club, owner=player)
 
     save_attendance(session, {char1.pk}, gm.user, club)
     save_attendance(session, {char1.pk}, gm.user, club)  # No changes
@@ -483,7 +483,7 @@ def test_attendance_post_inactive_character_ignored(client):
     with patch("play_sessions.core.character_is_active", return_value=False):
         client.force_login(gm.user)
         url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
-        response = client.post(url, {"characters": [char.pk]})
+        client.post(url, {"characters": [char.pk]})
 
     # Should not create attendance for inactive character
     assert not SessionAttendance.objects.filter(session=session, character=char).exists()
