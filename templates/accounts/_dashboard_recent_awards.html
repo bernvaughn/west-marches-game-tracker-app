@@ -1,0 +1,37 @@
+{% comment %}Latest awards dashboard section: recent ledger and downtime awards.
+   Context: recent_awards (list of dicts). Hidden when empty. Uses no-print.
+   Each award dict: date, kind, coins, items (list of (name, qty)), points, note.
+{% endcomment %}
+{% load coins %}
+{% if recent_awards %}
+<div class="wm-dashboard-section card wm-card-raised mb-4 no-print">
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush wm-recent-awards">
+      <li class="list-group-item py-2">
+        <h6 class="h6 mb-0">Latest awards</h6>
+      </li>
+      {% for award in recent_awards %}
+      <li class="list-group-item py-2">
+        <div class="d-flex w-100 justify-content-between align-items-start">
+          <span class="text-muted small wm-dashboard-date">{{ award.date }}</span>
+          {% if award.note %}<span class="text-muted small ms-2">{{ award.note }}</span>{% endif %}
+        </div>
+        <div class="wm-award-lines mt-1 small">
+          {% if award.points %}
+            +{{ award.points }} downtime points
+          {% elif award.coins %}
+            {{ award.coins|coins }}
+          {% else %}
+            {% for name, qty in award.items %}
+              {{ qty }} x {{ name }}{% if not forloop.last %}, {% endif %}
+            {% empty %}
+              —
+            {% endfor %}
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}

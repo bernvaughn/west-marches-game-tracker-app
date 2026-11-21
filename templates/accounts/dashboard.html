@@ -4,6 +4,8 @@
 {% include "components/page_header.html" with title="Dashboard" subtitle="Quick actions" %}
 {% include "accounts/_dashboard_header.html" with character=character coin_summary=coin_summary downtime_balance=downtime_balance junk_count=junk_count junk_value=junk_value %}
 
+{% include "accounts/_dashboard_recent_awards.html" with recent_awards=recent_awards %}
+
 <div class="wm-dashboard-grid">
   {% for provider in dashboard_providers %}
     {% include provider.template with provider_context=provider.ctx %}
