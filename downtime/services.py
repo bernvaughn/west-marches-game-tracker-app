@@ -10,6 +10,7 @@ from django.utils import timezone
 from downtime.models import DowntimePointEntry, DowntimeResult
 from ledger.services import Line
 from ledger.services import record as ledger_record
+from player_characters import life
 from player_characters.models import Character
 
 
@@ -18,6 +19,10 @@ class DowntimeError(Exception):
 
 
 class InsufficientPoints(DowntimeError):
+    pass
+
+
+class CharacterBlocked(DowntimeError):
     pass
 
 
@@ -90,7 +95,11 @@ def spend(character, action, by, rng=None, *, today=None):
         raise DowntimeError("That action is not available in this club.")
     today = today or timezone.localdate()
     with transaction.atomic():
-        list(Character.objects.select_for_update().filter(pk=character.pk))
+        locked = Character.objects.select_for_update().get(pk=character.pk)
+        try:
+            life.require_can_buy(locked)
+        except life.LifeError as exc:
+            raise CharacterBlocked(str(exc)) from exc
         if not action.is_live_on(today):
             raise DowntimeError(f"{action.name} is not available today.")
         entries = list(action.entries.prefetch_related("items__item"))

@@ -11,6 +11,7 @@ from accounts.permissions import club_member_required, is_club_admin, is_game_ma
 from accounts.scoping import club_get_object_or_404
 from items import stacked
 from ledger.services import InsufficientItems, available_items
+from player_characters import life
 from player_characters.selection import selected_character
 from quests import services
 from quests.models import Quest, QuestCompletion
@@ -148,7 +149,10 @@ def detail(request, club_slug, pk):
                 }
             )
         # Same order as quests.services.turn_in (liveness is checked above).
-        if not turnin_rows:
+        reason = life.buy_block_reason(character)
+        if reason:
+            blocked_reason = reason
+        elif not turnin_rows:
             blocked_reason = "This quest has no requirements."
         elif club_left == 0:
             blocked_reason = "This quest is full."
