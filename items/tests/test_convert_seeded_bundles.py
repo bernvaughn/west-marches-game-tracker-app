@@ -182,3 +182,94 @@ def character_class(club):
 def test_caltrops_assumption_is_stated(club):
     out = run(club)
     assert "Caltrops" in out and "one bag/bundle" in out
+
+
+def test_net_zero_only_skipped(club):
+    """A holder with net 0 is skipped; no ledger entry is written."""
+    old_arrows = Item.objects.create(club=club, name="Arrows (20)", value_cp=100)
+    char = make_character(club, "Srorthen")
+    record(char, "award", [Line(item=old_arrows, quantity=1)])
+    record(char, "consumed", [Line(item=old_arrows, quantity=-1)])  # net zero
+
+    before = snapshot()
+    out = run(club)  # dry run
+    assert "skipped (owns none)" in out
+    assert "Srorthen" in out
+    assert snapshot() == before  # nothing changed
+
+    out = run(club, apply=True)
+    assert "skipped (owns none)" in out
+    old_arrows.refresh_from_db()
+    assert old_arrows.name == "Arrows"
+    assert old_arrows.is_stacked
+    assert old_arrows.unit_name == "arrow" and old_arrows.value_units == 20
+    assert not LedgerEntry.objects.filter(kind="adjustment").exists()
+
+
+def test_net_zero_mixed_with_positive_holder(club):
+    """Net 0 holder skipped, positive holder converts."""
+    old_arrows = Item.objects.create(club=club, name="Arrows (20)", value_cp=100)
+    zero_char = make_character(club, "Srorthen")
+    pos_char = make_character(club, "Aria")
+    record(zero_char, "award", [Line(item=old_arrows, quantity=1)])
+    record(zero_char, "consumed", [Line(item=old_arrows, quantity=-1)])  # net zero
+    record(pos_char, "award", [Line(item=old_arrows, quantity=3)])  # net +3
+
+    out = run(club, apply=True)
+    assert "skipped (owns none)" in out
+    assert "Srorthen" in out
+    arrows = Item.objects.get(club=club, name="Arrows")
+    assert arrows.is_stacked and arrows.unit_name == "arrow" and arrows.value_units == 20
+    assert item_quantities(pos_char)[arrows.pk] == 60  # 3 * 20
+    assert arrows.pk not in item_quantities(zero_char)  # zero net means not in dict
+    # Only one adjustment entry (for Aria)
+    adjustments = LedgerEntry.objects.filter(kind="adjustment")
+    assert adjustments.count() == 1
+
+
+def test_negative_net_refuses_whole_run(club):
+    """Negative net total refuses the whole conversion, naming only negative holders."""
+    from django.utils import timezone
+
+    from ledger.models import LedgerEntry, LedgerLine
+
+    old_arrows = Item.objects.create(club=club, name="Arrows (20)", value_cp=100)
+    neg_char = make_character(club, "Srorthen")
+    pos_char = make_character(club, "Aria")
+    record(neg_char, "award", [Line(item=old_arrows, quantity=1)])
+    # Create a negative net total directly via ledger entries (bypassing validation)
+    entry = LedgerEntry.objects.create(
+        character=neg_char,
+        club=club,
+        kind=LedgerEntry.Kind.ADJUSTMENT,
+        note="test",
+        date=timezone.localdate(),
+    )
+    LedgerLine.objects.create(entry=entry, item=old_arrows, quantity=-2)  # net -1
+    record(pos_char, "award", [Line(item=old_arrows, quantity=3)])  # net +3
+
+    before = snapshot()
+    out = StringIO()
+    with pytest.raises(CommandError):
+        call_command("convert_seeded_bundles", "--club", club.slug, "--apply", stdout=out)
+    assert snapshot() == before  # nothing changed
+    assert "negative" in out.getvalue().lower()
+    assert "Srorthen" in out.getvalue()
+    assert "Aria" not in out.getvalue()  # positive holder not in refusal
+    old_arrows.refresh_from_db()
+    assert old_arrows.name == "Arrows (20)" and not old_arrows.is_stacked
+
+
+def test_second_apply_run_changes_nothing(club):
+    """Running the command twice changes nothing."""
+    old_arrows = Item.objects.create(club=club, name="Arrows (20)", value_cp=100)
+    char = make_character(club, "Aria")
+    record(char, "award", [Line(item=old_arrows, quantity=2)])
+
+    run(club, apply=True)
+    before = snapshot()
+    out = run(club, apply=True)
+    assert snapshot() == before
+    assert "already stacked" in out or "skipping" in out
+    arrows = Item.objects.get(club=club, name="Arrows")
+    assert item_quantities(char)[arrows.pk] == 40
