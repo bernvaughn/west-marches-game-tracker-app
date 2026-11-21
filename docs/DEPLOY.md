@@ -92,7 +92,7 @@ ssh deploy@<host> 'bash -s -- v0.1.0' < deploy/deploy.sh
 
 On the very first run this fails at the restart step. Install the files as section 2 says, then run the same command again.
 
-Then create the first site admin. The app uses `email` as the username field, so `createsuperuser` asks for an email:
+Then create the first site admin. The app uses `email` as the username field, so `createsuperuser` asks for an email. Password must be 12+ chars with upper, lower, digit, and special character:
 ```bash
 ssh deploy@<host>
 ```

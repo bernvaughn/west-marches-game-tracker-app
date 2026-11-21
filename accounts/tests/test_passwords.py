@@ -1,10 +1,11 @@
 import pytest
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.test import Client
 from django.urls import reverse
 
-from accounts.models import Membership
+from accounts.models import Membership, User
 from accounts.passwords import ComplexityValidator, PasswordHistoryValidator, save_password_history
 
 NEW_PW = "Tr1cky-Horse-Battery"
@@ -258,3 +259,79 @@ def test_cannot_reuse_previous_password_via_change_form(club, player, login):
     player.refresh_from_db()
     # Password should still be VALID_PASSWORD
     assert player.check_password(VALID_PASSWORD)
+
+
+# --- Tests for createsuperuser fix ---
+
+VALID_PASSWORD = "Tr1cky-Horse-Battery"
+WEAK_PASSWORD = "short"
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_password_history_validator_accepts_unsaved_user():
+    """Validator should not raise for unsaved user (no pk)."""
+    validator = PasswordHistoryValidator()
+    unsaved_user = User(email="x@example.com")
+    validator.validate(VALID_PASSWORD, unsaved_user)  # Should not raise
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_password_history_validator_accepts_none_user():
+    """Validator should not raise when user is None."""
+    validator = PasswordHistoryValidator()
+    validator.validate(VALID_PASSWORD, None)  # Should not raise
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_password_history_validator_rejects_reused_password_for_saved_user(player):
+    """Validator should still reject reused password for saved user with history."""
+    validator = PasswordHistoryValidator()
+    save_password_history(player, VALID_PASSWORD)
+    with pytest.raises(ValidationError, match="used recently"):
+        validator.validate(VALID_PASSWORD, player)
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_validate_password_accepts_valid_for_unsaved_user():
+    """Django's validate_password should pass for valid password with unsaved user."""
+    unsaved_user = User(email="x@example.com")
+    validate_password(VALID_PASSWORD, unsaved_user)  # Should not raise
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_validate_password_rejects_weak_for_unsaved_user():
+    """Django's validate_password should raise ValidationError for weak password."""
+    unsaved_user = User(email="x@example.com")
+    with pytest.raises(ValidationError):
+        validate_password(WEAK_PASSWORD, unsaved_user)
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_create_superuser_sets_flags_and_history():
+    """create_superuser should set is_staff, is_superuser, and create one PasswordHistory row."""
+    email = "super@example.com"
+    user = User.objects.create_superuser(email, password=VALID_PASSWORD)
+    assert user.is_staff is True
+    assert user.is_superuser is True
+    assert user.check_password(VALID_PASSWORD)
+    history = user.password_history.all()
+    assert history.count() == 1
+    assert user.check_password(VALID_PASSWORD)
+
+
+@pytest.mark.story("U20")
+@pytest.mark.django_db
+def test_create_user_creates_no_history():
+    """create_user should not create PasswordHistory rows (guards double counting)."""
+    email = "regular@example.com"
+    user = User.objects.create_user(email, password=VALID_PASSWORD)
+    assert user.is_staff is False
+    assert user.is_superuser is False
+    history = user.password_history.all()
+    assert history.count() == 0

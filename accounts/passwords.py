@@ -84,7 +84,7 @@ class PasswordHistoryValidator:
         self.history_count = history_count
 
     def validate(self, password, user=None):
-        if user is None:
+        if user is None or user.pk is None:
             return
         recent = PasswordHistory.objects.filter(user=user).order_by("-created")[
             : self.history_count
