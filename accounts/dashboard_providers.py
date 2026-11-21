@@ -291,7 +291,7 @@ class QuestsDashboardProvider(BaseDashboardProvider):
                 {
                     "label": "Quest Board",
                     "url": reverse("quests:index", args=[club.slug]),
-                    "icon": "scroll",
+                    "icon": "journal-text",
                     "subtext": "Browse available quests",
                 }
             )
