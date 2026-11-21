@@ -10,9 +10,11 @@ flight (hx-sync="this:drop"), so a double-click charges exactly once.
 
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 from django.core.management import call_command
+from django.db import connection
 from django.test import Client
 
 from accounts.models import User
@@ -48,21 +50,26 @@ def _wait_for(page, expression, timeout=5.0):
     raise AssertionError(f"Timed out waiting for: {expression}")
 
 
-def _set_balance(character, amount):
-    """Set character's downtime balance to exactly `amount` by awarding/spending."""
-    current = services.balance(character)
-    if amount > current:
-        services.award(character, amount - current)
-    elif amount < current:
-        # Spend down by recording a negative adjustment entry
-        from ledger.services import Line, record
+def _db_state(character):
+    """Snapshot the character's downtime state.
 
-        record(
-            character=character,
-            kind="adjustment",
-            lines=[Line(coins=amount - current)],  # negative delta
-            note="Test adjust",
-        )
+    Playwright's sync API runs an event loop, which Django's ORM refuses to use
+    from the same thread, so the queries run in a worker thread.
+    """
+
+    def query():
+        try:
+            return {
+                "balance": services.balance(character),
+                "results": DowntimeResult.objects.filter(character=character).count(),
+                "point_entries": character.downtime_point_entries.count(),
+                "ledger": character.ledger_entries.count(),
+            }
+        finally:
+            connection.close()
+
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(query).result()
 
 
 @pytest.mark.browser
@@ -76,8 +83,6 @@ def test_spin_again_enabled_at_zero_points(transactional_db, live_server, width)
 
     from playwright.sync_api import sync_playwright
 
-    # Use Borin Stonefist who starts with exactly 1 downtime point (per seed_demo)
-    # Borin is owned by bob@example.com
     user = User.objects.get(email="bob@example.com")
     character = Character.objects.get(club__slug=DEMO_CLUB_SLUG, name__startswith="Borin")
     action = DowntimeAction.objects.get(club__slug=DEMO_CLUB_SLUG, name=BAKERY_NAME)
@@ -85,9 +90,9 @@ def test_spin_again_enabled_at_zero_points(transactional_db, live_server, width)
 
     session_id = _session_id(user)
     initial_balance = services.balance(character)
-    initial_results = DowntimeResult.objects.filter(character=character).count()
-    initial_ledger = character.ledger_entries.count()
     assert initial_balance == 1, "Borin should start with 1 point"
+    initial_results = DowntimeResult.objects.filter(character=character).count()
+    initial_point_entries = character.downtime_point_entries.count()
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
@@ -98,36 +103,48 @@ def test_spin_again_enabled_at_zero_points(transactional_db, live_server, width)
             page.goto(f"{live_server.url}/c/{DEMO_CLUB_SLUG}/downtime/")
             page.wait_for_load_state("networkidle")
 
-            # Click "Take the job" on the bakery job card
             page.locator(
                 f'li.wm-chalk-job:has(h3:has-text("{BAKERY_NAME}")) button[type=submit]'
             ).click()
+            page.wait_for_selector(f"{MODAL} [data-downtime-wheel]", state="attached")
 
-            # Wait for result modal to appear with wheel
-            page.wait_for_selector(MODAL, state="visible", timeout=5000)
-            page.wait_for_selector("[data-downtime-wheel]", state="attached", timeout=5000)
+            # The spend is committed once the modal shows. Snapshot the state now.
+            # The wheel outcome is random, so the coin ledger may or may not gain a
+            # row: compare the replay against this snapshot, not against a fixed count.
+            after_spend = _db_state(character)
+            assert after_spend["balance"] == 0
+            assert after_spend["results"] == initial_results + 1
+            assert after_spend["point_entries"] == initial_point_entries + 1
 
-            # "Spin again" button should be enabled (not disabled)
+            chosen_before = page.locator(f"{MODAL} [data-downtime-wheel]").get_attribute(
+                "data-chosen"
+            )
+            # Tag the first wheel node so a replaced node can be told apart.
+            page.evaluate(
+                "document.querySelector('#app-modal [data-downtime-wheel]')"
+                ".setAttribute('data-first-spin', '1')"
+            )
+
+            # "Spin again" must be enabled at 0 points, and the click must hit /replay/.
             spin_again = page.locator(SPIN_AGAIN)
-            assert spin_again.is_enabled(), "Spin again should be enabled at 0 balance"
+            assert spin_again.is_enabled(), "Spin again should be enabled at 0 points"
+            with page.expect_response(lambda r: "/replay/" in r.url) as replay:
+                spin_again.click()
+            assert replay.value.status == 200
 
-            # Click "Spin again"
-            spin_again.click()
-
-            # Wait for modal to re-render with wheel (result replays)
-            page.wait_for_selector("[data-downtime-wheel]", state="attached", timeout=5000)
+            # The replay swaps in a fresh wheel node holding the same stored result.
+            _wait_for(
+                page,
+                "!document.querySelector('#app-modal [data-downtime-wheel]')"
+                ".hasAttribute('data-first-spin')",
+            )
+            wheel = page.locator(f"{MODAL} [data-downtime-wheel]")
+            assert wheel.get_attribute("data-chosen") == chosen_before
         finally:
             browser.close()
 
-    # Verify balance, result count, and ledger count unchanged (outside Playwright context)
-    character.refresh_from_db()
-    assert services.balance(character) == 0, "Balance should be 0 after spend"
-    assert DowntimeResult.objects.filter(character=character).count() == initial_results + 1, (
-        "No new result should be created on replay"
-    )
-    assert character.ledger_entries.count() == initial_ledger + 1, (
-        "Ledger should not change on replay (only the initial spend adds a ledger entry)"
-    )
+    # Replay is free: nothing changed since the spend.
+    assert _db_state(character) == after_spend
 
 
 @pytest.mark.browser
