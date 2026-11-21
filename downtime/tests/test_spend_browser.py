@@ -97,3 +97,87 @@ def test_double_click_take_the_job_charges_once(transactional_db, live_server):
     character.refresh_from_db()
     assert services.balance(character) == initial_balance - action.cost
     assert DowntimeResult.objects.filter(character=character).count() == initial_results + 1
+
+
+@pytest.mark.browser
+@pytest.mark.parametrize("width", [1280, 390])
+def test_balance_updates_after_spend(transactional_db, live_server, width):
+    """After spending downtime points, the balance and button state update on modal close.
+
+    Steps:
+    1. Open downtime page (balance shows 2 points)
+    2. Click "Take the job" on Work at a bakery (cost 1)
+    3. Close the result modal with the Close button
+    4. Assert balance shows "1 downtime point"
+    5. Click "Take the job" again
+    6. Close the result modal
+    7. Assert balance shows "0 downtime points"
+    8. Assert the "Take the job" button is disabled with reason text
+    """
+    _seed_demo()
+
+    from playwright.sync_api import sync_playwright
+
+    user = User.objects.get(email=DEMO_PLAYER_EMAIL)
+    character = Character.objects.get(club__slug=DEMO_CLUB_SLUG, name__startswith="Aria")
+    action = DowntimeAction.objects.get(club__slug=DEMO_CLUB_SLUG, name=BAKERY_NAME)
+    session_id = _session_id(user)
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        context = browser.new_context(viewport={"width": width, "height": 800})
+        context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
+        page = context.new_page()
+        try:
+            page.goto(f"{live_server.url}/c/{DEMO_CLUB_SLUG}/downtime/")
+            page.wait_for_load_state("networkidle")
+
+            # Initial balance should be 2 points
+            balance = page.locator("#downtime-balance")
+            expect = __import__("playwright.sync_api", fromlist=["expect"]).expect
+            expect(balance).to_contain_text("2 downtime point")
+
+            # First spend: click Take the job
+            job_button = page.locator(
+                "li.wm-chalk-job", has=page.locator("h3", has_text=BAKERY_NAME)
+            ).locator("button[type=submit]")
+            job_button.click()
+
+            # Wait for modal to appear
+            page.wait_for_selector(MODAL, state="visible", timeout=5000)
+
+            # Close the modal with Close button
+            page.locator("#app-modal .modal-footer button[data-bs-dismiss='modal']").click()
+
+            # Wait for modal to close
+            page.wait_for_selector(MODAL, state="hidden", timeout=5000)
+
+            # Assert balance updated to 1 point
+            expect(balance).to_contain_text("1 downtime point")
+
+            # Second spend: click Take the job again
+            job_button.click()
+
+            # Wait for modal to appear
+            page.wait_for_selector(MODAL, state="visible", timeout=5000)
+
+            # Close the modal
+            page.locator("#app-modal .modal-footer button[data-bs-dismiss='modal']").click()
+
+            # Wait for modal to close
+            page.wait_for_selector(MODAL, state="hidden", timeout=5000)
+
+            # Assert balance updated to 0 points
+            expect(balance).to_contain_text("0 downtime point")
+
+            # Assert button is disabled with reason text
+            expect(job_button).to_be_disabled()
+            reason = page.locator(f"#why-{action.pk}")
+            expect(reason).to_contain_text("Not enough downtime points")
+
+        finally:
+            browser.close()
+
+    # Verify server state matches
+    character.refresh_from_db()
+    assert services.balance(character) == 0
