@@ -125,6 +125,11 @@ The deploy writes the tag to `/srv/app/VERSION`, and the footer shows it after t
 
 Do not change the workflow internals here; that file is the owner's.
 
+After deploying the stacked-ammunition release, run this once per existing club on the server (it is a dry run until you add `--apply`, and safe to run twice):
+```bash
+cd /srv/app && set -a && . /etc/downtime.env && set +a && .venv/bin/python manage.py convert_seeded_bundles --club <slug> --apply
+```
+
 ## 5. Rollback
 
 Re-run the deploy command with the previous tag:
