@@ -169,6 +169,28 @@ def test_discovery_loads_module_and_skips_missing(tmp_path, monkeypatch):
     assert hooks_b is None
 
 
+def test_discovery_module_is_in_sys_modules_and_runs_once(tmp_path, monkeypatch):
+    import sys
+
+    pkg_dir = tmp_path / "once_pkg"
+    pkg_dir.mkdir()
+    (pkg_dir / "__init__.py").write_text("")
+    counter = tmp_path / "counter.txt"
+    (pkg_dir / "urls_a.py").write_text(
+        f"open({str(counter)!r}, 'a').write('x')\nurlpatterns = ['u']\npublic_urlpatterns = ['p']\n"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    for name in ("once_pkg", "once_pkg.urls_a"):
+        monkeypatch.delitem(sys.modules, name, raising=False)
+
+    first = core.discover_module("a", "urls", package="once_pkg")
+    second = core.discover_module("a", "urls", package="once_pkg")
+
+    assert first is second
+    assert sys.modules["once_pkg.urls_a"] is first
+    assert counter.read_text() == "x"
+
+
 def test_discovery_broken_module_raises(tmp_path, monkeypatch):
     pkg_dir = tmp_path / "bad_pkg"
     pkg_dir.mkdir()

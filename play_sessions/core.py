@@ -4,6 +4,7 @@ Exports timezone helpers, permission checks, the section registry,
 the attendance_saved signal, feature list, and auto-discovery.
 """
 
+import importlib
 import importlib.util
 from datetime import UTC
 
@@ -157,12 +158,10 @@ def discover_module(feature, prefix, package="play_sessions"):
     Raises ImportError if the module exists but fails to import.
     """
     module_name = f"{package}.{prefix}_{feature}"
-    spec = importlib.util.find_spec(module_name)
-    if spec is None:
+    if importlib.util.find_spec(module_name) is None:
         return None
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    # import_module caches in sys.modules, so each module runs once.
+    return importlib.import_module(module_name)
 
 
 def collect_urlpatterns(attr):
