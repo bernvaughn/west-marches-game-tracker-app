@@ -1,0 +1,67 @@
+{% load accounts_tags %}
+
+<h2>Who is coming</h2>
+
+{% if groups or unanswered %}
+  {% for answer_label, rows in groups %}
+    <div class="mb-3">
+      <h3 class="h6 text-muted mb-2">{{ answer_label }}</h3>
+      <ul class="list-unstyled">
+        {% for row in rows %}
+          <li class="mb-2">
+            <strong>{{ row.character.name }}</strong>
+            {% if row.level %}<span class="text-muted ms-2">Level {{ row.level }}</span>{% endif %}
+            {% if row.char_class %}<span class="text-muted ms-2">{{ row.char_class }}</span>{% endif %}
+            <span class="text-muted ms-2">Player: {{ row.player_name }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+
+  {% if unanswered %}
+    <div class="mb-3">
+      <h3 class="h6 text-muted mb-2">Not answered yet</h3>
+      <ul class="list-unstyled">
+        {% for player in unanswered %}
+          <li class="mb-2">
+            <strong>{{ player.player_name }}</strong>
+            {% if player.character_names %}
+              <span class="text-muted ms-2">({{ player.character_names }})</span>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  {% if can_manage %}
+    <hr />
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <a
+        href="{{ attendance_url }}"
+        class="btn btn-primary btn-sm"
+      >
+        Take attendance
+      </a>
+
+      <form method="post" action="{{ rsvp_for_url }}" class="d-flex flex-wrap gap-2 align-items-center">
+        {% csrf_token %}
+        <label for="id_character" class="visually-hidden">Character</label>
+        {{ rsvp_form.character }}
+        <label for="id_answer" class="visually-hidden">Answer</label>
+        {{ rsvp_form.answer }}
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Answer for someone</button>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if attendance_recorded %}
+    <p class="text-muted small mt-2">
+      Attendance recorded for {{ attendance_recorded }} character{{ attendance_recorded|pluralize }}.
+    </p>
+  {% endif %}
+
+{% else %}
+  {% include "components/empty_state.html" with text="No active characters in this club." %}
+{% endif %}
