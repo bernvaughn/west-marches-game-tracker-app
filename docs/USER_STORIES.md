@@ -990,6 +990,31 @@ Rules for every story in this round:
 **U131 Quests take units.** As a player, I want a quest to ask for a number of units, such as "20 sheets of parchment", so stacked items work with quests like any other item. *(quests)*
 - A turn-in uses up the units (the quest rules in Decisions still apply: all or nothing, only once the character holds everything).
 
+## Round 17: club admins and game masters on the People page (2026-11-21)
+
+Today a club admin can tick "Game master" when adding a person, but there is no "Club admin" box, and the People page shows roles without letting anyone change them. A new club starts with one admin, and adding a second one means using Django admin. These stories fix that.
+
+Rules for both stories:
+
+- Club admin and game master stay two separate permissions in a club (see Roles and permissions). A person can hold neither (a player), either, or both.
+- Roles belong to one club. Changing them in one club never changes another.
+- Only a club admin of that club can add people or change roles there. The site admin can do both in any club.
+- The app still sends no email.
+
+**U133 Add a club admin.** As a club admin, I want to tick "Club admin" as well as "Game master" when I add a person, so a co-organiser can manage the club from their first sign-in, without the site admin or Django admin. *(accounts)*
+- The add-person form (U1) gets a "Club admin" checkbox next to "Game master". Both can be ticked together. With neither ticked the person is a player.
+- Short help text under each box says what the role does: a club admin manages members, items, shops, and the inbox; a game master runs games and awards loot.
+- Everything else about adding a person stays the same: a new account gets a one-time temporary password (U18), an existing account is only added to this club, and an email already in the club gets the "already a member" notice.
+- The People page already shows a badge for each role, so a person with both roles shows both badges.
+
+**U134 Change someone's roles.** As a club admin, I want to turn "Club admin" and "Game master" on or off for a member on the People page, so a player can be promoted later and one person can hold both roles. *(accounts)*
+- Each member's row gets a "Roles" action that opens a modal with the two checkboxes and a Save button. It uses the same modal style as the other row actions (U19).
+- A club must always have at least one club admin. Unticking the last club admin is refused with a clear message, so the last admin cannot demote themselves or be demoted.
+- Changes apply on the person's next page load. They are not signed out.
+- Removing a role never removes a person's characters, items, or ledger. Only what they are allowed to do changes.
+- The password reset rules (U19) do not change.
+- Each role change shows a confirmation message to the admin who made it.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
