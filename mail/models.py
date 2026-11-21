@@ -30,10 +30,18 @@ class EmailMessage(models.Model):
         EMAIL_CHANGE = "email_change", "Email change"
 
     club = models.ForeignKey(
-        "accounts.Club", null=True, blank=True, on_delete=models.SET_NULL, related_name="emails"
+        "accounts.Club",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="emails",
     )
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="emails"
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="emails",
     )
     kind = models.CharField(max_length=20, choices=Kind.choices)
     to_address = models.EmailField()
@@ -85,11 +93,12 @@ class DoNotEmail(models.Model):
     class Meta:
         ordering = ["-created"]
 
+    def __str__(self):
+        return f"{self.address} ({self.reason})"
+
     def save(self, *args, **kwargs):
         self.address = self.address.strip().lower()
         super().save(*args, **kwargs)
-
-    def __str__(self):
         return f"{self.address} ({self.reason})"
 
 
@@ -104,9 +113,15 @@ class OneTimeToken(models.Model):
         EMAIL_CHANGE = "email_change", "Email change"
 
     purpose = models.CharField(max_length=20, choices=Purpose.choices)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tokens")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="tokens"
+    )
     club = models.ForeignKey(
-        "accounts.Club", null=True, blank=True, on_delete=models.CASCADE, related_name="tokens"
+        "accounts.Club",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="tokens",
     )
     token_hash = models.CharField(max_length=64, unique=True)
     expires_at = models.DateTimeField()
@@ -132,7 +147,11 @@ class EmailPreference(models.Model):
         NOTICE = "notice", "Notice"
         DIGEST = "digest", "Digest"
 
-    membership = models.ForeignKey("accounts.Membership", on_delete=models.CASCADE, related_name="email_preferences")
+    membership = models.ForeignKey(
+        "accounts.Membership",
+        on_delete=models.CASCADE,
+        related_name="email_preferences",
+    )
     kind = models.CharField(max_length=10, choices=Kind.choices)
     enabled = models.BooleanField(default=True)
 
@@ -153,7 +172,11 @@ def default_reminder_days():
 class ClubMailSettings(models.Model):
     """Club-level email settings."""
 
-    club = models.OneToOneField("accounts.Club", on_delete=models.CASCADE, related_name="mail_settings")
+    club = models.OneToOneField(
+        "accounts.Club",
+        on_delete=models.CASCADE,
+        related_name="mail_settings",
+    )
     contact_email = models.EmailField(blank=True)
     reminder_days = models.JSONField(default=default_reminder_days)
 
@@ -172,7 +195,11 @@ class NoticeSent(models.Model):
 
     kind = models.CharField(max_length=10, choices=Kind.choices)
     key = models.CharField(max_length=200)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notices_sent")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notices_sent",
+    )
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:

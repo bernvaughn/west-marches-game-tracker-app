@@ -5,7 +5,6 @@ M2: will create mail/sending.py with schedule_send(message).
 """
 
 
-
 def after_queue(message) -> None:
     """Called after an email is queued. Notifies the sending module if present."""
     try:

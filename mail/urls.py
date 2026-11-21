@@ -17,6 +17,7 @@ def discover():
     public_urlpatterns = []
 
     import mail
+
     for module_info in pkgutil.iter_modules(mail.__path__):
         if module_info.name.startswith("urls_"):
             module = import_module(f"mail.{module_info.name}")

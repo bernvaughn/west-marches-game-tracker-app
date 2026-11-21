@@ -34,6 +34,7 @@ class TestTokens:
         assert token.token_hash != raw
         # Verify it's the SHA-256 hash
         import hashlib
+
         expected = hashlib.sha256(raw.encode()).hexdigest()
         assert token.token_hash == expected
 
@@ -139,7 +140,7 @@ class TestTokens:
     def test_revoke_older_only_unused(self, test_user, test_club):
         """revoke_older only affects unused, unexpired tokens."""
         raw1 = issue("welcome", test_user, club=test_club)
-        raw2 = issue("welcome", test_user, club=test_club)
+        issue("welcome", test_user, club=test_club)
         consume(raw1, "welcome")  # Use one
 
         count = revoke_older("welcome", test_user, test_club)
@@ -169,6 +170,6 @@ class TestTokens:
 
     def test_extra_stored(self, test_user):
         """extra JSON is stored with the token."""
-        raw = issue("welcome", test_user, extra={"session_id": 42})
+        issue("welcome", test_user, extra={"session_id": 42})
         token = OneTimeToken.objects.get(user=test_user, purpose="welcome")
         assert token.extra == {"session_id": 42}

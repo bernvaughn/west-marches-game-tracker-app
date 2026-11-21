@@ -8,7 +8,6 @@ sending the password change notice email. This is used by the password reset flo
 sets their password for the first time.
 """
 
-from dataclasses import dataclass
 from datetime import timedelta
 
 from django.conf import settings
@@ -27,14 +26,6 @@ def email_enabled() -> bool:
     Reads MAIL_ENABLED at call time so it reflects runtime changes.
     """
     return getattr(settings, "MAIL_ENABLED", False)
-
-
-@dataclass
-class QueueResult:
-    """Result of queue_email."""
-
-    status: str  # "queued", "refused", "failed"
-    message: EmailMessage | None
 
 
 def queue_email(

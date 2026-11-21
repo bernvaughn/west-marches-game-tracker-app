@@ -30,6 +30,7 @@ def discover(prefix: str):
     Returns a list of imported module objects.
     """
     import mail
+
     modules = []
     for module_info in pkgutil.iter_modules(mail.__path__):
         if module_info.name.startswith(prefix):

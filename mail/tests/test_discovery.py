@@ -18,12 +18,13 @@ class TestUrlDiscovery:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Add to mail.__path__
             import mail
+
             original_path = mail.__path__
             mail.__path__ = list(original_path) + [tmpdir]
 
             try:
                 # Create a probe module
-                probe_content = '''
+                probe_content = """
 from django.urls import path
 
 club_urlpatterns = [
@@ -32,7 +33,7 @@ club_urlpatterns = [
 public_urlpatterns = [
     path("public/", lambda r: None, name="test_public"),
 ]
-'''
+"""
                 probe_file = os.path.join(tmpdir, "urls_zz_probe.py")
                 with open(probe_file, "w") as f:
                     f.write(probe_content)
@@ -48,6 +49,7 @@ public_urlpatterns = [
     def test_discover_raises_on_import_error(self):
         """Discovery raises on import error in urls_* module."""
         import mail
+
         original_path = mail.__path__
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -61,6 +63,7 @@ public_urlpatterns = [
 
                 with pytest.raises(ImportError):
                     from mail.urls import discover
+
                     discover()
             finally:
                 mail.__path__ = original_path
@@ -75,24 +78,25 @@ class TestHooksDiscovery:
         # Create a temporary hooks module
         with tempfile.TemporaryDirectory() as tmpdir:
             import mail
+
             original_path = mail.__path__
             mail.__path__ = list(original_path) + [tmpdir]
 
             try:
-                probe_content = '''
+                probe_content = """
 register_called = False
 
 def register():
     global register_called
     register_called = True
-'''
+"""
                 probe_file = os.path.join(tmpdir, "hooks_zz_probe.py")
                 with open(probe_file, "w") as f:
                     f.write(probe_content)
 
                 # Discover and import hooks
                 modules = discover_hooks("hooks_")
-                
+
                 # Find our probe module and call register
                 for module in modules:
                     if hasattr(module, "register"):
@@ -108,20 +112,21 @@ def register():
 
         with tempfile.TemporaryDirectory() as tmpdir:
             import mail
+
             original_path = mail.__path__
             mail.__path__ = list(original_path) + [tmpdir]
 
             try:
-                probe_content = '''
+                probe_content = """
 # No register function
 some_var = "test"
-'''
+"""
                 probe_file = os.path.join(tmpdir, "hooks_no_register.py")
                 with open(probe_file, "w") as f:
                     f.write(probe_content)
 
                 modules = discover_hooks("hooks_")
-                
+
                 # Module should be imported
                 found = False
                 for module in modules:
@@ -138,6 +143,7 @@ some_var = "test"
 
         with tempfile.TemporaryDirectory() as tmpdir:
             import mail
+
             original_path = mail.__path__
             mail.__path__ = list(original_path) + [tmpdir]
 
@@ -157,16 +163,19 @@ class TestPackagesExist:
     def test_views_package_exists(self):
         """mail.views package exists."""
         import mail.views
+
         assert hasattr(mail.views, "__path__")
 
     def test_management_package_exists(self):
         """mail.management package exists."""
         import mail.management
+
         assert hasattr(mail.management, "__path__")
 
     def test_management_commands_package_exists(self):
         """mail.management.commands package exists."""
         import mail.management.commands
+
         assert hasattr(mail.management.commands, "__path__")
 
     def test_extras_registry_works(self):

@@ -39,6 +39,16 @@ erDiagram
     CHARACTER ||--o{ TILE_VISIT : makes
     MEMBERSHIP ||--o{ MESSAGE : sends
     CHARACTER ||--o{ MESSAGE : "may be about"
+    CLUB ||--o{ EMAIL_MESSAGE : "mails"
+    USER ||--o{ EMAIL_MESSAGE : receives
+    EMAIL_MESSAGE ||--|| EMAIL_PAYLOAD : carries
+    CLUB ||--o| EMAIL_PREFERENCE : preferences
+    CLUB ||--o| CLUB_MAIL_SETTINGS : configures
+    USER ||--o{ ONE_TIME_TOKEN : holds
+    CLUB ||--o{ ONE_TIME_TOKEN : "scopes"
+    USER ||--o{ NOTICE_SENT : deduplicates
+    CLUB ||--o{ JOB_RUN : schedules
+    DO_NOT_EMAIL ||--o{ EMAIL_MESSAGE : suppresses
 ```
 
 Reading it: a person (user) joins clubs through memberships, and a membership owns characters. Everything else hangs off a club, a character, or the item catalogue.
@@ -99,7 +109,7 @@ Characters, quests, hex maps and locations, downtime actions, ledger entries, me
 - **Message**: from a membership to the club's admins, free text, with an optional character it is about (the sender's selected character, U27), and a handled/closed flag set by an admin (U13). No replies are stored. Grants made from a message (U30) are ordinary ledger entries, visits, credit, or found marks that point back at the message, so the message can list what was granted from it.
 - **Site feedback**: a site-level bug report or feature request from any logged-in user, sent to site admins rather than club admins (U114). Records who sent it, the club they were in when they sent it (if any), bug or feature kind, the free-text body, the page they came from, and an open/handled/closed status.
 
-A player's email is shown only to club admins (U17).
+A player's email is shown only to club admins (U17). Email is optional and never carries passwords; it only delivers one-time links.
 
 ### items
 
@@ -181,6 +191,17 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **Selected character**: per person and club, the character they act as (U24). Pages that act on a character default to it.
 - **Tile visit**: a map, a position, and a character that has been there (M7). It stores the position rather than the tile so empty tiles can be visited too.
 - **What each person sees.** Game masters and club admins see everything, including GM notes, and can print either the full map or a players' view for a group of characters they pick (M10). A player sees the tiles visited by the characters they pick, and on those tiles the locations those characters have found, with their player notes and encounters, but never GM notes. A location on those tiles that has discovery credit but that the picked characters have not found shows as an unnamed placeholder; undiscovered locations are not shown (M8, M9, M16). The pick starts as the player's selected character (U24).
+
+### mail
+
+- **EmailMessage**: an email queued for delivery. Club (nullable), user (nullable), kind, to_address, subject, status (queued, sending, sent, failed, bounced, complained), provider_id, attempts, last_error, next_attempt_at, created, sent_at. Never stores a body or a link; those live in EmailPayload and are deleted after send or final failure.
+- **EmailPayload**: one-to-one with EmailMessage. text, html, reply_to, expires_at. Deleted once the message is sent or failed for good.
+- **DoNotEmail**: an address that must never receive email. address (lower case, unique), reason (bounce, complaint, manual), created.
+- **OneTimeToken**: a single-use, expiring token. purpose (welcome, password_reset, rsvp, unsubscribe, email_change), user, club (nullable), token_hash (unique, SHA-256), expires_at, used_at, extra (JSON). Only the hash is stored; the raw token is returned once on issue.
+- **EmailPreference**: per-membership preference for a kind (reminder, notice, digest). Unique per (membership, kind). No row means default (on for reminders and notices, OFF for digest).
+- **ClubMailSettings**: one-to-one with Club. contact_email (blank), reminder_days (JSON list, default [3]).
+- **NoticeSent**: deduplication table for notices (reminders, cancel, change, digests). kind, key (string), user. Unique on (kind, key, user). Key holds ids and start time as text, never a link.
+- **JobRun**: tracks job executions. name (unique), last_run_at, ok (bool), note.
 
 ## Settled since the first draft
 
