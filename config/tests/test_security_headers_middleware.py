@@ -38,8 +38,7 @@ class TestSecurityHeadersMiddleware:
 
         expected = (
             "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-            "magnetometer=(), microphone=(), payment=(), usb=(), "
-            "interest-cohort=()"
+            "magnetometer=(), microphone=(), payment=(), usb=()"
         )
         assert response["Permissions-Policy"] == expected
 
@@ -97,8 +96,7 @@ class TestSecurityHeadersMiddleware:
         assert response["Referrer-Policy"] == "strict-origin-when-cross-origin"
         assert response["Permissions-Policy"] == (
             "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-            "magnetometer=(), microphone=(), payment=(), usb=(), "
-            "interest-cohort=()"
+            "magnetometer=(), microphone=(), payment=(), usb=()"
         )
 
     def test_add_security_headers_static_method(self):
@@ -109,8 +107,7 @@ class TestSecurityHeadersMiddleware:
         assert response["Referrer-Policy"] == "strict-origin-when-cross-origin"
         assert response["Permissions-Policy"] == (
             "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-            "magnetometer=(), microphone=(), payment=(), usb=(), "
-            "interest-cohort=()"
+            "magnetometer=(), microphone=(), payment=(), usb=()"
         )
         assert response["Cross-Origin-Opener-Policy"] == "same-origin"
         assert response["Cross-Origin-Embedder-Policy"] == "require-corp"
