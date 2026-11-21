@@ -8,6 +8,7 @@ from django.core.management import call_command
 from django.urls import reverse
 
 from accounts.design_tokens import contrast_ratio, read_tokens
+from accounts.tests._cdn_assert import assert_no_cdn
 from scripts.screenshot_pages import PAGES, ROLES, demo_objects, extra_fixtures
 
 pytestmark = [pytest.mark.story("U35"), pytest.mark.django_db, pytest.mark.slow]
@@ -374,7 +375,7 @@ def test_every_component_documents_itself():
 
 
 def test_page_loads_nothing_from_a_cdn(page):
-    assert "googleapis" not in page and "cdn" not in page.lower()
+    assert_no_cdn(page)
 
 
 def _hex(tokens, name):
