@@ -90,7 +90,7 @@ def _open_modals(page, base, path, problems, label):
     """Open each modal trigger on a freshly loaded page, then close it."""
     # One trigger per URL shape: `/shops/1/sell/5/` and `/shops/1/sell/6/` count as one.
     keys = page.eval_on_selector_all(
-        "[data-app-modal]",
+        "[data-app-modal]:not([hx-post])",
         "els => els.map(e => (e.getAttribute('hx-get') || e.getAttribute('href') || '')"
         ".replace(/[0-9]+/g, 'N'))",
     )
@@ -101,7 +101,7 @@ def _open_modals(page, base, path, problems, label):
     for i in sorted(first.values())[:MAX_MODALS]:
         if opened:
             page.goto(base + path, wait_until="load")
-        trigger = page.locator("[data-app-modal]").nth(i)
+        trigger = page.locator("[data-app-modal]:not([hx-post])").nth(i)
         if not trigger.is_visible():
             continue
         trigger.dispatch_event("click")  # SVG tiles can overlap, so a real click may miss
@@ -128,6 +128,15 @@ def sweep(pages_glob="*", width=1280, widths=None) -> list[str]:
         "DATABASE_PATH": str(tmp / "db.sqlite3"),
         "DJANGO_SETTINGS_MODULE": "config.settings",
         "DJANGO_DEBUG": "1",
+        # Turn off rate limits on the throwaway sweep server so the audit does
+        # not hit login/password rate limits at later widths.
+        "RATELIMIT_LOGIN_ATTEMPTS": "100000",
+        "RATELIMIT_PASSWORD_ATTEMPTS": "100000",
+        "RATELIMIT_OAUTH_TOKEN_ATTEMPTS": "100000",
+        "RATELIMIT_MCP_ATTEMPTS": "100000",
+        # The dev server is HTTP-only; disable SSL redirect so urlopen and
+        # Playwright can reach it over plain http on the throwaway server.
+        "DJANGO_SECURE_SSL_REDIRECT": "0",
     }
     for cmd in ("migrate", "seed_demo"):
         subprocess.run(
