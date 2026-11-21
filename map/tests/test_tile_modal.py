@@ -73,7 +73,7 @@ def test_hex_links_open_modal(login, club, hex_map, player, placeholder_world, p
     assert f'hx-get="{tile_url}' in link
     assert f"characters={player_character.pk}" in link
     assert 'hx-target="#app-modal .modal-content"' in link
-    assert "data-app-modal" in link and "hx-on:click" in link
+    assert "data-app-modal" in link and "hx-on" not in link
     assert "hx-push-url" not in link
 
 

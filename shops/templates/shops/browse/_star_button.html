@@ -4,6 +4,8 @@
         hx-post="{% url 'shops:favorite_toggle' club.slug lot.shop.pk %}"
         hx-swap="outerHTML"
         hx-target="closest .wm-favorite-form"
+        hx-disabled-elt="find button"
+        hx-sync="this:drop"
         class="wm-favorite-form">
     {% csrf_token %}
     <button type="submit"
@@ -18,6 +20,8 @@
         hx-post="{% url 'shops:stall_favorite_toggle' club.slug lot.stall.pk %}"
         hx-swap="outerHTML"
         hx-target="closest .wm-favorite-form"
+        hx-disabled-elt="find button"
+        hx-sync="this:drop"
         class="wm-favorite-form">
     {% csrf_token %}
     <button type="submit"
