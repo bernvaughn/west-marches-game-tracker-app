@@ -1,0 +1,21 @@
+{% extends "components/modal_frame.html" %}
+{% block content %}
+<form method="post" action="{% url 'characters:death' request.club.slug character.pk %}" hx-post="{% url 'characters:death' request.club.slug character.pk %}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  {{ block.super }}
+</form>
+{% endblock %}
+{% block title %}Mark as dead{% endblock %}
+{% block body %}
+{{ form }}
+{% if form.non_field_errors %}
+<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">
+  <div>{{ form.non_field_errors|join:" " }}</div>
+</div>
+{% endif %}
+<p class="wm-sheet-note">The character stops buying but can still sell junk.</p>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-danger" type="submit">Mark as dead</button>
+{% endblock %}

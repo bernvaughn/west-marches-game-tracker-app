@@ -1,1 +1,16 @@
-{# Death actions partial - context: character - owner: C2 #}
+{# Death actions partial - context: character, request, club, is_owner, can_adjust - owner: C2 #}
+{% load death_tags %}
+{% if character.is_dead %}
+  {% can_undo_death_tag request.user character as can_undo %}
+  {% if can_undo %}
+  <form method="post" action="{% url 'characters:death_undo' club.slug character.pk %}" class="d-inline">
+    {% csrf_token %}
+    <button class="btn btn-sm btn-outline-secondary no-print" type="submit" data-wm-tooltip title="Undo the death mark. Only the player who marked it can do this within 24 hours; GMs and admins can always undo." aria-label="Undo death">{% include "components/icon.html" with name="rotate-ccw" label="Undo death" %} Undo</button>
+  </form>
+  {% endif %}
+{% else %}
+  {% can_mark_dead_tag request.user character as can_mark %}
+  {% if can_mark %}
+  <a class="btn btn-sm btn-outline-danger no-print" href="{% url 'characters:death' club.slug character.pk %}" hx-get="{% url 'characters:death' club.slug character.pk %}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Mark this character as dead with a date and optional note." aria-label="Mark as dead">{% include "components/icon.html" with name="skull" label="Mark as dead" %} Mark as dead</a>
+  {% endif %}
+{% endif %}
