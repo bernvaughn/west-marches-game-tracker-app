@@ -4,7 +4,7 @@
 {% block content %}
 {% url 'accounts:index' request.club.slug as people_url %}
 {% url 'accounts:member_roles' request.club.slug membership.pk as roles_url %}
-{% include "components/page_header.html" with title="Roles" subtitle="Change roles for {{ who }}." back_url=people_url back_label="Back to people" %}
+{% include "components/page_header.html" with title="Roles for "|add:who subtitle="Change club admin and game master roles." back_url=people_url back_label="Back to people" %}
 <form method="post" class="wm-form" action="{{ roles_url }}">
   {% include "accounts/people/_roles_body.html" %}
   <div class="wm-form-actions">

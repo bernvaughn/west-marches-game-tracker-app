@@ -239,3 +239,33 @@ def test_non_htmx_success_redirects(club, club_admin, player, login):
     assert resp.url == idx(club)
     m.refresh_from_db()
     assert m.is_club_admin
+
+
+@pytest.mark.story("U134")
+def test_full_page_shows_name_and_no_template_syntax(club, club_admin, player, login):
+    m = _mem(club, player)
+    resp = login(club_admin).get(mr(club, m.pk))
+    assert resp.status_code == 200
+    content = resp.content.decode()
+    assert player.display_name in content
+    assert "{{" not in content
+
+
+@pytest.mark.story("U134")
+@pytest.mark.parametrize("htmx", [True, False])
+def test_refusal_message_shows_once(club, club_admin, login, htmx):
+    m = _mem(club, club_admin)
+    extra = {"HTTP_HX_REQUEST": "true"} if htmx else {}
+    resp = login(club_admin).post(mr(club, m.pk), {}, **extra)
+    assert resp.status_code == 200
+    assert resp.content.decode().count("This club needs at least one club admin") == 1
+
+
+@pytest.mark.story("U134")
+def test_noop_on_club_with_no_admin_is_not_refused(club, site_admin, player, login):
+    Membership.objects.filter(club=club).update(is_club_admin=False)
+    m = _mem(club, player)
+    resp = login(site_admin).post(mr(club, m.pk), {"is_game_master": "on"}, HTTP_HX_REQUEST="true")
+    assert resp.status_code == 204
+    m.refresh_from_db()
+    assert m.is_game_master and not m.is_club_admin

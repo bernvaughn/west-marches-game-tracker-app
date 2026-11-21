@@ -94,17 +94,17 @@ def member_roles(request, club_slug, pk):
                         Membership.objects.select_for_update().filter(club=request.club)
                     )
                     target = next(m for m in memberships if m.pk == membership.pk)
+                    was_admin = target.is_club_admin
                     target.is_club_admin = form.cleaned_data["is_club_admin"]
                     target.is_game_master = form.cleaned_data["is_game_master"]
                     admins = sum(1 for m in memberships if m.is_club_admin)
-                    if not target.is_club_admin and admins == 0:
+                    if was_admin and not target.is_club_admin and admins == 0:
                         raise _LastAdmin(
                             "This club needs at least one club admin. "
                             "Make someone else a club admin first."
                         )
                     target.save(update_fields=["is_club_admin", "is_game_master"])
             except _LastAdmin as exc:
-                form.add_error(None, str(exc))
                 return render_modal_or_page(
                     request,
                     "accounts/people/_roles_modal.html",
