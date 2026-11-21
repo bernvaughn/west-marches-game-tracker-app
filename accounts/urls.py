@@ -61,6 +61,11 @@ urlpatterns = [
         passwords.reset_password,
         name="reset_password",
     ),
+    path(
+        "people/<int:pk>/roles/",
+        people.member_roles,
+        name="member_roles",
+    ),
     path("messages/new/", inbox.message_new, name="message_new"),
     path("messages/stock/new/", inbox.stock_request_new, name="stock_request_new"),
     path("messages/", inbox.message_inbox, name="message_inbox"),
