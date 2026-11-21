@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load life_tags %}
 {% block title %}Characters{% endblock %}
 {% block content %}
 {% url 'characters:create' club.slug as create_url %}
@@ -8,7 +9,7 @@
   <tbody>
   {% for c in characters %}
   {% url 'characters:detail' club.slug c.pk as detail_url %}
-  <tr><td>{% include "components/character_chip.html" with name=c.name url=detail_url %}</td><td>{% if c.level %}Level {{ c.level }}{% else %}&mdash;{% endif %}</td><td>{{ c.char_class|default:"—" }}</td><td>{{ c.species|default:"—" }}</td><td>{{ c.owner.user.display_name }}</td></tr>
+  <tr><td>{% include "components/character_chip.html" with name=c.name url=detail_url %} {% include "player_characters/characters/_life_badge.html" with character=c %}</td><td>{% if c.level %}Level {{ c.level }}{% else %}&mdash;{% endif %}</td><td>{{ c.char_class|default:"—" }}</td><td>{{ c.species|default:"—" }}</td><td>{{ c.owner.user.display_name }}</td></tr>
   {% empty %}
   {% include "components/data_table_empty.html" with cols=5 text="No characters yet." %}
   {% endfor %}

@@ -1,4 +1,4 @@
-{% load accounts_tags character_tags %}
+{% load accounts_tags character_tags life_tags %}
 {% all_selector_context as chars_ctx %}
 {% if chars_ctx|length > 1 %}
 <form method="post" action="{% url 'characters:select' club.slug %}" class="character-selector d-flex align-items-center gap-1 no-print">
@@ -24,6 +24,7 @@
            {% if c == selected_character %}aria-current="true"{% endif %}>
           <span class="wm-avatar wm-avatar-sm" aria-hidden="true">{{ c.name|first|upper }}</span>
           <span class="flex-grow-1">{{ c.name }}</span>
+          {% include "player_characters/characters/_life_badge.html" with character=c %}
           {% if c == selected_character %}<span class="visually-hidden">(current)</span>{% endif %}
         </a>
       </li>
