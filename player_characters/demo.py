@@ -4,7 +4,7 @@ from ledger import demo as ledger_demo
 from ledger.models import LedgerEntry
 from ledger.services import Line, record
 
-from .models import Character, JunkMark
+from .models import Character, ItemNote, JunkMark
 
 CHARACTERS = [
     ("alice@example.com", "Aria Windrunner", 5),
@@ -19,6 +19,11 @@ GEAR = {
     "Tilda Brightwater": {"Priest's Pack": 1},
 }
 
+# Stacked gear for Aria (U123-U131 demo)
+STACKED_GEAR = {
+    "Aria Windrunner": {"Parchment": 25, "Hempen cord": 40},
+}
+STACKED_GEAR_NOTE = "Demo: stacked supplies"
 
 SHEETS = {
     "Aria Windrunner": {
@@ -105,6 +110,8 @@ def seed(club):
         if changed:
             character.save(update_fields=changed)
     _give_gear(club)
+    _give_stacked_gear(club)
+    _seed_item_note(club)
     _open_demo_stall(club)
 
 
@@ -122,6 +129,32 @@ def _give_gear(club):
         record(character, "award", lines, note=GEAR_NOTE, actor=gm)
 
 
+def _give_stacked_gear(club):
+    """Give Aria stacked items (Parchment sheets, Hempen cord feet)."""
+    ledger_demo.seed(club)
+    gm = User.objects.get(email="gm@example.com")
+    for name, gear in STACKED_GEAR.items():
+        character = Character.objects.get(club=club, name=name)
+        if LedgerEntry.objects.filter(character=character, note=STACKED_GEAR_NOTE).exists():
+            continue
+        found = {i.name: i for i in Item.objects.filter(club=club, name__in=gear)}
+        lines = [Line(found[i], q) for i, q in gear.items() if i in found]
+        if not lines:
+            continue
+        record(character, "award", lines, note=STACKED_GEAR_NOTE, actor=gm)
+
+
+def _seed_item_note(club):
+    """Add an ItemNote for Aria's Rope (U122 demo)."""
+    aria = Character.objects.filter(club=club, name="Aria Windrunner").first()
+    rope = Item.objects.filter(club=club, name="Rope").first()
+    if aria is None or rope is None:
+        return
+    ItemNote.objects.get_or_create(
+        character=aria, item=rope, defaults={"text": "Good for climbing and tying up goblins."}
+    )
+
+
 def _open_demo_stall(club):
     """Borin sells two spare torches. Aria's switch stays off for the walk-through."""
     borin = Character.objects.filter(club=club, name="Borin Stonefist").first()
@@ -134,3 +167,9 @@ def _open_demo_stall(club):
     if created:  # only on first create, so a user's later change survives a re-run
         borin.shop_open = True
         borin.save(update_fields=["shop_open"])
+
+    # Also give Aria a junk mark for 5 sheets of Parchment (U123-U131 demo)
+    aria = Character.objects.filter(club=club, name="Aria Windrunner").first()
+    parchment = Item.objects.filter(club=club, name="Parchment").first()
+    if aria is not None and parchment is not None:
+        JunkMark.objects.get_or_create(character=aria, item=parchment, defaults={"quantity": 5})

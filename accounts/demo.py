@@ -1,4 +1,4 @@
-from .models import Club, Membership, Message, User
+from .models import Club, Membership, Message, SiteFeedback, User
 
 DEMO_PASSWORD = "demo-password"
 DEMO_LOGINS = [
@@ -49,4 +49,14 @@ def seed():
     if msg.character_id is None:
         msg.character = aria
         msg.save(update_fields=["character"])
+
+    # SiteFeedback for U114 demo (site-level bug report)
+    SiteFeedback.objects.get_or_create(
+        user=User.objects.get(email="alice@example.com"),
+        club=club,
+        kind=SiteFeedback.Kind.BUG,
+        body="The character sheet tooltip flickers on mobile.",
+        defaults={"page_url": "/c/demo/character/1/", "status": SiteFeedback.Status.OPEN},
+    )
+
     return club

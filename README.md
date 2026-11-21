@@ -52,6 +52,7 @@ It also seeds a General Store run by Mabel Packwell (a halfling grocer) on the m
 stocked with all basic adventuring gear at 100%/75% buy/sell.
 It does not seed characters, quests, maps, downtime actions or messages.
 The GM creates those.
+**Stacked items are not seeded**; the GM converts items on the convert page or with `uv run python manage.py convert_to_stacked --club <slug>`.
 Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`.
 A plain run configures the packs but leaves an existing template unchanged.
 Add `--force` to upgrade an existing template to the choice groups.
@@ -65,6 +66,19 @@ See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
 `seed_demo` runs `seed_starting_equipment --force`, so the demo template always has the choice groups and the packs are containers.
 It also creates "Tilda Brightwater", a level 1 Cleric owned by bob@example.com.
 She holds one unopened Priest's Pack and has not claimed her starting equipment.
+
+Additional demo data:
+- **Stacked items**: Parchment (sheets) and Hempen cord (feet) in the catalogue.
+- **Bundle shop lines**: The Rusty Lantern sells Parchment in bundles of 10 (unlimited) and Hempen cord in bundles of 50 (qty 4).
+- **Unit holdings**: Aria Windrunner holds 25 sheets of Parchment and 40 ft of Hempen cord.
+- **Junk mark for units**: Aria has 5 sheets of Parchment marked for sale.
+- **Item note**: Aria has a note on her Rope.
+- **Quest with unit requirement**: "Maps for the Cartographer" needs 10 sheets of Parchment.
+- **Pending downtime point request**: Bob requested 1 point for Borin (navbar indicator demo).
+- **Magic starting option**: Moonstone amulet is available for starting equipment requests.
+- **Pending starting equipment request**: Tilda has a pending request for the Moonstone amulet.
+- **Site feedback**: Alice filed a bug report about tooltip flicker on mobile.
+
 `seed_demo` is safe to run more than once.
 
 ## Running targeted tests
@@ -248,7 +262,7 @@ MCP is an open standard that lets an AI agent call named actions ("tools") on an
 
 - **Fits the plan.** Sign-in uses OAuth through `django-oauth-toolkit`, and the endpoint is served with the `mcp` package ([PyPI](https://pypi.org/project/mcp/)). No new server or paid service is needed. Each agent call is an ordinary short request, so the sizing in [Sizing check](#sizing-check) still holds. Avoid long-lived streaming connections, which would tie up gunicorn workers on one small CPU.
 - **Spec moves quickly.** The MCP specification is dated and changes between revisions; the 2025-03-26 revision added OAuth 2.1 authorization and Streamable HTTP, and a later revision reportedly removed protocol sessions ([summary](https://www.getmaxim.ai/topics/mcp-gateway/mcp-specification)). Choose a library that tracks the current revision, and re-check before building.
-- **Which agents.** Some game masters use Claude and some use Meta's Muse. Claude connects to a remote MCP server by URL as a custom connector, from Anthropic's cloud, and Claude's docs describe both OAuth sign-in and fixed request headers such as a bearer token, though one of Claude's own pages lists fixed headers as beta ([Claude custom connectors](https://claude.com/docs/connectors/custom), [Claude authentication](https://claude.com/docs/connectors/building/authentication)). Muse is less clear: Meta's documentation does not mention MCP in the consumer app, while several third-party guides show a remote server added as a custom connector over Streamable HTTP with OAuth sign-in, and Meta's coding agent supports MCP directly ([guide](https://anythingmcp.com/guides/clients/muse), [Meta Muse MCP summary](https://www.aiagentslibrary.com/blog/meta-muse-connectors/)). Treat Muse support as unconfirmed until tested with a real account.
+- **Which agents.** Some game masters use Claude and some use Meta's Muse. Claude connects to a remote MCP server by URL as a custom connector, from Anthropic's cloud, and Claude's docs describe both OAuth sign-in and fixed request headers such as a bearer token, though one of Claude's own pages lists fixed headers as beta ([Claude custom connectors](https://claude.com/docs/connectors/custom), [Claude authentication](https://claude.com/docs/connectors/building/authentication)). Muse is less clear: Meta's documentation does not mention MCP in the consumer app, while several third-party guides show a remote server added as a custom connector over Streamable HTTP with OAuth sign-in, and Meta's coding agent supports MCP directly ([guide](https://anythingmcp.com/guides/clients/muse"), [Meta Muse MCP summary](https://www.aiagentslibrary.com/blog/meta-muse-connectors/)). Treat Muse support as unconfirmed until tested with a real account.
 - **Authentication.** Both can use OAuth sign-in, so the plan is OAuth with the game master's own app account as the sign-in step: they log in, pick a club, and approve. A fixed token is a fallback for agent software that cannot sign in.
 - **A domain is now required.** Claude and Muse call the server from their own clouds, so the app needs a public HTTPS address ([Claude custom connectors](https://claude.com/docs/connectors/custom)). A bare IP address is not enough in practice; buy a domain.
 - **Safety.** The agent only proposes; the game master confirms; the ledger stays append-only. The agent has the connecting game master's permissions in one club, cannot see player emails or messages, and its tool results are treated as data. Session notes and character text can contain instructions, and the confirm step is what keeps a stray instruction from changing anyone's coins.

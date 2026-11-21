@@ -11,6 +11,7 @@ from map import demo as map_demo
 from player_characters import demo as characters_demo
 from quests import demo as quests_demo
 from shops import demo as shops_demo
+from starting_equipment import demo as starting_equipment_demo
 
 
 class Command(BaseCommand):
@@ -41,6 +42,7 @@ class Command(BaseCommand):
                 ledger_demo,
                 downtime_demo,
                 agent_demo,
+                starting_equipment_demo,
             ):
                 module.seed(club)
 

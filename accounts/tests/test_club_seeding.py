@@ -2,21 +2,26 @@
 
 import pytest
 from django.db import transaction
+from django.db.models import Count
 from django.urls import reverse
 
 from accounts.club_seeding import seed_new_club
-from accounts.models import Club, Membership, User
+from accounts.models import Club, Membership, SiteFeedback, User
 from character_options.defaults import DEFAULT_CLASSES
 from character_options.models import Background, CharacterClass, Species
-from downtime.models import DowntimeAction
+from downtime.models import DowntimeAction, DowntimePointRequest
 from items.models import Item
 from map.models import HexMap, XPLevel
 from map.xp import DEFAULT_XP_TABLE
-from player_characters.models import Character
+from player_characters.models import Character, ItemNote
 from quests.models import Quest
 from shops.models import Shop
 from starting_equipment.models import (
+    MagicItemStartingOption,
+    StartingEquipmentBackgroundLine,
     StartingEquipmentClassEntry,
+    StartingEquipmentClassLine,
+    StartingEquipmentRequest,
     StartingEquipmentTemplate,
 )
 from starting_equipment.seeding import DEFAULT_TEMPLATE_NAME, StartingEquipmentSeedError
@@ -165,3 +170,199 @@ def test_seed_new_club_item_count_matches_docs(club):
     """README.md and docs/DATA_MODEL.md say "about 175 items". Update them if this fails."""
     seed_new_club(club)
     assert 165 <= Item.objects.filter(club=club).count() <= 185
+
+
+def test_new_club_has_choice_groups():
+    """New club's template has choice groups (is_choice=True lines) for classes and backgrounds."""
+    club = Club.objects.create(name="Test Club", slug="test-club")
+    seed_new_club(club)
+    template = StartingEquipmentTemplate.objects.get(club=club, name=DEFAULT_TEMPLATE_NAME)
+
+    # Class choice groups exist
+    class_choice_lines = StartingEquipmentClassLine.objects.filter(
+        class_entry__template=template, is_choice=True
+    )
+    assert class_choice_lines.exists()
+    # Choice group slugs should be present
+    class_choice_slugs = set(class_choice_lines.values_list("choice_group", flat=True))
+    expected_class_groups = {
+        "weapon",
+        "simple_weapon",
+        "melee_weapon",
+        "armor",
+        "ranged",
+        "weapons",
+        "pack",
+        "focus",
+        "instrument",
+        "shield_or_weapon",
+        "melee",
+    }
+    assert class_choice_slugs == expected_class_groups
+
+    # Background choice groups exist (Artisan tools, Entertainer instrument, Soldier gaming_set)
+    bg_choice_lines = StartingEquipmentBackgroundLine.objects.filter(
+        background_entry__template=template, is_choice=True
+    )
+    assert bg_choice_lines.exists()
+    bg_choice_slugs = set(bg_choice_lines.values_list("choice_group", flat=True))
+    assert bg_choice_slugs == {"tools", "instrument", "gaming_set"}
+
+
+def test_new_club_has_openable_packs():
+    """New club's packs are containers with slots."""
+    club = Club.objects.create(name="Test Club", slug="test-club")
+    seed_new_club(club)
+
+    pack_names = (
+        "Explorer's Pack",
+        "Priest's Pack",
+        "Dungeoneer's Pack",
+        "Burglar's Pack",
+        "Scholar's Pack",
+        "Diplomat's Pack",
+        "Entertainer's Pack",
+    )
+    for name in pack_names:
+        pack = Item.objects.get(club=club, name=name)
+        assert pack.is_container, name
+        assert pack.slots.exists(), name
+
+
+def test_new_club_has_general_store_with_stock():
+    """New club gets the General Store with stock."""
+    club = Club.objects.create(name="Test Club", slug="test-club")
+    seed_new_club(club)
+
+    store = Shop.objects.get(club=club, name="General Store")
+    assert store.keeper_name == "Mabel Packwell"
+    assert store.building == Shop.Building.GENERAL_STORE
+    assert store.street_position == 0
+    assert store.stock.count() > 0
+
+
+def test_seed_new_club_twice_unchanged_counts(club):
+    """Seeding twice leaves shop, stock and pack-slot counts unchanged."""
+    seed_new_club(club)
+
+    shop_count = Shop.objects.filter(club=club).count()
+    stock_count = Shop.objects.filter(club=club).first().stock.count() if shop_count else 0
+    # Count pack slots by summing slot counts per container
+    pack_slot_count = sum(
+        Item.objects.filter(club=club, is_container=True)
+        .annotate(slot_count=Count("slots"))
+        .values_list("slot_count", flat=True)
+    )
+
+    seed_new_club(club)
+
+    assert Shop.objects.filter(club=club).count() == shop_count
+    assert Shop.objects.filter(club=club).first().stock.count() == stock_count
+    # Pack slots should not be duplicated
+    new_pack_slot_count = sum(
+        Item.objects.filter(club=club, is_container=True)
+        .annotate(slot_count=Count("slots"))
+        .values_list("slot_count", flat=True)
+    )
+    assert new_pack_slot_count == pack_slot_count
+
+
+def test_seed_failure_rolls_back_via_direct_call(club, monkeypatch):
+    """A seeding failure inside seed_new_club rolls back the whole club (direct call)."""
+
+    def boom(club, **kwargs):
+        raise StartingEquipmentSeedError("boom")
+
+    monkeypatch.setattr("accounts.club_seeding.seed_default_starting_equipment", boom)
+
+    # XP table already seeded by post_save
+    assert XPLevel.objects.filter(club=club).count() == len(DEFAULT_XP_TABLE)
+
+    with pytest.raises(StartingEquipmentSeedError):
+        with transaction.atomic():
+            seed_new_club(club)
+
+    # All rolled back
+    assert Species.objects.filter(club=club).count() == 0
+    assert CharacterClass.objects.filter(club=club).count() == 0
+    assert Background.objects.filter(club=club).count() == 0
+    assert Item.objects.filter(club=club).count() == 0
+
+
+def test_demo_new_club_parity():
+    """Demo club and a new club have the same pack names, choice-group
+    slugs, General Store stock names."""
+    from django.core.management import call_command
+
+    # Seed demo club
+    call_command("seed_demo")
+    demo_club = Club.objects.get(slug="demo")
+
+    # Create and seed a fresh club
+    new_club = Club.objects.create(name="Parity Club", slug="parity-club")
+    seed_new_club(new_club)
+
+    # Pack names
+    demo_packs = set(
+        Item.objects.filter(club=demo_club, is_container=True).values_list("name", flat=True)
+    )
+    new_packs = set(
+        Item.objects.filter(club=new_club, is_container=True).values_list("name", flat=True)
+    )
+    assert demo_packs == new_packs
+
+    # Choice group slugs (class + background)
+    demo_class_groups = set(
+        StartingEquipmentClassLine.objects.filter(
+            class_entry__template__club=demo_club, is_choice=True
+        ).values_list("choice_group", flat=True)
+    )
+    new_class_groups = set(
+        StartingEquipmentClassLine.objects.filter(
+            class_entry__template__club=new_club, is_choice=True
+        ).values_list("choice_group", flat=True)
+    )
+    assert demo_class_groups == new_class_groups
+
+    demo_bg_groups = set(
+        StartingEquipmentBackgroundLine.objects.filter(
+            background_entry__template__club=demo_club, is_choice=True
+        ).values_list("choice_group", flat=True)
+    )
+    new_bg_groups = set(
+        StartingEquipmentBackgroundLine.objects.filter(
+            background_entry__template__club=new_club, is_choice=True
+        ).values_list("choice_group", flat=True)
+    )
+    assert demo_bg_groups == new_bg_groups
+
+    # General Store stock names
+    demo_store = Shop.objects.get(club=demo_club, name="General Store")
+    new_store = Shop.objects.get(club=new_club, name="General Store")
+    demo_stock = set(demo_store.stock.values_list("item__name", flat=True))
+    new_stock = set(new_store.stock.values_list("item__name", flat=True))
+    assert demo_stock == new_stock
+
+
+def test_new_club_has_no_demo_only_rows():
+    """A new club must not have stacked items, ItemNote, requests or feedback rows."""
+    new_club = Club.objects.create(name="Parity Club", slug="parity-club-2")
+    seed_new_club(new_club)
+
+    # No stacked items
+    assert not Item.objects.filter(club=new_club, is_stacked=True).exists()
+
+    # No ItemNote
+    assert not ItemNote.objects.filter(character__club=new_club).exists()
+
+    # No DowntimePointRequest
+    assert not DowntimePointRequest.objects.filter(club=new_club).exists()
+
+    # No StartingEquipmentRequest
+    assert not StartingEquipmentRequest.objects.filter(club=new_club).exists()
+
+    # No SiteFeedback
+    assert not SiteFeedback.objects.filter(club=new_club).exists()
+
+    # No MagicItemStartingOption (only created in demo)
+    assert not MagicItemStartingOption.objects.filter(template__club=new_club).exists()
