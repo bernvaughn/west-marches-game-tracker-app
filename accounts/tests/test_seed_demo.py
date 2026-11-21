@@ -5,18 +5,22 @@ from django.core.management import call_command
 from django.urls import reverse
 
 from accounts.demo import DEMO_LOGINS, DEMO_PASSWORD
-from accounts.models import Club, Membership, User
+from accounts.models import Club, Membership, Message, SiteFeedback, User, WhitelistEntry
+from downtime.models import DowntimePointRequest
 from items.models import ContainerSlot, ContainerSlotOption, Item
 from items.opening import open_container
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import available_items, coin_balance
 from map.models import HexMap, Location, Tile, TileVisit, XPLevel
-from player_characters.models import Character
+from player_characters.models import Character, ItemNote, JunkMark, SelectedCharacter
+from player_characters.sheet import xp_progress
 from quests.models import Quest, QuestRequirement, QuestReward
 from shops.models import Rotation, Shop, ShopStock
 from starting_equipment.models import (
+    MagicItemStartingOption,
     StartingEquipmentBackgroundLine,
     StartingEquipmentClassLine,
+    StartingEquipmentRequest,
     StartingEquipmentTemplate,
 )
 
@@ -45,6 +49,12 @@ MODELS = [
     ContainerSlotOption,
     StartingEquipmentClassLine,
     StartingEquipmentBackgroundLine,
+    ItemNote,
+    DowntimePointRequest,
+    StartingEquipmentRequest,
+    MagicItemStartingOption,
+    SiteFeedback,
+    WhitelistEntry,
 ]
 
 
@@ -174,3 +184,176 @@ def test_tilda_has_unopened_priests_pack_that_opens():
     held = available_items(tilda)
     assert held.get(pack.pk, 0) == 0
     assert held[Item.objects.get(club=club, name="Censer").pk] == 1
+
+
+def test_stacked_items_exist():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    parchment = Item.objects.get(club=club, name="Parchment")
+    cord = Item.objects.get(club=club, name="Hempen cord")
+    assert parchment.is_stacked
+    assert parchment.unit_name == "sheet"
+    assert parchment.value_units == 10
+    assert cord.is_stacked
+    assert cord.unit_name == "ft"
+    assert cord.value_units == 50
+
+
+def test_bundle_stock_rows_exist():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    lantern = Shop.objects.get(club=club, name="The Rusty Lantern")
+    parchment = Item.objects.get(club=club, name="Parchment")
+    cord = Item.objects.get(club=club, name="Hempen cord")
+    # Parchment bundle of 10 (unlimited)
+    stock = ShopStock.objects.get(shop=lantern, item=parchment, bundle_units=10)
+    assert stock.quantity is None
+    # Hempen cord bundle of 50 (qty 4)
+    stock = ShopStock.objects.get(shop=lantern, item=cord, bundle_units=50)
+    assert stock.quantity == 4
+
+
+def test_aria_holds_stacked_units():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    parchment = Item.objects.get(club=club, name="Parchment")
+    cord = Item.objects.get(club=club, name="Hempen cord")
+    held = available_items(aria)
+    assert held[parchment.pk] == 25
+    assert held[cord.pk] == 40
+
+
+def test_parchment_junk_mark_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    parchment = Item.objects.get(club=club, name="Parchment")
+    junk = JunkMark.objects.get(character=aria, item=parchment)
+    assert junk.quantity == 5
+
+
+def test_item_note_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    rope = Item.objects.get(club=club, name="Rope")
+    note = ItemNote.objects.get(character=aria, item=rope)
+    assert "climbing" in note.text.lower()
+
+
+def test_cartographer_quest_has_unit_requirement():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    quest = Quest.objects.get(club=club, name="Maps for the Cartographer")
+    parchment = Item.objects.get(club=club, name="Parchment")
+    req = QuestRequirement.objects.get(quest=quest, item=parchment)
+    assert req.quantity == 10
+
+
+def test_pending_point_request_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    bob = Membership.objects.get(club=club, user__email="bob@example.com")
+    req = DowntimePointRequest.objects.get(club=club, requested_by=bob, status="pending")
+    assert req.points == 1
+    assert "bakery" in req.note.lower()
+    assert req.characters.filter(name="Borin Stonefist").exists()
+
+
+def test_magic_option_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    template = StartingEquipmentTemplate.objects.get(club=club, name="2024 D&D Default")
+    moonstone = Item.objects.get(club=club, name="Moonstone amulet")
+    opt = MagicItemStartingOption.objects.get(template=template, item=moonstone)
+    assert opt.max_per_character == 1
+
+
+def test_pending_starting_request_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    tilda = Character.objects.get(club=club, name="Tilda Brightwater")
+    req = StartingEquipmentRequest.objects.get(club=club, character=tilda, status="pending")
+    assert req.quantity == 1
+    # Linked message exists
+    assert req.message is not None
+    assert req.message.kind == Message.Kind.STARTING_REQUEST
+    # Sent by the requesting player, as request_new does
+    assert req.message.sender == tilda.owner
+
+
+def test_site_feedback_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    alice = User.objects.get(email="alice@example.com")
+    fb = SiteFeedback.objects.get(user=alice, club=club, kind="bug")
+    assert "tooltip" in fb.body.lower()
+    assert fb.page_url == "/c/demo/"
+    assert fb.status == "open"
+
+
+def test_whitelist_entry_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    entry = WhitelistEntry.objects.get(club=club, email="newplayer@example.com")
+    assert entry.email == "newplayer@example.com"
+
+
+def test_wren_is_level_up_ready():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    wren = Character.objects.get(club=club, name="Wren Thistledown")
+    assert wren.level == 2
+    progress = xp_progress(wren)
+    assert progress["xp_level"] == 3
+    assert progress["level_up_ready"] is True
+
+
+def test_borin_holds_one_wolf_pelt():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    pelt = Item.objects.get(club=club, name="Wolf pelt")
+    assert available_items(borin)[pelt.pk] == 1
+
+
+def test_borin_quest_board_shows_one_of_three(client):
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    bob = User.objects.get(email="bob@example.com")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    membership = Membership.objects.get(user=bob, club=club)
+    SelectedCharacter.objects.update_or_create(membership=membership, defaults={"character": borin})
+    client.force_login(bob)
+    response = client.get(reverse("quests:index", args=["demo"]))
+    assert response.status_code == 200
+    assert "1 of 3" in response.content.decode()
+
+
+def test_second_seed_demo_adds_no_spare_pelt():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    assert LedgerEntry.objects.filter(character=borin, note="Demo: a spare pelt").count() == 1
+    call_command("seed_demo")
+    assert LedgerEntry.objects.filter(character=borin, note="Demo: a spare pelt").count() == 1
+
+
+def test_bundle_buy_smoke():
+    """Smoke test: buy a bundle through shops.buying.buy."""
+    from shops.buying import buy
+
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    parchment = Item.objects.get(club=club, name="Parchment")
+    lantern = Shop.objects.get(club=club, name="The Rusty Lantern")
+
+    # Parchment bundle of 10 is unlimited; buy one bundle (10 sheets)
+    stock = ShopStock.objects.get(shop=lantern, item=parchment, bundle_units=10)
+    buy(aria, stock, quantity=1)  # raises on failure
+    # Aria now has 35 sheets (25 + 10)
+    from ledger.services import available_items
+
+    assert available_items(aria)[parchment.pk] == 35

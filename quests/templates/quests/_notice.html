@@ -1,6 +1,6 @@
-{% load coins loot_tags %}{% comment %}
-  Quest notice. Context: quest, character (optional), stamp ("ready"/"done"/None), heading ("h1" or "h2"),
-  large (bool), hide_title (bool: the page header shows the name), faded (bool), link_url (optional), label (optional faded badge text).
+{% load coins loot_tags units %}{% comment %}
+  Quest notice. Context: quest, character (optional), stamp ("ready"/"done"/None), progress (rows + missing_total, board only),
+  heading ("h1" or "h2"), large (bool), hide_title (bool: the page header shows the name), faded (bool), link_url (optional), label (optional faded badge text).
 {% endcomment %}
 <article class="wm-notice wm-notice--tilt-{{ quest.tilt|add:2 }}{% if large %} wm-notice--large{% endif %}{% if faded %} wm-notice--faded{% endif %}">
   <span class="wm-notice-pin" aria-hidden="true"></span>
@@ -10,10 +10,24 @@
   {% if quest.description %}<p class="wm-notice-desc">{% if large %}{{ quest.description|linebreaksbr }}{% else %}{{ quest.description|truncatechars:140 }}{% endif %}</p>{% endif %}
   <dl class="wm-notice-info">
     <dt>Reward</dt>
-    <dd>{% for rw in quest.rewards.all %}{% if rw.item %}{{ rw.quantity }} x {% include "items/_item_name.html" with item=rw.item %}{% loot_preview rw.item as loot_rows %}{% if loot_rows %}<details class="wm-loot-stock-preview"><summary>Preview contents</summary>{% include "components/loot_rows.html" with rows=loot_rows %}</details>{% endif %}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    <dd>{% for rw in quest.rewards.all %}{% if rw.item %}{{ rw.quantity }}{% if rw.item.is_stacked %} {{ rw.item.unit_name }}{% else %} x{% endif %} {% include "items/_item_name.html" with item=rw.item %}{% loot_preview rw.item as loot_rows %}{% if loot_rows %}<details class="wm-loot-stock-preview"><summary>Preview contents</summary>{% include "components/loot_rows.html" with rows=loot_rows %}</details>{% endif %}{% endif %}{% if rw.coins %}{{ rw.coins|coins }}{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
     <dt>Bring</dt>
-    <dd>{% for r in quest.requirements.all %}{{ r.quantity }} x {% include "items/_item_name.html" with item=r.item %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+    <dd>{% for r in quest.requirements.all %}{{ r.quantity }}{% if r.item.is_stacked %} {{ r.item.unit_name }}{% else %} x{% endif %} {% include "items/_item_name.html" with item=r.item %}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
     {% if quest.end_date %}<dt>Ends</dt><dd>{{ quest.end_date }}</dd>{% endif %}
   </dl>
+  {% if progress %}
+  <ul class="wm-notice-progress">
+    {% for row in progress.rows %}
+    <li>
+      <span class="wm-notice-have">{{ row.have }} of {{ row.need }}{% if row.unit_name %} {{ row.unit_name }}{% endif %}</span>
+      <span class="wm-notice-req">{% include "items/_item_name.html" with item=row.item %}</span>
+      <span class="wm-notice-bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ row.need }}" aria-valuenow="{{ row.have }}" aria-label="{{ row.item.name }}: {{ row.have }} of {{ row.need }}">
+        <span class="wm-notice-fill" style="width: {{ row.percent }}%"></span>
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if progress.missing_total %}<p class="wm-notice-short">{{ progress.missing_total }} more</p>{% endif %}
+  {% endif %}
   {% if quest.left is not None %}<p class="wm-notice-left">{{ quest.left }} left</p>{% elif club_left is not None %}<p class="wm-notice-left">{{ club_left }} left</p>{% endif %}
 </article>

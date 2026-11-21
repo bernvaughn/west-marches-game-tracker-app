@@ -8,6 +8,7 @@ from accounts.permissions import admin_or_gm_required
 from accounts.scoping import club_get_object_or_404
 from items.containers import loot_preview
 from items.models import Item
+from items.unit_notes import with_unit_summary
 from ledger.services import (
     LedgerError,
     Line,
@@ -43,12 +44,13 @@ def _handle(request, character, form, formset, sign, kind):
     if not lines:
         form.add_error(None, NO_AMOUNT)
         return False
+    note = with_unit_summary(form.cleaned_data["note"], lines)
     try:
         record(
             character,
             kind,
             lines,
-            note=form.cleaned_data["note"],
+            note=note,
             date=form.cleaned_data["date"],
             actor=request.user,
         )
@@ -62,6 +64,7 @@ def _handle(request, character, form, formset, sign, kind):
 def adjust(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     items = Item.objects.for_club(request.club).filter(retired=False)
+    stacked_units = items.filter(is_stacked=True).values("name", "unit_name")
     post = request.method == "POST"
     form = AdjustForm(request.POST if post else None)
     formset = item_line_formset(items, request.POST if post else None)
@@ -79,6 +82,7 @@ def adjust(request, club_slug, pk):
             "form": form,
             "formset": formset,
             "recent": recent_changes(character),
+            "stacked_units": stacked_units,
         },
     )
 
@@ -96,6 +100,10 @@ def consume(request, club_slug, pk):
     if post and _handle(request, character, form, formset, -1, "consumed"):
         messages.success(request, f"Consumed from {character.name}.")
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+    available_with_units = [
+        (item, avail[item.pk], item.unit_name if item.is_stacked else "")
+        for item in items.order_by("name")
+    ]
     return render(
         request,
         "player_characters/characters/consume.html",
@@ -105,7 +113,7 @@ def consume(request, club_slug, pk):
             "formset": formset,
             "recent": recent_changes(character),
             "coins_available": available_coins(character),
-            "available": [(item, avail[item.pk]) for item in items.order_by("name")],
+            "available": available_with_units,
         },
     )
 
@@ -248,12 +256,13 @@ def bulk_award(request, club_slug):
                 lines.extend(formset_lines(item_formset, 1))
 
             if lines:
+                note = with_unit_summary(shared_note, lines)
                 specs.append(
                     dict(
                         character=character,
                         kind="award",
                         lines=lines,
-                        note=shared_note,
+                        note=note,
                         date=shared_date,
                         actor=request.user,
                     )

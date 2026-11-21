@@ -1,14 +1,19 @@
 """Tests for the new database-backed shop favorites feature."""
 
+import re
 from datetime import date
+from pathlib import Path
 
 import pytest
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.urls import reverse
 
 from player_characters.models import Character
 from shops.models import FavoriteShop, Rotation, Shop
+
+ROOT = Path(settings.BASE_DIR)
 
 pytestmark = pytest.mark.django_db
 
@@ -354,3 +359,38 @@ class TestFavoriteStarButtonAccessibility:
         """Test that star is hollow (☆) when not a favorite."""
         body = client_without_recent_shops.get(url("index", club) + "?tab=all").content.decode()
         assert "☆" in body  # Hollow star
+
+
+class TestFavoriteStarStyles:
+    """CSS design-system tests for the favourite star button (reads static/css/areas/shops.css)."""
+
+    def test_favorite_btn_uses_design_tokens(self):
+        """The star button rule uses design tokens, not a default browser button look."""
+        css = (ROOT / "static/css/areas/shops.css").read_text()
+        blocks = re.findall(r"\.wm-favorite-btn[^\{]*\{([^}]*)\}", css, re.DOTALL)
+        assert blocks, ".wm-favorite-btn rule not found in shops.css"
+        rules = "\n".join(blocks)
+        for token in (
+            "--wm-size-touch",
+            "--wm-focus-ring",
+            "--wm-border",
+            "--wm-radius-sm",
+            "--wm-accent",
+        ):
+            assert token in rules, f".wm-favorite-btn missing token {token}"
+
+    def test_active_rule_exists(self):
+        """The active (filled) star rule exists."""
+        css = (ROOT / "static/css/areas/shops.css").read_text()
+        assert ".wm-favorite-btn.active" in css
+
+    def test_no_sign_font_size_below_text_xs(self):
+        """No shop street sign font-size in shops.css is below --wm-text-xs."""
+        css = (ROOT / "static/css/areas/shops.css").read_text()
+        assert ".6875rem" not in css
+        assert ".625rem" not in css
+
+    def test_components_css_has_no_wm_favorite_rule(self):
+        """components.css keeps no wm-favorite rules (area CSS owns the star)."""
+        comp = (ROOT / "static/css/components.css").read_text()
+        assert "wm-favorite" not in comp

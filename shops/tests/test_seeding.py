@@ -264,7 +264,7 @@ def test_gear_list_prices_match_book(club):
     assert gear_dict["Rope"] == 100  # 1 gp
     assert gear_dict["Backpack"] == 200  # 2 gp
     assert gear_dict["Spyglass"] == 100000  # 1,000 gp
-    assert gear_dict["Arrows (20)"] == 100  # 1 gp for 20
+    assert gear_dict["Arrows"] == 100  # 1 gp for 20 arrows (stacked, value_units=20)
 
 
 def test_gear_list_no_duplicate_names(club):

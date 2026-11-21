@@ -74,8 +74,38 @@ def test_sheet_shows_bare_number_for_normal_item(login, club, player, character,
     record(character, "award", [Line(item=rope, quantity=40)])
     body = login(player).get(sheet_url(club, character)).content.decode()
     assert "40 ft Rope" in body
-    assert '<td class="num">3</td>' in body
+    assert '<td class="num wm-col-optional">3</td>' in body
     assert "3 × " not in body
+
+
+@pytest.mark.story("U37")
+def test_inventory_phone_markup(login, club, player, character, item, rope):
+    """Pin the phone inventory markup: wm-col-optional on Owned/Available,
+    wm-sheet-item-name flex wrapper, wm-sheet-owned-inline with quantity."""
+    record(character, "award", [Line(item=item, quantity=2)])
+    record(character, "award", [Line(item=rope, quantity=40)])
+
+    body = login(player).get(sheet_url(club, character)).content.decode()
+
+    # Owned and Available th have wm-col-optional
+    assert '<th class="num wm-col-optional">Owned</th>' in body
+    assert '<th class="num wm-col-optional">Available</th>' in body
+
+    # Normal item: Owned td has wm-col-optional and shows bare number 2
+    assert '<td class="num wm-col-optional">2</td>' in body
+    # Stacked item: Owned td has wm-col-optional and shows with units
+    assert '<td class="num wm-col-optional">40 ft Rope</td>' in body
+
+    # wm-sheet-item-name wrapper exists
+    assert 'class="wm-sheet-item-name"' in body
+
+    # wm-sheet-owned-inline shows "&times; 2" for normal item (HTML entity)
+    assert 'class="wm-sheet-owned-inline">&times; 2</small>' in body
+    # wm-sheet-owned-inline shows "40 ft" for stacked item
+    assert 'class="wm-sheet-owned-inline">40 ft</small>' in body
+
+    # Actions cell still has no-print wm-row-actions-cell
+    assert 'class="no-print wm-row-actions-cell"' in body
 
 
 # --- item cards ------------------------------------------------------------

@@ -6,7 +6,7 @@ from ledger.models import LedgerEntry
 from ledger.services import InsufficientFunds, Line, record
 from shops.buying import buy
 from shops.models import ShopStock
-from shops.services import AlreadySold, NotStocked, ShopClosed
+from shops.services import AlreadySold, NotStocked, PriceChanged, ShopClosed, sell_price
 
 pytestmark = pytest.mark.django_db
 
@@ -99,6 +99,31 @@ def test_stale_stock_object_fails(shop, always_open, stock, rich_character, fund
     assert purchases().count() == 1
     stock.refresh_from_db()
     assert stock.quantity == 0
+
+
+@pytest.mark.story("C2")
+def test_buy_accepts_shown_price(shop, always_open, stock, rich_character):
+    shown = sell_price(stock)
+    entry = buy(rich_character, stock, expected_price=shown, actor=None)
+    assert entry.kind == "purchase"
+    stock.refresh_from_db()
+    assert stock.quantity == 1
+
+
+@pytest.mark.story("C2")
+def test_buy_rejects_stale_price(shop, always_open, stock, rich_character):
+    shown = sell_price(stock)
+    # The price changes before the purchase is submitted.
+    stock.sell_percent = 50
+    stock.save()
+    with pytest.raises(PriceChanged) as exc:
+        buy(rich_character, stock, expected_price=shown, actor=None)
+    assert exc.value.expected == shown
+    assert exc.value.current == sell_price(stock)
+    # No stock was consumed and no purchase recorded.
+    stock.refresh_from_db()
+    assert stock.quantity == 2
+    assert purchases().count() == 0
 
 
 @pytest.mark.story("U9")

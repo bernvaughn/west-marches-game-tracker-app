@@ -120,7 +120,8 @@
   user-select: none;
 }
 .wm-filter-chip input { display: none; }
-.wm-filter-chip--active {
+.wm-filter-chip--active,
+.wm-filter-chip:has(input:checked) {
   background: var(--wm-accent);
   border-color: var(--wm-accent);
   color: var(--wm-on-accent);

@@ -1,0 +1,18 @@
+{% load accounts_tags coins %}
+{% comment %}
+_message_body: shared markup for the message body in both phone summary and desktop Message cell.
+Context: message (the Message object).
+Shows: kind badge, body line breaks, granted list.
+{% endcomment %}
+{% if message.kind == "stock_request" %}<span class="badge text-bg-info">Stock request</span><br>{% elif message.kind == "starting_request" %}<span class="badge text-bg-primary">Starting request</span><br>{% endif %}{{ message.body|linebreaksbr }}
+{% if message.granted_entries.all or message.granted_visits.all or message.granted_credits.all or message.granted_found_marks.all %}
+<div class="wm-granted"><strong>Granted</strong>
+  <ul>
+    {% for e in message.granted_entries.all %}{% for l in e.lines.all %}
+    <li>{{ e.character.name }}: {% if l.item %}{{ l.item.name }} × {{ l.quantity }}{% else %}{{ l.coins|coins }}{% endif %}</li>
+    {% endfor %}{% endfor %}
+    {% for v in message.granted_visits.all %}<li>{{ v.character.name }}: Visit ({{ v.q }}, {{ v.r }}) on {{ v.map.name }}</li>{% endfor %}
+    {% for g in message.granted_credits.all %}<li>{{ g.character.name }}: {{ g.credit.get_kind_display }}: {{ g.credit.location.name }}</li>{% endfor %}
+    {% for f in message.granted_found_marks.all %}<li>{{ f.character.name }}: Found: {{ f.location.name }}</li>{% endfor %}
+  </ul></div>
+{% endif %}

@@ -3,10 +3,12 @@ from datetime import date
 import pytest
 from django.urls import reverse
 
+from accounts.models import Membership
 from items.models import Item
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_coins, item_quantities, record
 from player_characters.junk import junk_rows, set_junk
+from player_characters.models import Character
 from quests.models import Quest, QuestRequirement
 from shops.models import Rotation, Shop
 from shops.selling import SellLineError, sell_many
@@ -195,3 +197,31 @@ def test_pick_shop_multiple_shops_shows_picker(club, login, player, junked, shop
 def test_pick_shop_no_character_404(club, login, other_player, always_open):
     r = login(other_player).get(pick_url(club), HTTP_HX_REQUEST="true")
     assert r.status_code == 404
+
+
+def detail_url(club, character):
+    return reverse("characters:detail", args=[club.slug, character.pk])
+
+
+def test_owner_sees_sell_junk_button(club, login, player, junked):
+    body = login(player).get(detail_url(club, junked)).content.decode()
+    assert "Sell junk" in body
+
+
+def test_game_master_sees_no_sell_junk_button(club, login, player, game_master, junked):
+    body = login(game_master).get(detail_url(club, junked)).content.decode()
+    assert "Sell junk" not in body
+
+
+def test_other_player_sees_no_sell_junk_button(club, login, other_player, junked):
+    body = login(other_player).get(detail_url(club, junked)).content.decode()
+    assert "Sell junk" not in body
+
+
+def test_unselected_character_sheet_hides_sell_junk_button(club, login, player, character, item):
+    owner = Membership.objects.get(user=player, club=club)
+    other = Character.objects.create(club=club, owner=owner, name="Brannoc")
+    record(other, "award", [Line(item=item, quantity=3)])
+    set_junk(other, item, 3, player)
+    body = login(player).get(detail_url(club, other)).content.decode()
+    assert "Sell junk" not in body

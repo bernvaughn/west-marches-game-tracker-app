@@ -28,6 +28,12 @@
 .wm-inline-form .form-select { width: auto; min-width: 6rem; }
 .wm-narrow-block { max-width: var(--wm-size-form); }
 
+/* Long page URLs truncate instead of widening the feedback table. */
+.wm-feedback-page { display: inline-block; max-width: 16rem; vertical-align: bottom; }
+.wm-feedback-filter__field { flex: 1 1 9rem; min-width: 0; }
+.wm-feedback-filter__field .form-select { min-width: 9rem; width: 100%; }
+@media (min-width: 576px) { .wm-feedback-filter__field { flex: 0 1 12rem; } }
+
 /* Inbox bulk actions: hide the bulk bar until at least one row is checked.
    :has() keeps this HTMX-safe (no load-time-only JS); #inbox-list is re-swapped on refresh. */
 #inbox-bulk-bar { display: none; }
@@ -49,8 +55,15 @@
 /* People and whitelist */
 .wm-people-table td { vertical-align: middle; }
 .wm-email-cell { overflow-wrap: anywhere; min-width: 10rem; }
-.wm-whitelist-form .form-check { padding-left: 0; display: flex; align-items: center; gap: var(--wm-space-2); }
+.wm-whitelist-form .form-check {
+  padding-left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wm-space-2);
+}
 .wm-whitelist-form .form-check-input { float: none; margin: 0; flex: none; }
+.wm-whitelist-form .form-check .form-text { flex-basis: 100%; margin-top: 0; }
 
 /* U96: site footer */
 .wm-site-footer {
@@ -76,7 +89,8 @@
 .wm-site-footer-copyright,
 .wm-site-footer-credit,
 .wm-site-footer-support,
-.wm-site-footer-links {
+.wm-site-footer-links,
+.wm-site-footer-version {
   margin: 0;
   white-space: nowrap;
 }
@@ -119,6 +133,12 @@
   text-decoration: underline;
 }
 
+.wm-site-footer-version {
+  margin-left: auto;
+  color: var(--wm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 640px) {
   .wm-site-footer-inner {
     flex-direction: column;
@@ -127,8 +147,12 @@
   .wm-site-footer-copyright,
   .wm-site-footer-credit,
   .wm-site-footer-support,
-  .wm-site-footer-links {
+  .wm-site-footer-links,
+  .wm-site-footer-version {
     white-space: normal;
+  }
+  .wm-site-footer-version {
+    margin-left: 0;
   }
 }
 
@@ -162,6 +186,12 @@
 .wm-dashboard-section .list-group-item .btn { position: relative; z-index: 2; }
 .wm-dashboard-section .list-group-item a.text-decoration-none { display: flex; align-items: center; gap: var(--wm-space-2); width: 100%; }
 .wm-dashboard-section .list-group-item small.text-muted { font-size: var(--wm-text-sm); }
+.wm-dashboard-section strong { overflow-wrap: anywhere; }
+
+/* Latest awards card (U135) */
+.wm-recent-awards .list-group-item { padding-top: var(--wm-space-1); padding-bottom: var(--wm-space-1); }
+.wm-recent-awards .wm-dashboard-date { white-space: nowrap; }
+.wm-recent-awards .wm-award-lines { color: var(--wm-text); }
 
 @media (max-width: 575.98px) {
   .wm-dashboard-grid { grid-template-columns: 1fr; }
@@ -317,4 +347,29 @@
 /* message_new page: prevent overflow at small widths by relaxing min-width */
 @media (max-width: 575.98px) {
   .wm-msg-col--fluid { min-width: 0; }
+}
+
+/* Request queues on phones: shared block for inbox, downtime and map queues.
+   Kept separate and appended so a rebase is trivial when other children edit this file. */
+
+/* Phone-only summary cell: text wraps, no clipping, small gap between children. */
+.wm-req-summary { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
+.wm-req-summary > * + * { margin-top: var(--wm-space-1); }
+
+/* Tap targets on action buttons below the 576 px phone breakpoint. */
+@media (max-width: 575.98px) {
+  /* Header and row checkboxes match (rem, not em). The 44 px tap area sits on the wrapping label padding. */
+  .form-check-input.wm-check-sm { width: 1.25rem; height: 1.25rem; }
+
+  .wm-queue-table td.actions .btn,
+  .wm-queue-table .wm-row-actions-cell .btn {
+    min-height: var(--wm-size-touch);
+    min-width: var(--wm-size-touch);
+  }
+
+  /* Inbox: fixed 2-column grid so every row has the same sticky width regardless of icon count. */
+  #inbox-list .wm-row-actions {
+    display: grid;
+    grid-template-columns: repeat(2, var(--wm-size-touch));
+  }
 }

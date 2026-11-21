@@ -4,6 +4,7 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
 <script src="{% static 'js/downtime_wheel.js' %}" defer></script>
+<script src="{% static 'js/downtime_filters.js' %}" defer></script>
 {% include "components/page_header.html" with title="Downtime" subtitle="Spend downtime points on an action." %}
 {% if not character %}
 {% include "components/alert.html" with text="You need a character to spend downtime points." %}
@@ -12,46 +13,54 @@
   <div class="wm-chalk-header">
     <span class="wm-chalk-hourglass" aria-hidden="true">{% include "components/icon.html" with name="hourglass-split" %}</span>
     <h2>Jobs on the board</h2>
-    {% if character %}<p class="wm-chalk-balance wm-downtime-balance">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>{% endif %}
+    {% if character %}<p id="downtime-balance" class="wm-chalk-balance wm-downtime-balance">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>{% endif %}
   </div>
+  <div id="downtime-balance-trigger"
+       hx-get="{% url 'downtime:play' club.slug %}"
+       hx-trigger="downtimeSpent from:body"
+       hx-include="#downtime-filters"
+       hx-target="#downtime-jobs"
+       hx-swap="outerHTML"
+       style="display: none;"></div>
   <form id="downtime-filters" method="get" action="{% url 'downtime:play' club.slug %}"
   hx-get="{% url 'downtime:play' club.slug %}"
   hx-trigger="change"
   hx-include="closest form"
   hx-target="#downtime-jobs"
   hx-swap="outerHTML"
+  hx-push-url="true"
   class="wm-downtime-filters d-flex flex-wrap gap-3 align-items-start mb-3">
   <div role="group" aria-label="Filter jobs" class="d-flex flex-wrap gap-3 align-items-end">
     <div class="wm-filter-group" role="group" aria-label="Cost">
       <span class="d-block fw-bold text-muted small mb-1">Cost</span>
-      <label class="wm-filter-chip{% if cost_1 %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="cost" value="1"{% if cost_1 %} checked{% endif %}> 1
       </label>
-      <label class="wm-filter-chip{% if cost_2 %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="cost" value="2"{% if cost_2 %} checked{% endif %}> 2
       </label>
-      <label class="wm-filter-chip{% if cost_3plus %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="cost" value="3+"{% if cost_3plus %} checked{% endif %}> 3+
       </label>
     </div>
     <div class="wm-filter-group" role="group" aria-label="Reward type">
       <span class="d-block fw-bold text-muted small mb-1">Reward type</span>
-      <label class="wm-filter-chip{% if reward_coins %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="reward" value="coins"{% if reward_coins %} checked{% endif %}> Coins
       </label>
-      <label class="wm-filter-chip{% if reward_items %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="reward" value="items"{% if reward_items %} checked{% endif %}> Items
       </label>
-      <label class="wm-filter-chip{% if reward_mixed %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="reward" value="mixed"{% if reward_mixed %} checked{% endif %}> Mixed
       </label>
     </div>
     <div class="wm-filter-group" role="group" aria-label="Availability">
       <span class="d-block fw-bold text-muted small mb-1">Availability</span>
-      <label class="wm-filter-chip{% if avail_now %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="availability" value="now"{% if avail_now %} checked{% endif %}> Now
       </label>
-      <label class="wm-filter-chip{% if avail_upcoming %} wm-filter-chip--active{% endif %}">
+      <label class="wm-filter-chip">
         <input type="checkbox" name="availability" value="upcoming"{% if avail_upcoming %} checked{% endif %}> Upcoming
       </label>
     </div>

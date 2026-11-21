@@ -35,8 +35,7 @@ class SecurityHeadersMiddleware:
         # Features can be explicitly enabled per-origin if needed.
         response["Permissions-Policy"] = (
             "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
-            "magnetometer=(), microphone=(), payment=(), usb=(), "
-            "interest-cohort=()"
+            "magnetometer=(), microphone=(), payment=(), usb=()"
         )
 
         # Cross-Origin-Opener-Policy: same-origin

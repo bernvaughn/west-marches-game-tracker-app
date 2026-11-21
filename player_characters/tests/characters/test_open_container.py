@@ -120,6 +120,15 @@ def test_owner_htmx_open_shows_result(login, player, club, character, club_admin
     assert ContainerOpening.objects.count() == 1
 
 
+def test_success_open_sends_container_opened_trigger(login, player, club, character, club_admin):
+    """A successful open tells the client to refresh the sheet on modal close."""
+    container, _ = fixed_container(club)
+    award(character, container, actor=club_admin)
+    r = login(player).post(open_url(club, character, container), HTTP_HX_REQUEST="true")
+    assert r.status_code == 200
+    assert r["HX-Trigger"] == "containerOpened"
+
+
 def test_owner_plain_open_shows_result(login, player, club, character, club_admin):
     container, rope = fixed_container(club)
     award(character, container, actor=club_admin)

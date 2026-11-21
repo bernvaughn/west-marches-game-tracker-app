@@ -74,14 +74,14 @@ def test_posted_character_ignored_and_no_character(
 def test_missing_message(login, player, quest, character):
     c = login(player)
     r = c.post(_url("turn_in", quest.pk), {"character": character.pk}, follow=True)
-    assert "Missing 2 x Rope" in r.content.decode()
+    assert "Missing 2 × Rope" in r.content.decode()
     assert QuestCompletion.objects.count() == 0
 
 
 @pytest.mark.story("Q1")
 def test_detail_ready_and_missing(login, player, quest, character, item, give):
     c = login(player)
-    assert "Missing 2 x Rope" in c.get(_url("detail", quest.pk)).content.decode()
+    assert "Missing 2 × Rope" in c.get(_url("detail", quest.pk)).content.decode()
     give(character, item, 2)
     assert "Ready" in c.get(_url("detail", quest.pk)).content.decode()
 

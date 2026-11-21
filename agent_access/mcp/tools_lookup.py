@@ -42,7 +42,7 @@ def _loot_rows(preview):
     """Convert loot_preview rows to JSON-serialisable dicts.
 
     Each row: {label, qty_min, qty_max, chance_pct, unknown,
-    options:[{label,qty_min,qty_max,weight_pct}]}.
+    options:[{label,qty_min,qty_max,weight_pct,unit_name}], unit_name}.
     Masked rows have no item name or id. Never emit item.pk or item.name
     of masked rows.
     """
@@ -57,6 +57,7 @@ def _loot_rows(preview):
                     "chance_pct": row.chance_pct,
                     "unknown": True,
                     "options": [],
+                    "unit_name": "",
                 }
             )
             continue
@@ -69,6 +70,7 @@ def _loot_rows(preview):
                     "qty_min": opt.qty_min,
                     "qty_max": opt.qty_max,
                     "weight_pct": opt.weight_pct,
+                    "unit_name": opt.unit_name,
                 }
                 for opt in row.options
             ]
@@ -80,6 +82,7 @@ def _loot_rows(preview):
                     "chance_pct": row.chance_pct,
                     "unknown": row.unknown,
                     "options": options,
+                    "unit_name": row.unit_name,
                 }
             )
         else:
@@ -92,6 +95,7 @@ def _loot_rows(preview):
                     "chance_pct": row.chance_pct,
                     "unknown": row.unknown,
                     "options": [],
+                    "unit_name": row.unit_name,
                 }
             )
     return rows
@@ -139,6 +143,9 @@ def search_items(ctx, query: str = "", limit: int = 25) -> dict[str, Any]:
             "value_cp": item.value_cp,
             "value": format_coins(item.value_cp),
             "is_container": item.is_container,
+            "is_stacked": item.is_stacked,
+            "unit_name": item.unit_name if item.is_stacked else "",
+            "value_units": item.value_units if item.is_stacked else 1,
         }
         if item.is_container:
             # Build preview with unknowns masked (agents never see real unknowns)

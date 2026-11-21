@@ -117,7 +117,7 @@ def dashboard_quest_turnin(request, club_slug, quest_pk):
         trigger={
             "appModalClose": True,
             "toast": {"message": "Quest turned in successfully.", "type": "success"},
-            "dashboardRefresh": True,
+            "questCompleted": True,
         }
     )
 

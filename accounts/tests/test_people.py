@@ -16,6 +16,15 @@ def idx(club):
     return reverse("accounts:index", args=[club.slug])
 
 
+def test_whitelist_form_renders_club_admin_and_help_texts(club, club_admin, login):
+    resp = login(club_admin).get(wl(club))
+    body = resp.content.decode()
+    assert "Club admin" in body
+    assert "Manages members, items, shops and the inbox." in body
+    assert "Game master" in body
+    assert "Runs games and awards loot." in body
+
+
 @pytest.fixture
 def known_temp(monkeypatch):
     monkeypatch.setattr(passwords, "generate_temporary_password", lambda: "Temp-Pass-123")
@@ -32,6 +41,38 @@ def test_new_email_creates_user_membership_entry(club, club_admin, login):
     m = Membership.objects.get(user=user, club=club)
     assert m.is_game_master and not m.is_club_admin
     assert WhitelistEntry.objects.filter(club=club, email="new@example.com").exists()
+
+
+@pytest.mark.story("U133")
+def test_whitelist_club_admin_only(club, club_admin, login):
+    resp = login(club_admin).post(
+        wl(club), {"email": "admin-only@example.com", "is_club_admin": "on"}
+    )
+    assert resp.status_code == 200
+    user = User.objects.get(email="admin-only@example.com")
+    m = Membership.objects.get(user=user, club=club)
+    assert m.is_club_admin and not m.is_game_master
+
+
+@pytest.mark.story("U133")
+def test_whitelist_both_roles(club, club_admin, login):
+    resp = login(club_admin).post(
+        wl(club),
+        {"email": "both@example.com", "is_club_admin": "on", "is_game_master": "on"},
+    )
+    assert resp.status_code == 200
+    user = User.objects.get(email="both@example.com")
+    m = Membership.objects.get(user=user, club=club)
+    assert m.is_club_admin and m.is_game_master
+
+
+@pytest.mark.story("U133")
+def test_whitelist_neither_role(club, club_admin, login):
+    resp = login(club_admin).post(wl(club), {"email": "player-only@example.com"})
+    assert resp.status_code == 200
+    user = User.objects.get(email="player-only@example.com")
+    m = Membership.objects.get(user=user, club=club)
+    assert not m.is_club_admin and not m.is_game_master
 
 
 @pytest.mark.story("U1")

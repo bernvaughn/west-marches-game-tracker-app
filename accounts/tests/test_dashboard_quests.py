@@ -63,7 +63,7 @@ def test_dashboard_quest_turnin_post_success(login, player, quest, character, it
     trigger = response["HX-Trigger"]
     assert "appModalClose" in trigger
     assert "toast" in trigger
-    assert "dashboardRefresh" in trigger
+    assert "questCompleted" in trigger
     # Quest completion was created
     assert QuestCompletion.objects.filter(quest=quest, character=character).count() == 1
 

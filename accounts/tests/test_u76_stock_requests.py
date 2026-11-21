@@ -67,7 +67,7 @@ def test_badge_and_filter(club, club_admin, player, character, login):
     c = login(club_admin)
     html = c.get(_inbox(club)).content.decode()
     assert "Want plate armour" in html and "Missing ring" in html
-    assert html.count("Stock request</span>") == 1
+    assert html.count("Stock request</span>") == 2  # phone block + desktop Message cell
     html = c.get(_inbox(club) + "?kind=stock_request").content.decode()
     assert "Want plate armour" in html and "Missing ring" not in html
     html = c.get(_inbox(club) + "?kind=message").content.decode()

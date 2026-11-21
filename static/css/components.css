@@ -102,6 +102,9 @@ fieldset.wm-field > legend { float: none; width: auto; padding: 0; font-size: va
 .wm-table-scroll table:has(td.actions > .wm-row-actions) th.actions {
   position: sticky; right: 0; z-index: 1; background-color: var(--wm-table-sticky-bg, var(--wm-surface)); border-left: 1px solid var(--wm-border); }
 .wm-table-scroll th.wm-row-actions-cell, .wm-table-scroll table:has(td.actions > .wm-row-actions) th.actions { background-color: var(--wm-surface-sunken); z-index: 2; }
+/* Row actions: when a cell's print dropdown is open, lift that cell above its
+   sticky siblings so the menu paints on top of the rows below (stacking-context fix). */
+.wm-table-scroll td.wm-row-actions-cell:has(.dropdown-menu.show) { z-index: 5; }
 .wm-row-actions-cell { white-space: nowrap; width: 1%; }
 .wm-row-actions { flex-wrap: nowrap; white-space: nowrap; }
 .wm-date { white-space: nowrap; font-variant-numeric: tabular-nums; }

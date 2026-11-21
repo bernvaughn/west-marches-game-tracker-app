@@ -26,7 +26,7 @@
                   hx-target="body"
                   hx-swap="outerHTML"
                   hx-include="[name='character']">
-            {% include "components/icon.html" with name="user" %} Switch
+            {% include "components/icon.html" with name="person" %} Switch
           </button>
         </form>
         {% endif %}
@@ -63,5 +63,12 @@
       </div>
       {% endif %}
     </div>
+
+    {% if xp_progress %}
+    <div class="wm-xp-section mt-3">
+      {% include "player_characters/characters/_xp_progress.html" with can_edit=True %}
+    </div>
+    {% endif %}
+
   </div>
 </div>

@@ -29,6 +29,7 @@ from ..character_forms import CharacterForm, HandoverForm
 from ..models import Character
 from ..notes import item_notes
 from ..player_shop import listed_quantity
+from ..selection import selected_character
 from ..sheet import (
     ability_rows,
     edit_current_values,
@@ -159,6 +160,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
         character = self.get_club_object_or_404(Character, pk=pk)
         can_view = self.can_view_inventory(request.user, character)
         is_owner = owns_character(request.user, character)
+        selected = selected_character(request)
         admin = self.is_club_admin(request.user, self.club)
         gm = self.is_game_master(request.user, self.club)
         template = (
@@ -191,6 +193,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             "can_adjust": admin or gm,
             "can_request_points": owns_character(request.user, character) and not (admin or gm),
             "is_owner": owns_character(request.user, character),
+            "can_sell_junk": is_owner and selected is not None and character.pk == selected.pk,
             "can_handover": admin,
             "show_starting_animation": request.GET.get("starting_equipment") == "1",
             "can_request_starting_equipment": owns_character(request.user, character)

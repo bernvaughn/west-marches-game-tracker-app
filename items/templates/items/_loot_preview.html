@@ -15,9 +15,9 @@
                 {% for opt in row.options %}
                 <li class="wm-loot-preview__option">
                     {% if opt.qty_min == opt.qty_max %}
-                        <span class="wm-loot-preview__qty">{{ opt.qty_min }}&#215;</span>
+                        <span class="wm-loot-preview__qty">{{ opt.qty_min }}{% if opt.unit_name %} {{ opt.unit_name }}{% else %}&#215;{% endif %}</span>
                     {% else %}
-                        <span class="wm-loot-preview__qty">{{ opt.qty_min }}&#8211;{{ opt.qty_max }}&#215;</span>
+                        <span class="wm-loot-preview__qty">{{ opt.qty_min }}&#8211;{{ opt.qty_max }}{% if opt.unit_name %} {{ opt.unit_name }}{% else %}&#215;{% endif %}</span>
                     {% endif %}
                     <span class="wm-loot-preview__name">{{ opt.label }}</span>
                     <span class="wm-loot-preview__weight">({{ opt.weight_pct }}%)</span>
@@ -29,9 +29,9 @@
             {% endif %}
         {% else %}
             {% if row.qty_min == row.qty_max %}
-                <span class="wm-loot-preview__qty">{{ row.qty_min }}&#215;</span>
+                <span class="wm-loot-preview__qty">{{ row.qty_min }}{% if row.unit_name %} {{ row.unit_name }}{% else %}&#215;{% endif %}</span>
             {% else %}
-                <span class="wm-loot-preview__qty">{{ row.qty_min }}&#8211;{{ row.qty_max }}&#215;</span>
+                <span class="wm-loot-preview__qty">{{ row.qty_min }}&#8211;{{ row.qty_max }}{% if row.unit_name %} {{ row.unit_name }}{% else %}&#215;{% endif %}</span>
             {% endif %}
             <span class="wm-loot-preview__name">{{ row.label }}</span>
             {% if row.chance_pct < 100 %}

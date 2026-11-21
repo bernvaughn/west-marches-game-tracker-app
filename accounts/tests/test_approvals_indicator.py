@@ -128,9 +128,16 @@ def test_demo_gwen_badge(login):
     gwen = User.objects.get(email="gm@example.com")
     html = login(gwen).get("/c/demo/").content.decode()
     assert "approvals-menu" in html
-    for label in ("Agent batches", "Proposed items", "Map requests", "Messages"):
+    for label in (
+        "Agent batches",
+        "Proposed items",
+        "Map requests",
+        "Messages",
+        "Downtime point requests",
+    ):
         assert label in html
-    assert 'approvals-total">5<' in html
+    # 1 agent batch + 1 proposed item + 1 map request + 3 messages + 1 downtime request = 7
+    assert 'approvals-total">7<' in html
 
 
 def test_no_trade_or_transfer_category_for_any_role(rf):

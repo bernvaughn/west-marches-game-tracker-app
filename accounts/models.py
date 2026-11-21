@@ -24,7 +24,13 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra):
         extra["is_staff"] = True
         extra["is_superuser"] = True
-        return self._create(email, password, **extra)
+        user = self._create(email, password, **extra)
+        if password:
+            # Import inside method to avoid circular import with passwords module
+            from .passwords import save_password_history
+
+            save_password_history(user, password)
+        return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):

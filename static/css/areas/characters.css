@@ -29,6 +29,27 @@
 .wm-sheet-table { width: auto; min-width: 60%; margin: 0; }
 .wm-sheet-table th, .wm-sheet-table td { padding: var(--wm-space-1) var(--wm-space-2); }
 .wm-sheet-table th:first-child, .wm-sheet-table td:first-child { width: 100%; }
+.wm-sheet-table td { vertical-align: middle; }
+
+/* Phone inventory inline quantity (this task) */
+.wm-sheet-item-name {
+  display: flex;
+  align-items: center;
+  gap: var(--wm-space-1);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wm-sheet-item-name .wm-item-symbol { margin-right: var(--wm-space-1); }
+
+.wm-sheet-owned-inline {
+  display: block;
+  font-size: var(--wm-text-xs);
+  color: var(--wm-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 576px) {
+  .wm-sheet-owned-inline { display: none; }
+}
 .wm-sheet-ledger { list-style: none; margin: 0 0 var(--wm-space-1); padding: 0; font-size: var(--wm-text-sm); }
 .wm-sheet-ledger li { padding: var(--wm-space-1) 0; }
 .wm-sheet-date { color: var(--wm-text-muted); font-variant-numeric: tabular-nums; margin-right: var(--wm-space-1); }
@@ -115,6 +136,9 @@
   .wm-sheet .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
   .wm-xp-bar { display: none; }
   .wm-xp-text { color: black; }
+  /* Phone inventory inline quantity (this task) - hide inline line, show optional columns */
+  .wm-sheet-owned-inline { display: none; }
+  .wm-sheet-table .wm-col-optional { display: table-cell; }
 }
 
 /* XP progress bar (gamification): slim bar under the XP number, text only in print. */

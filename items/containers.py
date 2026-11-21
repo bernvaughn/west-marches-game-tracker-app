@@ -60,6 +60,7 @@ class PreviewOption:
     qty_min: int
     qty_max: int
     weight_pct: int
+    unit_name: str = ""
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,7 @@ class PreviewRow:
     options: tuple[PreviewOption, ...]
     unknown: bool
     masked: bool
+    unit_name: str = ""
 
 
 def roll_container(container, rng=None) -> Roll:
@@ -185,6 +187,7 @@ def loot_preview(container, viewer_can_see_unknown) -> list[PreviewRow]:
 
         if len(options) == 1:
             option = options[0]
+            unit_name = option.item.unit_name if option.item.is_stacked else ""
             rows.append(
                 PreviewRow(
                     item=option.item,
@@ -195,6 +198,7 @@ def loot_preview(container, viewer_can_see_unknown) -> list[PreviewRow]:
                     options=(),
                     unknown=slot.unknown,
                     masked=False,
+                    unit_name=unit_name,
                 )
             )
             continue
@@ -207,6 +211,7 @@ def loot_preview(container, viewer_can_see_unknown) -> list[PreviewRow]:
                 qty_min=opt.qty_min,
                 qty_max=opt.qty_max,
                 weight_pct=int(round(opt.weight * 100 / total_weight)),
+                unit_name=opt.item.unit_name if opt.item.is_stacked else "",
             )
             for opt in options
         )

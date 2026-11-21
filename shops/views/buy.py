@@ -15,7 +15,7 @@ from player_characters.selection import selected_character
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import Shop, ShopStock
-from shops.services import ShopError, format_vs_base_text, is_open, sell_price
+from shops.services import PriceChanged, ShopError, format_vs_base_text, is_open, sell_price
 from shops.views.browse import add_recent_shop
 
 
@@ -42,14 +42,43 @@ def buy(request, club_slug, shop_id, stock_id):
         form = BuyForm(request.POST, max_quantity=stock.quantity)
         if character is not None and form.is_valid():
             quantity = form.cleaned_data["quantity"]
+            expected_price = request.POST.get("expected_price")
+            if expected_price is not None:
+                try:
+                    expected_price = int(expected_price)
+                except (TypeError, ValueError):
+                    expected_price = None
             try:
-                entry = buy_service(character, stock, quantity, actor=request.user)
+                entry = buy_service(
+                    character,
+                    stock,
+                    quantity,
+                    actor=request.user,
+                    expected_price=expected_price,
+                )
             except InsufficientFunds:
                 error = (
                     f"{character} cannot afford this: needs "
                     f"{format_coins(unit_price * quantity)}, has "
                     f"{format_coins(available_coins(character))} available."
                 )
+            except PriceChanged as exc:
+                # Price changed since the page was rendered: do not buy.
+                # Re-read stock and re-render the modal at the new price with a
+                # warning, so a second click confirms at the new price.
+                error = str(exc)
+                stock.refresh_from_db()
+                unit_price = sell_price(stock)
+                if stock.item.is_stacked:
+                    base_value = bundle_price(stock.item, stock.bundle_units, 100)
+                else:
+                    base_value = stock.item.value_cp
+                sell_percent = (
+                    stock.sell_percent
+                    if stock.sell_percent is not None
+                    else stock.shop.sell_percent
+                )
+                vs_base = unit_price - base_value
             except ShopError as exc:
                 error = str(exc)
             else:

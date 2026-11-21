@@ -5,14 +5,26 @@ from django.utils import timezone
 from items.stacked import unit_label
 from ledger.services import Line, record
 from shops.models import ShopStock
-from shops.services import AlreadySold, NotStocked, ShopClosed, is_open, sell_price
+from shops.services import (
+    AlreadySold,
+    NotStocked,
+    PriceChanged,
+    ShopClosed,
+    is_open,
+    sell_price,
+)
 
 
-def buy(character, stock, quantity=1, actor=None, today=None):
+def buy(character, stock, quantity=1, actor=None, today=None, expected_price=None):
     """Buy `quantity` bundles of a stocked item for `character`. All or nothing.
 
     See the Shops epic design, "Buying". Raises ShopClosed, NotStocked,
-    AlreadySold, or ledger InsufficientFunds (which rolls back the decrement).
+    AlreadySold, PriceChanged, or ledger InsufficientFunds (which rolls back
+    the decrement).
+
+    `expected_price` is the per-bundle price the player was shown. When given,
+    the purchase is refused if the current price differs, so a stale page can
+    never buy at a price that is no longer valid.
     """
     today = today or timezone.localdate()
     if quantity < 1:
@@ -27,6 +39,10 @@ def buy(character, stock, quantity=1, actor=None, today=None):
             raise ShopClosed()
         if item.retired:
             raise NotStocked()
+        if expected_price is not None:
+            current_price = sell_price(stock)
+            if current_price != expected_price:
+                raise PriceChanged(expected=expected_price, current=current_price)
         if stock.quantity is not None:
             updated = ShopStock.objects.filter(pk=stock.pk, quantity__gte=quantity).update(
                 quantity=F("quantity") - quantity

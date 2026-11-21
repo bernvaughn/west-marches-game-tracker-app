@@ -62,20 +62,20 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 | XP table | Default bands from `map/xp.py` (`copy_default_xp_table`). |
 | Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
 | Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
-| Items | Default item catalogue (about 175 items) from the starting-equipment data and the General Store gear list. |
+| Items | Default item catalogue (about 175 items) from the starting-equipment data and the General Store gear list. Includes 8 stacked gear items (ammunition and small consumables sold in unit bundles). |
 | Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. Each "X or Y" option of the 2024 PHB is a choice group (see below). |
 | Starting packs | The seven standard packs (Explorer's, Priest's, Dungeoneer's, Burglar's, Scholar's, Diplomat's, Entertainer's) are containers with their PHB contents as fixed slots. A character can open them. |
-| Shops | General Store run by Mabel Packwell (halfling grocer), sells at 100%/buys at 75%, stocks all Adventuring Gear plus ammunition, unlimited quantity, in "Always open" rotation at street position 0. |
+| Shops | General Store run by Mabel Packwell (halfling grocer), sells at 100%/buys at 75%, stocks all Adventuring Gear plus ammunition, unlimited quantity, in "Always open" rotation at street position 0. Stacked ammunition is stocked as bundle lines whose bundle size matches the item's unit size. |
 
 ### Not seeded
 
-Characters, quests, hex maps and locations, downtime actions, ledger entries, messages, demo users. The GM creates these.
+Characters, quests, hex maps and locations, downtime actions, ledger entries, messages, demo users. The GM creates these. Other (non-ammunition) stacked items are not seeded for a new club either; the GM converts them on the convert page or with `uv run python manage.py convert_to_stacked --club <slug>`.
 
 ### Rules
 
 - Seeding runs in the club-creation transaction. A failure rolls back the whole club.
 - Every seeder is idempotent. It never overwrites edited rows.
-- Existing clubs are not backfilled. They can run `uv run python manage.py seed_starting_equipment --club <slug>`.
+- Existing clubs are not backfilled. They can run `uv run python manage.py seed_starting_equipment --club <slug>` to get the current catalogue and template, then `uv run python manage.py convert_seeded_bundles --club <slug> --apply` to convert seeded bundle items to stacked items (dry run without `--apply`).
 - A plain run leaves an existing template unchanged. It still adds missing catalogue items and configures packs that have no slots.
 - `--force` upgrades an existing template. It resets entry coins and makes each entry's lines match the default data in order. It deletes stale lines, for example an old fixed line that is now a choice default. A forced run on a template that already matches writes no lines.
 - `seed_pack_containers --club <slug>` configures the packs only. It skips a pack that already has slots.

@@ -25,6 +25,23 @@ def seed(club):
     QuestReward.objects.get_or_create(quest=quest, item=None, coins=1000, defaults={"quantity": 0})
     QuestReward.objects.get_or_create(quest=quest, item=potion, defaults={"quantity": 1})
 
+    # Second quest: needs Parchment sheets (stacked item demo)
+    cartographer, _ = Quest.objects.get_or_create(
+        club=club,
+        name="Maps for the Cartographer",
+        defaults={
+            "description": "The cartographer needs parchment sheets to finish the regional map.",
+            "start_date": timezone.localdate() - timedelta(days=3),
+        },
+    )
+    parchment = Item.objects.get(club=club, name="Parchment")
+    QuestRequirement.objects.get_or_create(
+        quest=cartographer, item=parchment, defaults={"quantity": 10}
+    )
+    QuestReward.objects.get_or_create(
+        quest=cartographer, item=None, coins=500, defaults={"quantity": 0}
+    )
+
     _give_demo_pelts(club, pelt)
 
 

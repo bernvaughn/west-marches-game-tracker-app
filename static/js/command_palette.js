@@ -1,7 +1,11 @@
 /* Command Palette (Contract): Client-side only, indexes nav entries.
    Activated with Cmd/Ctrl+K. Searches navigation entries from the side menu.
 */
-document.addEventListener("DOMContentLoaded", function () {
+// Register before Alpine starts: alpine.min.js queues Alpine.start() in a
+// microtask that runs right after it executes, before DOMContentLoaded.
+// command_palette.js is ordered before alpine.min.js so this listener exists
+// when alpine:init fires inside Alpine.start().
+document.addEventListener("alpine:init", function () {
   if (!window.Alpine) {
     console.warn("Alpine.js not loaded; command palette disabled");
     return;
@@ -23,6 +27,14 @@ document.addEventListener("DOMContentLoaded", function () {
     return entries;
   }
 
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Template expressions must stay CSP-safe (bare names only), so the row
+  // markup is built here from escaped text and exposed as the `listHtml` getter.
   Alpine.data("wmCommandPalette", function () {
     return {
       open: false,
@@ -30,6 +42,33 @@ document.addEventListener("DOMContentLoaded", function () {
       entries: [],
       filtered: [],
       selectedIndex: 0,
+
+      get listHtml() {
+        return this.filtered
+          .map((entry, index) => {
+            const selected = index === this.selectedIndex;
+            const group = entry.group
+              ? '<span class="wm-command-item-group">' + escapeHtml(entry.group) + "</span>"
+              : "";
+            return (
+              '<div class="wm-command-item' +
+              (selected ? " wm-command-item-selected" : "") +
+              '" role="option" aria-selected="' + selected +
+              '" data-index="' + index + '">' +
+              '<span class="wm-command-item-label">' + escapeHtml(entry.label) + "</span>" +
+              group + "</div>"
+            );
+          })
+          .join("");
+      },
+
+      get isEmpty() {
+        return this.filtered.length === 0 && this.query !== "";
+      },
+
+      get emptyText() {
+        return "No results for " + this.query;
+      },
 
       init() {
         this.entries = collectNavEntries();
@@ -72,7 +111,10 @@ document.addEventListener("DOMContentLoaded", function () {
         this.selectedIndex = 0;
         this.$nextTick(() => {
           const input = this.$refs.input;
-          if (input) input.focus();
+          if (input) {
+            input.value = "";
+            input.focus();
+          }
         });
         document.body.style.overflow = "hidden";
       },
@@ -80,8 +122,29 @@ document.addEventListener("DOMContentLoaded", function () {
       closePalette() {
         this.open = false;
         this.query = "";
+        if (this.$refs.input) this.$refs.input.value = "";
         this.selectedIndex = 0;
         document.body.style.overflow = "";
+      },
+
+      onInput(event) {
+        this.query = event.target.value;
+        this.filterEntries();
+      },
+
+      itemIndex(event) {
+        const item = event.target.closest(".wm-command-item");
+        return item ? Number(item.dataset.index) : -1;
+      },
+
+      onListClick(event) {
+        const entry = this.filtered[this.itemIndex(event)];
+        if (entry) this.goTo(entry);
+      },
+
+      onListHover(event) {
+        const index = this.itemIndex(event);
+        if (index >= 0 && index !== this.selectedIndex) this.selectedIndex = index;
       },
 
       filterEntries() {

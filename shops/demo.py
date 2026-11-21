@@ -24,9 +24,11 @@ def _shop(club, name, keeper, stock, rotation_name, open_date, close_date, look)
     if not shop.description and look.get("description"):
         shop.description = look["description"]
         shop.save(update_fields=["description"])
-    for item_name, qty in stock:
+    for item_name, qty, bundle in stock:
         item = Item.objects.get(club=club, name=item_name)
-        ShopStock.objects.get_or_create(shop=shop, item=item, defaults={"quantity": qty})
+        ShopStock.objects.get_or_create(
+            shop=shop, item=item, bundle_units=bundle, defaults={"quantity": qty}
+        )
     rotation, _ = Rotation.objects.get_or_create(
         club=club,
         name=rotation_name,
@@ -44,7 +46,13 @@ def seed(club):
         club,
         "The Rusty Lantern",
         "Old Marta",
-        [("Rope", None), ("Torch", None), ("Longsword", 2)],
+        [
+            ("Rope", None, 1),
+            ("Torch", None, 1),
+            ("Longsword", 2, 1),
+            ("Parchment", None, 10),  # bundle of 10 sheets, unlimited
+            ("Hempen cord", 4, 50),  # bundle of 50 ft, qty 4
+        ],
         "Always open",
         date(2026, 1, 1),
         None,
@@ -64,7 +72,7 @@ def seed(club):
         club,
         "Wandering Caravan",
         "Zahra",
-        [("Healing potion", 3), ("Moonstone amulet", 1)],
+        [("Healing potion", 3, 1), ("Moonstone amulet", 1, 1)],
         "This week",
         today - timedelta(days=3),
         today + timedelta(days=4),

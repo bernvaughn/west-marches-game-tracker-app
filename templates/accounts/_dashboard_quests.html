@@ -1,8 +1,12 @@
 {% comment %}Quests dashboard section{% endcomment %}
-<div class="wm-dashboard-section card wm-card-raised h-100">
+<div
+  id="dashboard-card-quests"
+  data-refresh-url="{% url 'accounts:dashboard_partial' club.slug 'quests' %}"
+  class="wm-dashboard-section card wm-card-raised h-100"
+>
   <div class="card-header d-flex align-items-center justify-content-between py-2">
     <h3 class="h6 mb-0 d-flex align-items-center gap-2">
-      {% include "components/icon.html" with name="scroll" %}
+      {% include "components/icon.html" with name="journal-text" %}
       Quests
     </h3>
     {% if provider_context.ready_quests|length > 0 %}

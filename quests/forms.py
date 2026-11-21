@@ -59,7 +59,7 @@ class _ItemRowForm(forms.ModelForm):
 
 
 class RequirementForm(_ItemRowForm):
-    quantity = forms.IntegerField(min_value=1)
+    quantity = forms.IntegerField(min_value=1, help_text="Units for stacked items")
 
     class Meta:
         model = QuestRequirement
@@ -67,7 +67,7 @@ class RequirementForm(_ItemRowForm):
 
 
 class RewardForm(_ItemRowForm):
-    quantity = forms.IntegerField(min_value=0, required=False)
+    quantity = forms.IntegerField(min_value=0, required=False, help_text="Units for stacked items")
     coins = CoinsField(required=False, label="Coins")
 
     class Meta:

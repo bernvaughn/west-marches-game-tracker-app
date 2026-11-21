@@ -5,7 +5,7 @@
 
 <div class="wm-dashboard-header card wm-card-raised mb-4 no-print">
   <div class="card-body text-center py-5">
-    {% include "components/icon.html" with name="user" class="text-muted" size="48" %}
+    {% include "components/icon.html" with name="person" class="text-muted" size="48" %}
     <h3 class="mt-3 mb-2">No Character Selected</h3>
     <p class="text-muted mb-4">You need to select a character to access your dashboard.</p>
     <a href="{% url 'characters:index' club.slug %}" class="btn btn-primary">

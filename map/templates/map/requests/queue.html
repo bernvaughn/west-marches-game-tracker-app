@@ -19,22 +19,33 @@
   </button>
 </div>
 {% endif %}
-<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle" id="queue-table">
+<div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle wm-queue-table" id="queue-table">
 <thead><tr>
-{% if is_editor %}<th class="actions"><input type="checkbox" id="bulk-select-all" class="form-check-input" aria-label="Select all requests"></th>{% endif %}
-<th>Kind</th><th>Map and position</th><th>Location</th><th>Characters</th><th>Date</th><th>Note</th><th class="wm-col-optional">Requested by</th><th>Status</th><th class="wm-col-optional">Decided</th>{% if is_editor %}<th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
+{% if is_editor %}<th class="actions"><label class="d-inline-flex p-2"><input type="checkbox" id="bulk-select-all" class="form-check-input wm-check-sm" aria-label="Select all requests"></label></th>{% endif %}
+<th class="d-sm-none">Request</th>
+<th class="wm-col-optional">Kind</th><th class="wm-col-optional">Map and position</th><th class="wm-col-optional">Location</th><th class="wm-col-optional">Characters</th><th class="wm-col-optional">Date</th><th class="wm-col-optional">Note</th><th class="wm-col-optional">Requested by</th><th class="wm-col-optional">Status</th><th class="wm-col-optional">Decided</th>{% if is_editor %}<th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
 <tbody>
 {% for req in requests %}
 <tr>
-{% if is_editor %}<td class="actions">{% if req.status == "requested" %}<input type="checkbox" name="requests" class="form-check-input" value="{{ req.pk }}" aria-label="Select request from {{ req.requested_by.user.display_name }}">{% endif %}</td>{% endif %}
-<td>{% include "components/badge.html" with status="info" text=req.get_kind_display %}</td>
-<td>{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.tile_q is not None %} ({{ req.tile_q }}, {{ req.tile_r }}){% endif %}</td>
-<td>{% if req.kind == "visit" %}-{% else %}{{ req.location_label }}{% endif %}</td>
-<td>{% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</td>
-<td class="wm-date">{{ req.date|default:"" }}</td>
-<td>{{ req.note|linebreaksbr }}</td>
+{% if is_editor %}<td class="actions">{% if req.status == "requested" %}<label class="d-inline-flex p-2"><input type="checkbox" name="requests" class="form-check-input wm-check-sm" value="{{ req.pk }}" aria-label="Select request from {{ req.requested_by.user.display_name }}"></label>{% endif %}</td>{% endif %}
+<td class="d-sm-none wm-req-summary">
+  {% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}
+  <div class="wm-badge-row">
+    {% include "components/badge.html" with status="info" text=req.get_kind_display %}
+    {% include "components/status_badge.html" with value=req.status text=req.get_status_display %}
+  </div>
+  {% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.tile_q is not None %} ({{ req.tile_q }}, {{ req.tile_r }}){% endif %}
+  {% if req.kind != "visit" %}<span class="d-block">{{ req.location_label }}</span>{% endif %}
+  {{ req.note|linebreaksbr }}
+</td>
+<td class="wm-col-optional">{% include "components/badge.html" with status="info" text=req.get_kind_display %}</td>
+<td class="wm-col-optional">{% if req.map %}{{ req.map.name }}{% else %}Map deleted{% endif %}{% if req.tile_q is not None %} ({{ req.tile_q }}, {{ req.tile_r }}){% endif %}</td>
+<td class="wm-col-optional">{% if req.kind == "visit" %}-{% else %}{{ req.location_label }}{% endif %}</td>
+<td class="wm-col-optional">{% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</td>
+<td class="wm-col-optional wm-date">{{ req.date|default:"" }}</td>
+<td class="wm-col-optional">{{ req.note|linebreaksbr }}</td>
 <td class="wm-col-optional">{{ req.requested_by.user.display_name }}</td>
-<td>{% include "components/status_badge.html" with value=req.status text=req.get_status_display %}</td>
+<td class="wm-col-optional">{% include "components/status_badge.html" with value=req.status text=req.get_status_display %}</td>
 <td class="wm-col-optional wm-date">{% if req.decided_at %}{{ req.decided_by.user.display_name|default:"" }} {{ req.decided_at|date:"DATETIME_FORMAT" }}{% endif %}</td>
 {% if is_editor %}<td class="actions">{% if req.status == "requested" %}
 <div class="wm-row-actions btn-group btn-group-sm" role="group" aria-label="Actions for this request">
@@ -43,7 +54,7 @@
 </div>
 {% endif %}</td>{% endif %}
 </tr>
-{% empty %}{% if is_editor %}{% include "components/data_table_empty.html" with cols=11 text="No requests." %}{% else %}{% include "components/data_table_empty.html" with cols=9 text="No requests." %}{% endif %}{% endfor %}
+{% empty %}{% if is_editor %}{% include "components/data_table_empty.html" with cols=12 text="No requests." %}{% else %}{% include "components/data_table_empty.html" with cols=10 text="No requests." %}{% endif %}{% endfor %}
 </tbody>
 </table></div>
 {% endblock %}

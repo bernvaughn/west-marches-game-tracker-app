@@ -23,4 +23,5 @@ def app_name(request):
         "APP_NAME": settings.APP_NAME,
         "APP_TAGLINE": settings.APP_TAGLINE,
         "SITE_COPYRIGHT_YEAR": settings.SITE_COPYRIGHT_YEAR,
+        "APP_VERSION": settings.APP_VERSION,
     }

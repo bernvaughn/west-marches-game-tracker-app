@@ -24,6 +24,17 @@ from starting_equipment.models import (
     StartingEquipmentTemplate,
 )
 
+# Stacked ammunition items shared with the General Store gear list.
+# Each entry: name -> (value_cp, symbol, rarity, magic_type, unit_name, value_units)
+# These match shops/gear.py GENERAL_STORE_GEAR exactly.
+STACKED_AMMO_SPECS = {
+    "Arrows": (100, "🏹", "trivial", "", "arrow", 20),
+    "Crossbow Bolts": (100, "🏹", "trivial", "", "bolt", 20),
+    "Firearm Bullets": (300, "⚪", "trivial", "", "bullet", 10),
+    "Sling Bullets": (4, "⚪", "trivial", "", "bullet", 20),
+    "Needles": (100, "📌", "trivial", "", "needle", 50),
+}
+
 # 2024 D&D Class starting equipment (PHB 2024)
 # Each item tuple: (name, value_cp, symbol, rarity, magic_type, quantity, is_choice, choice_group)
 #
@@ -39,6 +50,10 @@ from starting_equipment.models import (
 # - Pack choices list the real packs by name; Entertainer's Pack enters the catalogue here.
 # - An item may sit in two groups of one entry (Rogue Shortsword), but never in a group
 #   and as a fixed line of the same entry.
+#
+# Ammunition items use stacked catalogue items (Arrows, Crossbow Bolts) with quantity
+# in UNITS (e.g., 20 arrows), not as separate plain items. The value_cp and symbol
+# match the gear list; the item's value_units defines the bundle size.
 CLASS_EQUIPMENT = {
     "Barbarian": {
         "coins_cp": 200,  # 2d4 × 10 gp average = 50 gp = 5000 cp, but 2024 uses fixed
@@ -80,7 +95,7 @@ CLASS_EQUIPMENT = {
     "Cleric": {
         "coins_cp": 500,  # 5d4 × 10 gp
         "items": [
-            ("Crossbow Bolt", 1, "🏹", "trivial", "", 20, False, ""),
+            ("Crossbow Bolts", 100, "🏹", "trivial", "", 20, False, ""),
             ("Shield", 1000, "🛡️", "standard", "", 1, False, ""),
             ("Holy Symbol (Amulet)", 500, "✝️", "standard", "", 1, False, ""),
             # melee_weapon: Mace OR warhammer
@@ -122,7 +137,7 @@ CLASS_EQUIPMENT = {
         "coins_cp": 500,  # 5d4 × 10 gp
         "items": [
             ("Shield", 1000, "🛡️", "standard", "", 1, False, ""),
-            ("Crossbow Bolt", 1, "🏹", "trivial", "", 20, False, ""),
+            ("Crossbow Bolts", 100, "🏹", "trivial", "", 20, False, ""),
             # armor: Chain mail OR leather armor + longbow + 20 arrows.
             # Simplified to one line per option: the alternative is Leather Armor only.
             ("Chain Mail", 7500, "🛡️", "standard", "", 1, True, "armor"),
@@ -179,7 +194,7 @@ CLASS_EQUIPMENT = {
         "coins_cp": 1000,  # 5d4 × 10 gp
         "items": [
             ("Longbow", 5000, "🏹", "fine", "", 1, False, ""),
-            ("Arrow", 1, "🏹", "trivial", "", 20, False, ""),
+            ("Arrows", 100, "🏹", "trivial", "", 20, False, ""),
             # armor: Scale mail OR leather armor
             ("Scale Mail", 5000, "🛡️", "standard", "", 1, True, "armor"),
             ("Leather Armor", 1000, "🧥", "standard", "", 1, True, "armor"),
@@ -195,7 +210,7 @@ CLASS_EQUIPMENT = {
     "Rogue": {
         "coins_cp": 400,  # 4d4 × 10 gp
         "items": [
-            ("Arrow", 1, "🏹", "trivial", "", 20, False, ""),
+            ("Arrows", 100, "🏹", "trivial", "", 20, False, ""),
             ("Leather Armor", 1000, "🧥", "standard", "", 1, False, ""),
             ("Dagger", 200, "🗡️", "standard", "", 2, False, ""),
             ("Thieves' Tools", 2500, "🔧", "standard", "", 1, False, ""),
@@ -214,7 +229,7 @@ CLASS_EQUIPMENT = {
     "Sorcerer": {
         "coins_cp": 300,  # 3d4 × 10 gp
         "items": [
-            ("Crossbow Bolt", 1, "🏹", "trivial", "", 20, False, ""),
+            ("Crossbow Bolts", 100, "🏹", "trivial", "", 20, False, ""),
             ("Dagger", 200, "🗡️", "standard", "", 2, False, ""),
             # ranged: Light crossbow + 20 bolts OR any simple weapon (bolts stay fixed)
             ("Light Crossbow", 2500, "🏹", "standard", "", 1, True, "ranged"),
@@ -236,7 +251,7 @@ CLASS_EQUIPMENT = {
     "Warlock": {
         "coins_cp": 1000,  # 4d4 × 10 gp
         "items": [
-            ("Crossbow Bolt", 1, "🏹", "trivial", "", 20, False, ""),
+            ("Crossbow Bolts", 100, "🏹", "trivial", "", 20, False, ""),
             ("Leather Armor", 1000, "🧥", "standard", "", 1, False, ""),
             ("Dagger", 200, "🗡️", "standard", "", 2, False, ""),
             # ranged: Light crossbow + 20 bolts OR any simple weapon (bolts stay fixed)
@@ -492,24 +507,37 @@ def _create_items(club: Club) -> int:
         for item_data in class_data["items"]:
             name, value_cp, symbol, rarity, magic_type, qty, is_choice, choice_group = item_data
             if name not in item_specs:
-                item_specs[name] = {
+                specs = {
                     "value_cp": value_cp,
                     "symbol": symbol,
                     "rarity": rarity,
                     "magic_type": magic_type,
                 }
+                # Add stacked fields for ammunition
+                if name in STACKED_AMMO_SPECS:
+                    _, _, _, _, unit_name, value_units = STACKED_AMMO_SPECS[name]
+                    specs["is_stacked"] = True
+                    specs["unit_name"] = unit_name
+                    specs["value_units"] = value_units
+                item_specs[name] = specs
 
     # Collect all unique items from background equipment
     for bg_data in BACKGROUND_EQUIPMENT.values():
         for item_data in bg_data["items"]:
             name, value_cp, symbol, rarity, magic_type, qty, is_choice, choice_group = item_data
             if name not in item_specs:
-                item_specs[name] = {
+                specs = {
                     "value_cp": value_cp,
                     "symbol": symbol,
                     "rarity": rarity,
                     "magic_type": magic_type,
                 }
+                if name in STACKED_AMMO_SPECS:
+                    _, _, _, _, unit_name, value_units = STACKED_AMMO_SPECS[name]
+                    specs["is_stacked"] = True
+                    specs["unit_name"] = unit_name
+                    specs["value_units"] = value_units
+                item_specs[name] = specs
 
     # Create items
     created_count = 0
@@ -527,6 +555,22 @@ def _create_items(club: Club) -> int:
             ) from err
         if created:
             created_count += 1
+        else:
+            # Update stacked fields if they were blank on an existing row
+            updated = []
+            if name in STACKED_AMMO_SPECS:
+                _, _, _, _, unit_name, value_units = STACKED_AMMO_SPECS[name]
+                if not item.is_stacked:
+                    item.is_stacked = True
+                    updated.append("is_stacked")
+                if not item.unit_name:
+                    item.unit_name = unit_name
+                    updated.append("unit_name")
+                if item.value_units != value_units:
+                    item.value_units = value_units
+                    updated.append("value_units")
+                if updated:
+                    item.save(update_fields=updated)
 
     return created_count
 
