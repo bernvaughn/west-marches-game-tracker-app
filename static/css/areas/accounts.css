@@ -345,15 +345,15 @@
 /* Request queues on phones: shared block for inbox, downtime and map queues.
    Kept separate and appended so a rebase is trivial when other children edit this file. */
 
-/* Checkbox size: header and row checkboxes match, measured in rem. */
-.wm-check-sm { width: var(--wm-size-touch); height: var(--wm-size-touch); }
-
 /* Phone-only summary cell: text wraps, no clipping, small gap between children. */
 .wm-req-summary { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 .wm-req-summary > * + * { margin-top: var(--wm-space-1); }
 
 /* Tap targets on action buttons below the 576 px phone breakpoint. */
 @media (max-width: 575.98px) {
+  /* Header and row checkboxes match (rem, not em). The 44 px tap area sits on the wrapping label padding. */
+  .form-check-input.wm-check-sm { width: 1.25rem; height: 1.25rem; }
+
   .wm-queue-table td.actions .btn,
   .wm-queue-table .wm-row-actions-cell .btn {
     min-height: var(--wm-size-touch);

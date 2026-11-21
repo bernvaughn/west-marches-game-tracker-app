@@ -81,3 +81,18 @@ def test_queue_header_checkbox_has_wm_check_sm(login, club, game_master, hex_map
     header_box = soup.select_one("#bulk-select-all")
     assert header_box is not None
     assert "wm-check-sm" in header_box.get("class", [])
+
+
+def test_queue_checkbox_cells_are_visible_on_desktop(login, club, game_master, hex_map, player):
+    """Checkbox th and td must not carry d-sm-none, which would hide them at 576 px and wider."""
+    owner = Membership.objects.get(user=player, club=club)
+    _create_request(club, hex_map, owner, 1, 1)
+    body = login(game_master).get(_url(club)).content.decode()
+    soup = BeautifulSoup(body, "html.parser")
+    head_cell = soup.select_one("#bulk-select-all").find_parent(["th", "td"])
+    row_cell = soup.select_one("input[name=requests]").find_parent(["th", "td"])
+    for cell in (head_cell, row_cell):
+        assert "d-sm-none" not in cell.get("class", [])
+    # Header and row boxes share one size class and sit in a label with tap padding.
+    assert "wm-check-sm" in soup.select_one("input[name=requests]").get("class", [])
+    assert soup.select_one("input[name=requests]").find_parent("label") is not None

@@ -21,13 +21,13 @@
 {% endif %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table align-middle wm-queue-table" id="queue-table">
 <thead><tr>
-{% if is_editor %}<th class="actions d-sm-none"><label class="d-inline-flex p-2"><input type="checkbox" id="bulk-select-all" class="form-check-input wm-check-sm" aria-label="Select all requests"></label></th>{% endif %}
+{% if is_editor %}<th class="actions"><label class="d-inline-flex p-2"><input type="checkbox" id="bulk-select-all" class="form-check-input wm-check-sm" aria-label="Select all requests"></label></th>{% endif %}
 <th class="d-sm-none">Request</th>
 <th class="wm-col-optional">Kind</th><th class="wm-col-optional">Map and position</th><th class="wm-col-optional">Location</th><th class="wm-col-optional">Characters</th><th class="wm-col-optional">Date</th><th class="wm-col-optional">Note</th><th class="wm-col-optional">Requested by</th><th class="wm-col-optional">Status</th><th class="wm-col-optional">Decided</th>{% if is_editor %}<th class="actions"><span class="visually-hidden">Actions</span></th>{% endif %}</tr></thead>
 <tbody>
 {% for req in requests %}
 <tr>
-{% if is_editor %}<td class="actions d-sm-none">{% if req.status == "requested" %}<input type="checkbox" name="requests" class="form-check-input wm-check-sm" value="{{ req.pk }}" aria-label="Select request from {{ req.requested_by.user.display_name }}">{% endif %}</td>{% endif %}
+{% if is_editor %}<td class="actions">{% if req.status == "requested" %}<label class="d-inline-flex p-2"><input type="checkbox" name="requests" class="form-check-input wm-check-sm" value="{{ req.pk }}" aria-label="Select request from {{ req.requested_by.user.display_name }}"></label>{% endif %}</td>{% endif %}
 <td class="d-sm-none wm-req-summary">
   {% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}
   <div class="wm-badge-row">

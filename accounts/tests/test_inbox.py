@@ -486,3 +486,17 @@ def test_inbox_starting_request_shows_badge_in_phone_block(
     _, inbox = _urls(club)
     page = login(club_admin).get(inbox).content.decode()
     assert 'class="badge text-bg-primary">Starting request</span>' in page
+
+
+def test_wm_check_sm_is_phone_scoped_in_css():
+    """The checkbox size rule sits inside the phone media query, so wider layouts are unchanged."""
+    import re
+    from pathlib import Path
+
+    css = Path("static/css/areas/accounts.css").read_text()
+    for m in re.finditer(r"[^{}]*\.wm-check-sm[^{}]*\{", css):
+        before = css[: m.start()]
+        last_media = before.rfind("@media")
+        assert last_media != -1
+        assert "max-width: 575.98px" in before[last_media:]
+        assert before[last_media:].count("{") - before[last_media:].count("}") >= 1
