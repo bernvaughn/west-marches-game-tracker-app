@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "downtime",
     "agent_access",
     "starting_equipment",
+    "mail",
 ]
 
 MIDDLEWARE = [
@@ -167,7 +168,25 @@ STORAGES = {
     "staticfiles": {"BACKEND": "config.static_storage.VersionedStaticFilesStorage"},
 }
 
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Mail settings
+RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+RESEND_WEBHOOK_SECRET = os.environ.get("RESEND_WEBHOOK_SECRET")
+EMAIL_FROM = os.environ.get("EMAIL_FROM", f"{APP_NAME} <noreply@localhost>")
+
+# SITE_URL for email links and base_context
+_allowed = ALLOWED_HOSTS[0] if ALLOWED_HOSTS else "localhost"
+SITE_URL = os.environ.get("SITE_URL", f"https://{_allowed}")
+
+# Mail enabled: true when key is set or DEBUG
+MAIL_ENABLED = bool(RESEND_API_KEY) or DEBUG
+
+# Email backend selection (lazy import via dotted path)
+if RESEND_API_KEY:
+    EMAIL_BACKEND = "mail.backends.ResendBackend"
+elif DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+else:
+    EMAIL_BACKEND = "mail.backends.DisabledBackend"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Cache configuration
