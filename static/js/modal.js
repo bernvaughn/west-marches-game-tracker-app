@@ -17,3 +17,15 @@ document.addEventListener("DOMContentLoaded", function () {
     content.innerHTML = "";
   });
 });
+
+/* Prevent default navigation for modal links inside SVG (SVGAElement).
+   htmx only calls preventDefault() on HTMLAnchorElement, so SVG <a> links
+   with data-app-modal and hx-get would navigate instead of opening the modal. */
+document.addEventListener("click", function (evt) {
+  var link = evt.target.closest("a[data-app-modal][hx-get]");
+  if (!link) return;
+  if (evt.defaultPrevented) return;
+  if (evt.button !== 0) return;
+  if (evt.ctrlKey || evt.metaKey || evt.shiftKey || evt.altKey) return;
+  evt.preventDefault();
+}, true);
