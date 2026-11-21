@@ -1,13 +1,11 @@
-"""Tests for the new contextual action card providers."""
+"""Tests for the dashboard action card providers (kept older providers)."""
 
 import pytest
 
 from accounts.dashboard_providers import (
-    DowntimeAvailableProvider,
-    JunkSummaryProvider,
-    QuestsReadyProvider,
-    get_providers,
-    register_provider,
+    DowntimeDashboardProvider,
+    QuestsDashboardProvider,
+    QuickActionsProvider,
 )
 from accounts.models import Membership
 from downtime import services as downtime_services
@@ -18,33 +16,17 @@ from player_characters.junk import JunkMark
 
 @pytest.fixture
 def provider_quests():
-    return QuestsReadyProvider()
+    return QuestsDashboardProvider()
 
 
 @pytest.fixture
-def provider_junk():
-    return JunkSummaryProvider()
+def provider_quick_actions():
+    return QuickActionsProvider()
 
 
 @pytest.fixture
 def provider_downtime():
-    return DowntimeAvailableProvider()
-
-
-@pytest.fixture(autouse=True)
-def register_providers():
-    """Ensure the new providers are registered for tests."""
-    wanted = {"quests_ready", "junk_summary", "downtime_available"}
-    for p in get_providers():
-        wanted.discard(p.key)
-    for key, cls in (
-        ("quests_ready", QuestsReadyProvider),
-        ("junk_summary", JunkSummaryProvider),
-        ("downtime_available", DowntimeAvailableProvider),
-    ):
-        if key in wanted:
-            register_provider(cls())
-    yield
+    return DowntimeDashboardProvider()
 
 
 class MockRequest:
@@ -80,44 +62,60 @@ def entries(action):
 
 
 # ---------------------------------------------------------------------------
-# Dashboard view rendering
+# Dashboard view rendering - one card per topic
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
-def test_dashboard_shows_quests_ready_card(club, player, character, quest, item, give, login):
-    """Dashboard renders the quests_ready card when a quest is completable."""
+def test_dashboard_shows_quests_card(club, player, character, quest, item, give, login):
+    """Dashboard renders the quests card when a quest is completable."""
     give(character, item, 2)
     c = login(player)
     resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert 'id="dashboard-card-quests_ready"' in body
+    assert 'id="dashboard-card-quests"' in body
     assert quest.name in body
     assert "Turn in" in body
 
 
 @pytest.mark.django_db
-def test_dashboard_hides_quests_ready_card(club, player, character, quest, login):
-    """Dashboard hides the quests_ready card when no quest is completable."""
+def test_dashboard_shows_quests_card_empty_fallback(club, player, character, login):
+    """Dashboard shows Quest Board fallback when no quests are ready."""
     c = login(player)
     resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert 'id="dashboard-card-quests_ready"' not in body
+    assert 'id="dashboard-card-quests"' in body
+    assert "Quest Board" in body
 
 
 @pytest.mark.django_db
-def test_dashboard_shows_junk_card(club, player, character, item, login):
-    """Dashboard renders the junk_summary card when the character has junk."""
+def test_dashboard_shows_quick_actions_card_with_junk(club, player, character, item, login):
+    """Dashboard renders the quick_actions card when the character has junk."""
     record(character, "award", [Line(item=item, quantity=3)], note="t", actor=player)
     JunkMark.objects.create(character=character, item=item, quantity=2)
     c = login(player)
     resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert 'id="dashboard-card-junk_summary"' in body
-    assert "Sell junk" in body
+    assert 'id="dashboard-card-quick_actions"' in body
+    assert "Sell Junk" in body
+
+
+@pytest.mark.django_db
+def test_dashboard_shows_quick_actions_card_always(club, player, character, login):
+    """Quick actions card is always rendered (should_show=True) even when empty.
+
+    This ensures the HTMX partial endpoint returns 200 after the last junk sale,
+    allowing the card to refresh properly.
+    """
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert 'id="dashboard-card-quick_actions"' in body
+    assert "No quick actions available" in body
 
 
 @pytest.mark.django_db
@@ -141,75 +139,56 @@ def test_dashboard_downtime_card_has_valid_refresh_target(
 
 
 @pytest.mark.django_db
-def test_dashboard_hides_junk_card(club, player, character, login):
-    """Dashboard hides the junk_summary card when the character has no junk."""
-    c = login(player)
-    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
-    assert resp.status_code == 200
-    body = resp.content.decode()
-    assert 'id="dashboard-card-junk_summary"' not in body
-
-
-@pytest.mark.django_db
 def test_dashboard_shows_downtime_card(club, player, character, action, entries, login):
-    """Dashboard renders the downtime_available card when points and an affordable action exist."""
+    """Dashboard renders the downtime card when points and an affordable action exist."""
     downtime_services.award(character, 1, note="t", by=player)
     c = login(player)
     resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
     assert resp.status_code == 200
     body = resp.content.decode()
-    assert 'id="dashboard-card-downtime_available"' in body
+    assert 'id="dashboard-card-downtime"' in body
     assert action.name in body
-    assert "Take job" in body
-
-
-@pytest.mark.django_db
-def test_dashboard_hides_downtime_card(club, player, character, login):
-    """Dashboard hides the downtime_available card when the character has no points."""
-    c = login(player)
-    resp = c.get(f"/c/{club.slug}/accounts/dashboard/")
-    assert resp.status_code == 200
-    body = resp.content.decode()
-    assert 'id="dashboard-card-downtime_available"' not in body
+    assert "Spend" in body
 
 
 # ---------------------------------------------------------------------------
-# QuestsReadyProvider
+# QuestsDashboardProvider
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
 def test_quests_provider_attributes(provider_quests):
     """Provider has the expected key, order and template."""
-    assert provider_quests.key == "quests_ready"
-    assert provider_quests.order == 10
-    assert provider_quests.template == "accounts/dashboard_partials/_quests_ready.html"
+    assert provider_quests.key == "quests"
+    assert provider_quests.order == 3
+    assert provider_quests.template == "accounts/_dashboard_quests.html"
 
 
 @pytest.mark.django_db
 def test_quests_should_show_true_when_ready(
     provider_quests, player, club, character, quest, item, give
 ):
-    """should_show is True when the character has a completable quest."""
+    """should_show is True when the character has a completable quest (defaults to True)."""
     give(character, item, 2)  # meet the quest requirement
+    request = MockRequest(club, player)
+    membership = _membership(player, club)
+    # QuestsDashboardProvider doesn't override should_show, so it's always True
+    assert provider_quests.should_show(request, club, character, membership) is True
+
+
+@pytest.mark.django_db
+def test_quests_should_show_true_when_not_ready(provider_quests, player, club, character, quest):
+    """should_show is True even when the character lacks the quest requirements."""
     request = MockRequest(club, player)
     membership = _membership(player, club)
     assert provider_quests.should_show(request, club, character, membership) is True
 
 
 @pytest.mark.django_db
-def test_quests_should_show_false_when_not_ready(provider_quests, player, club, character, quest):
-    """should_show is False when the character lacks the quest requirements."""
-    request = MockRequest(club, player)
-    membership = _membership(player, club)
-    assert provider_quests.should_show(request, club, character, membership) is False
-
-
-@pytest.mark.django_db
 def test_quests_get_context_keys(
     provider_quests, player, club, character, quest, item, give, reward_item
 ):
-    """get_context returns ready_quests with quest, reward_summary and url."""
+    """get_context returns ready_quests and quest_items with fallback."""
     give(character, item, 2)
     request = MockRequest(club, player)
     membership = _membership(player, club)
@@ -217,76 +196,76 @@ def test_quests_get_context_keys(
     ctx = provider_quests.get_context(request, club, character, membership)
 
     assert "ready_quests" in ctx
+    assert "quest_items" in ctx
     assert len(ctx["ready_quests"]) == 1
-    entry = ctx["ready_quests"][0]
-    assert entry["quest"].pk == quest.pk
-    assert entry["url"] == f"/c/{club.slug}/quests/{quest.pk}/"
-    assert "10 gp" in entry["reward_summary"]
-    assert "Healing potion" in entry["reward_summary"]
+    assert ctx["ready_quests"][0].pk == quest.pk
+    # quest_items includes the ready quest with Details/Turn in buttons
+    assert len(ctx["quest_items"]) >= 1
 
 
 # ---------------------------------------------------------------------------
-# JunkSummaryProvider
+# QuickActionsProvider
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
-def test_junk_provider_attributes(provider_junk):
+def test_quick_actions_provider_attributes(provider_quick_actions):
     """Provider has the expected key, order and template."""
-    assert provider_junk.key == "junk_summary"
-    assert provider_junk.order == 20
-    assert provider_junk.template == "accounts/dashboard_partials/_junk_summary.html"
+    assert provider_quick_actions.key == "quick_actions"
+    assert provider_quick_actions.order == 1
+    assert provider_quick_actions.template == "accounts/_dashboard_quick_actions.html"
 
 
 @pytest.mark.django_db
-def test_junk_should_show_true_when_junk(provider_junk, player, club, character, item):
-    """should_show is True when the character has marked junk."""
+def test_quick_actions_should_show_always_true(provider_quick_actions, player, club, character):
+    """should_show is always True so the partial endpoint returns 200 even when empty."""
+    request = MockRequest(club, player)
+    membership = _membership(player, club)
+    assert provider_quick_actions.should_show(request, club, character, membership) is True
+
+
+@pytest.mark.django_db
+def test_quick_actions_get_context_keys(provider_quick_actions, player, club, character, item):
+    """get_context returns has_junk, has_potions, junk_count."""
+    request = MockRequest(club, player)
+    membership = _membership(player, club)
+
+    ctx = provider_quick_actions.get_context(request, club, character, membership)
+
+    assert "has_junk" in ctx
+    assert "has_potions" in ctx
+    assert "junk_count" in ctx
+    assert ctx["has_junk"] is False
+    assert ctx["has_potions"] is False
+    assert ctx["junk_count"] == 0
+
+
+@pytest.mark.django_db
+def test_quick_actions_get_context_with_junk(provider_quick_actions, player, club, character, item):
+    """get_context reflects junk when present."""
     record(character, "award", [Line(item=item, quantity=3)], note="t", actor=player)
     JunkMark.objects.create(character=character, item=item, quantity=2)
     request = MockRequest(club, player)
     membership = _membership(player, club)
-    assert provider_junk.should_show(request, club, character, membership) is True
 
+    ctx = provider_quick_actions.get_context(request, club, character, membership)
 
-@pytest.mark.django_db
-def test_junk_should_show_false_when_no_junk(provider_junk, player, club, character):
-    """should_show is False when the character has no marked junk."""
-    request = MockRequest(club, player)
-    membership = _membership(player, club)
-    assert provider_junk.should_show(request, club, character, membership) is False
-
-
-@pytest.mark.django_db
-def test_junk_get_context_keys(provider_junk, player, club, character, item):
-    """get_context returns junk_rows, junk_value and sell_url."""
-    item.value_cp = 250
-    item.save(update_fields=["value_cp"])
-    record(character, "award", [Line(item=item, quantity=3)], note="t", actor=player)
-    JunkMark.objects.create(character=character, item=item, quantity=2)
-    request = MockRequest(club, player)
-    membership = _membership(player, club)
-
-    ctx = provider_junk.get_context(request, club, character, membership)
-
-    assert "junk_rows" in ctx
-    assert "junk_value" in ctx
-    assert "sell_url" in ctx
-    assert len(ctx["junk_rows"]) == 1
-    assert ctx["junk_value"] == "5 gp"
-    assert ctx["sell_url"] == f"/c/{club.slug}/accounts/dashboard/partial/quick_action_sell_junk/"
+    assert ctx["has_junk"] is True
+    # junk_count is the number of junk rows (item types), not total quantity
+    assert ctx["junk_count"] == 1
 
 
 # ---------------------------------------------------------------------------
-# DowntimeAvailableProvider
+# DowntimeDashboardProvider
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.django_db
 def test_downtime_provider_attributes(provider_downtime):
     """Provider has the expected key, order and template."""
-    assert provider_downtime.key == "downtime_available"
-    assert provider_downtime.order == 30
-    assert provider_downtime.template == "accounts/dashboard_partials/_downtime_actions.html"
+    assert provider_downtime.key == "downtime"
+    assert provider_downtime.order == 4
+    assert provider_downtime.template == "accounts/_dashboard_downtime.html"
 
 
 @pytest.mark.django_db
@@ -301,31 +280,38 @@ def test_downtime_should_show_true_when_points_and_action(
 
 
 @pytest.mark.django_db
-def test_downtime_should_show_false_when_no_points(
+def test_downtime_should_show_true_when_no_points_but_actions_exist(
     provider_downtime, player, club, character, action, entries
 ):
-    """should_show is False when the character has no downtime points."""
+    """should_show is True when live actions exist, even with zero points.
+
+    DowntimeDashboardProvider.should_show only checks for live actions with entries,
+    not the character's balance. Balance affects action.affordable in context.
+    """
     request = MockRequest(club, player)
     membership = _membership(player, club)
-    assert provider_downtime.should_show(request, club, character, membership) is False
+    assert provider_downtime.should_show(request, club, character, membership) is True
 
 
 @pytest.mark.django_db
-def test_downtime_should_show_false_when_action_unaffordable(
+def test_downtime_should_show_true_when_action_unaffordable(
     provider_downtime, player, club, character, action, entries
 ):
-    """should_show is False when all actions cost more than the balance."""
+    """should_show is True when live actions exist, even if unaffordable.
+
+    Affordability is reflected in the context (action.affordable=False), not in should_show.
+    """
     action.cost = 5
     action.save(update_fields=["cost"])
     downtime_services.award(character, 1, note="test", by=player)
     request = MockRequest(club, player)
     membership = _membership(player, club)
-    assert provider_downtime.should_show(request, club, character, membership) is False
+    assert provider_downtime.should_show(request, club, character, membership) is True
 
 
 @pytest.mark.django_db
 def test_downtime_get_context_keys(provider_downtime, player, club, character, action, entries):
-    """get_context returns affordable actions with cost, reward_type and spend_url."""
+    """get_context returns actions with cost, reason, affordable and spend_url."""
     downtime_services.award(character, 1, note="test", by=player)
     request = MockRequest(club, player)
     membership = _membership(player, club)
@@ -339,10 +325,48 @@ def test_downtime_get_context_keys(provider_downtime, player, club, character, a
     act = ctx["actions"][0]
     assert act["action"].pk == action.pk
     assert act["cost"] == action.cost
-    assert act["reward_type"] == "coins"
+    assert act["affordable"] is True
     assert (
         act["spend_url"] == f"/c/{club.slug}/accounts/dashboard/partial/downtime_spend/{action.pk}/"
     )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard partial endpoint returns 200 for kept providers
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_dashboard_partial_quests_returns_200(club, player, character, login):
+    """dashboard_partial for quests returns 200 even when no quests are ready."""
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/partial/quests/")
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert 'id="dashboard-card-quests"' in body
+
+
+@pytest.mark.django_db
+def test_dashboard_partial_quick_actions_returns_200(club, player, character, login):
+    """dashboard_partial for quick_actions returns 200 even when no junk/potions."""
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/partial/quick_actions/")
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert 'id="dashboard-card-quick_actions"' in body
+
+
+@pytest.mark.django_db
+def test_dashboard_partial_downtime_returns_200_when_available(
+    club, player, character, action, entries, login
+):
+    """dashboard_partial for downtime returns 200 when actions are available."""
+    downtime_services.award(character, 1, note="test", by=player)
+    c = login(player)
+    resp = c.get(f"/c/{club.slug}/accounts/dashboard/partial/downtime/")
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert 'id="dashboard-card-downtime"' in body
 
 
 # ---------------------------------------------------------------------------
