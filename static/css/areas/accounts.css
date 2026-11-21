@@ -180,11 +180,12 @@
 .wm-dashboard-section .list-group-item .btn { position: relative; z-index: 2; }
 .wm-dashboard-section .list-group-item a.text-decoration-none { display: flex; align-items: center; gap: var(--wm-space-2); width: 100%; }
 .wm-dashboard-section .list-group-item small.text-muted { font-size: var(--wm-text-sm); }
+.wm-dashboard-section strong { overflow-wrap: anywhere; }
 
 /* Latest awards card (U135) */
 .wm-recent-awards .list-group-item { padding-top: var(--wm-space-1); padding-bottom: var(--wm-space-1); }
 .wm-recent-awards .wm-dashboard-date { white-space: nowrap; }
-.wm-award-lines { color: var(--wm-text-muted); }
+.wm-recent-awards .wm-award-lines { color: var(--wm-text); }
 
 @media (max-width: 575.98px) {
   .wm-dashboard-grid { grid-template-columns: 1fr; }

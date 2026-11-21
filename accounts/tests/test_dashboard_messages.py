@@ -1,5 +1,7 @@
 """Tests for My Messages dashboard provider and message detail view."""
 
+import re
+
 import pytest
 from django.urls import reverse
 
@@ -73,11 +75,11 @@ def test_dashboard_my_messages_shows_subject_date_status(
     # Status badges
     assert "Open" in content
     assert "Handled" in content
-    # Date format (M d, Y H:i)
-    # Check that date appears
+    # Date format matches Latest awards (j M Y), no time
     import re
 
-    assert re.search(r"\w{3} \d{1,2}, \d{4} \d{2}:\d{2}", content)
+    assert re.search(r"\d{1,2} \w{3} \d{4}", content)
+    assert not re.search(r"\d{2}:\d{2}", content)
 
 
 @pytest.mark.story("S9")
@@ -216,11 +218,14 @@ def test_messages_card_no_badge_when_only_other_player_has_open_messages(
 def test_dashboard_my_messages_shows_character_name(
     club, player, character, player_with_messages, login
 ):
-    """Message row shows character name when message has character."""
+    """Message row shows character name when message has character, no brackets."""
     c = login(player)
     resp = c.get(_url_dashboard(club))
     content = resp.content.decode()
+    # Name shown as muted text, not wrapped in brackets
     assert character.name in content
+    assert f"({character.name})" not in content
+    assert re.search(r'class="text-muted[^"]*"\s*>' + re.escape(character.name) + r"<", content)
 
 
 @pytest.mark.story("S9")

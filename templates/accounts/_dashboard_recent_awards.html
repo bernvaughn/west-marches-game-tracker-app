@@ -5,22 +5,25 @@
 {% load coins %}
 {% if recent_awards %}
 <div class="wm-dashboard-section card wm-card-raised mb-4 no-print">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="trophy" %}
+      Latest awards
+    </h3>
+  </div>
   <div class="card-body p-0">
     <ul class="list-group list-group-flush wm-recent-awards">
-      <li class="list-group-item py-2">
-        <h6 class="h6 mb-0">Latest awards</h6>
-      </li>
       {% for award in recent_awards %}
       <li class="list-group-item py-2">
-        <div class="d-flex w-100 justify-content-between align-items-start">
-          <span class="text-muted small wm-dashboard-date">{{ award.date }}</span>
-          {% if award.note %}<span class="text-muted small ms-2">{{ award.note }}</span>{% endif %}
-        </div>
-        <div class="wm-award-lines mt-1 small">
+        <div class="fw-medium small wm-award-lines">
           {% if award.points %}+{{ award.points }} downtime points{% endif %}
           {% if award.coins %}{% if award.points %}, {% endif %}{{ award.coins|coins }}{% endif %}
           {% for name, qty in award.items %}{% if award.points or award.coins or not forloop.first %}, {% endif %}{{ qty }} x {{ name }}{% endfor %}
           {% if not award.points and not award.coins and not award.items %}—{% endif %}
+        </div>
+        <div class="text-muted small mt-1">
+          <span class="wm-dashboard-date">{{ award.date }}</span>
+          {% if award.note %} <span class="mx-1">·</span> <span>{{ award.note }}</span>{% endif %}
         </div>
       </li>
       {% endfor %}

@@ -10,16 +10,17 @@
     <ul class="list-group list-group-flush">
       {% for row in provider_context.message_rows %}
       <li class="list-group-item px-3 py-2">
-        <div class="d-flex flex-column flex-sm-row gap-2 align-items-sm-start justify-content-between">
+        <div class="d-flex flex-column gap-2">
           <div class="flex-grow-1">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <strong class="mb-0">{{ row.subject }}</strong>
               <span class="badge {{ row.status_badge_class }}">{{ row.status_display }}</span>
             </div>
             <div class="text-muted small mt-1">
-              <span>{{ row.sent_date|date:"M d, Y H:i" }}</span>
+              <span>{{ row.sent_date|date }}</span>
               {% if row.message.character %}
-                <span class="ms-2">({{ row.message.character.name }})</span>
+                <span class="mx-2">·</span>
+                <span class="text-muted">{{ row.message.character.name }}</span>
               {% endif %}
             </div>
             {% if row.admin_note_preview %}
@@ -28,12 +29,10 @@
             </div>
             {% endif %}
           </div>
-          <div class="flex-shrink-0 mt-2 mt-sm-0">
-            <a href="{{ row.detail_url }}" class="btn btn-sm btn-outline-primary">
-              {% include "components/icon.html" with name="eye" class="me-1" %}
-              View Response
-            </a>
-          </div>
+          <a href="{{ row.detail_url }}" class="btn btn-sm btn-outline-primary mt-2 align-self-start">
+            {% include "components/icon.html" with name="eye" class="me-1" %}
+            View Response
+          </a>
         </div>
       </li>
       {% empty %}

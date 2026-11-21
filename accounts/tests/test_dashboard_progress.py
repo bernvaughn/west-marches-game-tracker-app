@@ -266,6 +266,41 @@ def test_recent_awards_empty_hidden(club, player, character, login):
     assert "Latest awards" not in html
 
 
+@pytest.mark.django_db
+def test_recent_awards_card_header_with_trophy_icon(club, player, character, item, login):
+    """Latest awards card uses a card-header with trophy icon, like the other cards."""
+    today = timezone.localdate()
+    _award_ledger(character, item, "award", qty=1, note="Found treasure", date=today)
+    c = login(player)
+    resp = _dashboard(c, club.slug)
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert "Latest awards" in html
+    assert "#trophy" in html
+    assert "card-header" in html
+
+
+@pytest.mark.django_db
+def test_recent_awards_award_line_before_date(club, player, character, item, login):
+    """Award text comes first, then the muted date line, in clear reading order."""
+    from django.utils import dateformat
+
+    today = timezone.localdate()
+    _award_ledger(character, item, "award", qty=2, note="Found treasure", date=today)
+    c = login(player)
+    resp = _dashboard(c, club.slug)
+    assert resp.status_code == 200
+    html = resp.content.decode()
+    assert "2 x Rope" in html
+    assert "Found treasure" in html
+    date_str = dateformat.format(today, "j M Y")
+    award_pos = html.find("2 x Rope")
+    date_pos = html.find(date_str)
+    assert award_pos != -1
+    assert date_pos != -1
+    assert award_pos < date_pos, "award line should appear before the date"
+
+
 # ---------------------------------------------------------------------------
 # Print
 # ---------------------------------------------------------------------------
