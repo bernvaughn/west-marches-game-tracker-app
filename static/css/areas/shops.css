@@ -42,16 +42,62 @@
 @media (prefers-reduced-motion: reduce) { .wm-street-link { transition: none; } .wm-street-link:hover { transform: none; } }
 @media (max-width: 1199px) {
   .wm-street-link { padding-left: var(--wm-space-1); padding-right: var(--wm-space-1); }
-  .wm-street-sign { font-size: .6875rem; }
+  .wm-street-sign { font-size: var(--wm-text-xs); }
 }
 /* The narrowest lots: 8 per row at 768-991 px, and 4 per row below 360 px. */
-@media (max-width: 359px), (min-width: 768px) and (max-width: 991px) { .wm-street-sign { font-size: .625rem; } }
+@media (max-width: 359px), (min-width: 768px) and (max-width: 991px) { .wm-street-sign { font-size: var(--wm-text-xs); } }
 @media print {
   .wm-street-lot--filler { display: none; }
   .wm-street { display: block; }
   .wm-street-lot::after, .wm-building { display: none; }
   .wm-street-link { padding: 0; }
   .wm-street-sign { position: static; display: inline; border: 0; background: none; }
+  .wm-favorite-wrapper { display: none; }
+}
+
+/* ---- Favourite star (U49/U77) ---- */
+.wm-favorite-wrapper {
+  display: flex;
+  justify-content: center;
+}
+.wm-favorite-form {
+  margin: 0;
+}
+.wm-favorite-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--wm-size-touch);
+  min-height: var(--wm-size-touch);
+  padding: 0;
+  font: inherit;
+  font-size: var(--wm-text-lg);
+  line-height: 1;
+  color: var(--wm-text-muted);
+  background: var(--wm-surface-raised);
+  border: 1px solid var(--wm-border);
+  border-radius: var(--wm-radius-sm);
+  cursor: pointer;
+}
+.wm-favorite-btn:hover {
+  border-color: var(--wm-accent);
+  color: var(--wm-accent);
+}
+.wm-favorite-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--wm-focus-ring);
+  border-color: var(--wm-accent);
+}
+.wm-favorite-btn.active {
+  color: var(--wm-accent);
+  background: rgba(var(--wm-accent-rgb), .12);
+  border-color: var(--wm-accent);
+  font-weight: 700;
+}
+.wm-favorite-btn[disabled] {
+  opacity: .6;
+  cursor: progress;
 }
 
 /* ---- Shop tabs (S11) ---- */
