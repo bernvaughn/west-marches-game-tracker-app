@@ -109,6 +109,29 @@ def _downtime_result(aria):
         )
 
 
+def _play_session(club):
+    """A game night next week, run by the demo game master."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from accounts.models import Membership
+    from play_sessions.models import PlaySession
+
+    gm = Membership.objects.filter(club=club, user__email="gm@example.com").first()
+    PlaySession.objects.get_or_create(
+        club=club,
+        title="Return to the Wolf Den",
+        defaults={
+            "starts_at": timezone.now() + timedelta(days=7),
+            "ends_at": timezone.now() + timedelta(days=7, hours=3),
+            "game_master": gm,
+            "location": "The back room of The Rusty Lantern",
+            "notes": "Bring torches. We meet at the gate.",
+        },
+    )
+
+
 def extra_fixtures():
     """Add objects that `seed_demo` lacks. Safe to run twice.
 
@@ -123,6 +146,7 @@ def extra_fixtures():
     _junk(aria)
     _point_request(club, aria)
     _downtime_result(aria)
+    _play_session(club)
 
 
 def demo_objects() -> SimpleNamespace:
@@ -132,6 +156,7 @@ def demo_objects() -> SimpleNamespace:
     from items.models import Item
     from ledger.services import available_items
     from map.models import Encounter, HexMap, Location, MapRequest
+    from play_sessions.models import PlaySession
     from player_characters.models import Character
     from quests.models import Quest
     from shops.models import Rotation, Shop, ShopStock
@@ -170,6 +195,7 @@ def demo_objects() -> SimpleNamespace:
         result=DowntimeResult.objects.first(),
         point_request=DowntimePointRequest.objects.first(),
         bakery=DowntimeAction.objects.get(club=club, name="Work at a bakery"),
+        play_session=PlaySession.objects.filter(club=club).first(),
     )
 
 
@@ -601,6 +627,13 @@ def _build_pages() -> list[Page]:
             widths=(1280,),
             audit_widths=(1920, 1280, 768),
             modal_url=_c("downtime:agenda_add"),
+        ),
+        # play sessions
+        P("play-sessions-detail", "gm", _c("play_sessions:session_detail", "play_session.pk")),
+        P(
+            "play-sessions-detail-player",
+            "alice",
+            _c("play_sessions:session_detail", "play_session.pk"),
         ),
         # map
         P(

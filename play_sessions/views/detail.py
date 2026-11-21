@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.template.loader import render_to_string
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
@@ -34,7 +35,7 @@ def session_detail(request, club_slug, pk):
             "can_manage": can_manage,
             **section["context_fn"](request, session),
         }
-        html = render(request, section["template"], context).content.decode()
+        html = render_to_string(section["template"], context, request=request)
         sections_html.append({"key": section["key"], "html": html})
 
     context = {
