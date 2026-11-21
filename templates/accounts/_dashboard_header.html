@@ -63,5 +63,12 @@
       </div>
       {% endif %}
     </div>
+
+    {% if xp_progress %}
+    <div class="wm-xp-section mt-3">
+      {% include "player_characters/characters/_xp_progress.html" with can_edit=True %}
+    </div>
+    {% endif %}
+
   </div>
 </div>

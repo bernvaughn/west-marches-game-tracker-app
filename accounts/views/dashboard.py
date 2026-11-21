@@ -9,9 +9,11 @@ from django.template.loader import render_to_string
 from accounts.dashboard_providers import build_header_stats, get_provider, get_providers
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
+from downtime.models import DowntimePointEntry
 from ledger.models import LedgerEntry
 from player_characters.models import Character
 from player_characters.selection import selected_character
+from player_characters.sheet import xp_progress
 
 # =============================================================================
 # Dashboard Context Building (Uses Unified Provider System)
@@ -40,12 +42,82 @@ def _get_dashboard_context(request, club, character, membership):
                 }
             )
 
+    recent = _recent_awards(character)
+
     return {
         "character": character,
         "membership": membership,
         "dashboard_providers": providers,
+        "xp_progress": xp_progress(character),
+        "recent_awards": recent,
         **header_ctx,
     }
+
+
+def _recent_awards(character, limit=5):
+    """Merge ledger awards and downtime point awards for a character.
+
+    Returns up to `limit` items, newest first, each a dict with keys:
+    date, created, kind, coins, items, points, note.
+    """
+    ledger_entries = (
+        LedgerEntry.objects.filter(
+            character=character,
+            kind__in=[
+                LedgerEntry.Kind.AWARD,
+                LedgerEntry.Kind.QUEST_REWARD,
+                LedgerEntry.Kind.ADJUSTMENT,
+                LedgerEntry.Kind.REVERSAL,
+            ],
+        )
+        .prefetch_related("lines__item")
+        .order_by("-date", "-id")[:limit]
+    )
+
+    downtime_entries = DowntimePointEntry.objects.filter(
+        character=character,
+        kind=DowntimePointEntry.Kind.AWARD,
+    ).order_by("-date", "-id")[:limit]
+
+    awards = []
+    for entry in ledger_entries:
+        coins = sum(line.coins for line in entry.lines.all())
+        items = [
+            (line.item.name, line.quantity)
+            for line in entry.lines.all()
+            if line.item_id and line.quantity
+        ]
+        awards.append(
+            {
+                "date": entry.date,
+                "created": entry.created,
+                "pk": entry.pk,
+                "kind": "ledger",
+                "coins": coins,
+                "items": items,
+                "points": None,
+                "note": entry.note,
+            }
+        )
+
+    for entry in downtime_entries:
+        awards.append(
+            {
+                "date": entry.date,
+                "created": entry.created,
+                "pk": entry.pk,
+                "kind": "downtime",
+                "coins": 0,
+                "items": [],
+                "points": entry.delta,
+                "note": entry.note,
+            }
+        )
+
+    # Sort by (date, created, pk) descending; newest first.
+    awards.sort(key=lambda a: (a["date"], a["created"], a["pk"]), reverse=True)
+
+    return awards[:limit]
 
 
 @club_member_required
