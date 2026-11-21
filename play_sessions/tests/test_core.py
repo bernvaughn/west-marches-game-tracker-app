@@ -1,8 +1,6 @@
-import pytest
 from datetime import datetime
-from unittest.mock import patch
 
-from django.conf import settings
+import pytest
 from django.utils import timezone
 
 from accounts.models import Club, Membership, User
@@ -10,12 +8,13 @@ from play_sessions import core
 from play_sessions.models import PlaySession, SessionRSVP
 from player_characters.models import Character
 
-
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P1")]
 
 
 def test_from_club_local_to_club_local_round_trip():
-    club = Club.objects.create(name="Round Trip Club", slug="round-trip", timezone="America/Chicago")
+    club = Club.objects.create(
+        name="Round Trip Club", slug="round-trip", timezone="America/Chicago"
+    )
     naive = datetime(2024, 6, 15, 14, 30)  # 2:30 PM CDT
     utc = core.from_club_local(club, naive)
     assert utc.tzinfo is not None
@@ -197,10 +196,22 @@ def test_load_hooks_calls_register(monkeypatch):
         def register(self):
             called["yes"] = True
 
-    monkeypatch.setattr(core_module, "discover_module", lambda f, p, pkg=None: FakeModule() if f == "schedule" else None)
+    monkeypatch.setattr(
+        core_module,
+        "discover_module",
+        lambda f, p, pkg=None: FakeModule() if f == "schedule" else None,
+    )
     core_module.load_hooks()
     assert called.get("yes") is True
 
 
 def test_features_content():
-    assert core.FEATURES == ("schedule", "calendar", "rsvp", "attendance", "report", "recap", "settings")
+    assert core.FEATURES == (
+        "schedule",
+        "calendar",
+        "rsvp",
+        "attendance",
+        "report",
+        "recap",
+        "settings",
+    )

@@ -1,5 +1,4 @@
-from django.template.loader import render_to_string
-from django.utils import timezone
+from django.shortcuts import render
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
@@ -35,7 +34,7 @@ def session_detail(request, club_slug, pk):
             "can_manage": can_manage,
             **section["context_fn"](request, session),
         }
-        html = render_to_string(section["template"], context, request=request)
+        html = render(request, section["template"], context).content.decode()
         sections_html.append({"key": section["key"], "html": html})
 
     context = {
@@ -47,4 +46,4 @@ def session_detail(request, club_slug, pk):
         "zone_name": zone.key,
         "sections": sections_html,
     }
-    return render_to_string("play_sessions/session_detail.html", context, request=request)
+    return render(request, "play_sessions/session_detail.html", context)

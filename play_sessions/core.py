@@ -5,19 +5,16 @@ the attendance_saved signal, feature list, and auto-discovery.
 """
 
 import importlib.util
-from datetime import datetime, timezone as dt_timezone
+from datetime import UTC
 
 from django.conf import settings
-from django.db import transaction
 from django.dispatch import Signal
 from django.utils import timezone as dj_timezone
 
 try:
-    from zoneinfo import ZoneInfo
-    from zoneinfo import ZoneInfoNotFoundError
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 except ImportError:  # pragma: no cover - Python < 3.9
-    from backports.zoneinfo import ZoneInfo
-    from backports.zoneinfo import ZoneInfoNotFoundError
+    from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 FEATURES = ("schedule", "calendar", "rsvp", "attendance", "report", "recap", "settings")
 
@@ -48,7 +45,7 @@ def from_club_local(club, naive):
         raise ValueError("from_club_local requires a naive datetime")
     zone = club_zone(club)
     aware = naive.replace(tzinfo=zone, fold=0)
-    return aware.astimezone(dt_timezone.utc)
+    return aware.astimezone(UTC)
 
 
 # --- Permissions -------------------------------------------------------------
@@ -145,9 +142,7 @@ def register_session_section(key, order, template, context_fn, visible_fn=None):
 
 def session_sections(request, session):
     """Return visible sections for a session, sorted by (order, key)."""
-    visible = [
-        s for s in _sections.values() if s["visible_fn"](request, session)
-    ]
+    visible = [s for s in _sections.values() if s["visible_fn"](request, session)]
     visible.sort(key=lambda s: (s["order"], s["key"]))
     return visible
 

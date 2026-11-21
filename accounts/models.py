@@ -7,11 +7,9 @@ from django.utils import timezone
 from .scoping import ClubScopedManager
 
 try:
-    from zoneinfo import ZoneInfo
-    from zoneinfo import ZoneInfoNotFoundError
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 except ImportError:  # pragma: no cover - Python < 3.9
-    from backports.zoneinfo import ZoneInfo
-    from backports.zoneinfo import ZoneInfoNotFoundError
+    from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 def default_timezone():

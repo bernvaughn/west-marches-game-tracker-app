@@ -1,5 +1,6 @@
+from datetime import UTC
+
 import pytest
-from datetime import timezone as dt_timezone
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -9,15 +10,14 @@ from django.utils import timezone
 from accounts.models import Club
 from play_sessions import core
 from play_sessions.models import (
-    SessionSeries,
-    PlaySession,
-    SessionRSVP,
-    SessionAttendance,
     AttendanceChange,
+    PlaySession,
+    SessionAttendance,
     SessionAward,
+    SessionRSVP,
+    SessionSeries,
     SessionSettings,
 )
-
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P1")]
 
@@ -52,29 +52,37 @@ def test_unique_constraints():
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
     character = Character.objects.create(name="Hero", club=club, owner=membership)
 
-    series = SessionSeries.objects.create(club=club, rule=SessionSeries.Rule.WEEKLY, created_by=membership)
+    series = SessionSeries.objects.create(
+        club=club, rule=SessionSeries.Rule.WEEKLY, created_by=membership
+    )
     session = PlaySession.objects.create(
-        club=club, title="Session 1", starts_at=timezone.now(), game_master=membership, series=series
+        club=club,
+        title="Session 1",
+        starts_at=timezone.now(),
+        game_master=membership,
+        series=series,
     )
 
     # Unique session + character for RSVP
     SessionRSVP.objects.create(session=session, character=character, answer=SessionRSVP.Answer.YES)
-    with pytest.raises(IntegrityError):
-        SessionRSVP.objects.create(session=session, character=character, answer=SessionRSVP.Answer.NO)
+    with pytest.raises(IntegrityError), transaction.atomic():
+        SessionRSVP.objects.create(
+            session=session, character=character, answer=SessionRSVP.Answer.NO
+        )
 
     # Unique session + character for Attendance
     SessionAttendance.objects.create(session=session, character=character, played=True)
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError), transaction.atomic():
         SessionAttendance.objects.create(session=session, character=character, played=False)
 
     # Unique session + character for Award
     SessionAward.objects.create(session=session, character=character, points=5)
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError), transaction.atomic():
         SessionAward.objects.create(session=session, character=character, points=3)
 
     # SessionSettings one-to-one
     SessionSettings.objects.create(club=club, award_points=2)
-    with pytest.raises(IntegrityError):
+    with pytest.raises(IntegrityError), transaction.atomic():
         SessionSettings.objects.create(club=club, award_points=3)
 
 
@@ -86,7 +94,9 @@ def test_attendance_change_append_only():
     user = User.objects.create_user(email="gm2@test.com", password="pass12345678")
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
     character = Character.objects.create(name="Hero2", club=club, owner=membership)
-    session = PlaySession.objects.create(club=club, title="Session 2", starts_at=timezone.now(), game_master=membership)
+    session = PlaySession.objects.create(
+        club=club, title="Session 2", starts_at=timezone.now(), game_master=membership
+    )
 
     change = AttendanceChange.objects.create(
         session=session, character=character, old_played=None, new_played=True, changed_by=user
@@ -128,13 +138,12 @@ def test_moment_stored_utc_shown_in_club_zone_across_dst():
     """A moment stored in UTC is shown in the club zone correctly across DST change."""
     club = Club.objects.create(name="NY Club", slug="ny-club", timezone="America/New_York")
     from accounts.models import Membership, User
-    from player_characters.models import Character
 
     user = User.objects.create_user(email="gm3@test.com", password="pass12345678")
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
 
     # March 9, 2024 19:00 EST (UTC-5) -> 2024-03-10 00:00 UTC
-    starts_est = timezone.datetime(2024, 3, 10, 0, 0, tzinfo=dt_timezone.utc)
+    starts_est = timezone.datetime(2024, 3, 10, 0, 0, tzinfo=UTC)
     session1 = PlaySession.objects.create(
         club=club, title="Before DST", starts_at=starts_est, game_master=membership
     )
@@ -143,7 +152,7 @@ def test_moment_stored_utc_shown_in_club_zone_across_dst():
     assert local1.hour == 19
 
     # March 10, 2024 19:00 EDT (UTC-4) -> 2024-03-10 23:00 UTC
-    starts_edt = timezone.datetime(2024, 3, 10, 23, 0, tzinfo=dt_timezone.utc)
+    starts_edt = timezone.datetime(2024, 3, 10, 23, 0, tzinfo=UTC)
     session2 = PlaySession.objects.create(
         club=club, title="After DST", starts_at=starts_edt, game_master=membership
     )
@@ -156,12 +165,11 @@ def test_changing_club_zone_keeps_moment_changes_display():
     """Changing the club timezone keeps the stored UTC moment but changes local display."""
     club = Club.objects.create(name="Zone Club", slug="zone-club", timezone="America/New_York")
     from accounts.models import Membership, User
-    from player_characters.models import Character
 
     user = User.objects.create_user(email="gm4@test.com", password="pass12345678")
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
 
-    utc_moment = timezone.datetime(2024, 6, 15, 12, 0, tzinfo=dt_timezone.utc)
+    utc_moment = timezone.datetime(2024, 6, 15, 12, 0, tzinfo=UTC)
     session = PlaySession.objects.create(
         club=club, title="Zone Test", starts_at=utc_moment, game_master=membership
     )

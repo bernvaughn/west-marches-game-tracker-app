@@ -1,12 +1,12 @@
 from django.contrib import admin
 
 from .models import (
-    SessionSeries,
-    PlaySession,
-    SessionRSVP,
-    SessionAttendance,
     AttendanceChange,
+    PlaySession,
+    SessionAttendance,
     SessionAward,
+    SessionRSVP,
+    SessionSeries,
     SessionSettings,
 )
 
@@ -45,10 +45,25 @@ class SessionAttendanceAdmin(admin.ModelAdmin):
 
 @admin.register(AttendanceChange)
 class AttendanceChangeAdmin(admin.ModelAdmin):
-    list_display = ["id", "session", "character", "old_played", "new_played", "changed_by", "changed_at"]
+    list_display = [
+        "id",
+        "session",
+        "character",
+        "old_played",
+        "new_played",
+        "changed_by",
+        "changed_at",
+    ]
     list_filter = ["session__club"]
     search_fields = ["session__title", "character__name"]
-    readonly_fields = ["session", "character", "old_played", "new_played", "changed_by", "changed_at"]
+    readonly_fields = [
+        "session",
+        "character",
+        "old_played",
+        "new_played",
+        "changed_by",
+        "changed_at",
+    ]
 
     def has_change_permission(self, request, obj=None):
         return False
