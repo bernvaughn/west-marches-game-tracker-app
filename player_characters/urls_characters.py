@@ -22,8 +22,8 @@ app_name = "characters"
 urlpatterns = [
     path("", characters.IndexView.as_view(), name="index"),
     path("mine/", characters.MineView.as_view(), name="mine"),
-    path("archived/", archive_screen.ArchivedView.as_view(), name="archived"),
-    path("fallen/", fallen.FallenView.as_view(), name="fallen"),
+    path("archived/", archive_screen.archived, name="archived"),
+    path("fallen/", fallen.fallen, name="fallen"),
     path("directory/", characters.DirectoryView.as_view(), name="directory"),
     path("new/", characters.CreateView.as_view(), name="create"),
     path("select/", selection.select, name="select"),
@@ -62,8 +62,8 @@ urlpatterns = [
     path("<int:pk>/preview/", selection.character_preview, name="preview"),
     path("bulk-award/", character_adjust.bulk_award, name="bulk_award"),
     # Death and archive (C1 stubs)
-    path("<int:pk>/death/", character_death.DeathView.as_view(), name="death"),
-    path("<int:pk>/death/undo/", character_death.DeathUndoView.as_view(), name="death_undo"),
-    path("<int:pk>/archive/", character_archive.ArchiveView.as_view(), name="archive"),
-    path("<int:pk>/unarchive/", character_archive.UnarchiveView.as_view(), name="unarchive"),
+    path("<int:pk>/death/", character_death.death, name="death"),
+    path("<int:pk>/death/undo/", character_death.death_undo, name="death_undo"),
+    path("<int:pk>/archive/", character_archive.archive, name="archive"),
+    path("<int:pk>/unarchive/", character_archive.unarchive, name="unarchive"),
 ]

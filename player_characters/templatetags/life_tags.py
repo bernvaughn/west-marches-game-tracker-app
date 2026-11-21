@@ -7,7 +7,7 @@ from player_characters.life import buy_block_reason
 register = template.Library()
 
 
-@register.filter
+@register.filter(name="buy_block_reason")
 def buy_block_reason_filter(character):
     """Return the buy block reason text, or empty string for None character."""
     if character is None:

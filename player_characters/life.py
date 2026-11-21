@@ -7,6 +7,8 @@ Permissions (owner/GM/admin/24-hour undo) live in the views.
 from django.db import transaction
 from django.utils import timezone
 
+from player_characters.models import Character, CharacterStatusChange
+
 
 class LifeError(Exception):
     """Raised when a character cannot act due to death/archive state."""
@@ -78,105 +80,107 @@ def require_can_act(character):
 # --- Service functions ---
 
 
+def _apply(character, *, kind, by, note, date, _check, **changes):
+    """Apply `changes` to the locked row, write one history row, refresh `character`.
+
+    The caller's instance is updated in place, so it is current after the call.
+    """
+    with transaction.atomic():
+        locked = Character.objects.select_for_update().get(pk=character.pk)
+        _check(locked)
+        for field, value in changes.items():
+            setattr(locked, field, value)
+        locked.save(update_fields=list(changes))
+        history = CharacterStatusChange.objects.create(
+            character=locked,
+            kind=kind,
+            by=by,
+            at=timezone.now(),
+            note=note,
+            date=date,
+        )
+    for field in changes:
+        setattr(character, field, getattr(locked, field))
+    return history
+
+
 def mark_dead(character, *, by, died_on=None, note=""):
     """Mark a character as dead. Returns the new CharacterStatusChange row."""
-    if character.is_dead:
-        raise LifeError(f"{character.name} is already dead")
     if died_on is None:
         died_on = timezone.localdate()
     if died_on > timezone.localdate():
         raise LifeError("Death date cannot be in the future")
 
-    with transaction.atomic():
-        character = Character.objects.select_for_update().get(pk=character.pk)
-        if character.is_dead:
-            raise LifeError(f"{character.name} is already dead")
-        character.died_on = died_on
-        character.death_note = note
-        character.save(update_fields=["died_on", "death_note"])
+    def check(c):
+        if c.is_dead:
+            raise LifeError(f"{c.name} is already dead")
 
-        history = CharacterStatusChange.objects.create(
-            character=character,
-            kind=CharacterStatusChange.Kind.DIED,
-            by=by,
-            at=timezone.now(),
-            note=note,
-            date=died_on,
-        )
-    return history
+    return _apply(
+        character,
+        kind=CharacterStatusChange.Kind.DIED,
+        by=by,
+        note=note,
+        date=died_on,
+        _check=check,
+        died_on=died_on,
+        death_note=note,
+    )
 
 
 def undo_death(character, *, by, note=""):
     """Undo a character's death. Returns the new CharacterStatusChange row."""
-    if not character.is_dead:
-        raise LifeError(f"{character.name} is not dead")
 
-    with transaction.atomic():
-        character = Character.objects.select_for_update().get(pk=character.pk)
-        if not character.is_dead:
-            raise LifeError(f"{character.name} is not dead")
-        character.died_on = None
-        character.death_note = ""
-        character.save(update_fields=["died_on", "death_note"])
+    def check(c):
+        if not c.is_dead:
+            raise LifeError(f"{c.name} is not dead")
 
-        history = CharacterStatusChange.objects.create(
-            character=character,
-            kind=CharacterStatusChange.Kind.REVIVED,
-            by=by,
-            at=timezone.now(),
-            note=note,
-            date=timezone.localdate(),
-        )
-    return history
+    return _apply(
+        character,
+        kind=CharacterStatusChange.Kind.REVIVED,
+        by=by,
+        note=note,
+        date=timezone.localdate(),
+        _check=check,
+        died_on=None,
+        death_note="",
+    )
 
 
 def archive(character, *, by, note=""):
     """Archive a character. Closes their stall. Returns the new CharacterStatusChange row."""
-    if character.is_archived:
-        raise LifeError(f"{character.name} is already archived")
 
-    with transaction.atomic():
-        character = Character.objects.select_for_update().get(pk=character.pk)
-        if character.is_archived:
-            raise LifeError(f"{character.name} is already archived")
-        character.archived_at = timezone.now()
-        character.shop_open = False
-        character.save(update_fields=["archived_at", "shop_open"])
+    def check(c):
+        if c.is_archived:
+            raise LifeError(f"{c.name} is already archived")
 
-        history = CharacterStatusChange.objects.create(
-            character=character,
-            kind=CharacterStatusChange.Kind.ARCHIVED,
-            by=by,
-            at=timezone.now(),
-            note=note,
-            date=timezone.localdate(),
-        )
-    return history
+    return _apply(
+        character,
+        kind=CharacterStatusChange.Kind.ARCHIVED,
+        by=by,
+        note=note,
+        date=timezone.localdate(),
+        _check=check,
+        archived_at=timezone.now(),
+        shop_open=False,
+    )
 
 
 def unarchive(character, *, by, note=""):
     """Unarchive a character. Does not reopen the stall.
-    Returns the new CharacterStatusChange row."""
-    if not character.is_archived:
-        raise LifeError(f"{character.name} is not archived")
 
-    with transaction.atomic():
-        character = Character.objects.select_for_update().get(pk=character.pk)
-        if not character.is_archived:
-            raise LifeError(f"{character.name} is not archived")
-        character.archived_at = None
-        character.save(update_fields=["archived_at"])
+    Returns the new CharacterStatusChange row.
+    """
 
-        history = CharacterStatusChange.objects.create(
-            character=character,
-            kind=CharacterStatusChange.Kind.UNARCHIVED,
-            by=by,
-            at=timezone.now(),
-            note=note,
-            date=timezone.localdate(),
-        )
-    return history
+    def check(c):
+        if not c.is_archived:
+            raise LifeError(f"{c.name} is not archived")
 
-
-# Import at bottom to avoid circular imports
-from player_characters.models import Character, CharacterStatusChange  # noqa: E402
+    return _apply(
+        character,
+        kind=CharacterStatusChange.Kind.UNARCHIVED,
+        by=by,
+        note=note,
+        date=timezone.localdate(),
+        _check=check,
+        archived_at=None,
+    )

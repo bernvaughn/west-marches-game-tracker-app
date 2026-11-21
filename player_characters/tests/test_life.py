@@ -515,8 +515,8 @@ def test_stub_views_return_404(login, player, character):
         reverse("characters:fallen", args=[character.club.slug]),
     ]
     for url in urls:
-        resp = client.get(url)
-        assert resp.status_code == 404
+        assert client.get(url).status_code == 404
+        assert client.post(url).status_code == 404
 
 
 # --- Pages still render ---
@@ -552,3 +552,64 @@ def test_print_items_renders_200(login, player, character):
     url = reverse("characters:print_items", args=[character.club.slug, character.pk])
     resp = client.get(url)
     assert resp.status_code == 200
+
+
+# --- Template filters ---
+
+
+def test_buy_block_reason_filter_renders(character):
+    """The filter is named buy_block_reason in templates."""
+    from django.template import Context, Template
+
+    character.name = "Aria Windrunner"
+    character.died_on = date(2026, 11, 14)
+    tpl = Template("{% load life_tags %}{{ c|buy_block_reason }}")
+    assert tpl.render(Context({"c": character})) == "Aria Windrunner died on 2026-11-14"
+    assert tpl.render(Context({"c": None})) == ""
+
+
+def test_is_dead_filter_renders(character):
+    """The is_dead filter works through a template."""
+    from django.template import Context, Template
+
+    tpl = Template("{% load life_tags %}{% if c|is_dead %}dead{% else %}alive{% endif %}")
+    assert tpl.render(Context({"c": character})) == "alive"
+    character.died_on = date(2026, 11, 14)
+    assert tpl.render(Context({"c": character})) == "dead"
+    assert tpl.render(Context({"c": None})) == "alive"
+
+
+# --- Services refresh the passed instance ---
+
+
+def test_mark_dead_refreshes_passed_instance(character, player):
+    membership = Membership.objects.get(user=player, club=character.club)
+    mark_dead(character, by=membership, note="Dragon")
+    assert character.is_dead
+    assert character.died_on == timezone.localdate()
+    assert character.death_note == "Dragon"
+
+
+def test_undo_death_refreshes_passed_instance(character, player):
+    membership = Membership.objects.get(user=player, club=character.club)
+    mark_dead(character, by=membership, note="Dragon")
+    undo_death(character, by=membership)
+    assert not character.is_dead
+    assert character.death_note == ""
+
+
+def test_archive_refreshes_passed_instance(character, player):
+    membership = Membership.objects.get(user=player, club=character.club)
+    character.shop_open = True
+    character.save(update_fields=["shop_open"])
+    archive(character, by=membership)
+    assert character.is_archived
+    assert character.shop_open is False
+
+
+def test_unarchive_refreshes_passed_instance(character, player):
+    membership = Membership.objects.get(user=player, club=character.club)
+    archive(character, by=membership)
+    unarchive(character, by=membership)
+    assert not character.is_archived
+    assert character.shop_open is False

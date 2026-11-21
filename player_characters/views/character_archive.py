@@ -1,19 +1,15 @@
-"""Stub views for character archive actions (C1)."""
+"""Stub views for character archive actions (C1). Later stories replace the bodies."""
 
 from django.http import Http404
-from django.utils.decorators import method_decorator
-from django.views import View
 
 from accounts.permissions import club_member_required
 
 
-@method_decorator(club_member_required, name="dispatch")
-class ArchiveView(View):
-    def get(self, request, club_slug, pk):
-        raise Http404
+@club_member_required
+def archive(request, club_slug, pk):
+    raise Http404
 
 
-@method_decorator(club_member_required, name="dispatch")
-class UnarchiveView(View):
-    def get(self, request, club_slug, pk):
-        raise Http404
+@club_member_required
+def unarchive(request, club_slug, pk):
+    raise Http404
