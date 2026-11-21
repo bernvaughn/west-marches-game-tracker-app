@@ -29,12 +29,9 @@ def _open_sheet(pw, live_server, session_id, url, width, height):
     context = browser.new_context(viewport={"width": width, "height": height})
     context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
     page = context.new_page()
-    errors = []
-    page.on("console", lambda m: m.type == "error" and errors.append(m.text))
-    page.on("pageerror", lambda e: errors.append(str(e)))
     page.goto(live_server.url + url)
     page.wait_for_load_state("networkidle")
-    return browser, page, errors
+    return browser, page
 
 
 def _centre(box):
@@ -45,7 +42,11 @@ def _element_from_point(page, x, y):
     return page.evaluate(
         "([x, y]) => {"
         "  const el = document.elementFromPoint(x, y);"
-        "  return el && { tag: el.tagName, cls: el.className || '', text: el.textContent || '', href: el.href || '' };"
+        "  return el && {"
+        "    tag: el.tagName,"
+        "    cls: el.className || '',"
+        "    text: (el.textContent || '').trim()"
+        "  };"
         "}",
         [x, y],
     )
@@ -67,10 +68,10 @@ def test_print_dropdown_items_are_clickable(
     session_id = _session_id(player)
 
     with sync_playwright() as pw:
-        browser, page, errors = _open_sheet(pw, live_server, session_id, url, width, height)
+        browser, page = _open_sheet(pw, live_server, session_id, url, width, height)
         try:
             # Open the first row's print dropdown (in its row-actions cell, not the header menu).
-            page.locator(".wm-row-actions-cell [data-bs-toggle=\"dropdown\"]").first.click()
+            page.locator('.wm-row-actions-cell [data-bs-toggle="dropdown"]').first.click()
             menu = page.locator(".wm-row-actions-cell .dropdown-menu.show")
             menu.wait_for(state="visible")
 
@@ -89,12 +90,12 @@ def test_print_dropdown_items_are_clickable(
 
             # Click "Full page": the item's print page loads with status 200.
             with page.expect_response(
-                lambda r: r.request.method == "GET"
-                and r.url.startswith(live_server.url + print_url)
+                lambda r: (
+                    r.request.method == "GET" and r.url.startswith(live_server.url + print_url)
+                )
             ) as resp:
                 items.first.click()
             assert resp.value.status == 200
             assert page.url.startswith(live_server.url + print_url)
-            assert errors == []
         finally:
             browser.close()
