@@ -5,6 +5,7 @@ from django.urls import reverse
 from items.models import Item
 from ledger.models import LedgerEntry
 from shops.models import ShopStock
+from shops.services import sell_price
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U33")]
 HX = {"HTTP_HX_REQUEST": "true"}
@@ -195,3 +196,46 @@ def test_buy_modal_htmx_quantity_keeps_price_comparison(
     assert "vs base: 0 gp" in altered
     assert "Base value" in altered
     assert "Shop sell %" in altered
+
+
+@pytest.mark.story("U33")
+def test_buy_modal_shows_expected_price_hidden_field(
+    club, shop, always_open, stock, rich_character, player, login
+):
+    body = login(player).get(url(club, shop, stock), **HX).content.decode()
+    assert f'name="expected_price" value="{sell_price(stock)}"' in body
+
+
+@pytest.mark.story("U33")
+def test_buy_modal_buys_at_shown_price(
+    club, shop, always_open, stock, rich_character, player, login
+):
+    client = login(player)
+    shown = sell_price(stock)
+    resp = client.post(url(club, shop, stock), {"quantity": 1, "expected_price": shown}, **HX)
+    assert resp.status_code == 204
+    assert resp["HX-Redirect"] == reverse("shops:detail", args=[club.slug, shop.pk])
+    assert purchases().count() == 1
+    stock.refresh_from_db()
+    assert stock.quantity == 1
+
+
+@pytest.mark.story("U33")
+def test_buy_modal_rejects_stale_price_and_warns(
+    club, shop, always_open, stock, rich_character, player, login
+):
+    client = login(player)
+    shown = sell_price(stock)
+    # Change the price before submitting (a stale page / another buyer).
+    stock.sell_percent = 50
+    stock.save()
+    new_price = sell_price(stock)
+    resp = client.post(url(club, shop, stock), {"quantity": 1, "expected_price": shown}, **HX)
+    assert resp.status_code == 200
+    body = resp.content.decode()
+    assert "The price changed from 1 gp to 5 sp." in body
+    assert purchases().count() == 0
+    stock.refresh_from_db()
+    assert stock.quantity == 2
+    # The hidden field is refreshed to the new price so a second click confirms.
+    assert f'name="expected_price" value="{new_price}"' in body

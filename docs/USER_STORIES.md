@@ -1073,8 +1073,13 @@ These still apply and are not covered above. Keep, change, or drop them. C6 (cor
 **C3 Last one wins.** As a player, I want a clear "already sold" message when someone else buys the last unit first. *(shops)*
 - Two players buying the last unit at the same moment never both succeed.
 
-**C4 Live shop.** As a player, I want sold-out items to disappear from my screen within a few seconds, without reloading. *(shops)*
-- The shop refreshes about every 5 seconds while the page is visible, and not while the tab is hidden.
+**C4 Live shop.** As a player, I want the shop screen to reflect what I have just bought or sold, without me having to reload. *(shops)*
+- The shop updates when the page loads and after the player's own purchase or sale.
+- It does not refresh on a timer while the page sits open, so an expanded "Preview contents" stays open until the player closes it.
+
+**C6 Price changed.** As a player, if an item's price changes between when I open the "Buy" modal and when I confirm, I want to be told the new price and asked to confirm again, rather than being charged a price I did not agree to. *(shops)*
+- The buy modal shows the price the player was shown.
+- Submitting with a stale price re-opens the modal at the new price with a warning; no purchase happens until the player confirms at the new price.
 
 **C5 Ledger.** As a player, I want to see a history of every time each of my characters gained or lost items or coins, newest first, with a note on what happened (for example `sold to <shop name>` or `awarded by game master <name>`), so I can see where things came from and went. *(player_characters)*
 

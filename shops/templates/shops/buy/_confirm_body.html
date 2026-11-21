@@ -1,4 +1,8 @@
 {% load coins loot_tags units %}
+{# Per-bundle price the player was shown. Sent back on submit so the view can
+    detect a price change before buying. Kept outside #buy-summary so the
+    quantity-only hx-swap does not refresh it. #}
+<input type="hidden" name="expected_price" value="{{ price }}">
 {% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=stock.item %}{% if stock.item.is_stacked %} <small class="text-muted">{{ stock.item|bundle_label:stock.bundle_units }}</small>{% endif %}</h2>{% endif %}
 {% if stock.item.description %}<p>{{ stock.item.description }}</p>{% endif %}
 {% loot_preview stock.item as loot_rows %}
