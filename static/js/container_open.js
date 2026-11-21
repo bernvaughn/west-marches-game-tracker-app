@@ -117,7 +117,7 @@
     if (root.querySelector("[" + REPLAY_ATTR + "]")) return;
     var button = document.createElement("button");
     button.type = "button";
-    button.className = "wm-replay";
+    button.className = "btn btn-outline-secondary wm-replay";
     button.setAttribute(REPLAY_ATTR, "");
     button.textContent = "Replay";
     button.addEventListener("click", function () {
