@@ -72,6 +72,7 @@ def _get_or_create_gear_item(
     icon: str,
     unit_name: str | None = None,
     value_units: int = 1,
+    description: str = "",
 ) -> tuple[Item | None, bool]:
     """Get or create a gear item by case-insensitive name.
 
@@ -96,6 +97,7 @@ def _get_or_create_gear_item(
         is_stacked=unit_name is not None,
         unit_name=unit_name or "",
         value_units=value_units if unit_name else 1,
+        description=description,
     )
     return item, True
 
@@ -129,7 +131,13 @@ def seed_default_general_store(club: Club) -> GeneralStoreSummary:
         gear_items_with_bundle = []  # list of (item, bundle_units)
         for gear in GENERAL_STORE_GEAR:
             item, created = _get_or_create_gear_item(
-                club, gear.name, gear.value_cp, gear.icon, gear.unit_name, gear.value_units
+                club,
+                gear.name,
+                gear.value_cp,
+                gear.icon,
+                gear.unit_name,
+                gear.value_units,
+                gear.description,
             )
             if item is not None:
                 bundle_units = gear.value_units if gear.unit_name else 1

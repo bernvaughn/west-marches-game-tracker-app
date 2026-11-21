@@ -9,9 +9,14 @@ are seeded as a single stacked item with a plain name ("Arrows"), a unit name
 ("arrow"), and value_units equal to the bundle size. The General Store sells them
 as a bundle line of that size at the same total price. Starting equipment grants
 the same stacked item in units (e.g., 20 arrows), not a separate plain item.
+
+Item names use the clearer "Variant (Kind)" form from items.seed_names
+(VARIANT_RENAMES) so the store catalogue matches the starting-equipment seeds.
 """
 
 from dataclasses import dataclass
+
+from items.seed_names import MAP_CASE, SCROLL_CASE
 
 
 @dataclass(frozen=True)
@@ -23,6 +28,7 @@ class GearItem:
         value_cp: Total value in copper for `value_units` units (or for the whole
             item if not stacked).
         icon: Emoji symbol.
+        description: Short description shown in the catalogue. Defaults to "".
         unit_name: Singular unit name for stacked items (e.g., "arrow"). If
             provided, the item is seeded as stacked with this unit name.
         value_units: How many units the `value_cp` covers for stacked items.
@@ -32,6 +38,7 @@ class GearItem:
     name: str
     value_cp: int
     icon: str
+    description: str = ""
     unit_name: str | None = None
     value_units: int = 1
 
@@ -40,11 +47,11 @@ GENERAL_STORE_GEAR = [
     GearItem("Acid", 2500, "🧪"),
     GearItem("Alchemist's Fire", 5000, "🔥"),
     GearItem("Antitoxin", 5000, "🧪"),
-    GearItem("Arcane Focus (Crystal)", 1000, "🔮"),
-    GearItem("Arcane Focus (Orb)", 2000, "🔮"),
-    GearItem("Arcane Focus (Rod)", 1000, "🪄"),
-    GearItem("Arcane Focus (Staff)", 500, "🪄"),
-    GearItem("Arcane Focus (Wand)", 1000, "🪄"),
+    GearItem("Crystal (Arcane Focus)", 1000, "🔮"),
+    GearItem("Orb (Arcane Focus)", 2000, "🔮"),
+    GearItem("Rod (Arcane Focus)", 1000, "🪄"),
+    GearItem("Staff (Arcane Focus)", 500, "🪄"),
+    GearItem("Wand (Arcane Focus)", 1000, "🪄"),
     GearItem("Arrows", 100, "🏹", unit_name="arrow", value_units=20),
     GearItem("Crossbow Bolts", 100, "🏹", unit_name="bolt", value_units=20),
     GearItem("Firearm Bullets", 300, "⚪", unit_name="bullet", value_units=10),
@@ -65,7 +72,8 @@ GENERAL_STORE_GEAR = [
     GearItem("Caltrops", 100, "📌", unit_name="caltrop", value_units=20),
     GearItem("Candle", 1, "🕯️"),
     GearItem("Case, Crossbow Bolt", 100, "🧰"),
-    GearItem("Case, Map or Scroll", 100, "📜"),
+    GearItem(MAP_CASE, 100, "🗺️", description="Holds rolled maps."),
+    GearItem(SCROLL_CASE, 100, "📜", description="Holds scrolls."),
     GearItem("Chain", 500, "⛓️"),
     GearItem("Chest", 500, "🧰"),
     GearItem("Climber's Kit", 2500, "🧗"),
@@ -75,18 +83,18 @@ GENERAL_STORE_GEAR = [
     GearItem("Costume", 500, "🎭"),
     GearItem("Crowbar", 200, "🔨"),
     GearItem("Diplomat's Pack", 3900, "🎒"),
-    GearItem("Druidic Focus (Sprig of Mistletoe)", 100, "🌿"),
-    GearItem("Druidic Focus (Staff)", 500, "🪄"),
-    GearItem("Druidic Focus (Yew Wand)", 1000, "🪄"),
+    GearItem("Sprig of Mistletoe (Druidic Focus)", 100, "🌿"),
+    GearItem("Staff (Druidic Focus)", 500, "🪄"),
+    GearItem("Yew Wand (Druidic Focus)", 1000, "🪄"),
     GearItem("Dungeoneer's Pack", 1200, "🎒"),
     GearItem("Entertainer's Pack", 4000, "🎒"),
     GearItem("Explorer's Pack", 1000, "🎒"),
     GearItem("Flask", 2, "🍶"),
     GearItem("Grappling Hook", 200, "🪝"),
     GearItem("Healer's Kit", 500, "🩹"),
-    GearItem("Holy Symbol (Amulet)", 500, "✝️"),
-    GearItem("Holy Symbol (Emblem)", 500, "✝️"),
-    GearItem("Holy Symbol (Reliquary)", 500, "✝️"),
+    GearItem("Amulet (Holy Symbol)", 500, "✝️"),
+    GearItem("Emblem (Holy Symbol)", 500, "✝️"),
+    GearItem("Reliquary (Holy Symbol)", 500, "✝️"),
     GearItem("Holy Water", 2500, "💧"),
     GearItem("Hunting Trap", 500, "🪤"),
     GearItem("Ink (1 oz)", 1000, "🖋️"),
