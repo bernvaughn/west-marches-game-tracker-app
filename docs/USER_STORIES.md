@@ -1172,7 +1172,7 @@ Rules for every story in this round:
 ### Foundation
 
 **E1 Send email.** As a site admin, I want the app to send email through Resend, so the other stories can use it. *(core, config)*
-- Settings come from the server environment: the Resend API key, and the "from" address. There is no reply-to for now: a reply-to would be set per club by the app, and how is still undecided. With no key set, the app logs emails to the console as it does today and never fails because of it.
+- Settings come from the server environment: the Resend API key, and the "from" address. The reply-to is set per club by the app (E10), never by the server environment. With no key set, the app logs emails to the console as it does today and never fails because of it.
 - The "from" address is on a domain verified in Resend, for example `Downtime Market <noreply@mail.downtimemarket.com>`. The site admin does the DNS setup once, and the README says how.
 - Every email goes through one place in the code. It sends in the background, so a slow or failing Resend never makes a page slow or fail. A failed send is retried a few times, then marked failed.
 - A site admin command sends a test email to an address, and says plainly whether the key and domain work.
@@ -1236,6 +1236,14 @@ These stories need play sessions (P1-P4, round 19).
 - Changing the address sends a confirmation link to the new address. The old address stays in use until the link is opened, and the old address gets a notice.
 - An address is already used by another account: the page gives the same neutral answer as E4.
 - Whitelisted addresses (U1) are unchanged by this. A club admin can still add people by email.
+
+**E10 Club contact email.** As a club admin, I want to set an optional contact email for my club, so replies to the club's emails reach me or my game masters and not nobody. *(accounts, core)*
+- The club settings page gets an optional "Contact email" field. It must be a valid address and is shown to club admins only.
+- When it is set, every email the app sends for that club (E3, E4, E5, E7) carries it as the reply-to. The "from" address stays the site's address, so delivery is unchanged.
+- When it is blank, those emails have no reply-to. The email footer says replies are not read and names the club.
+- Emails about an account that is not tied to one club, such as a password reset (E4) for a person in several clubs, have no reply-to.
+- The contact email is never shown to players, other clubs, or agents. It is only used as the reply-to header.
+- The "new club" form (site admin) can set it, but does not need to.
 
 ## Quests
 
@@ -1437,7 +1445,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Containers.** Any item can be a container (`is_container`). Slots have chance, weighted options, quantity ranges, and unknown flags. Opening writes an `opened` ledger entry and a `ContainerOpening`. Previews go through `loot_preview()`; unknowns are masked to `???` for players and agents. Nesting allowed (max depth 3, no cycles). Existing packs migrated by idempotent `seed_pack_containers` command. Agent `search_items` returns `is_container` and masked `loot`. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere without revealing it is in a box.
 - **Death and archive (U138-U147).** Dead and archived are separate states on a character. Players can mark their own characters dead. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Coins from the stall keep going to the dead character and just collect there, unusable for now; a way to use them may come later. A replacement character may claim starting equipment as usual. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
 - **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
-- **Email (E1-E9).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
+- **Email (E1-E10).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes
