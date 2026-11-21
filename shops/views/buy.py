@@ -11,8 +11,8 @@ from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
 from player_characters.inventory import coin_summary
 from player_characters.junk import junk_value
+from player_characters.life import LifeError, buy_block_reason
 from player_characters.selection import selected_character
-from player_characters.life import buy_block_reason, LifeError
 from shops.buying import buy as buy_service
 from shops.forms.buy import BuyForm
 from shops.models import Shop, ShopStock

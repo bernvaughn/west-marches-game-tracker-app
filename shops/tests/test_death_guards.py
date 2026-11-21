@@ -8,10 +8,10 @@ from django.utils import timezone
 
 from ledger.models import LedgerEntry
 from ledger.services import Line, record
-from player_characters.life import archive, mark_dead
 from player_characters.player_shop import buy_from
 from shops.buying import buy as buy_service
-from shops.selling import sell as sell_service, sell_many
+from shops.selling import sell as sell_service
+from shops.selling import sell_many
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U140-U141")]
 
@@ -74,9 +74,7 @@ def test_dead_buyer_post_refused(club, shop, always_open, stock, character, play
     before = LedgerEntry.objects.count()
     stock_qty = stock.quantity
     client = login(player)
-    resp = client.post(
-        buy_url(club, shop, stock), {"character": character.pk, "quantity": 1}
-    )
+    resp = client.post(buy_url(club, shop, stock), {"character": character.pk, "quantity": 1})
     assert resp.status_code == 200
     body = resp.content.decode()
     assert "died on" in body
@@ -96,9 +94,7 @@ def test_archived_buyer_post_refused(club, shop, always_open, stock, character, 
     _archive(character)
     before = LedgerEntry.objects.count()
     client = login(player)
-    resp = client.post(
-        buy_url(club, shop, stock), {"character": character.pk, "quantity": 1}
-    )
+    resp = client.post(buy_url(club, shop, stock), {"character": character.pk, "quantity": 1})
     assert resp.status_code == 200
     assert "is archived" in resp.content.decode()
     assert LedgerEntry.objects.count() == before
@@ -118,9 +114,7 @@ def test_dead_buyer_stall_service_refused(club, character, item, other_character
     assert "died on" in str(exc.value)
 
 
-def test_dead_buyer_stall_post_refused(
-    club, character, item, other_character, player, login
-):
+def test_dead_buyer_stall_post_refused(club, character, item, other_character, player, login):
     _mark_dead(other_character)
     seller = character
     seller.shop_open = True
@@ -131,16 +125,12 @@ def test_dead_buyer_stall_post_refused(
     JunkMark.objects.create(character=seller, item=item, quantity=1)
     _fund(other_character)
     client = login(other_character.owner.user)
-    resp = client.post(
-        stall_buy_url(club, seller, item), {"quantity": 1}
-    )
+    resp = client.post(stall_buy_url(club, seller, item), {"quantity": 1})
     assert resp.status_code == 200
     assert "died on" in resp.content.decode()
 
 
-def test_archived_buyer_stall_post_refused(
-    club, character, item, other_character, player, login
-):
+def test_archived_buyer_stall_post_refused(club, character, item, other_character, player, login):
     _archive(other_character)
     seller = character
     seller.shop_open = True
@@ -151,9 +141,7 @@ def test_archived_buyer_stall_post_refused(
     JunkMark.objects.create(character=seller, item=item, quantity=1)
     _fund(other_character)
     client = login(other_character.owner.user)
-    resp = client.post(
-        stall_buy_url(club, seller, item), {"quantity": 1}
-    )
+    resp = client.post(stall_buy_url(club, seller, item), {"quantity": 1})
     assert resp.status_code == 200
     assert "is archived" in resp.content.decode()
 
@@ -215,9 +203,7 @@ def test_dead_can_post_sell_junk(club, shop, always_open, character, item, playe
 # ------------------------------------------------- dead seller's stall pays the dead seller
 
 
-def test_dead_seller_stall_pays_seller(
-    club, character, item, other_character, player, login
-):
+def test_dead_seller_stall_pays_seller(club, character, item, other_character, player, login):
     _mark_dead(character)
     _award_item(character, item, 3)
     character.shop_open = True
@@ -231,9 +217,7 @@ def test_dead_seller_stall_pays_seller(
     after = LedgerEntry.objects.filter(character=character, kind="player_shop").count()
     assert after == before + 1
     entry = (
-        LedgerEntry.objects.filter(character=character, kind="player_shop")
-        .order_by("-pk")
-        .first()
+        LedgerEntry.objects.filter(character=character, kind="player_shop").order_by("-pk").first()
     )
     assert any(line.coins > 0 for line in entry.lines.all())
 
@@ -304,9 +288,7 @@ def test_archived_cannot_set_junk_service(club, character, item, player):
     assert "is archived" in str(exc.value)
 
 
-def test_archived_cannot_post_sell_junk(
-    club, shop, always_open, character, item, player, login
-):
+def test_archived_cannot_post_sell_junk(club, shop, always_open, character, item, player, login):
     _archive(character)
     _award_item(character, item, 3)
     before = LedgerEntry.objects.count()

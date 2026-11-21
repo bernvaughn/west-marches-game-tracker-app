@@ -11,8 +11,7 @@ from ledger.services import item_quantities
 from ..access import require_inventory_access
 from ..forms_junk import JunkForm
 from ..junk import JunkError, set_junk
-from ..life import sell_block_reason
-from ..life import LifeError
+from ..life import LifeError, sell_block_reason
 from ..models import Character, JunkMark
 
 

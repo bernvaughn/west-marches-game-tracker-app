@@ -9,7 +9,7 @@ from accounts.scoping import club_get_object_or_404
 from items.stacked import unit_label
 from ledger.coins import format_coins
 from player_characters.junk import junk_rows
-from player_characters.life import sell_block_reason, LifeError
+from player_characters.life import LifeError, sell_block_reason
 from player_characters.selection import selected_character
 from quests.services import needed_by_open_quests
 from shops.models import Shop
@@ -133,7 +133,9 @@ def sell_junk(request, club_slug, shop_id):
         # htmx asks again as ticks and quantities change, so the total follows them.
         _, _, posted = _parse(request.GET, character, shop)
     if error is None and request.method != "POST":
-        error = sell_block_reason(character)
+        reason = sell_block_reason(character)
+        if reason:
+            error = reason
     rows = _rows(character, shop, posted) if character is not None else []
     return render_modal_or_page(
         request,
