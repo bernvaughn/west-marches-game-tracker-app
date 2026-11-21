@@ -298,6 +298,11 @@ EXCLUDED = {
     "characters:unarchive": "C1 stub view returning 404.",
     "characters:archived": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
+    # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
+    # and the public token feed (needs a real token; not a demo page).
+    "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
+    "play_sessions:feed_reset": "POST only; admin resets the feed token.",
+    "play_sessions_public:feed": "Needs a real feed token; not a demo page.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",
