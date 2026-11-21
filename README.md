@@ -52,11 +52,16 @@ It also seeds a General Store run by Mabel Packwell (a halfling grocer) on the m
 stocked with all basic adventuring gear at 100%/75% buy/sell.
 It does not seed characters, quests, maps, downtime actions or messages.
 The GM creates those.
-**Stacked items are not seeded**; the GM converts items on the convert page or with `uv run python manage.py convert_to_stacked --club <slug>`.
-Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>`.
-A plain run configures the packs but leaves an existing template unchanged.
-Add `--force` to upgrade an existing template to the choice groups.
-`--force` replaces admin edits to the default template's lines and coins.
+A new club also gets 8 stacked gear items (Arrows, Crossbow Bolts, Firearm Bullets,
+Sling Bullets, Needles, Caltrops, Ball Bearings and Spikes, Iron) as bundle lines in
+the General Store, and starting ammunition in units. The GM still converts other
+items on the convert page or with `uv run python manage.py convert_to_stacked --club <slug>`.
+Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>` to
+get the current catalogue and template, then `uv run python manage.py convert_seeded_bundles --club <slug> --apply`
+to convert seeded bundle items to stacked items (it is a dry run until `--apply`).
+A plain `seed_starting_equipment` run configures the packs but leaves an existing template
+unchanged; add `--force` to upgrade an existing template to the choice groups
+(`--force` replaces admin edits to the default template's lines and coins).
 To configure the packs only, run `uv run python manage.py seed_pack_containers --club <slug>`.
 To add the General Store to an existing club, run `uv run python manage.py seed_general_store --club <slug>`.
 See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
@@ -77,6 +82,9 @@ Additional demo data:
 - **Pending downtime point request**: Bob requested 1 point for Borin (navbar indicator demo).
 - **Magic starting option**: Moonstone amulet is available for starting equipment requests.
 - **Pending starting equipment request**: Tilda has a pending request for the Moonstone amulet.
+- **Level-up-ready character**: Wren Thistledown is level 2 with 1,000 XP, so her sheet and dashboard show the "Level up ready" badge (U135).
+- **Partial quest progress**: Borin Stonefist holds one Wolf pelt, so "Pelts for the Tanner" shows 1 of 3 on the quest board (U136).
+- **Pending whitelist entry**: newplayer@example.com is on the demo club whitelist, so the People page whitelist is not empty (U133).
 - **Site feedback**: Alice filed a bug report about tooltip flicker on mobile.
 
 `seed_demo` is safe to run more than once.

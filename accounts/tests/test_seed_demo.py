@@ -5,14 +5,15 @@ from django.core.management import call_command
 from django.urls import reverse
 
 from accounts.demo import DEMO_LOGINS, DEMO_PASSWORD
-from accounts.models import Club, Membership, Message, SiteFeedback, User
+from accounts.models import Club, Membership, Message, SiteFeedback, User, WhitelistEntry
 from downtime.models import DowntimePointRequest
 from items.models import ContainerSlot, ContainerSlotOption, Item
 from items.opening import open_container
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import available_items, coin_balance
 from map.models import HexMap, Location, Tile, TileVisit, XPLevel
-from player_characters.models import Character, ItemNote, JunkMark
+from player_characters.models import Character, ItemNote, JunkMark, SelectedCharacter
+from player_characters.sheet import xp_progress
 from quests.models import Quest, QuestRequirement, QuestReward
 from shops.models import Rotation, Shop, ShopStock
 from starting_equipment.models import (
@@ -53,6 +54,7 @@ MODELS = [
     StartingEquipmentRequest,
     MagicItemStartingOption,
     SiteFeedback,
+    WhitelistEntry,
 ]
 
 
@@ -289,6 +291,53 @@ def test_site_feedback_exists():
     assert "tooltip" in fb.body.lower()
     assert fb.page_url == "/c/demo/"
     assert fb.status == "open"
+
+
+def test_whitelist_entry_exists():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    entry = WhitelistEntry.objects.get(club=club, email="newplayer@example.com")
+    assert entry.email == "newplayer@example.com"
+
+
+def test_wren_is_level_up_ready():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    wren = Character.objects.get(club=club, name="Wren Thistledown")
+    assert wren.level == 2
+    progress = xp_progress(wren)
+    assert progress["xp_level"] == 3
+    assert progress["level_up_ready"] is True
+
+
+def test_borin_holds_one_wolf_pelt():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    pelt = Item.objects.get(club=club, name="Wolf pelt")
+    assert available_items(borin)[pelt.pk] == 1
+
+
+def test_borin_quest_board_shows_one_of_three(client):
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    bob = User.objects.get(email="bob@example.com")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    membership = Membership.objects.get(user=bob, club=club)
+    SelectedCharacter.objects.update_or_create(membership=membership, defaults={"character": borin})
+    client.force_login(bob)
+    response = client.get(reverse("quests:index", args=["demo"]))
+    assert response.status_code == 200
+    assert "1 of 3" in response.content.decode()
+
+
+def test_second_seed_demo_adds_no_spare_pelt():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    assert LedgerEntry.objects.filter(character=borin, note="Demo: a spare pelt").count() == 1
+    call_command("seed_demo")
+    assert LedgerEntry.objects.filter(character=borin, note="Demo: a spare pelt").count() == 1
 
 
 def test_bundle_buy_smoke():

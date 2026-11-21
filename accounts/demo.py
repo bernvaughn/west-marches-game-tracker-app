@@ -1,4 +1,4 @@
-from .models import Club, Membership, Message, SiteFeedback, User
+from .models import Club, Membership, Message, SiteFeedback, User, WhitelistEntry
 
 DEMO_PASSWORD = "demo-password"
 DEMO_LOGINS = [
@@ -58,5 +58,8 @@ def seed():
         body="The character sheet tooltip flickers on mobile.",
         defaults={"page_url": "/c/demo/", "status": SiteFeedback.Status.OPEN},
     )
+
+    # U133 demo: a pending whitelist entry so the People page whitelist is not empty.
+    WhitelistEntry.objects.get_or_create(club=club, email="newplayer@example.com")
 
     return club

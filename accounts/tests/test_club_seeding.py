@@ -360,6 +360,53 @@ def test_demo_new_club_parity():
     assert demo_stock == new_stock
 
 
+def test_demo_stacked_is_new_club_stacked_plus_demo_extras():
+    """Demo stacked gear is the new club's stacked gear plus Parchment and Hempen cord."""
+    from django.core.management import call_command
+
+    call_command("seed_demo")
+    demo_club = Club.objects.get(slug="demo")
+
+    new_club = Club.objects.create(name="Parity Club", slug="parity-club-3")
+    seed_new_club(new_club)
+
+    demo_stacked = {
+        item.name for item in Item.objects.filter(club=demo_club, is_stacked=True).order_by("name")
+    }
+    new_stacked = {
+        item.name for item in Item.objects.filter(club=new_club, is_stacked=True).order_by("name")
+    }
+    # Everything a new club gets stacked, the demo club also gets stacked.
+    assert new_stacked <= demo_stacked
+    # The demo club's only extra stacked items are its two demo-only supplies.
+    assert demo_stacked - new_stacked == {"Parchment", "Hempen cord"}
+
+
+def test_new_club_bundle_stock_matches_value_units():
+    """Each stacked item on the new club's General Store sells in its unit-size bundle."""
+    club = Club.objects.create(name="Bundle Club", slug="bundle-club")
+    seed_new_club(club)
+
+    store = Shop.objects.get(club=club, name="General Store")
+    for stock in store.stock.select_related("item").filter(item__is_stacked=True):
+        assert stock.bundle_units == stock.item.value_units, stock.item.name
+
+
+def test_seed_new_club_twice_adds_no_stacked_items_or_stock():
+    """Seeding a new club twice adds no stacked items and no stock rows."""
+    club = Club.objects.create(name="Twice Club", slug="twice-club")
+    seed_new_club(club)
+
+    first_stacked = Item.objects.filter(club=club, is_stacked=True).count()
+    store = Shop.objects.get(club=club, name="General Store")
+    first_stock = store.stock.count()
+
+    seed_new_club(club)
+
+    assert Item.objects.filter(club=club, is_stacked=True).count() == first_stacked
+    assert store.stock.count() == first_stock
+
+
 def test_new_club_has_no_demo_only_rows():
     """A new club must not have demo-only rows (ItemNote, requests, feedback).
     Stacked ammunition items are now part of standard seeding."""
