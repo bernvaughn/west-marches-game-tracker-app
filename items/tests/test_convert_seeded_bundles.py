@@ -227,15 +227,21 @@ def test_net_zero_mixed_with_positive_holder(club):
 
 def test_negative_net_refuses_whole_run(club):
     """Negative net total refuses the whole conversion, naming only negative holders."""
-    from ledger.models import LedgerEntry, LedgerLine
     from django.utils import timezone
+
+    from ledger.models import LedgerEntry, LedgerLine
+
     old_arrows = Item.objects.create(club=club, name="Arrows (20)", value_cp=100)
     neg_char = make_character(club, "Srorthen")
     pos_char = make_character(club, "Aria")
     record(neg_char, "award", [Line(item=old_arrows, quantity=1)])
     # Create a negative net total directly via ledger entries (bypassing validation)
     entry = LedgerEntry.objects.create(
-        character=neg_char, club=club, kind=LedgerEntry.Kind.ADJUSTMENT, note="test", date=timezone.localdate()
+        character=neg_char,
+        club=club,
+        kind=LedgerEntry.Kind.ADJUSTMENT,
+        note="test",
+        date=timezone.localdate(),
     )
     LedgerLine.objects.create(entry=entry, item=old_arrows, quantity=-2)  # net -1
     record(pos_char, "award", [Line(item=old_arrows, quantity=3)])  # net +3

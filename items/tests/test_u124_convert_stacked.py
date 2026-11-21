@@ -105,14 +105,20 @@ def test_preview_refusal_pending_agent_proposal(club, owned_item, club_admin, ch
 
 
 def test_preview_refusal_negative_total(club, owned_item, club_admin):
-    from ledger.models import LedgerEntry, LedgerLine
     from django.utils import timezone
+
+    from ledger.models import LedgerEntry, LedgerLine
+
     c1 = make_character(club, "Aria")
     c2 = make_character(club, "Borin")
     record(c1, "award", [Line(item=owned_item, quantity=2)])
     # Create a negative net total directly via ledger entries (bypassing validation)
     entry = LedgerEntry.objects.create(
-        character=c2, club=club, kind=LedgerEntry.Kind.ADJUSTMENT, note="test", date=timezone.localdate()
+        character=c2,
+        club=club,
+        kind=LedgerEntry.Kind.ADJUSTMENT,
+        note="test",
+        date=timezone.localdate(),
     )
     LedgerLine.objects.create(entry=entry, item=owned_item, quantity=-1)
     preview = conversion_preview(owned_item)
@@ -249,8 +255,10 @@ def test_convert_junk_marks_scaled(club, owned_item, two_holders):
 
 
 def test_convert_all_or_nothing(club, club_admin):
-    from ledger.models import LedgerEntry, LedgerLine
     from django.utils import timezone
+
+    from ledger.models import LedgerEntry, LedgerLine
+
     item = Item.objects.create(club=club, name="Rope", value_cp=100)
     c1 = make_character(club, "Aria")
     c2 = make_character(club, "Borin")
@@ -258,7 +266,11 @@ def test_convert_all_or_nothing(club, club_admin):
     record(c2, "award", [Line(item=item, quantity=1)])
     # Create a negative net total directly via ledger entries (bypassing validation)
     entry = LedgerEntry.objects.create(
-        character=c2, club=club, kind=LedgerEntry.Kind.ADJUSTMENT, note="test", date=timezone.localdate()
+        character=c2,
+        club=club,
+        kind=LedgerEntry.Kind.ADJUSTMENT,
+        note="test",
+        date=timezone.localdate(),
     )
     LedgerLine.objects.create(entry=entry, item=item, quantity=-2)  # c2 net -1 -> refusal
 

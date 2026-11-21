@@ -214,19 +214,20 @@ class Command(BaseCommand):
 
         preview = conversion_preview(old_item, factor=factor)
         non_skipped = sum(1 for h in preview.holders if not h.get("skipped"))
-        skipped_names = [h["name"] for h in preview.holders if h.get("skipped")]
         self.stdout.write(
             f'  "{old_name}": {non_skipped} holders, {preview.total_owned} owned '
             f'-> "{new_name}" ({factor} x {unit_name})'
         )
         for h in preview.holders:
             if h.get("skipped"):
-                self.stdout.write(f'    {h["name"]}: skipped (owns none)')
+                self.stdout.write(f"    {h['name']}: skipped (owns none)")
         if preview.refusal_reasons:
             raise Refusal(f'"{old_name}": ' + " ".join(preview.refusal_reasons))
 
-        if non_skipped == 0:
-            self.stdout.write(f'    No holders with positive net; skipping conversion of "{old_name}"')
+        # If there are holders but all are skipped (zero net), don't convert.
+        # If there are no holders at all, still convert (e.g., for starting equipment).
+        if preview.holders and non_skipped == 0:
+            self.stdout.write(f'    All holders have zero net; skipping conversion of "{old_name}"')
             return 0
 
         if old_name != new_name:
