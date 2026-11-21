@@ -21,7 +21,7 @@ from ..models import SessionSettings
 def calendar_page(request, club_slug):
     """The session calendar page: month grid (wide) or upcoming list (phones)."""
     club = request.club
-    today = timezone.localdate()
+    today = core.to_club_local(club, timezone.now()).date()
     year, month = calendar_helpers.parse_month(request.GET.get("month"), today)
     grid = calendar_helpers.month_grid(club, year, month, today)
     upcoming = calendar_helpers.upcoming_list(club, year, month, today)

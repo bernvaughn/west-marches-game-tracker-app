@@ -33,16 +33,23 @@ def get_or_create_token(club):
 
 
 def reset_token(club):
-    """Clear the club's feed token (admin only). The old public link stops working."""
-    settings = SessionSettings.objects.get(club=club)
+    """Replace the club's feed token with a new random one (admin only).
+
+    The old public link stops working. Creates the settings row if needed.
+    Returns the new token.
+    """
+    settings, _created = SessionSettings.objects.get_or_create(club=club)
     settings.feed_token = ""
     settings.save(update_fields=["feed_token"])
+    return get_or_create_token(club)
 
 
 def _escape_text(value):
     """Escape backslash, semicolon, comma and newline for an iCalendar TEXT value."""
     return (
         (value or "")
+        .replace("\r\n", "\n")
+        .replace("\r", "\n")
         .replace("\\", "\\\\")
         .replace(";", "\\;")
         .replace(",", "\\,")

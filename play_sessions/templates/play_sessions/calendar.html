@@ -4,13 +4,14 @@
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/sessions.css' %}">
 {% include "components/page_header.html" with title="Sessions" subtitle="Club calendar" %}
-<div class="row mb-3">
-  <div class="col-md-8">
-    {% include "play_sessions/_month_grid.html" with grid=grid year=year month=month today=today club=club zone_name=zone_name class="d-none d-md-block" %}
-  </div>
-  <div class="col-md-4">
-    {% include "play_sessions/_upcoming_list.html" with upcoming=upcoming today=today club=club zone_name=zone_name class="d-md-none" %}
-  </div>
+<div class="sessions-nav">
+  <a class="sessions-nav-link" href="?month={{ grid.prev_month }}" aria-label="Previous month">&lsaquo;</a>
+  <span class="sessions-month">{{ month_name }} {{ year }}</span>
+  <a class="sessions-nav-link" href="?month={{ grid.next_month }}" aria-label="Next month">&rsaquo;</a>
+</div>
+<div class="mb-3">
+  {% include "play_sessions/_month_grid.html" with grid=grid today=today club=club zone_name=zone_name class="d-none d-md-block" %}
+  {% include "play_sessions/_upcoming_list.html" with upcoming=upcoming today=today club=club zone_name=zone_name class="d-md-none" %}
 </div>
 <div class="card mb-3">
   <div class="card-body">

@@ -421,3 +421,47 @@ def test_isolation_club_b_not_in_club_a(client, club, game_master):
         reverse("play_sessions:calendar", kwargs={"club_slug": club.slug}) + "?month=2025-01"
     )
     assert b.status_code == 200
+
+
+def test_ics_crlf_notes_do_not_leak_bare_cr(club, game_master):
+    """Browser textareas submit CRLF; the .ics must not carry a stray CR."""
+    club.timezone = "UTC"
+    club.save()
+    gm_membership = Membership.objects.get(user=game_master, club=club)
+    _session(
+        club,
+        "Crlf",
+        datetime(2024, 6, 15, 22, 0, tzinfo=UTC),
+        gm=gm_membership,
+        notes="line1\r\nline2\rline3",
+    )
+    ics = build_ics(club, datetime(2024, 6, 20, 12, 0, tzinfo=UTC))
+    assert "line1\\nline2\\nline3" in ics.replace("\r\n ", "")
+    # Every CR is part of a CRLF pair.
+    assert ics.count("\r") == ics.count("\r\n")
+    assert "\r" not in ics.replace("\r\n", "")
+
+
+def test_feed_reset_before_any_calendar_view(client, club, club_admin):
+    """Reset must not 500 when no SessionSettings row exists yet."""
+    from play_sessions.models import SessionSettings
+
+    assert not SessionSettings.objects.filter(club=club).exists()
+    client.force_login(club_admin)
+    reset_url = reverse("play_sessions:feed_reset", kwargs={"club_slug": club.slug})
+    assert client.post(reset_url).status_code in (301, 302)
+    token = SessionSettings.objects.get(club=club).feed_token
+    assert token
+    assert client.get(reverse("play_sessions_public:feed", args=[token])).status_code == 200
+
+
+def test_calendar_month_nav_outside_grid_and_full_width(client, club, player):
+    """Month nav shows at every width (not inside the d-none grid); list is not a side column."""
+    client.force_login(player)
+    r = client.get(reverse("play_sessions:calendar", kwargs={"club_slug": club.slug}))
+    html = r.content.decode()
+    nav_pos = html.index("sessions-nav")
+    grid_pos = html.index("sessions-grid")
+    assert nav_pos < grid_pos
+    assert "d-none d-md-block" in html
+    assert "col-md-4" not in html

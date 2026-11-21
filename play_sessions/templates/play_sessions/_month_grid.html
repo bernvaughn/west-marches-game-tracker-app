@@ -1,15 +1,10 @@
 {% comment %}_month_grid: calendar month grid, Sunday first.
-   Context: grid (weeks, prev_month, next_month), year, month, today, club, zone_name, class.
+   Context: grid (weeks), today, club, zone_name, class. Month nav lives in calendar.html.
    Each day holds date, in_month, is_today, sessions. Each session has local_start
    (aware, club zone), title, game_master, yes_count, cancelled, pk.
 {% endcomment %}
 {% load tz %}
 <div class="sessions-grid {{ class|default:'' }}">
-  <div class="sessions-nav">
-    <a class="sessions-nav-link" href="?month={{ grid.prev_month }}">&lsaquo;</a>
-    <span class="sessions-month">{{ year }} {{ month_name }}</span>
-    <a class="sessions-nav-link" href="?month={{ grid.next_month }}">&rsaquo;</a>
-  </div>
   <div class="sessions-week sessions-week--head">
     <div class="sessions-cell sessions-cell--head">Sun</div>
     <div class="sessions-cell sessions-cell--head">Mon</div>
