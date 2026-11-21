@@ -1,72 +1,96 @@
+import importlib
 import os
+import sys
 import tempfile
 
 import pytest
 
+PROBE_URLS = """
+from django.http import HttpResponse
+from django.urls import path
+
+
+def _view(request, **kwargs):
+    return HttpResponse("ok")
+
+
+club_urlpatterns = [path("zz-club/", _view, name="zz_club")]
+public_urlpatterns = [path("zz-public/", _view, name="zz_public")]
+"""
+
+
+def _reload_urlconf():
+    """Re-run discovery at import and rebuild the root URLconf."""
+    from django.urls import clear_url_caches
+
+    import config.urls
+    import mail.urls
+
+    importlib.reload(mail.urls)
+    importlib.reload(config.urls)
+    clear_url_caches()
+
+
+@pytest.fixture
+def probe_urls_module(tmp_path):
+    """Put a ``urls_zz_probe`` module on ``mail.__path__`` for one test."""
+    import mail
+
+    (tmp_path / "urls_zz_probe.py").write_text(PROBE_URLS)
+    original_path = mail.__path__
+    mail.__path__ = list(original_path) + [str(tmp_path)]
+    try:
+        yield
+    finally:
+        mail.__path__ = original_path
+        sys.modules.pop("mail.urls_zz_probe", None)
+        _reload_urlconf()
+
 
 @pytest.mark.django_db
 class TestUrlDiscovery:
-    def test_discover_loads_urls_modules(self):
-        """URL discovery loads urls_* modules."""
-        from mail.urls import club_urlpatterns, discover, public_urlpatterns
+    def test_discovered_urls_are_mounted(self, probe_urls_module):
+        """A urls_* module is reachable through the real URLconf."""
+        from django.urls import reverse
 
-        # Initially empty
-        assert club_urlpatterns == []
-        assert public_urlpatterns == []
+        _reload_urlconf()
 
-        # Create a temporary urls_ module
-        with tempfile.TemporaryDirectory() as tmpdir:
-            # Add to mail.__path__
-            import mail
+        assert reverse("mail_public:zz_public") == "/mail/zz-public/"
+        assert reverse("mail:zz_club", kwargs={"club_slug": "demo"}) == "/c/demo/mail/zz-club/"
 
-            original_path = mail.__path__
-            mail.__path__ = list(original_path) + [tmpdir]
+    def test_discover_fills_the_same_lists_in_place(self, probe_urls_module):
+        """discover() never rebinds, so include() sees the patterns."""
+        from mail import urls
 
-            try:
-                # Create a probe module
-                probe_content = """
-from django.urls import path
+        club_list, public_list = urls.club_urlpatterns, urls.public_urlpatterns
 
-club_urlpatterns = [
-    path("test/", lambda r: None, name="test_club"),
-]
-public_urlpatterns = [
-    path("public/", lambda r: None, name="test_public"),
-]
-"""
-                probe_file = os.path.join(tmpdir, "urls_zz_probe.py")
-                with open(probe_file, "w") as f:
-                    f.write(probe_content)
+        club, public = urls.discover()
 
-                # Run discovery
-                club, public = discover()
+        assert club is club_list is urls.club_urls[0]
+        assert public is public_list is urls.public_urls[0]
+        assert [p.name for p in club] == ["zz_club"]
+        assert [p.name for p in public] == ["zz_public"]
 
-                assert len(club) == 1
-                assert len(public) == 1
-            finally:
-                mail.__path__ = original_path
+        # Running it again does not duplicate patterns.
+        urls.discover()
+        assert len(club_list) == 1
+        assert len(public_list) == 1
 
-    def test_discover_raises_on_import_error(self):
+    def test_discover_raises_on_import_error(self, tmp_path):
         """Discovery raises on import error in urls_* module."""
         import mail
+        from mail.urls import discover
 
+        (tmp_path / "urls_bad.py").write_text("import nonexistent_module_xyz\n")
         original_path = mail.__path__
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            mail.__path__ = list(original_path) + [tmpdir]
-
-            try:
-                # Create a probe module with a syntax error
-                probe_file = os.path.join(tmpdir, "urls_bad.py")
-                with open(probe_file, "w") as f:
-                    f.write("import nonexistent_module_xyz\n")
-
-                with pytest.raises(ImportError):
-                    from mail.urls import discover
-
-                    discover()
-            finally:
-                mail.__path__ = original_path
+        mail.__path__ = list(original_path) + [str(tmp_path)]
+        try:
+            with pytest.raises(ImportError):
+                discover()
+        finally:
+            mail.__path__ = original_path
+            sys.modules.pop("mail.urls_bad", None)
+            discover()
 
 
 @pytest.mark.django_db

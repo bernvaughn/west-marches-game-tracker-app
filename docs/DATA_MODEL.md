@@ -38,16 +38,19 @@ erDiagram
     HEX_MAP ||--o{ TILE_VISIT : records
     CHARACTER ||--o{ TILE_VISIT : makes
     MEMBERSHIP ||--o{ MESSAGE : sends
+    CLUB ||--o{ PLAY_SESSION : schedules
+    PLAY_SESSION ||--o{ SESSION_RSVP : receives
+    CHARACTER ||--o{ SESSION_ATTENDANCE : makes
+    PLAY_SESSION ||--o{ SESSION_AWARD : awards
     CHARACTER ||--o{ MESSAGE : "may be about"
     CLUB ||--o{ EMAIL_MESSAGE : "mails"
     USER ||--o{ EMAIL_MESSAGE : receives
     EMAIL_MESSAGE ||--|| EMAIL_PAYLOAD : carries
-    CLUB ||--o| EMAIL_PREFERENCE : preferences
+    MEMBERSHIP ||--o{ EMAIL_PREFERENCE : prefers
     CLUB ||--o| CLUB_MAIL_SETTINGS : configures
     USER ||--o{ ONE_TIME_TOKEN : holds
     CLUB ||--o{ ONE_TIME_TOKEN : "scopes"
     USER ||--o{ NOTICE_SENT : deduplicates
-    CLUB ||--o{ JOB_RUN : schedules
     DO_NOT_EMAIL ||--o{ EMAIL_MESSAGE : suppresses
 ```
 
@@ -110,6 +113,7 @@ Characters, quests, hex maps and locations, downtime actions, ledger entries, me
 - **Site feedback**: a site-level bug report or feature request from any logged-in user, sent to site admins rather than club admins (U114). Records who sent it, the club they were in when they sent it (if any), bug or feature kind, the free-text body, the page they came from, and an open/handled/closed status.
 
 A player's email is shown only to club admins (U17). Email is optional and never carries passwords; it only delivers one-time links.
+- **Club** adds `timezone` (IANA string, default from settings).
 
 ### items
 
@@ -129,8 +133,17 @@ A player's email is shown only to club admins (U17). Email is optional and never
 ### player_characters
 
 - **Character**: belongs to a club and is owned by a membership. Name and an optional level from 1 (U52, not tied to XP). The sheet (U2, U69) adds optional class, species, alignment, pronouns, a description, the six ability scores (1 to 30, with the modifier worked out as (score - 10) // 2), armor class (0 to 40), a Perception bonus (may be negative; passive Perception is 10 plus the bonus, blank shows a dash), and XP. Handing a character to another player changes the owner (U18).
+  - **`died_on`** (date, nullable): the date the character died. If set, the character is dead.
+  - **`death_note`** (text, blank): optional note about the death.
+  - **`archived_at`** (datetime, nullable): when the character was archived. If set, the character is archived.
+  - Dead and archived are independent states; each can be set without the other.
+  - Properties: `is_dead` (`died_on` is set), `is_archived` (`archived_at` is set), `is_active` (not archived).
+  - Queryset methods: `not_archived()`, `living()` (not dead), `dead()`. Lookups by id still find archived characters.
 - **Inventory entry**: a character, an item, and a quantity. Visible only to the owner, game masters, and club admins (U19).
 - **Junk mark**: a character, an item, and a quantity the player set aside to sell (U47). One per character and item. The quantity is capped at the number owned when read, so it needs no cleanup when items leave. It never touches the ledger.
+
+- **Character status change** (append-only): one row per state change on a character. Fields: `character` (FK), `kind` (died, revived, archived, unarchived), `by` (Membership, nullable), `at` (datetime), `note` (text), `date` (date). Uses `AppendOnlyModel` so rows cannot be updated or deleted. Ordered by `-at, -id`. Index on `(character, at)`.
+  - The single guard for all state checks is `player_characters/life.py`: `can_buy`, `can_sell`, `can_act`, `buy_block_reason`, `sell_block_reason`, `require_can_buy`, `require_can_sell`, `require_can_act`, plus service functions `mark_dead`, `undo_death`, `archive`, `unarchive` that write one history row each in a transaction.
 
 ### starting_equipment
 
@@ -191,6 +204,18 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **Selected character**: per person and club, the character they act as (U24). Pages that act on a character default to it.
 - **Tile visit**: a map, a position, and a character that has been there (M7). It stores the position rather than the tile so empty tiles can be visited too.
 - **What each person sees.** Game masters and club admins see everything, including GM notes, and can print either the full map or a players' view for a group of characters they pick (M10). A player sees the tiles visited by the characters they pick, and on those tiles the locations those characters have found, with their player notes and encounters, but never GM notes. A location on those tiles that has discovery credit but that the picked characters have not found shows as an unnamed placeholder; undiscovered locations are not shown (M8, M9, M16). The pick starts as the player's selected character (U24).
+
+### play_sessions
+
+- **SessionSeries**: a recurring series of play sessions (weekly or every two weeks). Belongs to a club; created by a membership (GM). Rule is `weekly` or `every_two_weeks`. Only a grouping so "cancel the rest" works.
+- **PlaySession**: a single scheduled play session. Club, title, starts_at (aware UTC), ends_at (nullable), game_master (Membership), location, notes, recap (shown to players), gm_notes (GM only), cancelled (bool), series (nullable FK to SessionSeries), created/updated. Ordering by starts_at. Index on (club, starts_at). Check constraint: ends_at >= starts_at.
+- **SessionRSVP**: a character's RSVP to a session. Session, character, answer (yes/maybe/no), answered_by (User), answered_at. Unique per session and character.
+- **SessionAttendance**: a character's attendance at a session. Session, character, played (bool), confirmed_by (User), confirmed_at. Unique per session and character.
+- **AttendanceChange**: append-only history of attendance corrections. Session, character, old_played (nullable), new_played, changed_by (User), changed_at (auto). Extends AppendOnlyModel; update/delete raise error.
+- **SessionAward**: downtime points awarded for attending a session. Session, character, points (positive small int). Unique per session and character. Used to compute difference on corrections.
+- **SessionSettings**: per-club settings for play sessions. One-to-one with Club. award_points (0-10, default 0), feed_token (64-char, blank until calendar feed creates it). Conditional unique constraint on feed_token where not blank.
+
+All models are club-scoped with `club_path` set and use `ClubScopedManager`. Child tables (RSVP, Attendance, AttendanceChange, Award) use `club_path = "session__club"`.
 
 ### mail
 

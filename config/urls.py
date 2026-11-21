@@ -4,6 +4,7 @@ from django.urls import include, path
 from accounts import views as account_views
 from config import views as config_views
 from mail.urls import club_urls, public_urls
+from play_sessions.urls import public_urlpatterns as play_sessions_public_urlpatterns
 
 club_patterns = [
     path("", account_views.club_home, name="club_home"),
@@ -19,6 +20,7 @@ club_patterns = [
     path("options/", include("character_options.urls")),
     path("agent/", include("agent_access.urls")),
     path("mail/", include(club_urls)),
+    path("sessions/", include("play_sessions.urls")),
 ]
 
 urlpatterns = [
@@ -30,5 +32,6 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", include("agent_access.urls_root")),
     path("mail/", include(public_urls)),
+    path("sessions/", include((play_sessions_public_urlpatterns, "play_sessions_public"))),
     path("c/<slug:club_slug>/", include(club_patterns)),
 ]

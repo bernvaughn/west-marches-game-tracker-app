@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     "agent_access",
     "starting_equipment",
     "mail",
+    "play_sessions",
 ]
 
 MIDDLEWARE = [

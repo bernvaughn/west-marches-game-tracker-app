@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load accounts_tags tz %}
+
+{% block content %}
+{% url 'play_sessions:calendar' as calendar_url %}
+{% include "components/page_header.html" with title=session.title back_url=calendar_url back_label="Calendar" %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <dl class="row mb-0">
+      <dt class="col-sm-2">Date</dt>
+      <dd class="col-sm-10">
+        {% localtime off %}
+        {{ starts_local|date:"l, F j, Y" }} at {{ starts_local|time:"g:i A" }} {{ zone_name }}
+        {% if ends_local %}–{{ ends_local|time:"g:i A" }} {{ zone_name }}{% endif %}
+        {% endlocaltime %}
+      </dd>
+
+      {% if session.location %}
+      <dt class="col-sm-2">Location</dt>
+      <dd class="col-sm-10">{{ session.location }}</dd>
+      {% endif %}
+
+      {% if session.game_master %}
+      <dt class="col-sm-2">Game Master</dt>
+      <dd class="col-sm-10">{{ session.game_master.user.display_name|default:session.game_master.user.email }}</dd>
+      {% endif %}
+
+      {% if session.notes %}
+      <dt class="col-sm-2">Notes</dt>
+      <dd class="col-sm-10">{{ session.notes|linebreaks }}</dd>
+      {% endif %}
+
+      {% if session.cancelled %}
+      <dt class="col-sm-2">Status</dt>
+      <dd class="col-sm-10">{% include "components/badge.html" with status="danger" text="Cancelled" %}</dd>
+      {% endif %}
+    </dl>
+  </div>
+</div>
+
+{% for section in sections %}
+<section id="section-{{ section.key }}" class="mb-4">
+  {{ section.html|safe }}
+</section>
+{% empty %}
+<p class="text-muted">No sections available.</p>
+{% endfor %}
+{% endblock %}

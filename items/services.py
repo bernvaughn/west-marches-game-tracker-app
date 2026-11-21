@@ -82,7 +82,7 @@ def conversion_preview(item, factor=1):
     holders = []
     total_owned = 0
     overflow = []
-    non_positive = []
+    negative = []
     rows = (
         LedgerLine.objects.filter(item=item)
         .values("entry__character_id")
@@ -96,23 +96,29 @@ def conversion_preview(item, factor=1):
         character = characters.get(row["entry__character_id"])
         new_total = owned * factor
         holders.append(
-            {"id": character.pk, "name": character.name, "owned": owned, "new": new_total}
+            {
+                "id": character.pk,
+                "name": character.name,
+                "owned": owned,
+                "new": new_total,
+                "skipped": owned == 0,
+            }
         )
         total_owned += owned
         if new_total > INT_LIMIT:
             overflow.append(character.name)
-        if owned <= 0:
-            non_positive.append(character.name)
+        if owned < 0:
+            negative.append(character.name)
     if overflow:
         refusals.append(
             f"Converting by factor {factor} would push a quantity past the {INT_LIMIT} limit for: "
             + ", ".join(overflow)
             + "."
         )
-    if non_positive:
+    if negative:
         refusals.append(
-            "These holders have a zero or negative net total and cannot be converted: "
-            + ", ".join(non_positive)
+            "These holders have a negative net total and cannot be converted: "
+            + ", ".join(negative)
             + "."
         )
 

@@ -1,8 +1,11 @@
 from django.urls import path
 
 from .views import (
+    archive_screen,
     character_adjust,
+    character_archive,
     character_consume,
+    character_death,
     character_junk,
     character_notes,
     character_open,
@@ -11,6 +14,7 @@ from .views import (
     character_slips,
     character_starting_reveal,
     characters,
+    fallen,
     selection,
 )
 
@@ -18,6 +22,8 @@ app_name = "characters"
 urlpatterns = [
     path("", characters.IndexView.as_view(), name="index"),
     path("mine/", characters.MineView.as_view(), name="mine"),
+    path("archived/", archive_screen.archived, name="archived"),
+    path("fallen/", fallen.fallen, name="fallen"),
     path("directory/", characters.DirectoryView.as_view(), name="directory"),
     path("new/", characters.CreateView.as_view(), name="create"),
     path("select/", selection.select, name="select"),
@@ -55,4 +61,9 @@ urlpatterns = [
     ),
     path("<int:pk>/preview/", selection.character_preview, name="preview"),
     path("bulk-award/", character_adjust.bulk_award, name="bulk_award"),
+    # Death and archive (C1 stubs)
+    path("<int:pk>/death/", character_death.death, name="death"),
+    path("<int:pk>/death/undo/", character_death.death_undo, name="death_undo"),
+    path("<int:pk>/archive/", character_archive.archive, name="archive"),
+    path("<int:pk>/unarchive/", character_archive.unarchive, name="unarchive"),
 ]
