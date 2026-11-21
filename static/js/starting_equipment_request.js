@@ -15,6 +15,14 @@
         function updateQuantityMax() {
             const selectedOption = itemSelect.options[itemSelect.selectedIndex];
             const max = selectedOption ? parseInt(selectedOption.dataset.max, 10) : 1;
+            // The blank option ("Select a magic item...") has no data-max.
+            // Never write "NaN" to the max attribute or the help text: clear
+            // the limit instead until a real item is chosen.
+            if (!Number.isFinite(max) || max < 1) {
+                quantityInput.removeAttribute("max");
+                helpText.textContent = "";
+                return;
+            }
             quantityInput.max = max;
             if (quantityInput.valueAsNumber > max) {
                 quantityInput.value = max;
