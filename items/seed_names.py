@@ -39,22 +39,32 @@ VARIANT_RENAMES: dict[str, str] = {
     "Holy Symbol (Amulet)": "Amulet (Holy Symbol)",
     "Holy Symbol (Emblem)": "Emblem (Holy Symbol)",
     "Holy Symbol (Reliquary)": "Reliquary (Holy Symbol)",
-    # Artisan's Tools -> "X (Artisan's Tools)"
-    # Variant word spelled exactly as the seeds spell it today.
-    "Artisan's Tools (Brewer's)": "Brewer's (Artisan's Tools)",
-    "Artisan's Tools (Calligrapher's)": "Calligrapher's (Artisan's Tools)",
-    "Artisan's Tools (Carpenter's)": "Carpenter's (Artisan's Tools)",
-    "Artisan's Tools (Leatherworker's)": "Leatherworker's (Artisan's Tools)",
-    "Artisan's Tools (Mason's)": "Mason's (Artisan's Tools)",
-    "Artisan's Tools (Potter's)": "Potter's (Artisan's Tools)",
-    "Artisan's Tools (Smith's)": "Smith's (Artisan's Tools)",
-    "Artisan's Tools (Tinker's)": "Tinker's (Artisan's Tools)",
-    "Artisan's Tools (Weaver's)": "Weaver's (Artisan's Tools)",
-    "Artisan's Tools (Woodcarver's)": "Woodcarver's (Artisan's Tools)",
+    # Artisan's Tools -> full 2024 PHB tool name + "(Artisan's Tools)"
+    # (owner decision, 2026-11-21).  Keys use the variant word exactly as the
+    # seeds spell it today.
+    "Artisan's Tools (Brewer's)": "Brewer's Supplies (Artisan's Tools)",
+    "Artisan's Tools (Calligrapher's)": "Calligrapher's Supplies (Artisan's Tools)",
+    "Artisan's Tools (Carpenter's)": "Carpenter's Tools (Artisan's Tools)",
+    "Artisan's Tools (Leatherworker's)": "Leatherworker's Tools (Artisan's Tools)",
+    "Artisan's Tools (Mason's)": "Mason's Tools (Artisan's Tools)",
+    "Artisan's Tools (Potter's)": "Potter's Tools (Artisan's Tools)",
+    "Artisan's Tools (Smith's)": "Smith's Tools (Artisan's Tools)",
+    "Artisan's Tools (Tinker's)": "Tinker's Tools (Artisan's Tools)",
+    "Artisan's Tools (Weaver's)": "Weaver's Tools (Artisan's Tools)",
+    "Artisan's Tools (Woodcarver's)": "Woodcarver's Tools (Artisan's Tools)",
+    # Plain tool items that now duplicate an artisan's tool (merge sources,
+    # shared targets by design): the Farmer's and the Guard/Scribe's items.
+    "Carpenter's Tools": "Carpenter's Tools (Artisan's Tools)",
+    "Calligrapher's Supplies": "Calligrapher's Supplies (Artisan's Tools)",
     # Gaming Set -> "X (Gaming Set)"
     "Gaming Set (Dice)": "Dice (Gaming Set)",
     "Gaming Set (Playing Cards)": "Playing Cards (Gaming Set)",
     "Gaming Set (Dragonchess)": "Dragonchess (Gaming Set)",
+}
+
+# Plain artisan's tool items merged into the matching variant record.
+PLAIN_TOOL_RENAMES = {
+    old: VARIANT_RENAMES[old] for old in ("Carpenter's Tools", "Calligrapher's Supplies")
 }
 
 # Optional subset: the 10 instrument keys, for merge logic in later stories.
