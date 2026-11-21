@@ -13,7 +13,7 @@ from items.stacked import unit_label
 from ledger.coins import format_coins
 from ledger.services import InsufficientItems, available_items, held_items
 from player_characters.junk import junk_rows, reduce_junk
-from player_characters.life import sell_block_reason, LifeError
+from player_characters.life import LifeError, sell_block_reason
 from player_characters.selection import selected_character
 from shops.models import Shop
 from shops.selling import sale_total
