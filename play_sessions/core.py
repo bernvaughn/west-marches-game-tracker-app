@@ -5,7 +5,7 @@ the attendance_saved signal, feature list, and auto-discovery.
 """
 
 import importlib.util
-from datetime import datetime
+from datetime import datetime, timezone as dt_timezone
 
 from django.conf import settings
 from django.db import transaction
@@ -48,7 +48,7 @@ def from_club_local(club, naive):
         raise ValueError("from_club_local requires a naive datetime")
     zone = club_zone(club)
     aware = naive.replace(tzinfo=zone, fold=0)
-    return aware.astimezone(dj_timezone.utc)
+    return aware.astimezone(dt_timezone.utc)
 
 
 # --- Permissions -------------------------------------------------------------
@@ -95,10 +95,10 @@ def set_rsvp(session, character, answer, by):
     Raises:
         ValueError: if answer is not a valid choice.
     """
+    from .models import SessionRSVP
+
     if answer not in SessionRSVP.Answer.values:
         raise ValueError(f"Invalid RSVP answer: {answer}")
-
-    from .models import SessionRSVP
 
     rsvp, _ = SessionRSVP.objects.update_or_create(
         session=session,

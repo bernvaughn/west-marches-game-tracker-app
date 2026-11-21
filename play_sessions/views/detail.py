@@ -1,7 +1,7 @@
 from django.template.loader import render_to_string
 from django.utils import timezone
 
-from accounts.mixins import club_member_required
+from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 
 from .. import core
