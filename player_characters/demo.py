@@ -18,6 +18,7 @@ GEAR = {
     "Borin Stonefist": {"Longsword": 1, "Torch": 3},
     "Tilda Brightwater": {"Priest's Pack": 1},
 }
+SPARE_PELT_NOTE = "Demo: a spare pelt"
 
 # Stacked gear for Aria (U123-U131 demo)
 STACKED_GEAR = {
@@ -52,7 +53,7 @@ SHEETS = {
         "charisma": 14,
         "armor_class": 13,
         "max_hp": 22,
-        "xp": 300,
+        "xp": 1000,
         "description": "Quick fingers and a quicker tongue.",
     },
     "Borin Stonefist": {
@@ -111,6 +112,7 @@ def seed(club):
             character.save(update_fields=changed)
     _give_gear(club)
     _give_stacked_gear(club)
+    _give_borin_spare_pelt(club)
     _seed_item_note(club)
     _open_demo_stall(club)
 
@@ -142,6 +144,22 @@ def _give_stacked_gear(club):
         if not lines:
             continue
         record(character, "award", lines, note=STACKED_GEAR_NOTE, actor=gm)
+
+
+def _give_borin_spare_pelt(club):
+    """Borin holds one Wolf pelt: partial progress (1 of 3) on 'Pelts for the Tanner'.
+
+    Idempotent: the ledger note guard skips a re-run, and a missing item is skipped.
+    """
+    ledger_demo.seed(club)
+    gm = User.objects.get(email="gm@example.com")
+    borin = Character.objects.filter(club=club, name="Borin Stonefist").first()
+    pelt = Item.objects.filter(club=club, name="Wolf pelt").first()
+    if borin is None or pelt is None:
+        return
+    if LedgerEntry.objects.filter(character=borin, note=SPARE_PELT_NOTE).exists():
+        return
+    record(borin, "award", [Line(pelt, 1)], note=SPARE_PELT_NOTE, actor=gm)
 
 
 def _seed_item_note(club):
