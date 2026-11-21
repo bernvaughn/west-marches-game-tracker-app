@@ -5,6 +5,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 staticfiles/
+/VERSION
 
 # Stale hand-off, plan and acceptance notes committed by past agent runs.
 # Ignored at the repo root only; docs/ files with similar names are unaffected.
