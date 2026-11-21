@@ -277,6 +277,8 @@ def test_pending_starting_request_exists():
     # Linked message exists
     assert req.message is not None
     assert req.message.kind == Message.Kind.STARTING_REQUEST
+    # Sent by the requesting player, as request_new does
+    assert req.message.sender == tilda.owner
 
 
 def test_site_feedback_exists():
@@ -285,7 +287,7 @@ def test_site_feedback_exists():
     alice = User.objects.get(email="alice@example.com")
     fb = SiteFeedback.objects.get(user=alice, club=club, kind="bug")
     assert "tooltip" in fb.body.lower()
-    assert fb.page_url == "/c/demo/character/1/"
+    assert fb.page_url == "/c/demo/"
     assert fb.status == "open"
 
 

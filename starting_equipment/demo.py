@@ -1,7 +1,7 @@
 """Demo seeding for starting_equipment: MagicItemStartingOption and a
 pending StartingEquipmentRequest."""
 
-from accounts.models import Membership, Message
+from accounts.models import Message
 from items.models import Item
 from player_characters.models import Character
 
@@ -15,18 +15,19 @@ def seed(club):
     if template is None:
         return
 
-    # Add a MagicItemStartingOption for "Moonstone amulet" if it exists in the catalogue
+    # The Moonstone amulet comes from the shops demo seeder. The request needs it.
     moonstone = Item.objects.filter(club=club, name="Moonstone amulet").first()
-    if moonstone:
-        MagicItemStartingOption.objects.get_or_create(
-            template=template,
-            item=moonstone,
-            defaults={"max_per_character": 1, "notes": "Level 5+ only"},
-        )
+    if moonstone is None:
+        return
+    MagicItemStartingOption.objects.get_or_create(
+        template=template,
+        item=moonstone,
+        defaults={"max_per_character": 1, "notes": "Level 5+ only"},
+    )
 
     # Create a pending StartingEquipmentRequest for Tilda (unclaimed starting equipment)
     tilda = Character.objects.filter(club=club, name="Tilda Brightwater").first()
-    if tilda is None:
+    if tilda is None or tilda.owner is None:
         return
 
     # Check if a pending request for Tilda already exists
@@ -37,38 +38,22 @@ def seed(club):
     ).exists():
         return
 
-    # Get the GM membership for the message sender
-    gm_membership = Membership.objects.filter(club=club, is_game_master=True).first()
-    if gm_membership is None:
-        return
-
-    # Create the request (matching request_new view: PENDING request + STARTING_REQUEST message)
+    note = "Would like this for my first adventure."
     request = StartingEquipmentRequest.objects.create(
         club=club,
         character=tilda,
         item=moonstone,
         quantity=1,
-        note="Would like this for my first adventure.",
+        note=note,
         status=StartingEquipmentRequest.Status.PENDING,
     )
 
-    # Create linked inbox Message (STARTING_REQUEST kind)
-    if moonstone:
-        body = (
-            f"{tilda.name} requests 1x {moonstone.name} "
-            f"as starting equipment. Note: Would like this for my first adventure."
-        )
-    else:
-        body = (
-            f"{tilda.name} requests a starting equipment item. "
-            f"Note: Would like this for my first adventure."
-        )
-
+    # Linked inbox message. Like request_new, the sender is the requesting player.
     msg = Message.objects.create(
         club=club,
-        sender=gm_membership,
+        sender=tilda.owner,
         character=tilda,
-        body=body,
+        body=f"{tilda.name} requests 1x {moonstone.name} as starting equipment. Note: {note}",
         kind=Message.Kind.STARTING_REQUEST,
     )
     request.message = msg

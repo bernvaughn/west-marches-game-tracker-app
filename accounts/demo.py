@@ -56,7 +56,7 @@ def seed():
         club=club,
         kind=SiteFeedback.Kind.BUG,
         body="The character sheet tooltip flickers on mobile.",
-        defaults={"page_url": "/c/demo/character/1/", "status": SiteFeedback.Status.OPEN},
+        defaults={"page_url": "/c/demo/", "status": SiteFeedback.Status.OPEN},
     )
 
     return club

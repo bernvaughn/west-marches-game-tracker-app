@@ -90,6 +90,22 @@ def test_seed_failure_rolls_back_club_creation(site_admin, login, monkeypatch):
     assert not Membership.objects.filter(user__email="boss@example.com").exists()
 
 
+def test_general_store_failure_rolls_back_club_via_view(site_admin, login, monkeypatch):
+    """A failure in the last seeder (General Store) leaves no Club row after a view post."""
+
+    def boom(club, **kwargs):
+        raise StartingEquipmentSeedError("general store failed")
+
+    monkeypatch.setattr("accounts.club_seeding.seed_default_general_store", boom)
+    c = login(site_admin)
+    with pytest.raises(StartingEquipmentSeedError):
+        _post(c)
+
+    assert not Club.objects.filter(slug="club-c").exists()
+    assert not Item.objects.filter(club__slug="club-c").exists()
+    assert not Membership.objects.filter(user__email="boss@example.com").exists()
+
+
 def test_seed_failure_rolls_back_xp_and_options(club, monkeypatch):
     def boom(club, **kwargs):
         raise StartingEquipmentSeedError("starting equipment failed")
