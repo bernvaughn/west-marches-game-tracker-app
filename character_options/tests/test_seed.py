@@ -98,6 +98,7 @@ def test_seed_new_club_via_view(club, site_admin, login):
             "name": "New Club",
             "slug": "new-club",
             "admin_email": "newadmin@example.com",
+            "timezone": "UTC",
             "admin_display_name": "New Admin",
         },
     )
