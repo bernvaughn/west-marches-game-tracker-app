@@ -36,16 +36,13 @@ class AccountsConfig(AppConfig):
         from .approval_providers import open_messages
         from .dashboard_providers import (
             ConsumablesDashboardProvider,
-            DowntimeAvailableProvider,
             DowntimeDashboardProvider,
             HeaderDashboardProvider,
-            JunkSummaryProvider,
             MapDashboardProvider,
             MessagesDashboardProvider,
             MyMessagesDashboardProvider,
             PlayerShopDashboardProvider,
             QuestsDashboardProvider,
-            QuestsReadyProvider,
             QuickActionsProvider,
             register_provider,
         )
@@ -80,8 +77,3 @@ class AccountsConfig(AppConfig):
         register_provider(MyMessagesDashboardProvider())
         register_provider(PlayerShopDashboardProvider())
         register_provider(ConsumablesDashboardProvider())
-
-        # Register contextual action card providers
-        register_provider(QuestsReadyProvider())
-        register_provider(JunkSummaryProvider())
-        register_provider(DowntimeAvailableProvider())

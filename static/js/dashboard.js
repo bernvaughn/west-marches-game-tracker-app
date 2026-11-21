@@ -9,9 +9,9 @@
  */
 (function () {
   const EVENT_CARD = {
-    questCompleted: ["quests_ready"],
-    junkChanged: ["junk_summary"],
-    downtimeSpent: ["downtime", "downtime_available"],
+    questCompleted: ["quests"],
+    junkChanged: ["quick_actions"],
+    downtimeSpent: ["downtime"],
   };
 
   function refreshCard(key) {
