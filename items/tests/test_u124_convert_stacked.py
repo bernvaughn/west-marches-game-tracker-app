@@ -104,15 +104,38 @@ def test_preview_refusal_pending_agent_proposal(club, owned_item, club_admin, ch
     assert any("pending agent proposal" in r for r in preview.refusal_reasons)
 
 
-def test_preview_refusal_negative_or_zero_total(club, owned_item, club_admin):
+def test_preview_refusal_negative_total(club, owned_item, club_admin):
+    from ledger.models import LedgerEntry, LedgerLine
+    c1 = make_character(club, "Aria")
+    c2 = make_character(club, "Borin")
+    record(c1, "award", [Line(item=owned_item, quantity=2)])
+    # Create a negative net total directly via ledger entries (bypassing validation)
+    entry = LedgerEntry.objects.create(character=c2, kind=LedgerEntry.Kind.ADJUSTMENT, note="test")
+    LedgerLine.objects.create(entry=entry, item=owned_item, quantity=-1)
+    preview = conversion_preview(owned_item)
+    assert any("negative" in r for r in preview.refusal_reasons)
+    assert any("Borin" in r for r in preview.refusal_reasons)
+    # Aria (net +2) should not be in the refusal
+    assert not any("Aria" in r for r in preview.refusal_reasons)
+
+
+def test_preview_net_zero_skipped_not_refused(club, owned_item, club_admin):
     c1 = make_character(club, "Aria")
     c2 = make_character(club, "Borin")
     record(c1, "award", [Line(item=owned_item, quantity=2)])
     record(c2, "award", [Line(item=owned_item, quantity=1)])
     record(c2, "consumed", [Line(item=owned_item, quantity=-1)])  # net zero
     preview = conversion_preview(owned_item)
-    assert any("zero or negative" in r for r in preview.refusal_reasons)
-    assert any("Borin" in r for r in preview.refusal_reasons)
+    assert preview.refusal_reasons == []  # no refusal for net zero
+    # Borin should be marked as skipped
+    borin = next(h for h in preview.holders if h["name"] == "Borin")
+    assert borin["skipped"] is True
+    assert borin["owned"] == 0
+    assert borin["new"] == 0
+    # Aria should not be skipped
+    aria = next(h for h in preview.holders if h["name"] == "Aria")
+    assert aria["skipped"] is False
+    assert aria["owned"] == 2
 
 
 def test_preview_overflow(club, club_admin):
@@ -228,7 +251,7 @@ def test_convert_all_or_nothing(club, club_admin):
     c2 = make_character(club, "Borin")
     record(c1, "award", [Line(item=item, quantity=2)])
     record(c2, "award", [Line(item=item, quantity=1)])
-    record(c2, "consumed", [Line(item=item, quantity=-1)])  # c2 net zero -> refusal
+    record(c2, "consumed", [Line(item=item, quantity=-2)])  # c2 net -1 -> refusal
 
     entries_before = LedgerEntry.objects.count()
     with pytest.raises(StackedConversionError):
@@ -238,6 +261,27 @@ def test_convert_all_or_nothing(club, club_admin):
     assert item.unit_name == ""
     assert item.value_units == 1
     assert LedgerEntry.objects.count() == entries_before  # nothing written
+
+
+def test_convert_net_zero_skipped_no_ledger_entry(club, club_admin):
+    item = Item.objects.create(club=club, name="Rope", value_cp=100)
+    c1 = make_character(club, "Aria")
+    c2 = make_character(club, "Borin")
+    record(c1, "award", [Line(item=item, quantity=2)])
+    record(c2, "award", [Line(item=item, quantity=1)])
+    record(c2, "consumed", [Line(item=item, quantity=-1)])  # c2 net zero
+
+    entries_before = LedgerEntry.objects.count()
+    convert_to_stacked(item, 5, "ft")
+    item.refresh_from_db()
+    assert item.is_stacked
+    assert item.unit_name == "ft"
+    assert item.value_units == 5
+    # Only Aria should have an adjustment entry (Borin net zero -> skipped)
+    assert LedgerEntry.objects.count() == entries_before + 1
+    # Quantities: Aria 2 * 5 = 10, Borin 0 * 5 = 0 (no ledger entry for Borin)
+    assert item_quantities(c1)[item.pk] == 10
+    assert item_quantities(c2)[item.pk] == 0
 
 
 def test_convert_refusals_write_nothing(club, club_admin, character):

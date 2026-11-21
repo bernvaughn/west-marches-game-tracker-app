@@ -14,7 +14,9 @@ error. Running it twice changes nothing.
 Per club it:
 1. Converts bundle items with ``items.services.convert_to_stacked`` after
    renaming them: "Arrows (20)" becomes "Arrows" and each owned bundle becomes
-   20 units, with one ledger entry per holder.
+   20 units, with one ledger entry per holder. Holders whose net total is
+   exactly zero are skipped (no ledger entry, shown as "skipped (owns none)").
+   Holders with a negative net total refuse the whole conversion.
 2. Merges the plain "Crossbow Bolt" / "Arrow" items into the stacked item
    1:1 (the plain items already count single units). If the stacked item does
    not exist, the plain item is turned into it in place.
@@ -211,10 +213,15 @@ class Command(BaseCommand):
             )
 
         preview = conversion_preview(old_item, factor=factor)
+        non_skipped = sum(1 for h in preview.holders if not h.get("skipped"))
+        skipped_names = [h["name"] for h in preview.holders if h.get("skipped")]
         self.stdout.write(
-            f'  "{old_name}": {len(preview.holders)} holders, {preview.total_owned} owned '
+            f'  "{old_name}": {non_skipped} holders, {preview.total_owned} owned '
             f'-> "{new_name}" ({factor} x {unit_name})'
         )
+        for h in preview.holders:
+            if h.get("skipped"):
+                self.stdout.write(f'    {h["name"]}: skipped (owns none)')
         if preview.refusal_reasons:
             raise Refusal(f'"{old_name}": ' + " ".join(preview.refusal_reasons))
 
