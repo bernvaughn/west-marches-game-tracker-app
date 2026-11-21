@@ -28,6 +28,10 @@
 .wm-inline-form .form-select { width: auto; min-width: 6rem; }
 .wm-narrow-block { max-width: var(--wm-size-form); }
 
+.wm-feedback-filter__field { flex: 1 1 9rem; min-width: 0; }
+.wm-feedback-filter__field .form-select { min-width: 9rem; width: 100%; }
+@media (min-width: 576px) { .wm-feedback-filter__field { flex: 0 1 12rem; } }
+
 /* Inbox bulk actions: hide the bulk bar until at least one row is checked.
    :has() keeps this HTMX-safe (no load-time-only JS); #inbox-list is re-swapped on refresh. */
 #inbox-bulk-bar { display: none; }

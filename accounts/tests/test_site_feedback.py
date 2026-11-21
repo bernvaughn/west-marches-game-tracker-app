@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from django.test import Client, override_settings
 from django.urls import reverse
@@ -145,6 +147,45 @@ def test_site_admin_sees_list_and_changes_status(site_admin, club, player, login
     r = c.post(_status_url(fb.pk), {"status": "open"})
     assert r.status_code == 302
     assert SiteFeedback.objects.get().status == "open"
+
+
+@pytest.mark.django_db
+def test_site_admin_feedback_filters_are_labelled_and_table_is_phone_ready(
+    site_admin, club, player, login
+):
+    c = login(site_admin)
+    SiteFeedback.objects.create(
+        user=player,
+        club=club,
+        kind="bug",
+        body="The tile crashes.",
+        page_url="https://example.com/a/very/long/page/url/that/should/not/push/report/off/screen",
+    )
+    r = c.get(LIST_URL)
+    assert r.status_code == 200
+    body = r.content.decode()
+
+    # Labels are tied to their selects with for/id.
+    assert 'for="feedback-status"' in body
+    assert 'id="feedback-status"' in body
+    assert 'for="feedback-kind"' in body
+    assert 'id="feedback-kind"' in body
+
+    # Filter controls wrap; the old non-wrapping inline-flex row is gone.
+    assert "flex-wrap" in body
+    assert "d-inline-flex" not in body
+
+    # Low-value columns are optional; Report, Status and Kind stay visible.
+    th_tags = re.findall(r"<th[^>]*>.*?</th>", body, re.S)
+    optional = [t for t in th_tags if "wm-col-optional" in t]
+    assert len(optional) == 4
+    for label in ("User", "Club", "Page", "Date"):
+        assert any(label in t for t in optional), label
+    for label in ("Kind", "Status", "Report"):
+        assert not any(label in t and "wm-col-optional" in t for t in th_tags), label
+
+    # Action column has a visually hidden header.
+    assert re.search(r'<th class="actions"><span class="visually-hidden">Actions</span></th>', body)
 
 
 @pytest.mark.django_db
