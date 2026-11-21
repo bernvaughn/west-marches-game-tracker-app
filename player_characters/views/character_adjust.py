@@ -100,6 +100,10 @@ def consume(request, club_slug, pk):
     if post and _handle(request, character, form, formset, -1, "consumed"):
         messages.success(request, f"Consumed from {character.name}.")
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+    available_with_units = [
+        (item, avail[item.pk], item.unit_name if item.is_stacked else "")
+        for item in items.order_by("name")
+    ]
     return render(
         request,
         "player_characters/characters/consume.html",
@@ -109,7 +113,7 @@ def consume(request, club_slug, pk):
             "formset": formset,
             "recent": recent_changes(character),
             "coins_available": available_coins(character),
-            "available": [(item, avail[item.pk]) for item in items.order_by("name")],
+            "available": available_with_units,
         },
     )
 
