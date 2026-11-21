@@ -97,7 +97,7 @@ GENERAL_STORE_GEAR = [
     GearItem("Lantern, Bullseye", 1000, "🔦"),
     GearItem("Lantern, Hooded", 500, "🏮"),
     GearItem("Lock", 1000, "🔒"),
-    GearItem("Magnifying Glass", 10000, "🔭"),
+    GearItem("Magnifying Glass", 10000, "🔍"),
     GearItem("Manacles", 200, "⛓️"),
     GearItem("Map", 100, "🗺️"),
     GearItem("Mirror", 500, "🪞"),
