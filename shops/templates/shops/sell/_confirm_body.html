@@ -1,4 +1,4 @@
-{% load coins units %}
+{% load coins units quest_needs %}
 <dl class="wm-dl wm-shop-sums">
   <dt>Units</dt><dd>{{ unit_text }}</dd>
   {% if item.is_stacked %}
@@ -9,6 +9,10 @@
   {% endif %}
 </dl>
 <p>Selling as <strong>{{ character.name }}</strong></p>
+{% quest_needs character as needs %}
+{% with names=needs|needed_for:item.pk %}{% if names %}
+<p class="wm-quest-needed-warning text-warning-emphasis">Warning: {{ item.name }} is needed for the quest {{ names|join:", " }}. You may not be able to finish it if you sell.</p>
+{% endif %}{% endwith %}
 <div class="alert alert-warning wm-alert wm-alert--warning" role="alert">{% include "components/icon.html" with name="exclamation-triangle-fill" %}<div>
   {% if item.is_stacked %}
     {% if junk_quantity %}Only {{ junk_quantity }} of {{ unit_text }} are marked as junk. All {{ unit_text }} sell and leave your inventory for {{ total|coins }}.{% else %}{{ item.name }} is not marked as junk. Selling {{ unit_text }} pays {{ total|coins }} and it leaves your inventory.{% endif %}
