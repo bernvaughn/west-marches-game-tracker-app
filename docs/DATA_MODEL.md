@@ -119,8 +119,17 @@ A player's email is shown only to club admins (U17).
 ### player_characters
 
 - **Character**: belongs to a club and is owned by a membership. Name and an optional level from 1 (U52, not tied to XP). The sheet (U2, U69) adds optional class, species, alignment, pronouns, a description, the six ability scores (1 to 30, with the modifier worked out as (score - 10) // 2), armor class (0 to 40), a Perception bonus (may be negative; passive Perception is 10 plus the bonus, blank shows a dash), and XP. Handing a character to another player changes the owner (U18).
+  - **`died_on`** (date, nullable): the date the character died. If set, the character is dead.
+  - **`death_note`** (text, blank): optional note about the death.
+  - **`archived_at`** (datetime, nullable): when the character was archived. If set, the character is archived.
+  - Dead and archived are independent states; each can be set without the other.
+  - Properties: `is_dead` (`died_on` is set), `is_archived` (`archived_at` is set), `is_active` (not archived).
+  - Queryset methods: `not_archived()`, `living()` (not dead), `dead()`. Lookups by id still find archived characters.
 - **Inventory entry**: a character, an item, and a quantity. Visible only to the owner, game masters, and club admins (U19).
 - **Junk mark**: a character, an item, and a quantity the player set aside to sell (U47). One per character and item. The quantity is capped at the number owned when read, so it needs no cleanup when items leave. It never touches the ledger.
+
+- **Character status change** (append-only): one row per state change on a character. Fields: `character` (FK), `kind` (died, revived, archived, unarchived), `by` (Membership, nullable), `at` (datetime), `note` (text), `date` (date). Uses `AppendOnlyModel` so rows cannot be updated or deleted. Ordered by `-at, -id`. Index on `(character, at)`.
+  - The single guard for all state checks is `player_characters/life.py`: `can_buy`, `can_sell`, `can_act`, `buy_block_reason`, `sell_block_reason`, `require_can_buy`, `require_can_sell`, `require_can_act`, plus service functions `mark_dead`, `undo_death`, `archive`, `unarchive` that write one history row each in a transaction.
 
 ### starting_equipment
 

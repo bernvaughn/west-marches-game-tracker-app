@@ -264,6 +264,13 @@ EXCLUDED = {
     "shops:sell_junk_pick": "HTMX partial endpoint for shop picker modal.",
     "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
+    # C1 death and archive stub views
+    "characters:death": "C1 stub view returning 404.",
+    "characters:death_undo": "C1 stub view returning 404.",
+    "characters:archive": "C1 stub view returning 404.",
+    "characters:unarchive": "C1 stub view returning 404.",
+    "characters:archived": "C1 stub view returning 404.",
+    "characters:fallen": "C1 stub view returning 404.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",

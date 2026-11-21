@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 
 from accounts.scoping import ClubScopedManager, ClubScopedQuerySet
-from ledger.models import AppendOnlyModel, AppendOnlyManager
+from ledger.models import AppendOnlyManager, AppendOnlyModel
 
 ABILITIES = [
     ("strength", "STR", "Strength"),

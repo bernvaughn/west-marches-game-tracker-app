@@ -155,7 +155,8 @@ def archive(character, *, by, note=""):
 
 
 def unarchive(character, *, by, note=""):
-    """Unarchive a character. Does not reopen the stall. Returns the new CharacterStatusChange row."""
+    """Unarchive a character. Does not reopen the stall.
+    Returns the new CharacterStatusChange row."""
     if not character.is_archived:
         raise LifeError(f"{character.name} is not archived")
 
@@ -178,4 +179,4 @@ def unarchive(character, *, by, note=""):
 
 
 # Import at bottom to avoid circular imports
-from player_characters.models import Character, CharacterStatusChange
+from player_characters.models import Character, CharacterStatusChange  # noqa: E402

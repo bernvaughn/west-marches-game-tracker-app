@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    archive_screen,
     character_adjust,
     character_archive,
     character_consume,
@@ -13,7 +14,6 @@ from .views import (
     character_slips,
     character_starting_reveal,
     characters,
-    archive_screen,
     fallen,
     selection,
 )

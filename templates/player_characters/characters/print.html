@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins static %}
+{% load coins static life_tags %}
 {% block title %}Items of {{ character.name }}{% endblock %}
 {% block main_class %}wm-card-print{% endblock %}
 {% block content %}
@@ -23,4 +23,5 @@
 {% empty %}
 {% if not too_many %}{% include "components/empty_state.html" with text="No items." %}{% endif %}
 {% endfor %}
+{% include "player_characters/characters/_life_badge.html" with character=character %}
 {% endblock %}
