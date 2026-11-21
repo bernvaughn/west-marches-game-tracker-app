@@ -27,6 +27,19 @@
 
 .wm-notice--faded { opacity: .6; filter: grayscale(1); }
 .wm-notice--large { max-width: 40rem; margin-inline: auto; margin-bottom: var(--wm-space-5); padding: var(--wm-space-6) var(--wm-space-5) var(--wm-space-5); }
+
+/* U136: per-requirement progress under a board notice. */
+.wm-notice-progress { margin: var(--wm-space-3) 0 0; padding: 0; list-style: none; font-size: var(--wm-text-sm); }
+.wm-notice-progress li { display: flex; align-items: baseline; gap: var(--wm-space-2); margin: 0 0 var(--wm-space-1); }
+.wm-notice-req { flex: 0 0 auto; }
+.wm-notice-have { flex: 0 0 auto; }
+.wm-notice-bar { flex: 1; border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); background: var(--wm-neutral-bg); height: 6px; overflow: hidden; display: flex; align-items: center; }
+.wm-notice-fill { height: 100%; width: 0%; background: var(--wm-accent); }
+.wm-notice-short { margin: var(--wm-space-2) 0 0; font-size: var(--wm-text-sm); color: var(--wm-danger); }
+
+@media print {
+  .wm-notice-bar { display: none; }
+}
 .wm-notice--large .wm-notice-title { font-size: var(--wm-text-2xl); }
 .wm-notice--large .wm-notice-info { font-size: var(--wm-text-md); }
 

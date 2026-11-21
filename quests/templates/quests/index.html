@@ -8,7 +8,7 @@
   {% if board %}
   <ul class="wm-board-grid">
     {% for quest in board %}
-    <li>{% url 'quests:detail' club.slug quest.pk as detail_url %}{% include "quests/_notice.html" with link_url=detail_url stamp=quest.stamp heading="h2" %}</li>
+    <li>{% url 'quests:detail' club.slug quest.pk as detail_url %}{% include "quests/_notice.html" with link_url=detail_url stamp=quest.stamp heading="h2" progress=quest.progress %}</li>
     {% endfor %}
   </ul>
   {% else %}

@@ -37,6 +37,31 @@ def _stamp(quest, have, counts, full):
     return None
 
 
+def _progress(quest, have):
+    """Per-requirement progress rows for a quest notice, or None when there are none."""
+    reqs = quest.requirements.all()
+    if not reqs:
+        return None
+    rows = []
+    missing_total = 0
+    for r in reqs:
+        need = r.quantity
+        have_n = have.get(r.item_id, 0)
+        short = max(0, need - have_n)
+        missing_total += short
+        rows.append(
+            {
+                "item": r.item,
+                "have": have_n,
+                "need": need,
+                "short": short,
+                "percent": min(100, have_n * 100 // need) if need else 100,
+                "unit_name": r.item.unit_name if r.item.is_stacked else "",
+            }
+        )
+    return {"rows": rows, "missing_total": missing_total}
+
+
 @club_member_required
 def index(request, club_slug):
     today = timezone.localdate()
@@ -65,6 +90,9 @@ def index(request, club_slug):
         full = q.left == 0
         q.stamp = _stamp(q, have, counts, full) if character is not None else None
         if status == "live" and not full:
+            q.progress = (
+                _progress(q, have) if (character is not None and q.stamp != "done") else None
+            )
             board.append(q)
             continue
         if status == "ended":
