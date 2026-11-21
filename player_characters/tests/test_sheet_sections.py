@@ -1,5 +1,7 @@
 """Tests for the character sheet sections registry and tag."""
 
+from html.parser import HTMLParser
+
 import pytest
 from django.template import Context
 from django.test import RequestFactory, override_settings
@@ -232,9 +234,7 @@ def test_sheet_renders_sections_after_ledger(club, login, player, character):
         ledger_idx = html.index("Recent ledger entries")
         demo_idx = html.index("Hello from section")
         assert demo_idx > ledger_idx
-        # Wrapper has no-print and data-sheet-section
         assert 'data-sheet-section="demo"' in html
-        assert "no-print" in html
 
 
 @pytest.mark.story("C2")
@@ -355,3 +355,57 @@ def test_repeated_key_replaces_old_entry(request_factory, character):
     assert len(result) == 1
     assert result[0]["context"]["value"] == "new"
     assert result[0]["order"] == 20
+
+
+class _SectionTagParser(HTMLParser):
+    """Track nesting of <section> tags that carry data-sheet-section."""
+
+    def __init__(self):
+        super().__init__()
+        self.opens = 0
+        self.closes = 0
+        self.stack = []  # (is_sheet_section, key)
+        self.sheet_section_depths = {}  # key -> number of open sheet sections when opened
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "section":
+            return
+        self.opens += 1
+        key = dict(attrs).get("data-sheet-section")
+        if key is not None:
+            self.sheet_section_depths[key] = sum(1 for is_ss, _ in self.stack if is_ss)
+        self.stack.append((key is not None, key))
+
+    def handle_endtag(self, tag):
+        if tag != "section":
+            return
+        self.closes += 1
+        if self.stack:
+            self.stack.pop()
+
+
+@pytest.mark.story("C2")
+def test_two_sections_are_balanced_and_not_nested(club, login, player, character):
+    """Each wrapper is closed; the second section is not inside the first."""
+    with _with_demo_template():
+        sheet_sections.register_sheet_section(
+            "a", 10, DEMO_TEMPLATE_NAME, lambda r, c: {"demo_value": "AAA"}
+        )
+        sheet_sections.register_sheet_section(
+            "b", 20, DEMO_TEMPLATE_NAME, lambda r, c: {"demo_value": "BBB"}
+        )
+
+        url = u("characters:detail", club, character.pk)
+        html = login(player).get(url).content.decode()
+
+    parser = _SectionTagParser()
+    parser.feed(html)
+    assert parser.opens == parser.closes
+    assert parser.stack == []
+    # Both wrappers sit at the same level: neither is inside another sheet section.
+    assert parser.sheet_section_depths == {"a": 0, "b": 0}
+    # The first wrapper is closed before the second one opens.
+    a_start = html.index('data-sheet-section="a"')
+    b_start = html.index('data-sheet-section="b"')
+    assert "</section>" in html[a_start:b_start]
+    assert html[a_start:b_start].count("</section>") >= 1

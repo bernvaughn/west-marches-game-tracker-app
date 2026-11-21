@@ -6,6 +6,7 @@ ledger box, and only on screen (they carry ``no-print``).
 """
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
@@ -18,8 +19,8 @@ class SheetSection:
     key: str
     order: int
     template: str
-    context_fn: object  # Callable[[HttpRequest, Character], dict | None]
-    visible_fn: object | None = None  # Callable[[HttpRequest, Character], bool] | None
+    context_fn: Callable[..., dict | None]  # (request, character) -> dict | None
+    visible_fn: Callable[..., bool] | None = None  # (request, character) -> bool
 
 
 _sections: dict[str, SheetSection] = {}
@@ -29,8 +30,8 @@ def register_sheet_section(
     key: str,
     order: int,
     template: str,
-    context_fn: object,
-    visible_fn: object | None = None,
+    context_fn: Callable[..., dict | None],
+    visible_fn: Callable[..., bool] | None = None,
 ) -> None:
     """Register a sheet section.
 

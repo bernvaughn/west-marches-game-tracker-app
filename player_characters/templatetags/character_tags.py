@@ -1,5 +1,7 @@
 """Template tags for character-related functionality."""
 
+import logging
+
 from django import template
 from django.template.loader import render_to_string
 from django.utils.html import format_html
@@ -7,6 +9,8 @@ from django.utils.safestring import mark_safe
 
 from ..selector_context import all_characters_selector_context, character_selector_context
 from ..sheet_sections import get_sheet_sections
+
+logger = logging.getLogger(__name__)
 
 register = template.Library()
 
@@ -82,16 +86,13 @@ def sheet_sections(context):
             )
         except Exception:
             # Log and skip a broken template; do not break the sheet.
-            import logging
-
-            logger = logging.getLogger(__name__)
             logger.exception("Template render failed for sheet section %r", section["key"])
             continue
 
         # Wrap in a section with no-print and data attribute
         wrapper = format_html(
             '<section class="wm-sheet-box wm-sheet-full no-print wm-sheet-extra" '
-            'data-sheet-section="{}" aria-label="{}">{}',
+            'data-sheet-section="{}" aria-label="{}">{}</section>',
             section["key"],
             section["key"].replace("_", " ").title(),
             mark_safe(html),
