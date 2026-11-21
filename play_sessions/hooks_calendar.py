@@ -7,7 +7,6 @@ circular imports at app load time.
 
 from django.utils import timezone
 
-from . import core
 from .calendar import next_session
 
 
@@ -46,4 +45,4 @@ def register():
 def _next_session_ctx(club):
     """Wrap ``next_session`` so the empty state is ``{"session": None}``."""
     session = next_session(club, timezone.now())
-    return {"session": session}
+    return {"session": session, "club": club}

@@ -24,4 +24,4 @@ def next_session_block(context):
 
 def _next_session_ctx(club):
     session = next_session(club, timezone.now())
-    return {"session": session}
+    return {"session": session, "club": club}

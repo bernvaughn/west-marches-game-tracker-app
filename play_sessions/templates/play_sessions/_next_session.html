@@ -23,7 +23,7 @@
     {% endwith %}
     {% else %}
     <p class="card-text text-muted">No sessions scheduled.</p>
-    <a href="{% url 'play_sessions:calendar' club.slug %}" class="btn btn-sm btn-outline-primary">View calendar</a>
+    <a href="{% url 'play_sessions:calendar' provider_context.club.slug %}" class="btn btn-sm btn-outline-primary">View calendar</a>
     {% endif %}
   </div>
 </div>

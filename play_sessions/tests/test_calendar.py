@@ -8,16 +8,26 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Club, Membership, User
-from play_sessions import core
-from play_sessions.calendar import month_grid, next_session, parse_month, upcoming_list
-from play_sessions.feed import build_ics, get_or_create_token, reset_token
+from play_sessions.calendar import month_grid, next_session, parse_month
+from play_sessions.feed import build_ics, get_or_create_token
 from play_sessions.models import PlaySession, SessionRSVP
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P3")]
 
 
-def _session(club, title, starts_at, ends_at=None, cancelled=False, gm=None, location="", notes="", recap="", gm_notes=""):
+def _session(
+    club,
+    title,
+    starts_at,
+    ends_at=None,
+    cancelled=False,
+    gm=None,
+    location="",
+    notes="",
+    recap="",
+    gm_notes="",
+):
     return PlaySession.objects.create(
         club=club,
         title=title,
@@ -144,8 +154,12 @@ def test_yes_count_counts_only_yes(club, game_master, player, other_player):
     char2 = Character.objects.create(club=club, owner=other_owner, name="C2")
 
     session = _session(club, "RSVP session", timezone.now() + timedelta(days=1), gm=gm_membership)
-    SessionRSVP.objects.create(session=session, character=char1, answer=SessionRSVP.Answer.YES, answered_by=player)
-    SessionRSVP.objects.create(session=session, character=char2, answer=SessionRSVP.Answer.MAYBE, answered_by=other_player)
+    SessionRSVP.objects.create(
+        session=session, character=char1, answer=SessionRSVP.Answer.YES, answered_by=player
+    )
+    SessionRSVP.objects.create(
+        session=session, character=char2, answer=SessionRSVP.Answer.MAYBE, answered_by=other_player
+    )
 
     grid = month_grid(
         club, timezone.localdate().year, timezone.localdate().month, timezone.localdate()
@@ -403,5 +417,7 @@ def test_isolation_club_b_not_in_club_a(client, club, game_master):
     assert b"Club A session" in feed.content
     assert b"Club B session" not in feed.content
     # Another club's ?month= leaks nothing
-    b = client.get(reverse("play_sessions:calendar", kwargs={"club_slug": club.slug}) + "?month=2025-01")
+    b = client.get(
+        reverse("play_sessions:calendar", kwargs={"club_slug": club.slug}) + "?month=2025-01"
+    )
     assert b.status_code == 200

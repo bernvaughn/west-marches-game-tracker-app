@@ -5,10 +5,10 @@ The .ics is written by hand (RFC 5545, CRLF line ends) with no new dependency.
 
 import secrets
 from datetime import timedelta
+
 from django.db import IntegrityError
 from django.utils import timezone
 
-from . import core
 from .models import PlaySession, SessionSettings
 
 

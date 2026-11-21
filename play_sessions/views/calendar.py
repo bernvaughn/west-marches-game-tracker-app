@@ -1,6 +1,7 @@
 """Calendar views: the month grid page, the feed reset, and the public .ics feed."""
 
 import calendar as cal_module
+
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
@@ -10,10 +11,10 @@ from django.views.decorators.http import require_POST, require_safe
 
 from accounts.permissions import club_admin_required, club_member_required
 
+from .. import calendar as calendar_helpers
 from .. import core
 from ..feed import build_ics, get_or_create_token, reset_token
 from ..models import SessionSettings
-from . import calendar as calendar_helpers
 
 
 @club_member_required
@@ -25,9 +26,7 @@ def calendar_page(request, club_slug):
     grid = calendar_helpers.month_grid(club, year, month, today)
     upcoming = calendar_helpers.upcoming_list(club, year, month, today)
     token = get_or_create_token(club)  # creates the token on first use
-    feed_url = request.build_absolute_uri(
-        reverse("play_sessions_public:feed", args=[token])
-    )
+    feed_url = request.build_absolute_uri(reverse("play_sessions_public:feed", args=[token]))
     webcal_url = "webcal://" + feed_url.split("://", 1)[1]
     context = {
         "club": club,

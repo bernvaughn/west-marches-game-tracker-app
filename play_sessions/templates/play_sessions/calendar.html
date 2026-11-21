@@ -25,7 +25,7 @@
     {% if can_manage %}
     <form
       method="post"
-      action="{% url 'play_sessions:feed_reset' %}"
+      action="{% url 'play_sessions:feed_reset' club.slug %}"
       class="d-inline mt-2"
       onsubmit="return confirm('Reset the feed token? This invalidates the old public link.')"
     >
