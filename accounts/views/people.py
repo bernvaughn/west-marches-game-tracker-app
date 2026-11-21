@@ -56,6 +56,7 @@ def whitelist(request, club_slug):
             request.club,
             email,
             data["display_name"],
+            is_club_admin=data["is_club_admin"],
             is_game_master=data["is_game_master"],
         )
         if data["character_name"].strip():
