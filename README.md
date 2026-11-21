@@ -4,7 +4,7 @@ Downtime Market is a game tracker for West Marches style D&D clubs.
 
 Plan written 2026-11-09 and re-checked against the full scope on 2026-11-10. Prices come from DigitalOcean's own docs where noted and otherwise from third-party summaries; confirm them on the signup page.
 
-Scope has since grown to a dozen Django apps (see [Django apps](#django-apps)), clubs, maps, quests, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends no email (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
+Scope has since grown to a dozen Django apps (see [Django apps](#django-apps)), clubs, maps, quests, printing, and a donate button. The cost and infrastructure sections below were re-checked against that scope; the plan still fits one $6 Droplet. The app sends email through Resend (see [Sending email](#sending-email)). User stories are in [docs/USER_STORIES.md](docs/USER_STORIES.md), and a plain-language outline of the records is in [docs/DATA_MODEL.md](docs/DATA_MODEL.md).
 
 ## Run locally
 
@@ -187,7 +187,7 @@ Buy one Basic Droplet with 1 GiB of RAM at $6/month, add backups if you want the
 | DigitalOcean Droplet, Basic, 1 GiB RAM | $6/month | Yes | 1 vCPU, 25 GB SSD, about 1 TB of outbound transfer included ([plan list](https://www.temperstack.com/plans/digitalocean/)) |
 | Automatic Droplet backups | about $1.20/month (20% of the Droplet price) | Optional | Weekly backups ([cost example](https://www.activepieces.com/blog/digitalocean-pricing-plans-and-real-costs-in-2026)) |
 | Domain name | about $10-15/year | Yes, for agent access | Approximate, not looked up; lets Caddy get a free HTTPS certificate automatically, and agents need a public HTTPS address to connect |
-| Email-sending service | $0 | No | The app sends no email for now; see [Sending email](#sending-email) |
+| Email-sending service | $0 | No | Resend, free tier is enough for about 20 players; see [Sending email](#sending-email) |
 | Django, SQLite, htmx, gunicorn, Caddy | $0 | Yes | All free, open-source software |
 
 Total: $6/month for the server alone, or $7.20/month with backups, plus the domain. DigitalOcean's docs confirm weekly backups cost 20% of the Droplet price ([backups pricing](https://docs.digitalocean.com/products/backups/details/pricing/)). A $4 Droplet with 512 MiB RAM also exists ([price list](https://kuberns.com/blogs/digitalocean-pricing/)), but 1 GiB leaves room for gunicorn, Caddy, and the nightly backup running together, so this plan stays at $6.
@@ -258,7 +258,7 @@ When to look again: many clubs at once (hundreds of regular users), long-lived l
 
 DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and recommends a third-party email service ([DigitalOcean docs](https://docs.digitalocean.com/support/why-is-smtp-blocked/)); the account's support replies say the block can't be lifted. Some providers offer another port, such as 2525, or an HTTPS API, which are not blocked ([Ghost's guide](https://docs.ghost.org/faq/digitalocean-smtp-blocked)).
 
-**Decision: no email for now.** Club admins create accounts and hand out one-time temporary passwords; people choose their own on first sign-in; club admins reset passwords for players and game masters whose clubs they all administer; the site admin can reset anyone's (stories U20-U22). The app sends no email, so no email provider is needed. If email is wanted later (sign-in links, notifications), use a transactional provider through its HTTPS API or port 2525, with a domain for sender verification; free tiers exist at some providers but I did not check any.
+**Decision (updated 2026-11-21): send email through Resend's HTTPS API.** This replaces the earlier "no email for now" decision. The uses are a welcome link for new accounts, password reset links, and session reminders with RSVP links (stories E1-E9). Email is never required: admins can still hand out temporary passwords and reset passwords by hand. The Resend key goes in `/etc/downtime.env` as `RESEND_API_KEY`, with `EMAIL_FROM` on a domain verified in Resend. The key never goes in code or logs.
 
 Do not run your own mail server on the Droplet.
 
