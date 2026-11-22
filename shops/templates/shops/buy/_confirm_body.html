@@ -1,4 +1,4 @@
-{% load coins loot_tags units %}
+{% load coins loot_tags units life_tags %}
 {# Per-bundle price the player was shown. Sent back on submit so the view can
     detect a price change before buying. Kept outside #buy-summary so the
     quantity-only hx-swap does not refresh it. #}
@@ -19,6 +19,10 @@
 {% elif not character %}
 <p>You have no character in this club.</p>
 {% else %}
+{% with reason=character|buy_block_reason %}
+{% if reason %}
+<p class="wm-sheet-note" role="status">{{ reason }}</p>
+{% else %}
 <p>Buying as <strong>{{ character.name }}</strong></p>
 {% if junk_value %}<p class="wm-sheet-note">Junk: {{ junk_value|coins }}</p>{% endif %}
 {% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
@@ -35,4 +39,6 @@
     <dt>Coins after</dt><dd>{% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</dd>
   </dl>
 </div>
+{% endif %}
+{% endwith %}
 {% endif %}

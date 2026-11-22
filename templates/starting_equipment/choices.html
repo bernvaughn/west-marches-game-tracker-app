@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static accounts_tags %}
+{% load static accounts_tags life_tags %}
 {% block title %}Choose starting equipment{% endblock %}
 
 {% block content %}
@@ -56,7 +56,13 @@
       </div>
     </section>
     <div class="wm-form-actions mt-3">
-      <button type="submit" class="btn btn-primary">Confirm choices</button>
+    {% with reason=character|buy_block_reason %}
+    {% if reason %}
+    <p class="wm-sheet-note" role="status">{{ reason }}</p>
+    {% else %}
+    <button type="submit" class="btn btn-primary">Confirm choices</button>
+    {% endif %}
+    {% endwith %}
       <a class="btn btn-outline-secondary" href="{{ sheet_url }}">Finish later</a>
     </div>
   </form>

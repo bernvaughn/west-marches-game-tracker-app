@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load life_tags %}
 {% block title %}Buy from {{ shop.name }}{% endblock %}
 {% block content %}
 {% url "shops:detail" request.club.slug shop.pk as back_url %}{% include "components/page_header.html" with title="Buy from "|add:shop.name back_url=back_url back_label="Back to "|add:shop.name %}
@@ -6,7 +7,9 @@
 <form method="post" class="wm-form">
   {% csrf_token %}
   {% include "shops/buy/_confirm_body.html" %}
-  {% if character and not sold_out %}<div class="wm-form-actions"><button class="btn btn-primary" type="submit">Buy as {{ character.name }}</button></div>{% endif %}
+  {% with reason=character|buy_block_reason %}
+  {% if character and not sold_out and not reason %}<div class="wm-form-actions"><button class="btn btn-primary" type="submit">Buy as {{ character.name }}</button></div>{% endif %}
+  {% endwith %}
 </form>
 {% include "components/card_close.html" %}
 {% endblock %}
