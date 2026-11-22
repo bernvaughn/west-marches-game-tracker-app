@@ -15,7 +15,7 @@
 <td class="wm-col-optional">{% if req.tile_q is not None %}({{ req.tile_q }}, {{ req.tile_r }}){% else %}-{% endif %}</td>
 <td>
   {% for c in req.characters.all %}
-    {% include "components/character_chip.html" with name=c.name %}
+    {% include "components/request_character_chip.html" with character=c %}
   {% endfor %}
 </td>
 <td class="wm-col-optional">{{ req.requested_by.user.display_name }}</td>

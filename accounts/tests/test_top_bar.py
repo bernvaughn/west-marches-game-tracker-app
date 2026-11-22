@@ -13,10 +13,11 @@ pytestmark = [pytest.mark.django_db, pytest.mark.story("U61")]
 SHORTCUTS = {
     "Dashboard": ("accounts:player_dashboard", "character"),
     "Character": ("characters:mine", "character"),
-    "Shops": ("shops:index", "town"),
-    "Quests": ("quests:index", "town"),
-    "Downtime": ("downtime:play", "town"),
     "Map": ("map:index", "map"),
+    "Quests": ("quests:index", "town"),
+    "Sessions": ("play_sessions:calendar", "club"),
+    "Shops": ("shops:index", "town"),
+    "Downtime": ("downtime:play", "town"),
 }
 
 

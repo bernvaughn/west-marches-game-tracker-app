@@ -180,6 +180,7 @@ def test_seed_default_general_store_rollback_on_failure(site_admin, login, monke
                 "name": "Club C",
                 "slug": "",
                 "admin_email": "Boss@Example.com",
+                "timezone": "UTC",
                 "admin_display_name": "Boss",
             },
         )

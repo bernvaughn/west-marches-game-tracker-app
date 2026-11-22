@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% load accounts_tags play_sessions_tags static tz %}
+{% block title %}Sessions{{ block.super }}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/sessions.css' %}">
+{% include "components/page_header.html" with title="Sessions" subtitle="Club calendar" %}
+<div class="sessions-nav">
+  <a class="sessions-nav-link" href="?month={{ grid.prev_month }}" aria-label="Previous month">&lsaquo;</a>
+  <span class="sessions-month">{{ month_name }} {{ year }}</span>
+  <a class="sessions-nav-link" href="?month={{ grid.next_month }}" aria-label="Next month">&rsaquo;</a>
+</div>
+<div class="mb-3">
+  {% include "play_sessions/_month_grid.html" with grid=grid today=today club=club zone_name=zone_name class="d-none d-md-block" %}
+  {% include "play_sessions/_upcoming_list.html" with upcoming=upcoming today=today club=club zone_name=zone_name class="d-md-none" %}
+</div>
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Calendar feed</h5>
+    <p class="card-text small text-muted">
+      Subscribe to this club's sessions in your calendar app. Times are UTC.
+    </p>
+    <input type="text" class="form-control form-control-sm mb-2" value="{{ feed_url }}" readonly>
+    <a href="{{ webcal_url }}" class="btn btn-sm btn-outline-secondary">
+      {% include "components/icon.html" with name="calendar" %} Add to calendar
+    </a>
+    {% if can_manage %}
+    <form
+      method="post"
+      action="{% url 'play_sessions:feed_reset' club.slug %}"
+      class="d-inline mt-2"
+      data-confirm="Reset the feed token? This invalidates the old public link."
+    >
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-danger">
+        {% include "components/icon.html" with name="arrow-repeat" %} Reset feed token
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -313,6 +313,11 @@ EXCLUDED = {
     "characters:fallen": "C1 stub view returning 404.",
     "characters:death": "POST only; mark a character as dead.",
     "characters:death_undo": "POST only; undo a death mark.",
+    # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
+    # and the public token feed (needs a real token; not a demo page).
+    "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
+    "play_sessions:feed_reset": "POST only; admin resets the feed token.",
+    "play_sessions_public:feed": "Needs a real feed token; not a demo page.",
     "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
     "session page with a seeded recap is captured via play-sessions-detail and "
     "play-sessions-detail-player at 1280 and 390 px.",
@@ -395,6 +400,8 @@ def _build_pages() -> list[Page]:
         P("site-design", "site_admin", lambda d: reverse("site_design")),
         P("site-feedback", "site_admin", lambda d: reverse("site_feedback")),
         P("site-feedback-new", "alice", lambda d: reverse("feedback_new")),
+        # accounts club settings
+        P("accounts-club-settings", "gm", _c("accounts:club_settings")),
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
