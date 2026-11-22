@@ -511,9 +511,6 @@ def test_stub_views_return_404(login, player, character):
         reverse("characters:archived", args=[character.club.slug]),
         reverse("characters:fallen", args=[character.club.slug]),
     ]
-        reverse("characters:archived", args=[character.club.slug]),
-        reverse("characters:fallen", args=[character.club.slug]),
-    ]
     for url in urls:
         assert client.get(url).status_code == 404
         assert client.post(url).status_code == 404
