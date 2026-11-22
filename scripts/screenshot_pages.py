@@ -298,6 +298,7 @@ EXCLUDED = {
     "characters:unarchive": "C1 stub view returning 404.",
     "characters:archived": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
+    "play_sessions:report_csv": "CSV export; no HTML page to screenshot.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",
@@ -643,6 +644,7 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("play_sessions:session_detail", "play_session.pk"),
         ),
+        P("play-sessions-report", "club_admin", _c("play_sessions:report")),
         # map
         P(
             "map-visits",
