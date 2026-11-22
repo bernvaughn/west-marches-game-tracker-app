@@ -122,7 +122,10 @@ def add_favorite_flags(lots, favorite_shop_ids, favorite_stall_ids):
 def street_stalls(club):
     """Open player shops in this club with something listed, by name then id."""
     characters = (
-        Character.objects.for_club(club).filter(shop_open=True).order_by(Lower("name"), "id")
+        Character.objects.for_club(club)
+        .filter(shop_open=True)
+        .not_archived()
+        .order_by(Lower("name"), "id")
     )
     return [c for c in characters if has_listing(c)]
 

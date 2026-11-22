@@ -12,6 +12,7 @@ from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
 from player_characters.access import owns_character
 from player_characters.inventory import coin_summary, inventory_rows
+from player_characters.life import LifeError, buy_block_reason
 from player_characters.models import Character
 from player_characters.player_shop import (
     PlayerShopError,
@@ -83,6 +84,8 @@ def buy(request, club_slug, character_id, item_id):
                 )
             except PlayerShopError as exc:
                 error = str(exc)
+            except LifeError as exc:
+                error = str(exc)
             else:
                 messages.success(request, entry.note)
                 target = (
@@ -95,6 +98,11 @@ def buy(request, club_slug, character_id, item_id):
         form = BuyForm(request.GET, max_quantity=max_quantity)
     else:
         form = BuyForm(max_quantity=max_quantity)
+
+    if error is None and request.method != "POST":
+        reason = buy_block_reason(buyer)
+        if reason:
+            error = reason
 
     quantity = 1
     if form.is_bound and form.is_valid():

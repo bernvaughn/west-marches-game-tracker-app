@@ -22,6 +22,7 @@ from downtime import services
 from downtime.models import DowntimeAction, DowntimeResult
 from downtime.wheel import wheel_payload
 from ledger import services as ledger_services
+from player_characters import life
 
 COST_CHOICES = ("1", "2", "3+")
 REWARD_CHOICES = ("coins", "items", "mixed")
@@ -108,6 +109,8 @@ class PlayView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
             reason = ""
             if character is None:
                 reason = "You have no character."
+            elif life.buy_block_reason(character):
+                reason = life.buy_block_reason(character)
             elif balance < action.cost:
                 reason = "Not enough downtime points."
             cards.append({"action": action, "rewards": rewards, "reason": reason})

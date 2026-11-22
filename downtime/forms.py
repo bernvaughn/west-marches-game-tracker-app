@@ -25,7 +25,9 @@ class PointsForm(forms.Form):
 
     def __init__(self, *args, club, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["characters"].queryset = Character.objects.for_club(club).order_by("name", "id")
+        self.fields["characters"].queryset = (
+            Character.objects.for_club(club).not_archived().order_by("name", "id")
+        )
 
     def signed_delta(self):
         points = self.cleaned_data["points"]

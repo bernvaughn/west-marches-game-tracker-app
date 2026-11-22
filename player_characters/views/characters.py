@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch
+from django.db.models import Case, IntegerField, Prefetch, When
 from django.db.models.functions import Lower
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -14,7 +14,12 @@ from accounts.mixins import (
     ClubScopedMixin,
     PermissionMixin,
 )
-from accounts.permissions import admin_or_gm_required, club_admin_required, club_member_required
+from accounts.permissions import (
+    admin_or_gm_required,
+    club_admin_required,
+    club_member_required,
+    is_club_admin,
+)
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests
 from starting_equipment.models import StartingEquipmentTemplate
@@ -47,15 +52,40 @@ class MineView(ClubContextMixin, CharacterContextMixin, View):
         return render(request, "player_characters/characters/mine_empty.html")
 
 
+def _life_filter(request, is_admin):
+    """Return 'living', 'dead' or 'all' from ?status=. Only a club admin may filter."""
+    if not is_admin:
+        return "all"
+    status = request.GET.get("status", "all")
+    return status if status in ("living", "dead", "all") else "all"
+
+
+def _dead_last_ordering():
+    """Order characters so dead ones sort after living ones, then by name."""
+    return (
+        Case(When(died_on__isnull=False, then=1), default=0, output_field=IntegerField()),
+        Lower("name"),
+    )
+
+
 @method_decorator(club_member_required, name="dispatch")
 class DirectoryView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
     def get(self, request, club_slug):
-        sees_all = self.is_club_admin(request.user, self.club) or self.is_game_master(
-            request.user, self.club
-        )
-        characters = (
-            self.get_club_queryset(Character).select_related("owner__user").order_by(Lower("name"))
-        )
+        admin = self.is_club_admin(request.user, self.club)
+        sees_all = admin or self.is_game_master(request.user, self.club)
+        status = _life_filter(request, admin)
+        characters = self.get_club_queryset(Character).not_archived().select_related("owner__user")
+        if status == "living":
+            characters = characters.living()
+        elif status == "dead":
+            characters = characters.dead()
+        characters = characters.order_by(*_dead_last_ordering())
+        if status == "dead":
+            empty_text = "No dead characters."
+        elif status == "living":
+            empty_text = "No living characters."
+        else:
+            empty_text = "No characters yet."
         mine = getattr(request.membership, "pk", None)
         rows = []
         for c in characters:
@@ -72,15 +102,56 @@ class DirectoryView(ClubScopedMixin, PermissionMixin, ClubContextMixin, View):
                     "own": own,
                 }
             )
-        return render(request, "player_characters/characters/directory.html", {"rows": rows})
+        return render(
+            request,
+            "player_characters/characters/directory.html",
+            {
+                "rows": rows,
+                "status": status,
+                "can_filter": admin,
+                "archive_secondary": [
+                    {
+                        "url": reverse("characters:archived", args=[self.club.slug]),
+                        "label": "Archived characters",
+                    }
+                ],
+                "empty_text": empty_text,
+            },
+        )
 
 
 @method_decorator(admin_or_gm_required, name="dispatch")
 class IndexView(ClubScopedMixin, View):
     def get(self, request, club_slug):
-        characters = self.get_club_queryset(Character).select_related("owner__user")
+        admin = is_club_admin(request.user, request.club)
+        status = _life_filter(request, admin)
+        characters = self.get_club_queryset(Character).not_archived().select_related("owner__user")
+        if status == "living":
+            characters = characters.living()
+        elif status == "dead":
+            characters = characters.dead()
+        characters = characters.order_by(*_dead_last_ordering())
+        if status == "dead":
+            empty_text = "No dead characters."
+        elif status == "living":
+            empty_text = "No living characters."
+        else:
+            empty_text = "No characters yet."
         return render(
-            request, "player_characters/characters/index.html", {"characters": characters}
+            request,
+            "player_characters/characters/index.html",
+            {
+                "characters": characters,
+                "status": status,
+                "can_filter": admin,
+                "archive_secondary": [
+                    {
+                        "url": reverse("characters:archived", args=[request.club.slug]),
+                        "label": "Archived characters",
+                    }
+                ],
+                "empty_text": empty_text,
+            },
         )
 
 

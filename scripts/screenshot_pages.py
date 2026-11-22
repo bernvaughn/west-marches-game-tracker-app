@@ -31,6 +31,8 @@ MODAL_SELECTORS = {
     "sell_junk_modal": 'a[data-app-modal][href*="/sell-junk/"]',
     "junk_modal": 'a[data-app-modal][href*="/junk/"]',
     "note_modal": 'a[data-app-modal][href*="/note/"]',
+    "archive_modal": 'a[data-app-modal][href*="/archive/"]',
+    "unarchive_modal": 'a[data-app-modal][href*="/unarchive/"]',
     "consume_modal": 'a[data-app-modal][href*="/consume/"]',
     "stall_buy_modal": 'a[data-app-modal][href*="/stall/"]',
     "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
@@ -137,11 +139,26 @@ def extra_fixtures():
 
     Each helper is a `get_or_create`, so a second run changes nothing.
     """
-    from accounts.models import Club
+    from django.utils import timezone
+
+    from accounts.models import Club, Membership
     from player_characters.models import Character
 
     club = Club.objects.get(slug="demo")
     aria = Character.objects.get(club=club, name="Aria Windrunner")
+    alice = Membership.objects.get(user__email="alice@example.com", club=club)
+    old_brannoc, _ = Character.objects.get_or_create(
+        club=club,
+        owner=alice,
+        name="Old Brannoc",
+        defaults={"char_class": "Fighter", "level": 5},
+    )
+    old_brannoc.char_class = "Fighter"
+    old_brannoc.level = 5
+    old_brannoc.died_on = timezone.localdate()
+    old_brannoc.archived_at = timezone.now()
+    old_brannoc.shop_open = False
+    old_brannoc.save()
     _role_users(club)
     _junk(aria)
     _point_request(club, aria)
@@ -291,13 +308,21 @@ EXCLUDED = {
     "shops:sell_junk_pick": "HTMX partial endpoint for shop picker modal.",
     "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
+    "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
     "characters:death": "C1 stub view returning 404.",
     "characters:death_undo": "C1 stub view returning 404.",
-    "characters:archive": "C1 stub view returning 404.",
-    "characters:unarchive": "C1 stub view returning 404.",
-    "characters:archived": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
+    # archive and unarchive are implemented (U144), archived is implemented (U145)
+    "play_sessions:report_csv": "CSV export; no HTML page to screenshot.",
+    # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
+    # and the public token feed (needs a real token; not a demo page).
+    "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
+    "play_sessions:feed_reset": "POST only; admin resets the feed token.",
+    "play_sessions_public:feed": "Needs a real feed token; not a demo page.",
+    "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
+    "session page with a seeded recap is captured via play-sessions-detail and "
+    "play-sessions-detail-player at 1280 and 390 px.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",
@@ -307,6 +332,14 @@ EXCLUDED = {
     "character_options:restore": "POST only.",
     "character_options:delete": "GET shows confirm modal; POST deletes.",
     "character_options:move": "POST only.",
+    # play_sessions schedule - club-scoped, need specific session/club state
+    "play_sessions:session_create": "Needs a club and GM; create form.",
+    "play_sessions:session_edit": "Needs an existing session PK; edit form.",
+    "play_sessions:session_cancel": "POST only; cancels a session.",
+    "play_sessions:series_cancel": "Needs a series session PK; confirm page.",
+    # Play session attendance URLs require a session PK and club context
+    "play_sessions:attendance": "Attendance page; requires session PK and club context.",
+    "play_sessions:rsvp_for": "POST-only RSVP override; requires session PK and club context.",
 }
 
 
@@ -372,9 +405,13 @@ def _build_pages() -> list[Page]:
         P("site-design", "site_admin", lambda d: reverse("site_design")),
         P("site-feedback", "site_admin", lambda d: reverse("site_feedback")),
         P("site-feedback-new", "alice", lambda d: reverse("feedback_new")),
+        # accounts club settings
+        P("accounts-club-settings", "gm", _c("accounts:club_settings")),
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
+        P("characters-archived-alice", "alice", _c("characters:archived")),
+        P("characters-archived-gm", "gm", _c("characters:archived")),
         P("characters-create", "alice", _c("characters:create")),
         P("characters-slips-gm", "gm", _c("characters:slips")),
         P("characters-slips-alice", "alice", _c("characters:slips")),
@@ -564,6 +601,20 @@ def _build_pages() -> list[Page]:
             action="junk_modal",
             modal_url=_c("characters:junk", "aria.pk", "torch.pk"),
         ),
+        P(
+            "characters-archive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="archive_modal",
+            modal_url=_c("characters:archive", "aria.pk"),
+        ),
+        P(
+            "characters-unarchive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="unarchive_modal",
+            modal_url=_c("characters:unarchive", "aria.pk"),
+        ),
         P("characters-note", "alice", _c("characters:note", "aria.pk", "torch.pk")),
         P(
             "characters-note-modal",
@@ -643,6 +694,8 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("play_sessions:session_detail", "play_session.pk"),
         ),
+        P("play-sessions-report", "club_admin", _c("play_sessions:report")),
+        P("play-sessions-settings", "club_admin", _c("play_sessions:settings")),
         # map
         P(
             "map-visits",

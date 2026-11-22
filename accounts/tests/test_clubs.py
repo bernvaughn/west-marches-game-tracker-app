@@ -17,6 +17,7 @@ def _post(client, **over):
         "slug": "",
         "admin_email": "Boss@Example.com",
         "admin_display_name": "Boss",
+        "timezone": "UTC",
     }
     data.update(over)
     return client.post(reverse(NEW), data)

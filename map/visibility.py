@@ -23,7 +23,10 @@ def pick_characters(request, ids, allow_any):
             parsed.append(int(value))
         except (TypeError, ValueError):
             continue
-    base = Character.objects.for_club(request.club) if allow_any else own_characters(request)
+    if allow_any:
+        base = Character.objects.for_club(request.club).not_archived()
+    else:
+        base = own_characters(request)
     return base.filter(pk__in=parsed)
 
 
@@ -63,7 +66,7 @@ def resolve_view(request, hex_map):
         visible = visible_positions(hex_map, picked)
     players_view = mode != "full"
     if mode == "players":
-        choices = Character.objects.for_club(request.club).order_by("name")
+        choices = Character.objects.for_club(request.club).not_archived().order_by("name")
     else:
         choices = own_characters(request).order_by("name")
     view_param = mode if is_editor and mode != "full" else ""

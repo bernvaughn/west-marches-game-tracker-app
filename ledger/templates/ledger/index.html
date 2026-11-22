@@ -59,6 +59,7 @@
   {% if page_obj.has_next %}<a class="btn btn-sm btn-outline-secondary" href="{% querystring page=page_obj.next_page_number %}">Next</a>{% endif %}
 </nav>
 {% endif %}
+{% include "ledger/_status_changes.html" %}
 {% downtime_points_section %}
 {% endif %}
 {% endblock %}

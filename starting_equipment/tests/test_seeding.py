@@ -84,7 +84,7 @@ class TestSeedDefaultStartingEquipment:
         # Check items were created
         # Count unique items across class and background equipment, plus pack contents
         # Use case-insensitive deduplication since seed_pack reuses by name__iexact
-        from items.pack_seeding import PACKS
+        from items.pack_seeding import PACKS, slot_options
 
         expected_items_lower = set()
         for class_data in CLASS_EQUIPMENT.values():
@@ -95,8 +95,9 @@ class TestSeedDefaultStartingEquipment:
                 expected_items_lower.add(item_data[0].lower())
         # Add pack content items (case-insensitive matching via name__iexact)
         for contents in PACKS.values():
-            for content_name, *_ in contents:
-                expected_items_lower.add(content_name.lower())
+            for entry in contents:
+                for content_name, *_ in slot_options(entry):
+                    expected_items_lower.add(content_name.lower())
         items = Item.objects.for_club(club).all()
         actual_items_lower = {item.name.lower() for item in items}
         assert len(actual_items_lower) == len(expected_items_lower)
@@ -322,7 +323,7 @@ class TestSeedDefaultStartingEquipment:
         # Modify a line
         holy_symbol_line = (
             StartingEquipmentBackgroundLine.objects.for_club(club)
-            .filter(background_entry=acolyte, item__name="Holy Symbol (Amulet)")
+            .filter(background_entry=acolyte, item__name="Amulet (Holy Symbol)")
             .first()
         )
         holy_symbol_line.quantity = 5
@@ -355,3 +356,13 @@ class TestSeedDefaultStartingEquipment:
 
         lc.refresh_from_db()
         assert lc.coins_cp == 50000  # Original
+
+    def test_no_duplicate_item_names_per_club(self, club):
+        """Seeded items have no duplicate names within a club."""
+        from django.db.models import Count
+
+        seed_default_starting_equipment(club)
+
+        # Check for duplicate item names within the club
+        dupes = Item.objects.for_club(club).values("name").annotate(c=Count("id")).filter(c__gt=1)
+        assert not dupes.exists(), f"Duplicate item names found: {list(dupes)}"

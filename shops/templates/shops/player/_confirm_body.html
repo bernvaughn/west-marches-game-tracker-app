@@ -1,4 +1,4 @@
-{% load coins loot_tags units %}
+{% load coins loot_tags units life_tags %}
 {% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=item %}</h2>{% endif %}
 {% if item.description %}<p>{{ item.description }}</p>{% endif %}
 {% loot_preview item as loot_rows %}
@@ -12,6 +12,10 @@
 {% if not buyer %}
 <p>You have no character in this club.</p>
 {% elif can_buy %}
+{% with reason=buyer|buy_block_reason %}
+{% if reason %}
+<p class="wm-sheet-note" role="status">{{ reason }}</p>
+{% else %}
 <p>Buying as <strong>{{ buyer.name }}</strong></p>
 {% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
 <p>
@@ -26,4 +30,6 @@
     <dt>Coins after</dt><dd>{% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</dd>
   </dl>
 </div>
+{% endif %}
+{% endwith %}
 {% endif %}

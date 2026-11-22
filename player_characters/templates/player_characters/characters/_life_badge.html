@@ -1,1 +1,5 @@
-{# Life badge partial - context: character - owner: C7 #}
+{# Life badge partial - context: character, compact (default false) - owner: C7 #}
+{% if character.is_dead %}
+<span class="wm-badge wm-badge--danger"{% if character.death_note %} title="{{ character.death_note }}"{% endif %}>Died {{ character.died_on|date:"j M Y" }}</span>
+{% if character.death_note and not compact %}<span class="wm-life-note">{{ character.death_note }}</span>{% endif %}
+{% endif %}

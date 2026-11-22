@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+{% url 'play_sessions:report' club.slug as report_url %}
+{% include "components/page_header.html" with title="Attendance report" action_url=csv_url action_label="Export CSV" action_icon="download" %}
+
+{% if error %}
+<div class="alert alert-danger" role="alert">{{ error }}</div>
+{% endif %}
+
+<form method="get" action="{{ report_url }}" class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-auto">
+        <label class="form-label visually-hidden" for="report-start">Start date</label>
+        <input type="date" id="report-start" name="start" value="{{ start }}" class="form-control" placeholder="Start">
+      </div>
+      <div class="col-auto">
+        <label class="form-label visually-hidden" for="report-end">End date</label>
+        <input type="date" id="report-end" name="end" value="{{ end }}" class="form-control" placeholder="End">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary" type="submit">Apply</button>
+      </div>
+      <div class="col-auto">
+        <a href="{{ report_url }}" class="btn btn-outline-secondary" role="button">Clear</a>
+      </div>
+    </div>
+    <p class="form-text mt-2">Dates are club-local and inclusive. Leave both blank for all time.</p>
+  </div>
+</form>
+
+<h2 class="h5 mt-4">By character</h2>
+<div class="wm-table-scroll mb-3">
+  <table class="table table-sm wm-data-table">
+    <thead>
+      <tr><th>Character</th><th>Player</th><th class="num">Sessions</th></tr>
+    </thead>
+    <tbody>
+    {% for row in characters %}
+      <tr>
+        <td>{{ row.name }}</td>
+        <td>{{ row.owner }}</td>
+        <td class="num">{{ row.sessions }}</td>
+      </tr>
+    {% empty %}
+      {% include "components/data_table_empty.html" with cols=3 text="No character attendance yet." %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="h5 mt-4">By player</h2>
+<div class="wm-table-scroll mb-3">
+  <table class="table table-sm wm-data-table">
+    <thead>
+      <tr><th>Player</th><th class="num">Sessions</th></tr>
+    </thead>
+    <tbody>
+    {% for row in players %}
+      <tr>
+        <td>{{ row.name }}</td>
+        <td class="num">{{ row.sessions }}</td>
+      </tr>
+    {% empty %}
+      {% include "components/data_table_empty.html" with cols=2 text="No player attendance yet." %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

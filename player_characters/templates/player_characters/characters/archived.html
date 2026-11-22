@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Archived characters{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Archived characters" subtitle="Characters archived in this club" %}
+<div class="wm-table-scroll">
+  <table class="table table-sm table-striped wm-data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Level</th>
+        <th>Archived</th>
+        <th>Died</th>
+        {% if sees_all %}<th>Owner</th>{% endif %}
+        <th class="actions">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in characters %}
+      {% with c=row.character %}
+      <tr>
+        <td>
+          <span class="wm-chip">
+            <span class="wm-avatar" aria-hidden="true">{{ c.name|first|upper }}</span>
+            {% if row.detail_url %}<a href="{{ row.detail_url }}">{{ c.name }}</a>{% else %}<span>{{ c.name }}</span>{% endif %}
+          </span>
+        </td>
+        <td>{{ c.char_class|default:"—" }}</td>
+        <td>{% if c.level %}Level {{ c.level }}{% else %}&mdash;{% endif %}</td>
+        <td>{{ c.archived_at|date }}</td>
+        <td>
+          {% if c.is_dead %}Died {{ c.died_on|date }}{% else %}&mdash;{% endif %}
+        </td>
+        {% if sees_all %}<td>{{ c.owner.user.display_name }}</td>{% endif %}
+        <td class="actions">
+          <form method="post" action="{% url 'characters:unarchive' club.slug c.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Unarchive</button>
+          </form>
+        </td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      {% if sees_all and selected_owner %}
+        {% include "components/data_table_empty.html" with cols=7 text="No archived characters for this owner." %}
+      {% elif sees_all %}
+        {% include "components/data_table_empty.html" with cols=7 text="No archived characters." %}
+      {% else %}
+        {% include "components/data_table_empty.html" with cols=6 text="No archived characters." %}
+      {% endif %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p class="text-muted small mt-3">
+  Unarchiving does not reopen the stall. A dead character stays dead.
+</p>
+
+{% if sees_all %}
+<form method="get" class="mt-4">
+  <label for="id_owner">Filter by owner:</label>
+  <select name="owner" id="id_owner" class="form-select form-select-sm d-inline-block w-auto">
+    <option value="">All owners</option>
+    {% for o in owner_choices %}
+      <option value="{{ o.pk }}" {% if selected_owner == o.pk %}selected{% endif %}>{{ o.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-sm btn-outline-secondary ms-2">Filter</button>
+  {% if selected_owner %}
+    <a href="{% url 'characters:archived' club.slug %}" class="btn btn-sm btn-link ms-2">Clear</a>
+  {% endif %}
+</form>
+{% endif %}
+{% endblock %}

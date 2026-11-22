@@ -1,1 +1,8 @@
 {# Archive actions partial - context: character - owner: C8 #}
+{% if is_owner or can_adjust %}
+  {% if not character.is_archived %}
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:archive' club.slug character.pk %}" hx-get="{% url 'characters:archive' club.slug character.pk %}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Archive this character. They will be hidden from lists and their stall will close.">Archive</a>
+  {% else %}
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'characters:unarchive' club.slug character.pk %}" hx-get="{% url 'characters:unarchive' club.slug character.pk %}" hx-target="#app-modal .modal-content" data-app-modal data-wm-tooltip title="Unarchive this character. They will reappear in lists but their stall stays closed.">Unarchive</a>
+  {% endif %}
+{% endif %}
