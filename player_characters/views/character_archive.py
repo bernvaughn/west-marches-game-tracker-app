@@ -3,13 +3,16 @@
 from django import forms
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
+from django.shortcuts import redirect
 
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
 
 from ..access import owns_character
-from ..life import LifeError, archive, unarchive
+from ..life import LifeError
+from ..life import archive as life_archive
+from ..life import unarchive as life_unarchive
 from ..models import Character
 
 
@@ -18,6 +21,9 @@ def archive(request, club_slug, pk):
     """Archive a character."""
     character = club_get_object_or_404(request, Character, pk=pk)
     _require_can_manage(request, character)
+
+    sheet = redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+    sheet_url = sheet.url
 
     class ArchiveNoteForm(forms.Form):
         note = forms.CharField(
@@ -31,12 +37,13 @@ def archive(request, club_slug, pk):
         form = ArchiveNoteForm(request.POST)
         if form.is_valid():
             try:
-                archive(character, by=request.membership, note=form.cleaned_data["note"])
+                life_archive(character, by=request.membership, note=form.cleaned_data["note"])
             except LifeError as exc:
                 form.add_error(None, str(exc))
             else:
-                messages.success(request, f"{character.name} was archived. Their stall is closed.")
-                return htmx_or_redirect(request, "characters:detail", club_slug=club_slug, pk=character.pk)
+                msg = f"{character.name} was archived. Their stall is closed."
+                messages.success(request, msg)
+                return htmx_or_redirect(request, sheet_url)
     else:
         form = ArchiveNoteForm()
 
@@ -55,6 +62,9 @@ def unarchive(request, club_slug, pk):
     character = club_get_object_or_404(request, Character, pk=pk)
     _require_can_manage(request, character)
 
+    sheet = redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+    sheet_url = sheet.url
+
     class ArchiveNoteForm(forms.Form):
         note = forms.CharField(
             required=False,
@@ -67,12 +77,13 @@ def unarchive(request, club_slug, pk):
         form = ArchiveNoteForm(request.POST)
         if form.is_valid():
             try:
-                unarchive(character, by=request.membership, note=form.cleaned_data["note"])
+                life_unarchive(character, by=request.membership, note=form.cleaned_data["note"])
             except LifeError as exc:
                 form.add_error(None, str(exc))
             else:
-                messages.success(request, f"{character.name} was unarchived. Their stall stays closed.")
-                return htmx_or_redirect(request, "characters:detail", club_slug=club_slug, pk=character.pk)
+                msg = f"{character.name} was unarchived. Their stall stays closed."
+                messages.success(request, msg)
+                return htmx_or_redirect(request, sheet_url)
     else:
         form = ArchiveNoteForm()
 

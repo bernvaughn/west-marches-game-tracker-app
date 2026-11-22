@@ -1,16 +1,11 @@
 """Tests for archive and unarchive (U144)."""
 
 import pytest
-from datetime import timedelta
-
 from django.utils import timezone
 
-from accounts.models import Membership, User
-from ledger.models import CharacterStatusChange
-from ledger.services import Line, record
-from player_characters.models import Character
-from items.models import Item
-
+from accounts.models import Membership
+from ledger.services import Line, coin_balance, record
+from player_characters.models import Character, CharacterStatusChange
 
 pytestmark = pytest.mark.story("U144")
 
@@ -57,19 +52,20 @@ def test_owner_can_unarchive(club, login, character):
     assert history.first().note == "Test unarchive"
 
 
-def test_other_player_cannot_archive(club, login, other_character):
-    client = login(other_character.owner.user)
-    url = f"/c/{club.slug}/characters/{other_character.pk}/archive/"
+def test_other_player_cannot_archive(club, login, character, other_player):
+    client = login(other_player)
+    url = f"/c/{club.slug}/characters/{character.pk}/archive/"
     resp = client.get(url)
     assert resp.status_code == 403
     resp = client.post(url, {"note": "hack"})
     assert resp.status_code == 403
-    other_character.refresh_from_db()
-    assert not other_character.is_archived
+    character.refresh_from_db()
+    assert not character.is_archived
 
 
 def test_anonymous_redirected(club, character):
     from django.test import Client
+
     client = Client()
     url = f"/c/{club.slug}/characters/{character.pk}/archive/"
     resp = client.get(url)
@@ -108,6 +104,7 @@ def test_club_admin_can_archive_any(club, login, club_admin, character):
 
 def test_site_admin_works_with_by_none(db, club, site_admin, character):
     from django.test import Client
+
     client = Client()
     client.force_login(site_admin)
     url = f"/c/{club.slug}/characters/{character.pk}/archive/"
@@ -159,7 +156,7 @@ def test_ledger_items_coins_map_credit_unchanged(club, login, character, item):
     """Archiving does not change ledger, items, coins, or map credit."""
     record(character, "award", [Line(coins=500), Line(item=item, quantity=3)])
     before_ledger = character.ledger_entries.count()
-    before_coins = character.coin_balance()
+    before_coins = coin_balance(character)
 
     client = login(character.owner.user)
     url = f"/c/{club.slug}/characters/{character.pk}/archive/"
@@ -167,7 +164,7 @@ def test_ledger_items_coins_map_credit_unchanged(club, login, character, item):
     character.refresh_from_db()
 
     assert character.ledger_entries.count() == before_ledger
-    assert character.coin_balance() == before_coins
+    assert coin_balance(character) == before_coins
 
 
 def test_shop_open_becomes_false_on_archive(club, login, character):
@@ -231,9 +228,12 @@ def test_repeat_unarchive_shows_error_and_no_second_row(club, login, character):
     assert history.count() == 1
 
 
-def test_sheet_shows_archive_for_owner_gm_admin_hides_for_other_player(club, login, character, other_character, game_master, club_admin):
+def test_sheet_shows_archive_for_owner_gm_admin(
+    club, login, character, other_character, game_master, club_admin
+):
     """Archive button shows for owner, GM, admin; hides for other player."""
     from django.urls import reverse
+
     owner_client = login(character.owner.user)
     resp = owner_client.get(reverse("characters:detail", args=[club.slug, character.pk]))
     assert "Archive" in resp.content.decode()
@@ -257,6 +257,7 @@ def test_sheet_shows_unarchive_when_archived(club, login, character):
     character.save()
     client = login(character.owner.user)
     from django.urls import reverse
+
     resp = client.get(reverse("characters:detail", args=[club.slug, character.pk]))
     assert "Unarchive" in resp.content.decode()
     assert "Archive" not in resp.content.decode()
@@ -265,6 +266,7 @@ def test_sheet_shows_unarchive_when_archived(club, login, character):
 def test_modal_get_contains_form_and_text(club, login, character):
     client = login(character.owner.user)
     from django.urls import reverse
+
     resp = client.get(reverse("characters:archive", args=[club.slug, character.pk]))
     content = resp.content.decode()
     assert "Archive" in content
