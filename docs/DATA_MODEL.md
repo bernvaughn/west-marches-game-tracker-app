@@ -43,6 +43,15 @@ erDiagram
     CHARACTER ||--o{ SESSION_ATTENDANCE : makes
     PLAY_SESSION ||--o{ SESSION_AWARD : awards
     CHARACTER ||--o{ MESSAGE : "may be about"
+    CLUB ||--o{ EMAIL_MESSAGE : "mails"
+    USER ||--o{ EMAIL_MESSAGE : receives
+    EMAIL_MESSAGE ||--|| EMAIL_PAYLOAD : carries
+    MEMBERSHIP ||--o{ EMAIL_PREFERENCE : prefers
+    CLUB ||--o| CLUB_MAIL_SETTINGS : configures
+    USER ||--o{ ONE_TIME_TOKEN : holds
+    CLUB ||--o{ ONE_TIME_TOKEN : "scopes"
+    USER ||--o{ NOTICE_SENT : deduplicates
+    DO_NOT_EMAIL ||--o{ EMAIL_MESSAGE : suppresses
 ```
 
 Reading it: a person (user) joins clubs through memberships, and a membership owns characters. Everything else hangs off a club, a character, or the item catalogue.
@@ -103,7 +112,7 @@ Characters, quests, hex maps and locations, downtime actions, ledger entries, me
 - **Message**: from a membership to the club's admins, free text, with an optional character it is about (the sender's selected character, U27), and a handled/closed flag set by an admin (U13). No replies are stored. Grants made from a message (U30) are ordinary ledger entries, visits, credit, or found marks that point back at the message, so the message can list what was granted from it.
 - **Site feedback**: a site-level bug report or feature request from any logged-in user, sent to site admins rather than club admins (U114). Records who sent it, the club they were in when they sent it (if any), bug or feature kind, the free-text body, the page they came from, and an open/handled/closed status.
 
-A player's email is shown only to club admins (U17).
+A player's email is shown only to club admins (U17). Email is optional and never carries passwords; it only delivers one-time links.
 - **Club** adds `timezone` (IANA string, default from settings).
 
 ### items
@@ -207,6 +216,17 @@ There is no separate purchase record. A purchase or sale changes the stock and w
 - **SessionSettings**: per-club settings for play sessions. One-to-one with Club. award_points (0-10, default 0), feed_token (64-char, blank until calendar feed creates it). Conditional unique constraint on feed_token where not blank.
 
 All models are club-scoped with `club_path` set and use `ClubScopedManager`. Child tables (RSVP, Attendance, AttendanceChange, Award) use `club_path = "session__club"`.
+
+### mail
+
+- **EmailMessage**: an email queued for delivery. Club (nullable), user (nullable), kind, to_address, subject, status (queued, sending, sent, failed, bounced, complained), provider_id, attempts, last_error, next_attempt_at, created, sent_at. Never stores a body or a link; those live in EmailPayload and are deleted after send or final failure.
+- **EmailPayload**: one-to-one with EmailMessage. text, html, reply_to, expires_at. Deleted once the message is sent or failed for good.
+- **DoNotEmail**: an address that must never receive email. address (lower case, unique), reason (bounce, complaint, manual), created.
+- **OneTimeToken**: a single-use, expiring token. purpose (welcome, password_reset, rsvp, unsubscribe, email_change), user, club (nullable), token_hash (unique, SHA-256), expires_at, used_at, extra (JSON). Only the hash is stored; the raw token is returned once on issue.
+- **EmailPreference**: per-membership preference for a kind (reminder, notice, digest). Unique per (membership, kind). No row means default (on for reminders and notices, OFF for digest).
+- **ClubMailSettings**: one-to-one with Club. contact_email (blank), reminder_days (JSON list, default [3]).
+- **NoticeSent**: deduplication table for notices (reminders, cancel, change, digests). kind, key (string), user. Unique on (kind, key, user). Key holds ids and start time as text, never a link.
+- **JobRun**: tracks job executions. name (unique), last_run_at, ok (bool), note.
 
 ## Settled since the first draft
 

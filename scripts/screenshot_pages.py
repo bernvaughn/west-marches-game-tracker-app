@@ -31,6 +31,8 @@ MODAL_SELECTORS = {
     "sell_junk_modal": 'a[data-app-modal][href*="/sell-junk/"]',
     "junk_modal": 'a[data-app-modal][href*="/junk/"]',
     "note_modal": 'a[data-app-modal][href*="/note/"]',
+    "archive_modal": 'a[data-app-modal][href*="/archive/"]',
+    "unarchive_modal": 'a[data-app-modal][href*="/unarchive/"]',
     "consume_modal": 'a[data-app-modal][href*="/consume/"]',
     "stall_buy_modal": 'a[data-app-modal][href*="/stall/"]',
     "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
@@ -137,11 +139,26 @@ def extra_fixtures():
 
     Each helper is a `get_or_create`, so a second run changes nothing.
     """
-    from accounts.models import Club
+    from django.utils import timezone
+
+    from accounts.models import Club, Membership
     from player_characters.models import Character
 
     club = Club.objects.get(slug="demo")
     aria = Character.objects.get(club=club, name="Aria Windrunner")
+    alice = Membership.objects.get(user__email="alice@example.com", club=club)
+    old_brannoc, _ = Character.objects.get_or_create(
+        club=club,
+        owner=alice,
+        name="Old Brannoc",
+        defaults={"char_class": "Fighter", "level": 5},
+    )
+    old_brannoc.char_class = "Fighter"
+    old_brannoc.level = 5
+    old_brannoc.died_on = timezone.localdate()
+    old_brannoc.archived_at = timezone.now()
+    old_brannoc.shop_open = False
+    old_brannoc.save()
     _role_users(club)
     _junk(aria)
     _point_request(club, aria)
@@ -291,13 +308,12 @@ EXCLUDED = {
     "shops:sell_junk_pick": "HTMX partial endpoint for shop picker modal.",
     "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
+    "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
-    "characters:death": "C1 stub view returning 404.",
-    "characters:death_undo": "C1 stub view returning 404.",
-    "characters:archive": "C1 stub view returning 404.",
-    "characters:unarchive": "C1 stub view returning 404.",
-    "characters:archived": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
+    "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
+    "session page with a seeded recap is captured via play-sessions-detail and "
+    "play-sessions-detail-player at 1280 and 390 px.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",
@@ -307,6 +323,11 @@ EXCLUDED = {
     "character_options:restore": "POST only.",
     "character_options:delete": "GET shows confirm modal; POST deletes.",
     "character_options:move": "POST only.",
+    # play_sessions schedule - club-scoped, need specific session/club state
+    "play_sessions:session_create": "Needs a club and GM; create form.",
+    "play_sessions:session_edit": "Needs an existing session PK; edit form.",
+    "play_sessions:session_cancel": "POST only; cancels a session.",
+    "play_sessions:series_cancel": "Needs a series session PK; confirm page.",
 }
 
 
@@ -375,6 +396,8 @@ def _build_pages() -> list[Page]:
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
+        P("characters-archived-alice", "alice", _c("characters:archived")),
+        P("characters-archived-gm", "gm", _c("characters:archived")),
         P("characters-create", "alice", _c("characters:create")),
         P("characters-slips-gm", "gm", _c("characters:slips")),
         P("characters-slips-alice", "alice", _c("characters:slips")),
@@ -563,6 +586,20 @@ def _build_pages() -> list[Page]:
             _c("characters:detail", "aria.pk"),
             action="junk_modal",
             modal_url=_c("characters:junk", "aria.pk", "torch.pk"),
+        ),
+        P(
+            "characters-archive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="archive_modal",
+            modal_url=_c("characters:archive", "aria.pk"),
+        ),
+        P(
+            "characters-unarchive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="unarchive_modal",
+            modal_url=_c("characters:unarchive", "aria.pk"),
         ),
         P("characters-note", "alice", _c("characters:note", "aria.pk", "torch.pk")),
         P(
