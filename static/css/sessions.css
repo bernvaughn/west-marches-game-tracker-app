@@ -1,0 +1,29 @@
+/* Sessions calendar (P3): month grid and phone list. Colours come from tokens only. */
+.sessions-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+.sessions-month { margin: 0; font-size: 1.125rem; font-weight: 600; }
+.sessions-nav-link { text-decoration: none; color: var(--wm-text); padding: .25rem .5rem; border: 1px solid var(--wm-border); border-radius: .375rem; }
+.sessions-nav-link:hover, .sessions-nav-link:focus { background: var(--wm-neutral-bg); }
+.sessions-week { display: grid; grid-template-columns: repeat(7, 1fr); border-top: 1px solid var(--wm-border); }
+.sessions-cell { min-height: 1.75rem; padding: .125rem .375rem; border-left: 1px solid var(--wm-border); border-bottom: 1px solid var(--wm-border); display: flex; flex-direction: column; gap: 2px; }
+.sessions-cell:last-child { border-right: 1px solid var(--wm-border); }
+.sessions-cell--head { background: var(--wm-surface-sunken); font-weight: 600; font-size: var(--wm-text-xs); color: var(--wm-text-muted); text-align: center; padding: .25rem .375rem; border-bottom: 1px solid var(--wm-border); }
+.sessions-day--other { opacity: .45; }
+.sessions-day--today .sessions-daynum { font-weight: 700; text-decoration: underline; color: var(--wm-accent); }
+.sessions-daynum { font-size: var(--wm-text-xs); line-height: 1; margin-bottom: 2px; }
+.sessions-session { font-size: var(--wm-text-xs); line-height: 1.25; text-decoration: none; color: var(--wm-text); }
+.sessions-session--cancelled { opacity: .6; }
+.sessions-session--cancelled .sessions-title { text-decoration: line-through; }
+.sessions-title { font-weight: 600; }
+.sessions-title:hover { text-decoration: underline; }
+.sessions-time, .sessions-gm, .sessions-yes { display: block; }
+.sessions-time { color: var(--wm-text-muted); }
+.sessions-gm { color: var(--wm-text-muted); }
+.sessions-yes { color: var(--wm-text-muted); }
+.sessions-list { display: flex; flex-direction: column; gap: .5rem; }
+.sessions-list-day { margin-bottom: .25rem; }
+.sessions-list-daynum { font-weight: 600; font-size: var(--wm-text-sm); color: var(--wm-text); margin-bottom: .25rem; }
+.sessions-today { font-weight: 400; font-size: var(--wm-text-xs); color: var(--wm-accent); }
+.sessions-list-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .625rem 0; border-bottom: 1px solid var(--wm-border); text-decoration: none; color: var(--wm-text); }
+.sessions-list-row--cancelled { opacity: .6; }
+.sessions-list-row--cancelled .sessions-title { text-decoration: line-through; }
+.sessions-title { font-weight: 600; }

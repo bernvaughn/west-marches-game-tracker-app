@@ -311,6 +311,11 @@ EXCLUDED = {
     "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
     "characters:fallen": "C1 stub view returning 404.",
+    # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
+    # and the public token feed (needs a real token; not a demo page).
+    "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
+    "play_sessions:feed_reset": "POST only; admin resets the feed token.",
+    "play_sessions_public:feed": "Needs a real feed token; not a demo page.",
     "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
     "session page with a seeded recap is captured via play-sessions-detail and "
     "play-sessions-detail-player at 1280 and 390 px.",

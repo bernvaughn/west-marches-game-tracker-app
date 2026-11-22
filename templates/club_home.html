@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% load accounts_tags %}
+{% load accounts_tags play_sessions_tags %}
 {% block content %}
 {% include "components/page_header.html" with title=club.name subtitle="Pick an area." %}
 {% if session_desk %}{% include "accounts/_session_desk.html" %}{% endif %}
+{% next_session_block %}
 {% nav_entries as nav %}
 {% for key, heading, links in nav|menu_sections %}{% if key != "account" %}
 {% include "components/section_open.html" with title=heading %}
