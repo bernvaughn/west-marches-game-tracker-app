@@ -855,3 +855,15 @@ def test_rest_of_series_includes_ties():
     )
     assert set(rest_of_series(a)) == {a, b}
     assert cancel_rest(a) == 2
+
+
+def test_manage_section_keeps_edit_link_on_cancelled_session(client):
+    club, sessions = _make_series(client, "Editlink")
+    sessions[0].cancelled = True
+    sessions[0].save()
+    detail = reverse(
+        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": sessions[0].pk}
+    )
+    html = client.get(detail).content.decode()
+    assert "Edit session" in html
+    assert "Cancel session" not in html
