@@ -3,6 +3,7 @@
 import pytest
 from django.urls import reverse
 from django.core.cache import cache
+from django.test import override_settings
 
 from accounts.models import Club, Membership, User
 from mail.models import ClubMailSettings
@@ -12,6 +13,12 @@ from mail.service import email_enabled
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("E11")]
 
+RATELIMIT_CACHE_SETTINGS = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "test-email-rate-limit-tests",
+    }
+}
 
 def _login(client, user):
     client.force_login(user)
@@ -38,9 +45,11 @@ def test_test_email_get_requires_club_admin(club_admin, player, login, club):
     assert r.status_code == 403
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_sends_to_admin(club_admin, login, club, settings):
     """Test email can be sent to the signed-in admin."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -58,9 +67,11 @@ def test_test_email_sends_to_admin(club_admin, login, club, settings):
     assert msg.payload.reply_to == "club@test.com"
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_sends_to_other_admin(club_admin, game_master, login, club, settings):
     """Test email can be sent to another admin of the same club."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     # Make game_master an admin of this club
     gm_membership = game_master.memberships.get(club=club)
@@ -79,9 +90,11 @@ def test_test_email_sends_to_other_admin(club_admin, game_master, login, club, s
     assert msg.to_address == game_master.email
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_recipient_limited_to_admins(club_admin, player, login, club, settings):
     """Test email recipient must be an admin of the same club."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -97,9 +110,11 @@ def test_test_email_recipient_limited_to_admins(club_admin, player, login, club,
     assert EmailMessage.objects.filter(club=club, kind="test").count() == 0
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_rate_limit(club_admin, login, club, settings):
     """Test email is rate limited to 5 per hour per club."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -118,9 +133,11 @@ def test_test_email_rate_limit(club_admin, login, club, settings):
     assert "Rate limit exceeded" in r.content.decode()
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_disabled_when_email_off(club_admin, login, club, settings):
     """Test email is disabled when email is off."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = False
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -136,9 +153,11 @@ def test_test_email_disabled_when_email_off(club_admin, login, club, settings):
     assert EmailMessage.objects.filter(club=club, kind="test").count() == 0
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_log_shows_kind_test(club_admin, login, club, settings):
     """Test email log shows kind 'test'."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -153,9 +172,11 @@ def test_test_email_log_shows_kind_test(club_admin, login, club, settings):
     assert msg.kind == "test"
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_page_shows_queued_status(club_admin, login, club, settings):
     """Page shows queued status for test email."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -168,9 +189,11 @@ def test_test_email_page_shows_queued_status(club_admin, login, club, settings):
     assert "Queued" in body or "queued" in body.lower()
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_page_shows_failed_with_reason(club_admin, login, club, settings):
     """Page shows failed status with plain reason from last_error."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = False  # Email off causes failed status
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -187,9 +210,11 @@ def test_test_email_page_shows_failed_with_reason(club_admin, login, club, setti
     assert "Email is off" in msg.last_error
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_htmx_returns_partial(club_admin, login, club, settings):
     """HTMX requests return the card partial."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
@@ -203,9 +228,11 @@ def test_test_email_htmx_returns_partial(club_admin, login, club, settings):
     assert "Recent test emails" in body
 
 
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
 def test_test_email_no_recipient_selected(club_admin, login, club, settings):
     """Error when no recipient is selected."""
-    _clear_ratelimit(club.slug)
+    from django.core.cache import caches
+    caches["default"].clear()
     settings.MAIL_ENABLED = True
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 

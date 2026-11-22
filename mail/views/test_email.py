@@ -47,6 +47,7 @@ def test_email(request, club_slug):
         # Get selected recipient
         recipient_id = request.POST.get("recipient")
         if not recipient_id:
+            error = "Select a recipient."
             if request.headers.get("HX-Request"):
                 return HttpResponse(
                     render_to_string(
@@ -57,19 +58,21 @@ def test_email(request, club_slug):
                             "admins": admins,
                             "email_on": email_on,
                             "disabled_reason": disabled_reason,
-                            "error": "Select a recipient.",
+                            "error": error,
                             "recent_tests": recent_tests,
                         },
                         request=request,
                     ),
                     status=400,
                 )
-            messages.error(request, "Select a recipient.")
+            messages.error(request, error)
+            return render(request, "mail/_club_test_card.html", context, status=400)
         else:
             # Verify recipient is an admin of this club
             try:
                 recipient_membership = admins.get(id=recipient_id)
             except Membership.DoesNotExist:
+                error = "Invalid recipient."
                 if request.headers.get("HX-Request"):
                     return HttpResponse(
                         render_to_string(
@@ -80,14 +83,15 @@ def test_email(request, club_slug):
                                 "admins": admins,
                                 "email_on": email_on,
                                 "disabled_reason": disabled_reason,
-                                "error": "Invalid recipient.",
+                                "error": error,
                                 "recent_tests": recent_tests,
                             },
                             request=request,
                         ),
                         status=400,
                     )
-                messages.error(request, "Invalid recipient.")
+                messages.error(request, error)
+                return render(request, "mail/_club_test_card.html", context, status=400)
             else:
                 recipient = recipient_membership.user
                 to_address = recipient.email

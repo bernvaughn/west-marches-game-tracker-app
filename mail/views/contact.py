@@ -24,6 +24,7 @@ def contact_email(request, club_slug):
             try:
                 validate_email(email)
             except ValidationError:
+                error = "Enter a valid email address."
                 if request.headers.get("HX-Request"):
                     return HttpResponse(
                         render_to_string(
@@ -31,13 +32,19 @@ def contact_email(request, club_slug):
                             {
                                 "club": club,
                                 "settings": settings,
-                                "error": "Enter a valid email address.",
+                                "error": error,
                             },
                             request=request,
                         ),
                         status=400,
                     )
-                messages.error(request, "Enter a valid email address.")
+                messages.error(request, error)
+                return render(
+                    request,
+                    "mail/_club_contact_card.html",
+                    {"club": club, "settings": settings, "error": error},
+                    status=400,
+                )
             else:
                 settings.contact_email = email
                 settings.save(update_fields=["contact_email"])
