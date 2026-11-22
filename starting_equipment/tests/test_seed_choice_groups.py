@@ -276,7 +276,7 @@ def _downgrade_to_old_style(club):
                 line.save()
     old_tools = Item.objects.create(club=club, name="Artisan's Tools", value_cp=2000)
     StartingEquipmentBackgroundLine.objects.filter(
-        background_entry__template__club=club, item__name="Artisan's Tools (Woodcarver's)"
+        background_entry__template__club=club, item__name="Woodcarver's Tools (Artisan's Tools)"
     ).update(item=old_tools)
 
 
@@ -316,11 +316,322 @@ def test_force_upgrades_old_style_template(club, player):
 
     # The stale generic tools line is gone, so an Artisan gets exactly one tool.
     granted = _claim(club, player, "Cleric", "Artisan")
-    tools = {name: qty for name, qty in granted.items() if name.startswith("Artisan's Tools")}
-    assert tools == {"Artisan's Tools (Woodcarver's)": 1}
+    tools = {name: qty for name, qty in granted.items() if name.endswith("(Artisan's Tools)")}
+    assert tools == {"Woodcarver's Tools (Artisan's Tools)": 1}
     assert granted["Mace"] == 1 and "Warhammer" not in granted
 
     # A second forced run is stable.
     before = _counts()
     seed_default_starting_equipment(club, force=True)
     assert _counts() == before
+
+
+# ---------------------------------------------------------------------------
+# New tests for U150/U151 variant name changes
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_seed_module_has_no_old_names():
+    """The seed module text must not contain any old name from VARIANT_RENAMES."""
+    import re
+    from pathlib import Path
+
+    from items.seed_names import VARIANT_RENAMES
+
+    seed_path = Path(__file__).parent.parent / "seeding.py"
+    text = seed_path.read_text()
+
+    for old_name in VARIANT_RENAMES.keys():
+        pattern = re.escape(f'"{old_name}"') + "|" + re.escape(f"'{old_name}'")
+        assert not re.search(pattern, text), f"Old name {old_name!r} found in seeding.py"
+
+
+@pytest.mark.django_db
+def test_every_renamed_family_appears(club):
+    """Every renamed family appears under its new name in the seeded data."""
+    from items.seed_names import VARIANT_RENAMES
+
+    seed_default_starting_equipment(club)
+
+    # Collect all seeded item names
+    all_names = set(Item.objects.for_club(club).values_list("name", flat=True))
+
+    # Expected new names per family
+    expected_families = {
+        "Musical Instrument": [
+            "Lute (Musical Instrument)",
+            "Flute (Musical Instrument)",
+            "Lyre (Musical Instrument)",
+            "Horn (Musical Instrument)",
+            "Drum (Musical Instrument)",
+        ],
+        "Arcane Focus": [
+            "Crystal (Arcane Focus)",
+            "Orb (Arcane Focus)",
+            "Rod (Arcane Focus)",
+            "Staff (Arcane Focus)",
+            "Wand (Arcane Focus)",
+        ],
+        "Druidic Focus": [
+            "Staff (Druidic Focus)",
+        ],
+        "Holy Symbol": [
+            "Amulet (Holy Symbol)",
+        ],
+        "Artisan's Tools": [
+            "Woodcarver's Tools (Artisan's Tools)",
+            "Brewer's Supplies (Artisan's Tools)",
+            "Calligrapher's Supplies (Artisan's Tools)",
+            "Carpenter's Tools (Artisan's Tools)",
+            "Leatherworker's Tools (Artisan's Tools)",
+            "Mason's Tools (Artisan's Tools)",
+            "Potter's Tools (Artisan's Tools)",
+            "Smith's Tools (Artisan's Tools)",
+            "Tinker's Tools (Artisan's Tools)",
+            "Weaver's Tools (Artisan's Tools)",
+        ],
+        "Gaming Set": [
+            "Dice (Gaming Set)",
+            "Playing Cards (Gaming Set)",
+            "Dragonchess (Gaming Set)",
+        ],
+    }
+
+    # Every expected new name must be present
+    for family, names in expected_families.items():
+        for name in names:
+            assert name in all_names, f"Missing {family} variant: {name}"
+
+    # Every seeded name that is a renamed variant must be a VARIANT_RENAMES value
+    # (or a non-renamed item like Navigator's Tools, Thieves' Tools, etc.)
+    renamed_values = set(VARIANT_RENAMES.values())
+    for name in all_names:
+        if (
+            name.endswith("(Musical Instrument)")
+            or name.endswith("(Arcane Focus)")
+            or name.endswith("(Druidic Focus)")
+            or name.endswith("(Holy Symbol)")
+            or name.endswith("(Artisan's Tools)")
+            or name.endswith("(Gaming Set)")
+        ):
+            assert name in renamed_values, f"Seeded name {name!r} not in VARIANT_RENAMES values"
+
+
+@pytest.mark.django_db
+def test_instruments_share_one_record(club):
+    """Bard, Entertainer, and Guard share one record per instrument."""
+    seed_default_starting_equipment(club)
+
+    instrument_names = [
+        "Lute (Musical Instrument)",
+        "Flute (Musical Instrument)",
+        "Lyre (Musical Instrument)",
+        "Horn (Musical Instrument)",
+    ]
+
+    for name in instrument_names:
+        items = Item.objects.filter(club=club, name=name)
+        assert items.count() == 1, f"Expected 1 record for {name}, got {items.count()}"
+
+    # Old plain names should not exist as Items
+    for old_name in ["Lute", "Flute", "Lyre", "Horn"]:
+        assert not Item.objects.filter(club=club, name=old_name).exists(), (
+            f"Old name {old_name!r} should not exist as an Item"
+        )
+
+    # Re-seed: second run must keep count == 1
+    seed_default_starting_equipment(club, force=True)
+    for name in instrument_names:
+        assert Item.objects.filter(club=club, name=name).count() == 1
+
+
+@pytest.mark.django_db
+def test_drum_only_in_entertainer(club):
+    """Drum is in the Entertainer's choice group, not in the Bard's."""
+    seed_default_starting_equipment(club)
+
+    # Bard has no Drum in its instrument group
+    bard_entry = StartingEquipmentClassEntry.objects.get(
+        template__club=club, class_option__name="Bard"
+    )
+    bard_instruments = bard_entry.lines.filter(choice_group="instrument").values_list(
+        "item__name", flat=True
+    )
+    assert "Drum (Musical Instrument)" not in bard_instruments
+    assert set(bard_instruments) == {
+        "Lute (Musical Instrument)",
+        "Flute (Musical Instrument)",
+        "Lyre (Musical Instrument)",
+        "Horn (Musical Instrument)",
+    }
+
+    # Entertainer has Drum
+    ent_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Entertainer"
+    )
+    ent_instruments = ent_entry.lines.filter(choice_group="instrument").values_list(
+        "item__name", flat=True
+    )
+    assert "Drum (Musical Instrument)" in ent_instruments
+    assert set(ent_instruments) == {
+        "Lute (Musical Instrument)",
+        "Flute (Musical Instrument)",
+        "Lyre (Musical Instrument)",
+        "Horn (Musical Instrument)",
+        "Drum (Musical Instrument)",
+    }
+
+
+@pytest.mark.django_db
+def test_farmer_and_scribe_share_artisan_records(club):
+    """Farmer's Carpenter and Scribe's Calligrapher are the Artisan's records."""
+    seed_default_starting_equipment(club)
+
+    # Farmer's line item == Artisan's Carpenter line item
+    farmer_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Farmer"
+    )
+    farmer_tool = farmer_entry.lines.first().item
+    assert farmer_tool.name == "Carpenter's Tools (Artisan's Tools)"
+
+    artisan_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Artisan"
+    )
+    artisan_carpenter = (
+        artisan_entry.lines.filter(item__name="Carpenter's Tools (Artisan's Tools)").first().item
+    )
+    assert farmer_tool.pk == artisan_carpenter.pk
+
+    # Scribe's line item == Artisan's Calligrapher line item
+    scribe_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Scribe"
+    )
+    scribe_tool = scribe_entry.lines.first().item
+    assert scribe_tool.name == "Calligrapher's Supplies (Artisan's Tools)"
+
+    artisan_calligrapher = (
+        artisan_entry.lines.filter(item__name="Calligrapher's Supplies (Artisan's Tools)")
+        .first()
+        .item
+    )
+    assert scribe_tool.pk == artisan_calligrapher.pk
+
+    # Exactly one record each
+    assert Item.objects.filter(club=club, name="Carpenter's Tools (Artisan's Tools)").count() == 1
+    assert (
+        Item.objects.filter(club=club, name="Calligrapher's Supplies (Artisan's Tools)").count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
+def test_choice_slugs_and_order_unchanged(club):
+    """Choice group slugs and line order (first = default) are unchanged."""
+    seed_default_starting_equipment(club)
+
+    # Helper to get distinct choice groups in order of appearance
+    def get_groups(entry):
+        seen = set()
+        groups = []
+        for line in entry.lines.filter(is_choice=True).order_by("id"):
+            if line.choice_group not in seen:
+                seen.add(line.choice_group)
+                groups.append(line.choice_group)
+        return groups
+
+    # Bard: weapon, pack, instrument (ordered by line id)
+    bard_entry = StartingEquipmentClassEntry.objects.get(
+        template__club=club, class_option__name="Bard"
+    )
+    bard_groups = get_groups(bard_entry)
+    assert bard_groups == ["weapon", "pack", "instrument"]
+    # First instrument is Lute (default)
+    first_instrument = bard_entry.lines.filter(choice_group="instrument").order_by("id").first()
+    assert first_instrument.item.name == "Lute (Musical Instrument)"
+
+    # Entertainer: instrument
+    ent_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Entertainer"
+    )
+    ent_groups = get_groups(ent_entry)
+    assert ent_groups == ["instrument"]
+    first_ent_instrument = ent_entry.lines.filter(choice_group="instrument").order_by("id").first()
+    assert first_ent_instrument.item.name == "Lute (Musical Instrument)"
+
+    # Artisan: tools
+    art_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Artisan"
+    )
+    art_groups = get_groups(art_entry)
+    assert art_groups == ["tools"]
+    first_tool = art_entry.lines.filter(choice_group="tools").order_by("id").first()
+    assert first_tool.item.name == "Woodcarver's Tools (Artisan's Tools)"
+
+    # Soldier: gaming_set
+    sol_entry = StartingEquipmentBackgroundEntry.objects.get(
+        template__club=club, background_option__name="Soldier"
+    )
+    sol_groups = get_groups(sol_entry)
+    assert sol_groups == ["gaming_set"]
+    first_gaming = sol_entry.lines.filter(choice_group="gaming_set").order_by("id").first()
+    assert first_gaming.item.name == "Dice (Gaming Set)"
+
+    # Wizard/Sorcerer/Warlock: focus (first is Crystal)
+    for class_name in ["Wizard", "Sorcerer", "Warlock"]:
+        cls_entry = StartingEquipmentClassEntry.objects.get(
+            template__club=club, class_option__name=class_name
+        )
+        cls_groups = get_groups(cls_entry)
+        assert "focus" in cls_groups
+        first_focus = cls_entry.lines.filter(choice_group="focus").order_by("id").first()
+        assert first_focus.item.name == "Component Pouch"
+
+
+@pytest.mark.django_db
+def test_bard_claim_defaults_to_lute_and_can_pick_others(club, player):
+    """A Bard claim grants Lute by default and offers Flute, Lyre, Horn."""
+    seed_default_starting_equipment(club)
+
+    template = StartingEquipmentTemplate.objects.get(club=club, name=DEFAULT_TEMPLATE_NAME)
+    character = Character.objects.create(
+        club=club,
+        owner=Membership.objects.get(user=player, club=club),
+        name="Test Bard",
+        char_class="Bard",
+        class_option=CharacterClass.objects.get(club=club, name="Bard"),
+        background="Acolyte",
+        background_option=Background.objects.get(club=club, name="Acolyte"),
+        level=1,
+    )
+    result = apply_starting_equipment(character, template, None)
+
+    granted = Counter()
+    for line in LedgerLine.objects.filter(entry=result.entry, item__isnull=False):
+        granted[line.item.name] += line.quantity
+
+    # Default grant includes Lute
+    assert "Lute (Musical Instrument)" in granted
+    assert granted["Lute (Musical Instrument)"] == 1
+
+    # Other instruments NOT granted by default
+    for name in [
+        "Flute (Musical Instrument)",
+        "Lyre (Musical Instrument)",
+        "Horn (Musical Instrument)",
+    ]:
+        assert granted[name] == 0
+
+    # The choice lines for Bard's instrument group offer Flute, Lyre, Horn
+    instrument_lines = (
+        StartingEquipmentClassLine.objects.for_club(club)
+        .filter(class_entry__class_option__name="Bard", choice_group="instrument")
+        .order_by("id")
+    )
+    offered = [line.item.name for line in instrument_lines]
+    assert offered == [
+        "Lute (Musical Instrument)",
+        "Flute (Musical Instrument)",
+        "Lyre (Musical Instrument)",
+        "Horn (Musical Instrument)",
+    ]
