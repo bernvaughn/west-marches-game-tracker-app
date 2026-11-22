@@ -36,7 +36,7 @@
 {% elif selected_character %}
 {% with ctx=selected_character|selector_context %}
 <span class="navbar-text character-name">
-  Acting as {{ selected_character.name }}
+  Acting as {{ selected_character.name }}{% include "player_characters/characters/_life_badge.html" with character=selected_character compact=True %}
   {% if ctx.coins %} · {{ ctx.coins }}{% endif %}
   {% if ctx.junk_qty > 0 %} · <span class="wm-badge wm-badge--warning">Junk {{ ctx.junk_qty }}</span>{% endif %}
   {% if ctx.downtime > 0 %} · <span class="wm-badge wm-badge--success">DT {{ ctx.downtime }}</span>{% endif %}

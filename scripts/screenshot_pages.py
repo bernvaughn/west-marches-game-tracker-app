@@ -311,6 +311,8 @@ EXCLUDED = {
     "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
     "characters:fallen": "C1 stub view returning 404.",
+    "characters:death": "POST only; mark a character as dead.",
+    "characters:death_undo": "POST only; undo a death mark.",
     # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
     # and the public token feed (needs a real token; not a demo page).
     "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
