@@ -30,9 +30,7 @@ def _body(client, club, quest):
     return client.get(_url("detail", club, quest.pk)).content.decode()
 
 
-def test_turn_in_dead_shows_reason(
-    club, logged_in_client, quest, character, item, give
-):
+def test_turn_in_dead_shows_reason(club, logged_in_client, quest, character, item, give):
     """Turn-in card shows reason instead of form when character is dead."""
     give(character, item, 2)
     character.died_on = timezone.localdate()
@@ -46,9 +44,7 @@ def test_turn_in_dead_shows_reason(
     assert "<form" not in body.split('id="turn-in"')[1]
 
 
-def test_turn_in_archived_shows_reason(
-    club, logged_in_client, quest, character, item, give
-):
+def test_turn_in_archived_shows_reason(club, logged_in_client, quest, character, item, give):
     """Turn-in card shows reason when character is archived."""
     give(character, item, 2)
     character.archived_at = timezone.now()
@@ -62,9 +58,7 @@ def test_turn_in_archived_shows_reason(
     assert "<form" not in body.split('id="turn-in"')[1]
 
 
-def test_turn_in_living_shows_button(
-    club, logged_in_client, quest, character, item, give
-):
+def test_turn_in_living_shows_button(club, logged_in_client, quest, character, item, give):
     """Turn-in card shows Turn in button for living character with requirements met."""
     give(character, item, 2)
     _select_character(logged_in_client, character)

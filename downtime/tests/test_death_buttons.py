@@ -1,7 +1,5 @@
 """Tests for U140: downtime spend buttons replaced by death reason."""
 
-from urllib.parse import urlencode
-
 import pytest
 from django.test import Client
 from django.urls import reverse
@@ -51,7 +49,6 @@ def logged_in_client(player):
 
 def test_play_page_dead_shows_reason(club, logged_in_client, character, action, entries):
     """Play page shows reason instead of 'Take the job' when character is dead."""
-    from downtime import services
 
     services.award(character, 2)
     character.died_on = timezone.localdate()
@@ -67,7 +64,6 @@ def test_play_page_dead_shows_reason(club, logged_in_client, character, action, 
 
 def test_play_page_archived_shows_reason(club, logged_in_client, character, action, entries):
     """Play page shows reason when character is archived."""
-    from downtime import services
 
     services.award(character, 2)
     character.archived_at = timezone.now()
@@ -83,7 +79,6 @@ def test_play_page_archived_shows_reason(club, logged_in_client, character, acti
 
 def test_play_page_living_shows_take_job(club, logged_in_client, character, action, entries):
     """Play page shows 'Take the job' for living character with points."""
-    from downtime import services
 
     services.award(character, 2)
     _select_character(logged_in_client, character)
@@ -100,7 +95,6 @@ def test_result_modal_dead_shows_reason_instead_of_spin_again(
     club, logged_in_client, player, character, action, entries
 ):
     """Result modal shows reason instead of 'Spin again' when character is dead."""
-    from downtime import services
 
     services.award(character, 2)
     _select_character(logged_in_client, character)
@@ -120,7 +114,6 @@ def test_result_modal_archived_shows_reason_instead_of_spin_again(
     club, logged_in_client, player, character, action, entries
 ):
     """Result modal shows reason instead of 'Spin again' when character is archived."""
-    from downtime import services
 
     services.award(character, 2)
     _select_character(logged_in_client, character)
@@ -136,9 +129,10 @@ def test_result_modal_archived_shows_reason_instead_of_spin_again(
     assert "Spin again" not in body
 
 
-def test_result_modal_living_shows_spin_again(club, logged_in_client, player, character, action, entries):
+def test_result_modal_living_shows_spin_again(
+    club, logged_in_client, player, character, action, entries
+):
     """Result modal shows 'Spin again' for living character."""
-    from downtime import services
 
     services.award(character, 2)
     _select_character(logged_in_client, character)

@@ -56,29 +56,32 @@ def test_own_characters_excludes_archived_keeps_dead(rf, club, player):
 # --- selected_character fallback ---
 
 
-def test_selected_archived_falls_back_to_living(rf, club, player):
+def test_selected_archived_remains_selected_when_archived(rf, club, player):
+    """An archived character remains selected so the 'is archived' message shows."""
     first = _char(club, player, "First")
     second = _char(club, player, "Second")
     membership = Membership.objects.get(user=player, club=club)
     SelectedCharacter.objects.create(membership=membership, character=first)
     first.archived_at = timezone.now()
     first.save()
-    assert selected_character(_req(rf, player, club)) == second
+    assert selected_character(_req(rf, player, club)) == first
 
 
-def test_selected_archived_falls_back_to_dead(rf, club, player):
+def test_selected_archived_remains_selected_when_no_living(rf, club, player):
+    """An archived character remains selected even if a dead character exists."""
     first = _char(club, player, "First", dead=True)
     second = _char(club, player, "Second", archived=True)
     membership = Membership.objects.get(user=player, club=club)
     SelectedCharacter.objects.create(membership=membership, character=second)
-    assert selected_character(_req(rf, player, club)) == first
+    assert selected_character(_req(rf, player, club)) == second
 
 
-def test_selected_none_when_all_archived(rf, club, player):
+def test_selected_archived_when_all_archived(rf, club, player):
+    """An archived character remains selected even if all are archived."""
     first = _char(club, player, "First", archived=True)
     membership = Membership.objects.get(user=player, club=club)
     SelectedCharacter.objects.create(membership=membership, character=first)
-    assert selected_character(_req(rf, player, club)) is None
+    assert selected_character(_req(rf, player, club)) == first
 
 
 def test_selected_none_when_no_owned(rf, club, player):
@@ -95,9 +98,11 @@ def test_selection_restores_after_unarchive(rf, club, player):
     SelectedCharacter.objects.create(membership=membership, character=first)
     first.archived_at = timezone.now()
     first.save()
-    assert selected_character(_req(rf, player, club)) == second
+    # Archived character remains selected so 'is archived' message shows
+    assert selected_character(_req(rf, player, club)) == first
     first.archived_at = None
     first.save()
+    # After unarchive, the same character is still selected
     assert selected_character(_req(rf, player, club)) == first
 
 

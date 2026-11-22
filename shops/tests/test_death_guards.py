@@ -96,7 +96,7 @@ def test_archived_buyer_post_refused(club, shop, always_open, stock, character, 
     client = login(player)
     resp = client.post(buy_url(club, shop, stock), {"character": character.pk, "quantity": 1})
     assert resp.status_code == 200
-    assert "You have no character in this club" in resp.content.decode()
+    assert "is archived" in resp.content.decode()
     assert LedgerEntry.objects.count() == before
 
 
@@ -143,7 +143,7 @@ def test_archived_buyer_stall_post_refused(club, character, item, other_characte
     client = login(other_character.owner.user)
     resp = client.post(stall_buy_url(club, seller, item), {"quantity": 1})
     assert resp.status_code == 200
-    assert "You have no character in this club" in resp.content.decode()
+    assert "is archived" in resp.content.decode()
 
 
 # ------------------------------------------------- dead character can still sell

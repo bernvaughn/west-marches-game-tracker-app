@@ -18,18 +18,42 @@ def own_characters(request):
 def selected_character(request):
     if hasattr(request, _CACHE):
         return getattr(request, _CACHE)
-    # Include archived characters in the selection pool so they can be explicitly selected
-    owned = list(own_characters(request).filter(archived_at__isnull=False) | own_characters(request))
-    # Actually, let's just get all owned characters including archived
-    from .models import Character
     club = getattr(request, "club", None)
     membership = getattr(request, "membership", None)
     if club is None or membership is None:
         setattr(request, _CACHE, None)
         return None
-    owned = list(
-        Character.objects.for_club(club).filter(owner=membership).order_by("name")
+    # First, check if there's a previously selected character that is still owned
+    stored = (
+        SelectedCharacter.objects.filter(membership=request.membership)
+        .values_list("character_id", flat=True)
+        .first()
     )
+    if stored:
+        try:
+            chosen = Character.objects.for_club(club).filter(
+                owner=membership, pk=stored
+            ).first()
+            if chosen:
+                setattr(request, _CACHE, chosen)
+                return chosen
+        except (AttributeError, ValueError):
+            pass
+    # No valid stored character: build pool of selectable characters
+    # Primary pool: living + dead (not archived)
+    owned = list(
+        Character.objects.for_club(club)
+        .filter(owner=membership)
+        .not_archived()
+        .order_by("name")
+    )
+    # Fallback: if no non-archived characters exist, allow archived characters
+    if not owned:
+        owned = list(
+            Character.objects.for_club(club)
+            .filter(owner=membership)
+            .order_by("name")
+        )
     chosen = None
     if len(owned) == 1:
         chosen = owned[0]
