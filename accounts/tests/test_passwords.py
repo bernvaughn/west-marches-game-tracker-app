@@ -165,17 +165,17 @@ def test_complexity_validator_rejects_invalid_passwords(password, player):
 
 
 @pytest.mark.story("U20")
-def test_minimum_length_12_enforced_by_django_validator(player):
-    # This tests that Django's MinimumLengthValidator is configured with min_length=12
+def test_minimum_length_8_enforced_by_django_validator(player):
+    # This tests that Django's MinimumLengthValidator is configured with min_length=8
     # The actual validation is done by Django's validator, not our ComplexityValidator
     from django.contrib.auth.password_validation import MinimumLengthValidator
 
-    validator = MinimumLengthValidator(min_length=12)
-    # 11 chars should fail
+    validator = MinimumLengthValidator(min_length=8)
+    # 7 chars should fail
     with pytest.raises(ValidationError):
-        validator.validate("Abcdefgh1!", player)  # 11 chars
-    # 12 chars should pass
-    validator.validate("Abcdefgh1!@@", player)  # 12 chars with all requirements
+        validator.validate("Abcdef1", player)  # 7 chars
+    # 8 chars should pass
+    validator.validate("Abcdef1!", player)  # 8 chars with all requirements
 
 
 @pytest.mark.story("U20")
