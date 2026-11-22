@@ -1,0 +1,12 @@
+{% autoescape off %}
+{{ content }}
+
+{% if extra_text %}
+{{ extra_text }}
+{% endif %}
+
+---
+{% for line in footer_lines %}
+{{ line }}
+{% endfor %}
+{% endautoescape %}

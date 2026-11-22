@@ -1,0 +1,1 @@
+# Mail tests package
