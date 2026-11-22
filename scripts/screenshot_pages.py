@@ -307,6 +307,9 @@ EXCLUDED = {
     "character_options:restore": "POST only.",
     "character_options:delete": "GET shows confirm modal; POST deletes.",
     "character_options:move": "POST only.",
+    # Play session attendance URLs require a session PK and club context
+    "play_sessions:attendance": "Attendance page; requires session PK and club context.",
+    "play_sessions:rsvp_for": "POST-only RSVP override; requires session PK and club context.",
 }
 
 
