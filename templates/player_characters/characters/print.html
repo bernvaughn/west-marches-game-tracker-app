@@ -4,7 +4,7 @@
 {% block main_class %}wm-card-print{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/print.css' %}">
-{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% with c=coins.owned|coins_text %}{% with coins_sub="Coins: "|add:c %}{% include "components/page_header.html" with title=character.name subtitle=coins_sub back_url=sheet_url back_label="Back to sheet" %}{% endwith %}{% endwith %}</div>
+{% url "characters:detail" club.slug character.pk as sheet_url %}<div class="no-print">{% with c=coins.owned|coins_text %}{% with coins_sub="Coins: "|add:c %}{% include "components/page_header.html" with title=character.name subtitle=coins_sub back_url=sheet_url back_label="Back to sheet" %}{% endwith %}{% endwith %}{% include "player_characters/characters/_life_badge.html" with character=character %}</div>
 
 <form data-print-frame method="post" action="{% url 'characters:print_items' club.slug character.pk %}?copies={{ copies }}" class="no-print">
   <div class="wm-toolbar" role="toolbar" aria-label="Item card actions">
@@ -23,5 +23,4 @@
 {% empty %}
 {% if not too_many %}{% include "components/empty_state.html" with text="No items." %}{% endif %}
 {% endfor %}
-{% include "player_characters/characters/_life_badge.html" with character=character %}
 {% endblock %}
