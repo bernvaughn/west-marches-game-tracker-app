@@ -49,7 +49,7 @@
                  {% if cd.checked %} checked{% endif %}
                  data-wm-toggle="#char-section-{{ c.pk }}">
         </td>
-        <td><label for="award-{{ c.pk }}">{{ c.name }}</label></td>
+        <td><label for="award-{{ c.pk }}">{{ c.name }}{% if c.is_archived %} {% include "components/badge.html" with status="neutral" text="(archived)" %}{% endif %}</label></td>
         <td>{{ c.owner.user.display_name|default:c.owner.user.email }}</td>
         <td>{{ c.level|default_if_none:"—" }}</td>
         <td>{{ c.char_class|default:"—" }}</td>
@@ -64,7 +64,10 @@
   {% for cd in character_data %}{% with c=cd.character %}
   <div id="char-section-{{ c.pk }}" class="wm-char-section" data-char-pk="{{ c.pk }}">
     <hr class="my-3">
-    <h3 class="h6 mb-2">{{ c.name }}</h3>
+    <h3 class="h6 mb-2">{{ c.name }}{% if c.is_archived %} {% include "components/badge.html" with status="neutral" text="(archived)" %}{% endif %}</h3>
+    {% if c.is_archived %}
+    {% include "components/alert.html" with level="warning" title="Archived character." text=c.name|add:" is archived. It cannot act or shop. The award still applies." %}
+    {% endif %}
     <div class="row g-3 mb-3">
       <div class="col-md-4">
         <label class="form-label" for="coins_{{ c.pk }}">Coins (cp)</label>
