@@ -643,6 +643,7 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("play_sessions:session_detail", "play_session.pk"),
         ),
+        P("play-sessions-settings", "club_admin", _c("play_sessions:settings")),
         # map
         P(
             "map-visits",
