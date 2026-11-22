@@ -139,11 +139,26 @@ def extra_fixtures():
 
     Each helper is a `get_or_create`, so a second run changes nothing.
     """
-    from accounts.models import Club
+    from django.utils import timezone
+
+    from accounts.models import Club, Membership
     from player_characters.models import Character
 
     club = Club.objects.get(slug="demo")
     aria = Character.objects.get(club=club, name="Aria Windrunner")
+    alice = Membership.objects.get(user__email="alice@example.com", club=club)
+    old_brannoc, _ = Character.objects.get_or_create(
+        club=club,
+        owner=alice,
+        name="Old Brannoc",
+        defaults={"char_class": "Fighter", "level": 5},
+    )
+    old_brannoc.char_class = "Fighter"
+    old_brannoc.level = 5
+    old_brannoc.died_on = timezone.localdate()
+    old_brannoc.archived_at = timezone.now()
+    old_brannoc.shop_open = False
+    old_brannoc.save()
     _role_users(club)
     _junk(aria)
     _point_request(club, aria)
@@ -295,9 +310,6 @@ EXCLUDED = {
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
     "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
-    "characters:death": "C1 stub view returning 404.",
-    "characters:death_undo": "C1 stub view returning 404.",
-    "characters:archived": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
     # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
     # and the public token feed (needs a real token; not a demo page).
@@ -389,6 +401,8 @@ def _build_pages() -> list[Page]:
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),
+        P("characters-archived-alice", "alice", _c("characters:archived")),
+        P("characters-archived-gm", "gm", _c("characters:archived")),
         P("characters-create", "alice", _c("characters:create")),
         P("characters-slips-gm", "gm", _c("characters:slips")),
         P("characters-slips-alice", "alice", _c("characters:slips")),
