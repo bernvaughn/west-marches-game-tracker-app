@@ -739,4 +739,3 @@ def _build_pages() -> list[Page]:
 
 
 PAGES = _build_pages()
-
