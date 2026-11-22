@@ -82,7 +82,7 @@ def _wait_for(url: str, proc: subprocess.Popen, timeout=30):
         except Exception:
             time.sleep(0.3)
     stdout, stderr = proc.communicate()
-    print(f"Dev server did not start in time.")
+    print("Dev server did not start in time.")
     if stdout:
         print(f"stdout: {stdout.decode()[:2000]}")
     if stderr:
@@ -147,7 +147,7 @@ def main() -> int:
     sys.path.insert(0, str(ROOT))
     for cmd in ("migrate", "seed_demo"):
         print(f"Running {cmd}...")
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, "manage.py", cmd],
             cwd=ROOT,
             env=env,
