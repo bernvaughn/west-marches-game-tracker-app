@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}The Fallen{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="The Fallen" subtitle="Dead characters in this club" %}
+<div class="wm-table-scroll">
+  <table class="table table-sm table-striped wm-data-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Level</th>
+        <th>Died</th>
+        <th>Note</th>
+        <th>Owner</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in characters %}
+      {% with c=row.character %}
+      <tr>
+        <td>
+          <span class="wm-chip">
+            <span class="wm-avatar" aria-hidden="true">{{ c.name|first|upper }}</span>
+            {% if row.detail_url %}<a href="{{ row.detail_url }}">{{ c.name }}</a>{% else %}<span>{{ c.name }}</span>{% endif %}
+          </span>
+        </td>
+        <td>{{ c.char_class|default:"—" }}</td>
+        <td>{% if c.level %}Level {{ c.level }}{% else %}&mdash;{% endif %}</td>
+        <td>{{ c.died_on|date }}</td>
+        <td>{{ c.death_note|default:"—" }}</td>
+        <td>{{ c.owner.user.display_name }}</td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      {% include "components/data_table_empty.html" with cols=6 text="No fallen characters." %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- P7 HOOK: Sessions played - add a column or data here when the play_sessions app exists -->
+{% endblock %}

@@ -32,3 +32,11 @@ class PlayerCharactersConfig(AppConfig):
             lambda r: _membership(r.user, r.club) is not None,
             58,
         )
+        reg(
+            "club",
+            "The Fallen",
+            "characters:fallen",
+            lambda r: _membership(r.user, r.club) is not None,
+            59,
+            icon="flower1",
+        )
