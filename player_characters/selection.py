@@ -18,7 +18,33 @@ def own_characters(request):
 def selected_character(request):
     if hasattr(request, _CACHE):
         return getattr(request, _CACHE)
-    owned = list(own_characters(request))
+    club = getattr(request, "club", None)
+    membership = getattr(request, "membership", None)
+    if club is None or membership is None:
+        setattr(request, _CACHE, None)
+        return None
+    # First, check if there's a previously selected character that is still owned
+    stored = (
+        SelectedCharacter.objects.filter(membership=request.membership)
+        .values_list("character_id", flat=True)
+        .first()
+    )
+    if stored:
+        try:
+            chosen = Character.objects.for_club(club).filter(owner=membership, pk=stored).first()
+            if chosen:
+                setattr(request, _CACHE, chosen)
+                return chosen
+        except (AttributeError, ValueError):
+            pass
+    # No valid stored character: build pool of selectable characters
+    # Primary pool: living + dead (not archived)
+    owned = list(
+        Character.objects.for_club(club).filter(owner=membership).not_archived().order_by("name")
+    )
+    # Fallback: if no non-archived characters exist, allow archived characters
+    if not owned:
+        owned = list(Character.objects.for_club(club).filter(owner=membership).order_by("name"))
     chosen = None
     if len(owned) == 1:
         chosen = owned[0]

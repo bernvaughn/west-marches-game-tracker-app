@@ -1,0 +1,13 @@
+{# Memorial marker for a dead character's stall (U142). Renders nothing unless dead. #}
+{% if character.is_dead %}
+{% if inline %}
+<span class="wm-memorial wm-memorial--inline" role="note" aria-label="In memory of {{ character.name }}">
+  † In memory, {{ character.died_on|date:"j M Y" }}
+</span>
+{% else %}
+<div class="wm-memorial" role="note" aria-label="In memory of {{ character.name }}">
+  <span class="wm-memorial-text">In memory of {{ character.name }}</span>
+  <time class="wm-memorial-date" datetime="{{ character.died_on|date:'Y-m-d' }}">{{ character.died_on|date:"j M Y" }}</time>
+</div>
+{% endif %}
+{% endif %}

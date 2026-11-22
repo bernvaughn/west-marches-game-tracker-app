@@ -22,7 +22,7 @@
   <tbody>
   {% for o in offers.stalls %}
     <tr>
-      <td><a href="{{ o.url }}">{{ o.character.name }}</a>{% if o.is_own %} {% include "components/badge.html" with status="info" text="your stall" %}{% endif %}</td>
+      <td><a href="{{ o.url }}">{{ o.character.name }}</a>{% if o.is_own %} {% include "components/badge.html" with status="info" text="your stall" %}{% endif %}{% if o.character.is_dead %}{% include "shops/_memorial.html" with character=o.character inline=True %}{% endif %}</td>
       <td class="num">{{ o.price|coins }}</td>
       <td class="num">{{ o.quantity }}</td>
     </tr>

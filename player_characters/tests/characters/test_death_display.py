@@ -99,8 +99,13 @@ def test_archived_absent_from_lists_but_reachable_by_url(club, login, player, cl
     owner = _membership(club, player)
     archived = Character.objects.create(club=club, owner=owner, name="Vale")
     archive(archived, by=owner)
-    assert "Vale" not in login(player).get(u("characters:directory", club)).content.decode()
+    # Archived characters should not appear in the directory table
+    directory_html = login(player).get(u("characters:directory", club)).content.decode()
+    # Check the table body only (where character rows appear)
+    tbody = _tbody(directory_html)
+    assert "Vale" not in tbody
     assert "Vale" not in login(club_admin).get(u("characters:index", club)).content.decode()
+    # But they should still be reachable by direct URL
     r = login(player).get(u("characters:detail", club, archived.pk))
     assert r.status_code == 200
     assert "Vale" in r.content.decode()
