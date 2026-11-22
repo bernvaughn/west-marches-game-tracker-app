@@ -11,12 +11,12 @@
   <div class="card-body">
     <div class="row g-3 align-items-end">
       <div class="col-auto">
-        <label class="form-label visually-hidden">Start date</label>
-        <input type="date" name="start" value="{{ start }}" class="form-control" placeholder="Start">
+        <label class="form-label visually-hidden" for="report-start">Start date</label>
+        <input type="date" id="report-start" name="start" value="{{ start }}" class="form-control" placeholder="Start">
       </div>
       <div class="col-auto">
-        <label class="form-label visually-hidden">End date</label>
-        <input type="date" name="end" value="{{ end }}" class="form-control" placeholder="End">
+        <label class="form-label visually-hidden" for="report-end">End date</label>
+        <input type="date" id="report-end" name="end" value="{{ end }}" class="form-control" placeholder="End">
       </div>
       <div class="col-auto">
         <button class="btn btn-primary" type="submit">Apply</button>

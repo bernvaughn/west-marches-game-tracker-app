@@ -282,6 +282,26 @@ def test_report_view_error_alert(client):
     assert b"Not a valid" in response.content
 
 
+def test_report_filter_form_echoes_iso_dates(client):
+    club = _make_club()
+    admin_user = _make_user("admin@test.com")
+    _make_membership(admin_user, club, is_admin=True)
+    client.force_login(admin_user)
+
+    url = reverse("play_sessions:report", kwargs={"club_slug": club.slug})
+    html = client.get(url).content.decode()
+    assert 'value="None"' not in html
+
+    html = client.get(url, {"start": "2026-01-05", "end": "2026-02-01"}).content.decode()
+    assert 'value="2026-01-05"' in html
+    assert 'value="2026-02-01"' in html
+    assert 'value="None"' not in html
+
+    html = client.get(url, {"start": "bad"}).content.decode()
+    assert 'value="bad"' in html
+    assert 'value="None"' not in html
+
+
 # ---------------------------------------------------------------------------
 # P8: CSV export
 # ---------------------------------------------------------------------------

@@ -31,8 +31,8 @@ def report(request, club_slug):
 
     context = {
         "club": club,
-        "start": start,
-        "end": end,
+        "start": request.GET.get("start", ""),
+        "end": request.GET.get("end", ""),
         "error": error,
         "characters": characters,
         "players": players,
