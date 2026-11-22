@@ -12,17 +12,35 @@ from player_characters.models import Character
 from .server import agent_tool
 
 
+def character_status(character: Character) -> str:
+    """Return the character's life status: 'archived', 'dead', or 'living'.
+
+    Archived takes precedence over dead.
+    """
+    if character.is_archived:
+        return "archived"
+    if character.is_dead:
+        return "dead"
+    return "living"
+
+
 @agent_tool
-def list_characters(ctx, search: str = "") -> dict[str, Any]:
+def list_characters(ctx, search: str = "", include_archived: bool = False) -> dict[str, Any]:
     """List the characters of this club, ordered by name.
 
     Use it to match character names in session notes to character ids.
     `search` is an optional case-insensitive part of the name; an empty
     search returns every character. Only this club's characters are
-    returned. Each row has `id`, `name` and `owner_display_name`. Use the
-    returned `id` in `propose_awards`.
+    returned. Each row has `id`, `name`, `owner_display_name`, `status`
+    ("archived", "dead", or "living"), and `died_on` (ISO date or null).
+    Use the returned `id` in `propose_awards`.
+
+    By default archived characters are excluded. Pass `include_archived=true`
+    to include them.
     """
     qs = Character.objects.for_club(ctx.club).select_related("owner__user")
+    if not include_archived:
+        qs = qs.not_archived()
     search = (search or "").strip()
     if search:
         qs = qs.filter(name__icontains=search)
@@ -32,6 +50,8 @@ def list_characters(ctx, search: str = "") -> dict[str, Any]:
                 "id": c.pk,
                 "name": c.name,
                 "owner_display_name": c.owner.user.display_name,
+                "status": character_status(c),
+                "died_on": c.died_on.isoformat() if c.died_on else None,
             }
             for c in qs.order_by("name", "pk")
         ]

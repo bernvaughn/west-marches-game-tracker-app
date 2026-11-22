@@ -29,15 +29,26 @@ def batch_list(request, club_slug):
 def _render_detail(request, batch, bound=None, status=200):
     lines = list(batch.lines.select_related("character", "item", "proposed_item").order_by("pk"))
     rows = []
+    archived_rows = []
     for n, line in enumerate(lines, start=1):
+        is_dead = line.character.is_dead
+        is_archived = line.character.is_archived
         form = None
         if batch.status == ProposedBatch.Status.PENDING:
             if bound is not None and bound.prefix == f"line-{line.pk}":
                 form = bound
             else:
                 form = LineForm(club=request.club, line=line)
-        rows.append({"n": n, "line": line, "form": form})
-    ctx = {"batch": batch, "rows": rows, "pending": batch.status == ProposedBatch.Status.PENDING}
+        row = {"n": n, "line": line, "form": form, "dead": is_dead, "archived": is_archived}
+        rows.append(row)
+        if batch.status == ProposedBatch.Status.PENDING and is_archived:
+            archived_rows.append(row)
+    ctx = {
+        "batch": batch,
+        "rows": rows,
+        "pending": batch.status == ProposedBatch.Status.PENDING,
+        "archived_rows": archived_rows,
+    }
     return render(request, "agent_access/batches/detail.html", ctx, status=status)
 
 
@@ -88,8 +99,14 @@ def batch_line_remove(request, club_slug, pk, line_pk):
 @require_POST
 def batch_confirm(request, club_slug, pk):
     batch = club_get_object_or_404(request, ProposedBatch, pk=pk)
+    confirm_archived = request.POST.get("confirm_archived") == "on"
     try:
-        entries = confirm_batch(club=request.club, batch_id=batch.pk, actor=request.user)
+        entries = confirm_batch(
+            club=request.club,
+            batch_id=batch.pk,
+            actor=request.user,
+            confirm_archived=confirm_archived,
+        )
     except ConfirmError as exc:
         for message in exc.messages:
             messages.error(request, message)

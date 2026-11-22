@@ -44,7 +44,15 @@ def _resolve_item(line, n, problems):
     return None
 
 
-def confirm_batch(*, club, batch_id, actor):
+def archived_lines(lines):
+    """Return a list of (line_number, line) for lines whose character is archived.
+
+    The view and template share this logic.
+    """
+    return [(n, line) for n, line in enumerate(lines, start=1) if line.character.is_archived]
+
+
+def confirm_batch(*, club, batch_id, actor, confirm_archived=False):
     with transaction.atomic():
         batch = ProposedBatch.objects.for_club(club).get(pk=batch_id)
         if batch.status != ProposedBatch.Status.PENDING:
@@ -58,6 +66,10 @@ def confirm_batch(*, club, batch_id, actor):
             raise ConfirmError(["An empty batch cannot be confirmed."])
         problems, specs = [], []
         for n, line in enumerate(lines, start=1):
+            if line.character.is_archived and not confirm_archived:
+                problems.append(
+                    f"Line {n}: {line.character.name} is archived. Fix the line or confirm it."
+                )
             if line.item_id or line.proposed_item_id:
                 item = _resolve_item(line, n, problems)
                 amounts = [ledger.Line(item=item, quantity=line.quantity)]

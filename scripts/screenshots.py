@@ -69,12 +69,24 @@ def _wait_for(url: str, proc: subprocess.Popen, timeout=30):
     end = time.time() + timeout
     while time.time() < end:
         if proc.poll() is not None:
+            stdout, stderr = proc.communicate()
+            print(f"Dev server exited early. Return code: {proc.returncode}")
+            if stdout:
+                print(f"stdout: {stdout.decode()[:2000]}")
+            if stderr:
+                print(f"stderr: {stderr.decode()[:2000]}")
             raise RuntimeError("Dev server exited early.")
         try:
             urllib.request.urlopen(url, timeout=2)
             return
         except Exception:
             time.sleep(0.3)
+    stdout, stderr = proc.communicate()
+    print("Dev server did not start in time.")
+    if stdout:
+        print(f"stdout: {stdout.decode()[:2000]}")
+    if stderr:
+        print(f"stderr: {stderr.decode()[:2000]}")
     raise RuntimeError("Dev server did not start.")
 
 
@@ -134,13 +146,16 @@ def main() -> int:
     os.environ.update(env)
     sys.path.insert(0, str(ROOT))
     for cmd in ("migrate", "seed_demo"):
+        print(f"Running {cmd}...")
         subprocess.run(
             [sys.executable, "manage.py", cmd],
             cwd=ROOT,
             env=env,
             check=True,
-            stdout=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
         )
+        print(f"{cmd} done")
     import django
 
     django.setup()
@@ -170,8 +185,8 @@ def main() -> int:
         [sys.executable, "manage.py", "runserver", "--noreload", f"127.0.0.1:{port}"],
         cwd=ROOT,
         env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     )
     failed = overflow = taken = 0
     try:

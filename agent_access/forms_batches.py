@@ -21,7 +21,11 @@ class LineForm(forms.Form):
         kwargs.setdefault("prefix", f"line-{line.pk}")
         kwargs.setdefault("initial", initial_for(line))
         super().__init__(*args, **kwargs)
-        self.fields["character"].queryset = Character.objects.for_club(club)
+        # Allow editing a line already on an archived character, but don't let
+        # the GM pick a different archived character.
+        self.fields["character"].queryset = Character.objects.for_club(club).filter(
+            Q(archived_at__isnull=True) | Q(pk=line.character_id)
+        )
         self.fields["item"].queryset = Item.objects.for_club(club).filter(
             Q(retired=False) | Q(pk=line.item_id)
         )

@@ -40,7 +40,9 @@ def test_list_characters_all(mcp, world, character):
     assert {"aragorn", "Aria", "Bram"} <= set(names)
     assert "Zed" not in names
     assert names == sorted(names, key=str.lower) or names == sorted(names)
-    assert all(set(r) == {"id", "name", "owner_display_name"} for r in rows)
+    # Each row now has id, name, owner_display_name, status, died_on
+    expected_fields = {"id", "name", "owner_display_name", "status", "died_on"}
+    assert all(set(r) == expected_fields for r in rows)
     assert rows[0]["owner_display_name"]
 
 
