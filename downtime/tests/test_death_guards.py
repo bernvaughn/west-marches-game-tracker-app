@@ -54,7 +54,7 @@ def test_archived_spend_refused(login, club, player, character, action, entries)
     r = c.post(url(club, action.pk), follow=True)
 
     assert r.status_code == 200
-    assert f"{archived.name} is archived" in r.content.decode()
+    assert "You have no character to spend points for" in r.content.decode()
     assert services.balance(archived) == before_balance
     assert not DowntimeResult.objects.filter(character=archived).exists()
 
