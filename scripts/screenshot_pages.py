@@ -336,7 +336,7 @@ EXCLUDED = {
     "character_options:restore": "POST only.",
     "character_options:delete": "GET shows confirm modal; POST deletes.",
     "character_options:move": "POST only.",
-# play_sessions schedule - club-scoped, need specific session/club state
+    # play_sessions schedule - club-scoped, need specific session/club state
     "play_sessions:session_create": "Needs a club and GM; create form.",
     "play_sessions:session_edit": "Needs an existing session PK; edit form.",
     "play_sessions:session_cancel": "POST only; cancels a session.",
@@ -353,6 +353,7 @@ EXCLUDED = {
     "play_sessions:attendance": "Attendance page; requires session PK and club context.",
     "play_sessions:rsvp_for": "POST-only RSVP override; requires session PK and club context.",
 }
+
 
 def _c(name, *args):
     """A club-scoped URL builder: reverse(name, [slug, *attrs of demo])."""
