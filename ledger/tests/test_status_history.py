@@ -38,9 +38,7 @@ def other_char(club, other_player):
     return Character.objects.create(club=club, owner=owner, name="Borin")
 
 
-def test_club_ledger_shows_all_kinds(
-    login, game_master, club, character, other_char, item
-):
+def test_club_ledger_shows_all_kinds(login, game_master, club, character, other_char, item):
     """Club ledger shows died, revived, archived, unarchived rows
     with who, date and note; newest first."""
     # Create status changes using the life.py service functions
@@ -101,8 +99,9 @@ def test_player_redirected_from_club_ledger(login, player, club, character, othe
 
 def test_archived_character_shows_history_and_rows(login, player, club, character):
     """Archived character still shows its history and rows."""
-    mark_dead(character, by=Membership.objects.get(user=player, club=club), died_on=d(1), note="Died")
-    archive(character, by=Membership.objects.get(user=player, club=club), note="Archived")
+    m = Membership.objects.get(user=player, club=club)
+    mark_dead(character, by=m, died_on=d(1), note="Died")
+    archive(character, by=m, note="Archived")
     r = login(player).get(hist(club, character))
     assert r.status_code == 200
     t = text(r)
@@ -124,7 +123,6 @@ def test_club_ledger_filters(
     kind, item, downtime hide the section."""
     gm_m = Membership.objects.get(user=game_master, club=club)
     player_m = Membership.objects.get(user=player, club=club)
-    other_m = Membership.objects.get(user=other_player, club=club)
 
     mark_dead(character, by=gm_m, died_on=d(1), note="c1-died")
     undo_death(character, by=gm_m, note="c1-revived")
@@ -188,11 +186,19 @@ def test_cross_club_isolation(login, game_master, club, other_club, character):
 
 
 def test_ledger_entries_pagination_unchanged(login, game_master, club, character, item):
-    """Ledger entries and pagination unchanged: ledger row count and order identical with and without status rows."""
+    """Ledger entries and pagination unchanged:
+    ledger row count and order identical with and without status rows."""
     gm_m = Membership.objects.get(user=game_master, club=club)
     # Add some ledger entries
     for i in range(3):
-        record(character, "award", [Line(coins=100)], note=f"entry{i}", date=d(i + 1), actor=game_master)
+        record(
+            character,
+            "award",
+            [Line(coins=100)],
+            note=f"entry{i}",
+            date=d(i + 1),
+            actor=game_master,
+        )
     # Add status changes
     mark_dead(character, by=gm_m, died_on=d(4), note="death")
 
@@ -246,9 +252,23 @@ def test_club_ledger_tests_still_pass(login, game_master, club, character, other
     """Existing test_club_ledger.py tests still pass - run them."""
     # This test verifies the original tests would still work by checking
     # the ledger entries still function correctly
-    gm_m = Membership.objects.get(user=game_master, club=club)
-    record(character, "award", [Line(coins=100)], note="older", date=d(1), actor=game_master)
-    record(other_char, "award", [Line(item=item, quantity=2)], note="newest", date=d(9), actor=game_master)
+    Membership.objects.get(user=game_master, club=club)
+    record(
+        character,
+        "award",
+        [Line(coins=100)],
+        note="older",
+        date=d(1),
+        actor=game_master,
+    )
+    record(
+        other_char,
+        "award",
+        [Line(item=item, quantity=2)],
+        note="newest",
+        date=d(9),
+        actor=game_master,
+    )
 
     r = login(game_master).get(index(club))
     t = text(r)

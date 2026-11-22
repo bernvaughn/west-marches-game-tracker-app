@@ -93,7 +93,9 @@ def index(request, club_slug):
     status_changes = None
     if show_status:
         sc_qs = _status_changes_for(request, form=form)
-        status_page_obj = Paginator(sc_qs, STATUS_PAGE_SIZE).get_page(request.GET.get("status_page"))
+        status_page_obj = Paginator(sc_qs, STATUS_PAGE_SIZE).get_page(
+            request.GET.get("status_page")
+        )
         status_changes = status_page_obj
 
     m = request.membership
