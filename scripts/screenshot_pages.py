@@ -291,6 +291,7 @@ EXCLUDED = {
     "shops:sell_junk_pick": "HTMX partial endpoint for shop picker modal.",
     "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
+    "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
     "characters:death": "C1 stub view returning 404.",
     "characters:death_undo": "C1 stub view returning 404.",
