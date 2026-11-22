@@ -311,6 +311,8 @@ EXCLUDED = {
     "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
     "characters:fallen": "C1 stub view returning 404.",
+    "characters:death": "POST only; mark a character as dead.",
+    "characters:death_undo": "POST only; undo a death mark.",
     "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
     "session page with a seeded recap is captured via play-sessions-detail and "
     "play-sessions-detail-player at 1280 and 390 px.",
