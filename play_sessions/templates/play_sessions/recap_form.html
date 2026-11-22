@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+
+{% block content %}
+{% include "components/page_header.html" with title="Recap and GM notes" back_url=cancel_url back_label=session.title %}
+
+{% include "components/form_layout.html" with form=form submit_label="Save" cancel_url=cancel_url %}
+{% endblock %}
