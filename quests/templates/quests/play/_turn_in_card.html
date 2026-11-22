@@ -1,7 +1,12 @@
 <section id="turn-in" class="wm-quest-turnin card" aria-labelledby="turn-in-title">
   <h2 id="turn-in-title" class="h4">Turn in</h2>
-  {% load coins units %}
+  {% load coins units life_tags %}
   {% if character %}
+  {% with reason=character|buy_block_reason %}
+  {% if reason %}
+  <p class="wm-quest-turnin-name"><strong>{{ character.name }}</strong></p>
+  <p class="wm-sheet-note" role="status">{{ reason }}</p>
+  {% else %}
   <p class="wm-quest-turnin-name"><strong>{{ character.name }}</strong></p>
   <div class="wm-table-scroll">
     <table class="table table-sm wm-data-table">
@@ -46,6 +51,8 @@
     {% if blocked_reason %}<p class="wm-sheet-note" id="turn-in-reason">{{ blocked_reason }}</p>{% endif %}
     <button class="btn btn-primary" type="submit"{% if blocked_reason %} disabled aria-describedby="turn-in-reason"{% endif %}>Turn in as {{ character.name }}</button>
   </form>
+  {% endif %}
+  {% endwith %}
   {% else %}
   {% url 'characters:create' club.slug as create_url %}
   {% include "components/empty_state.html" with text="You have no character in this club." icon="person" action_url=create_url action_label="Create a character" %}

@@ -1,17 +1,22 @@
-{% load coins %}
+{% load coins life_tags %}
 <div id="downtime-jobs">
   {% if character and is_htmx %}<p id="downtime-balance" class="wm-chalk-balance wm-downtime-balance" hx-swap-oob="true">{{ character.name }} has <strong>{{ balance }}</strong> downtime point{{ balance|pluralize }}.</p>{% endif %}
   {% if cards %}
+  {% with reason=character|buy_block_reason %}
   <ul class="wm-chalk-list">
     {% for card in cards %}
     <li class="wm-chalk-job">
       <h3>{{ card.action.name }}</h3>
       {% if card.action.description %}<p>{{ card.action.description|linebreaksbr }}</p>{% endif %}
       <p>Cost: <strong>{{ card.action.cost }}</strong> point{{ card.action.cost|pluralize }}</p>
+      {% if reason %}
+      <p class="wm-sheet-note" role="status">{{ reason }}</p>
+      {% else %}
       <form method="post" action="{% url 'downtime:spend' club.slug card.action.pk %}" hx-post="{% url 'downtime:spend' club.slug card.action.pk %}" hx-target="#app-modal .modal-content" hx-disabled-elt="find button" hx-sync="this:drop">{% csrf_token %}
         <button class="btn wm-chalk-button" type="submit"{% if card.reason %} disabled aria-describedby="why-{{ card.action.pk }}"{% endif %}>Take the job</button>
         {% if card.reason %}<span class="text-muted" id="why-{{ card.action.pk }}">{{ card.reason }}</span>{% endif %}
       </form>
+      {% endif %}
       <h4>Possible rewards</h4>
       <div class="table-responsive">
       <table class="wm-chalk-table wm-downtime-rewards">
@@ -31,6 +36,7 @@
     </li>
     {% endfor %}
   </ul>
+  {% endwith %}
   {% else %}
   <p class="wm-chalk-muted mb-0">
     {% if has_filters %}No jobs match your filters.{% else %}No downtime actions are available right now.{% endif %}

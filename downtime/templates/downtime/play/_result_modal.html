@@ -1,4 +1,5 @@
 {% extends "components/modal_frame.html" %}
+{% load life_tags %}
 {% block title %}{{ result.action.name }}{% endblock %}
 {% block body %}
 <div class="wm-chalk-modal">
@@ -7,10 +8,16 @@
 </div>
 {% endblock %}
 {% block footer %}
+{% with reason=result.character|buy_block_reason %}
+{% if reason %}
+<p class="wm-sheet-note" role="status">{{ reason }}</p>
+{% else %}
 <button type="button" class="btn wm-chalk-button wm-spin-again"
   hx-get="{% url 'downtime:replay' request.club.slug result.pk %}"
   hx-target="#app-modal .modal-content"
   aria-label="Spin again">Spin again</button>
+{% endif %}
+{% endwith %}
 <button type="button" class="btn wm-chalk-button wm-sound-toggle" data-sound-toggle
   aria-label="Toggle sound" title="Sound">🔇</button>
 <a class="btn wm-chalk-button" href="{% url 'downtime:play' request.club.slug %}">Back to Downtime</a>

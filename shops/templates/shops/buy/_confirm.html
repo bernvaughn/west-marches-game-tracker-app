@@ -1,4 +1,5 @@
 {% extends "components/modal_frame.html" %}
+{% load life_tags %}
 {% block content %}
 <form method="post" action="{% url 'shops:buy' request.club.slug shop.pk stock.pk %}" hx-post="{% url 'shops:buy' request.club.slug shop.pk stock.pk %}" hx-target="#app-modal .modal-content">
   {% csrf_token %}
@@ -9,5 +10,7 @@
 {% block body %}{% include "shops/buy/_confirm_body.html" with in_modal=True %}{% endblock %}
 {% block footer %}
 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-{% if character and not sold_out %}<button class="btn btn-primary" type="submit">Buy as {{ character.name }}</button>{% endif %}
+{% with reason=character|buy_block_reason %}
+{% if character and not sold_out and not reason %}<button class="btn btn-primary" type="submit">Buy as {{ character.name }}</button>{% endif %}
+{% endwith %}
 {% endblock %}

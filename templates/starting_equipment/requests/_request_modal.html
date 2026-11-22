@@ -1,5 +1,5 @@
 {% extends "components/modal_frame.html" %}
-{% load accounts_tags loot_tags static %}
+{% load accounts_tags loot_tags static life_tags %}
 
 {% block title %}Request Magic Starting Item{% endblock %}
 
@@ -60,8 +60,14 @@
 {% endblock %}
 
 {% block footer %}
+{% with reason=character|buy_block_reason %}
+{% if reason %}
+<p class="wm-sheet-note" role="status">{{ reason }}</p>
+{% else %}
 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
 <button type="submit" class="btn btn-primary">Submit Request</button>
+{% endif %}
+{% endwith %}
 {% endblock %}
 
 {% block content %}
