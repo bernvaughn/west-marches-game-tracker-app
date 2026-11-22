@@ -307,8 +307,9 @@ def test_review_page_no_warning_for_clean_batch(
     url = reverse("agent_access:batch_detail", args=[club.slug, batch.pk])
     html = gm_client.get(url).content.decode()
 
-    # No warning alert
-    assert "Archived characters" not in html
+    # No warning alert (check for alert-specific text, since "Archived characters"
+    # also appears in nav links elsewhere on the page)
+    assert "held back until" not in html
     # No checkbox
     assert 'name="confirm_archived"' not in html
 
@@ -325,7 +326,8 @@ def test_review_page_no_warning_for_confirmed_batch(
     url = reverse("agent_access:batch_detail", args=[club.slug, batch.pk])
     html = gm_client.get(url).content.decode()
 
-    # No warning alert (batch is confirmed)
-    assert "Archived characters" not in html
+    # No warning alert (batch is confirmed) — check for alert-specific text,
+    # since "Archived characters" also appears in nav links elsewhere on the page
+    assert "held back until" not in html
     # No checkbox
     assert 'name="confirm_archived"' not in html
