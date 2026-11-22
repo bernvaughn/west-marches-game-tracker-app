@@ -8,6 +8,7 @@ from django.db.models import Q
 
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import record as ledger_record
+from player_characters import life
 from player_characters.models import Character
 
 if TYPE_CHECKING:
@@ -26,6 +27,12 @@ class AlreadyClaimed(StartingEquipmentError):
 
 class InvalidChoices(StartingEquipmentError):
     """Raised when the player's choice picks are missing or invalid."""
+
+
+class CharacterCannotClaim(StartingEquipmentError):
+    """Raised when a dead or archived character cannot claim starting equipment."""
+
+    pass
 
 
 @dataclass(frozen=True)
@@ -491,6 +498,8 @@ def claim_starting_equipment(
     """
     with transaction.atomic():
         locked = Character.objects.select_for_update().get(pk=character.pk)
+        if not life.can_act(locked):
+            raise CharacterCannotClaim(life.act_block_reason(locked))
         if locked.starting_equipment_claimed:
             raise AlreadyClaimed("Starting equipment has already been claimed for this character.")
         result = apply_starting_equipment(locked, template, actor, picks=picks)
@@ -508,6 +517,7 @@ __all__ = [
     "get_choice_groups",
     "AlreadyClaimed",
     "InvalidChoices",
+    "CharacterCannotClaim",
     "Reason",
     "ChoiceOption",
     "ChoiceGroup",
