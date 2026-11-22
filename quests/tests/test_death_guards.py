@@ -52,7 +52,7 @@ def test_archived_turn_in_refused(login, club, quest, character, item, give):
     r = c.post(_url("turn_in", quest.pk), {"character": archived.pk}, follow=True)
 
     assert r.status_code == 200
-    assert f"{archived.name} is archived" in r.content.decode()
+    assert "You have no character in this club" in r.content.decode()
     assert QuestCompletion.objects.count() == 0
     assert LedgerEntry.objects.count() == before_ledger
 

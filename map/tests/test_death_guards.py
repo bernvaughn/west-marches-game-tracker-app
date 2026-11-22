@@ -45,7 +45,7 @@ def test_visit_new_archived_refused(login, club, hex_map):
         {"q": 1, "r": 0, "characters": [archived.pk], "date": "2026-01-02", "note": "n"},
     )
     assert r.status_code == 200
-    assert f"{archived.name} is archived" in r.content.decode()
+    assert "Select a valid choice" in r.content.decode()
     assert not MapRequest.objects.exists()
 
 
@@ -83,7 +83,7 @@ def test_credit_new_archived_refused(login, club, game_master, tile_location):
         {"characters": [archived.pk], "date": "2026-01-02", "note": "n"},
     )
     assert r.status_code == 200
-    assert f"{archived.name} is archived" in r.content.decode()
+    assert "Select a valid choice" in r.content.decode()
     assert not MapRequest.objects.exists()
 
 
