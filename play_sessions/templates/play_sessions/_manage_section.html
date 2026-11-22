@@ -1,0 +1,16 @@
+{% load accounts_tags %}
+
+<h3 class="wm-section-heading">Manage</h3>
+{% if session.cancelled %}
+<p class="text-muted">This session is cancelled.</p>
+{% endif %}
+<a href="{{ edit_url }}" class="btn btn-sm btn-outline-secondary">Edit session</a>
+{% if not session.cancelled %}
+<form method="post" action="{{ cancel_url }}" class="d-inline">
+{% csrf_token %}
+<button type="submit" class="btn btn-sm btn-danger">Cancel session</button>
+</form>
+{% endif %}
+{% if series_cancel_url %}
+<a href="{{ series_cancel_url }}" class="btn btn-sm btn-outline-danger">Cancel this and later sessions</a>
+{% endif %}
