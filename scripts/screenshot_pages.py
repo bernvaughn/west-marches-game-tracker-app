@@ -313,6 +313,7 @@ EXCLUDED = {
     "characters:fallen": "C1 stub view returning 404.",
     "characters:death": "POST only; mark a character as dead.",
     "characters:death_undo": "POST only; undo a death mark.",
+    "play_sessions:report_csv": "CSV export; no HTML page to screenshot.",
     # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
     # and the public token feed (needs a real token; not a demo page).
     "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
@@ -689,6 +690,7 @@ def _build_pages() -> list[Page]:
             "alice",
             _c("play_sessions:session_detail", "play_session.pk"),
         ),
+        P("play-sessions-report", "club_admin", _c("play_sessions:report")),
         P("play-sessions-settings", "club_admin", _c("play_sessions:settings")),
         # map
         P(

@@ -1,0 +1,21 @@
+<h2 class="wm-sheet-box-title">Attendance history</h2>
+{% if history %}
+<ul class="wm-sheet-ledger">
+  {% for entry in history %}
+    <li>
+      <span class="wm-sheet-date">{{ entry.date|date }}</span>
+      {% if entry.session_url %}
+        <a href="{{ entry.session_url }}">{{ entry.title }}</a>
+      {% else %}
+        {{ entry.title }}
+      {% endif %}
+      <span class="wm-sheet-note">GM: {{ entry.gm|default:"&mdash;" }}</span>
+    </li>
+  {% endfor %}
+</ul>
+{% if history_total > history|length %}
+<p class="wm-sheet-note">{{ history_total }} sessions in total (showing the most recent 50).</p>
+{% endif %}
+{% else %}
+<p class="wm-sheet-note">No sessions played yet.</p>
+{% endif %}
