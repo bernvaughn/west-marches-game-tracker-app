@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from accounts.htmx import hx_response
 from accounts.permissions import admin_or_gm_required, club_member_required
 from accounts.scoping import club_get_object_or_404, club_queryset
+from player_characters import life
 from player_characters.selection import selected_character
 
 from .. import services
@@ -78,6 +79,16 @@ def _default_character(request):
     return {"characters": [sel.pk]} if sel else {}
 
 
+def _blocked_picks(characters):
+    """Return the act_block_reason strings of picked characters that cannot act."""
+    reasons = []
+    for character in characters:
+        reason = life.act_block_reason(character)
+        if reason:
+            reasons.append(reason)
+    return reasons
+
+
 @club_member_required
 def visit_new(request, club_slug, map_id):
     is_editor = is_map_editor(request.user, request.club)
@@ -87,22 +98,26 @@ def visit_new(request, club_slug, map_id):
     if request.method == "POST":
         form = VisitRequestForm(request.POST, characters_qs=chars)
         if form.is_valid():
-            d = form.cleaned_data
-            tile = Tile.objects.filter(map=hex_map, q=d["q"], r=d["r"]).first()
-            req = MapRequest.objects.create(
-                club=request.club,
-                kind=MapRequest.Kind.VISIT,
-                map=hex_map,
-                q=d["q"],
-                r=d["r"],
-                tile=tile,
-                date=d["date"],
-                note=d["note"],
-                requested_by=request.membership,
-            )
-            req.characters.set(d["characters"])
-            messages.success(request, "Visit request sent.")
-            return redirect("map:requests", club_slug=club_slug)
+            blocked = _blocked_picks(form.cleaned_data["characters"])
+            if blocked:
+                form.add_error("characters", blocked[0])
+            else:
+                d = form.cleaned_data
+                tile = Tile.objects.filter(map=hex_map, q=d["q"], r=d["r"]).first()
+                req = MapRequest.objects.create(
+                    club=request.club,
+                    kind=MapRequest.Kind.VISIT,
+                    map=hex_map,
+                    q=d["q"],
+                    r=d["r"],
+                    tile=tile,
+                    date=d["date"],
+                    note=d["note"],
+                    requested_by=request.membership,
+                )
+                req.characters.set(d["characters"])
+                messages.success(request, "Visit request sent.")
+                return redirect("map:requests", club_slug=club_slug)
     else:
         form = VisitRequestForm(
             characters_qs=chars,
@@ -137,23 +152,27 @@ def credit_new(request, club_slug, location_id, kind):
     if request.method == "POST":
         form = CreditRequestForm(request.POST, characters_qs=chars)
         if form.is_valid():
-            d = form.cleaned_data
-            tile = location.tile
-            req = MapRequest.objects.create(
-                club=request.club,
-                kind=kind,
-                location=location,
-                tile=tile,
-                map=tile.map,
-                q=tile.q,
-                r=tile.r,
-                date=d["date"],
-                note=d["note"],
-                requested_by=request.membership,
-            )
-            req.characters.set(d["characters"])
-            messages.success(request, "Request sent.")
-            return redirect("map:requests", club_slug=club_slug)
+            blocked = _blocked_picks(form.cleaned_data["characters"])
+            if blocked:
+                form.add_error("characters", blocked[0])
+            else:
+                d = form.cleaned_data
+                tile = location.tile
+                req = MapRequest.objects.create(
+                    club=request.club,
+                    kind=kind,
+                    location=location,
+                    tile=tile,
+                    map=tile.map,
+                    q=tile.q,
+                    r=tile.r,
+                    date=d["date"],
+                    note=d["note"],
+                    requested_by=request.membership,
+                )
+                req.characters.set(d["characters"])
+                messages.success(request, "Request sent.")
+                return redirect("map:requests", club_slug=club_slug)
     else:
         form = CreditRequestForm(characters_qs=chars, initial=_default_character(request))
     if request.method == "POST":
