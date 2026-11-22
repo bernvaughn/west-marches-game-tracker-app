@@ -42,7 +42,7 @@ The app runs on one Droplet behind Caddy and gunicorn, with nightly SQLite backu
 The site admin "new club" form seeds each new club.
 It seeds the XP table, the character options and the club admin.
 The club admin gets a temporary password.
-It also seeds the default item catalogue (about 175 items).
+It also seeds the default item catalogue (167 items).
 It also seeds an active "2024 D&D Default" starting equipment template.
 Each "X or Y" option of the 2024 PHB is a choice group in that template.
 All 12 classes have choice groups, and so do the Artisan, Entertainer and Soldier backgrounds.
@@ -59,6 +59,9 @@ items on the convert page or with `uv run python manage.py convert_to_stacked --
 Existing clubs can run `uv run python manage.py seed_starting_equipment --club <slug>` to
 get the current catalogue and template, then `uv run python manage.py convert_seeded_bundles --club <slug> --apply`
 to convert seeded bundle items to stacked items (it is a dry run until `--apply`).
+The sibling `uv run python manage.py rename_seeded_items --club <slug>` command brings an existing
+club's item names up to the current seed (dry run by default; add `--apply`); it ships in a
+sibling story and is documented in docs/DEPLOY.md.
 A plain `seed_starting_equipment` run configures the packs but leaves an existing template
 unchanged; add `--force` to upgrade an existing template to the choice groups
 (`--force` replaces admin edits to the default template's lines and coins).

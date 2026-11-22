@@ -1277,7 +1277,7 @@ Rules for every story in this round:
 
 **U150 Name variants "Variant (Kind)".** As a player, I want variant items named with the specific thing first, so lists sort and read naturally, like "Drum (Musical Instrument)". *(items, starting_equipment, shops)*
 - These seeded families are renamed: Musical Instrument (Lute, Flute, Lyre, Horn, Drum), Arcane Focus (Crystal, Orb, Rod, Staff, Wand), Druidic Focus (Sprig of Mistletoe, Staff, Yew Wand), Holy Symbol (Amulet, Emblem, Reliquary), Artisan's Tools (ten trades), and Gaming Set (Dice, Dragonchess, Playing Cards).
-- Example: "Crystal (Arcane Focus)", "Amulet (Holy Symbol)", "Brewer's Supplies (Artisan's Tools)", "Dice (Gaming Set)".
+- Example: "Crystal (Arcane Focus)", "Amulet (Holy Symbol)", "Brewer's (Artisan's Tools)", "Dice (Gaming Set)".
 - Starting equipment choice groups (the lists a player picks from when claiming) are unchanged. Only the names change.
 - Names with a comma or a unit, like "Bottle, Glass", "Lantern, Hooded", "Oil (flask)" and "Ink (1 oz)", stay as they are.
 - Item cards, printouts, the agent's item search (A2), and shop lines show the new names.
