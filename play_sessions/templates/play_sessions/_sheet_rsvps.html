@@ -1,0 +1,60 @@
+{% comment %}Character sheet RSVP section. Uses design tokens and components/ includes.{% endcomment %}
+<section class="wm-sheet-box wm-sheet-full no-print wm-sheet-extra" data-sheet-section="rsvps" aria-label="Session RSVPs">
+  <h2 class="wm-sheet-box-title">Session RSVPs</h2>
+
+  {% if sessions %}
+  <div class="wm-table-scroll">
+    <table class="table table-sm wm-data-table wm-sheet-table">
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Date & Time</th>
+          <th>RSVP</th>
+          <th class="no-print">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sessions %}
+        <tr>
+          <td>
+            <a href="{% url 'play_sessions:session_detail' club.slug s.session.pk %}" class="text-decoration-none stretched-link">
+              {{ s.session.title }}
+            </a>
+          </td>
+          <td class="text-nowrap">{{ s.starts_local|date:"M d, Y" }} at {{ s.starts_local|time:"g:i A" }}</td>
+          <td>
+            {% if s.answer %}
+              {% include "components/badge.html" with text=s.answer|title status="success" %}
+            {% else %}
+              <span class="text-muted">Not answered</span>
+            {% endif %}
+          </td>
+          <td class="no-print wm-row-actions-cell">
+            {% if s.player_can_answer %}
+            <form method="post" action="{% url 'play_sessions:rsvp_set' club.slug s.session.pk %}" class="d-flex flex-wrap gap-1">
+              {% csrf_token %}
+              <input type="hidden" name="character" value="{{ character.pk }}">
+              <button type="submit" name="answer" value="yes" class="btn btn-sm btn-success" title="Yes">
+                {% include "components/icon.html" with name="check" label="Yes" %}
+              </button>
+              <button type="submit" name="answer" value="maybe" class="btn btn-sm btn-warning" title="Maybe">
+                {% include "components/icon.html" with name="question" label="Maybe" %}
+              </button>
+              <button type="submit" name="answer" value="no" class="btn btn-sm btn-danger" title="No">
+                {% include "components/icon.html" with name="x" label="No" %}
+              </button>
+              <noscript><button type="submit" class="btn btn-sm btn-secondary">Save</button></noscript>
+            </form>
+            {% elif s.is_manager and not s.answer %}
+            <span class="text-muted small">No answer yet</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="wm-sheet-note">No upcoming sessions.</p>
+  {% endif %}
+</section>
