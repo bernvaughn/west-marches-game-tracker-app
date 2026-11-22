@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+
+{% block title %}Session settings – {{ club.name }}{% endblock %}
+
+{% block content %}
+<div class="container wm-page-container">
+  {% include "components/page_header.html" with title="Session settings" subtitle="Configure downtime point awards for attendance" back_url=cancel_url back_label="Back to calendar" %}
+
+  <div class="card wm-form-card">
+    <div class="card-body">
+      {% include "components/form_layout.html" with form=form submit_label="Save" cancel_url=cancel_url %}
+    </div>
+  </div>
+</div>
+{% endblock %}
