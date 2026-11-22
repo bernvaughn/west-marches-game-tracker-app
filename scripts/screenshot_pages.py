@@ -31,6 +31,8 @@ MODAL_SELECTORS = {
     "sell_junk_modal": 'a[data-app-modal][href*="/sell-junk/"]',
     "junk_modal": 'a[data-app-modal][href*="/junk/"]',
     "note_modal": 'a[data-app-modal][href*="/note/"]',
+    "archive_modal": 'a[data-app-modal][href*="/archive/"]',
+    "unarchive_modal": 'a[data-app-modal][href*="/unarchive/"]',
     "consume_modal": 'a[data-app-modal][href*="/consume/"]',
     "stall_buy_modal": 'a[data-app-modal][href*="/stall/"]',
     "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
@@ -308,10 +310,6 @@ EXCLUDED = {
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
     "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
     # C1 death and archive stub views
-    "characters:death": "C1 stub view returning 404.",
-    "characters:death_undo": "C1 stub view returning 404.",
-    "characters:archive": "C1 stub view returning 404.",
-    "characters:unarchive": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
@@ -585,6 +583,20 @@ def _build_pages() -> list[Page]:
             _c("characters:detail", "aria.pk"),
             action="junk_modal",
             modal_url=_c("characters:junk", "aria.pk", "torch.pk"),
+        ),
+        P(
+            "characters-archive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="archive_modal",
+            modal_url=_c("characters:archive", "aria.pk"),
+        ),
+        P(
+            "characters-unarchive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="unarchive_modal",
+            modal_url=_c("characters:unarchive", "aria.pk"),
         ),
         P("characters-note", "alice", _c("characters:note", "aria.pk", "torch.pk")),
         P(

@@ -505,11 +505,10 @@ def test_url_fallen_reverses(club):
 
 def test_stub_views_return_404(login, player, character):
     """Remaining stub views return 404 for logged-in member.
-    `characters:archived` is implemented by C9 (U145) and no longer a stub."""
+    Death, undo, archive, unarchive, archived are implemented (C2, U144, U145).
+    Only fallen remains a stub (C15)."""
     client = login(player)
     urls = [
-        reverse("characters:archive", args=[character.club.slug, character.pk]),
-        reverse("characters:unarchive", args=[character.club.slug, character.pk]),
         reverse("characters:fallen", args=[character.club.slug]),
     ]
     for url in urls:
