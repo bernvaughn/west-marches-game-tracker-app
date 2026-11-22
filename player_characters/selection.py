@@ -31,9 +31,7 @@ def selected_character(request):
     )
     if stored:
         try:
-            chosen = Character.objects.for_club(club).filter(
-                owner=membership, pk=stored
-            ).first()
+            chosen = Character.objects.for_club(club).filter(owner=membership, pk=stored).first()
             if chosen:
                 setattr(request, _CACHE, chosen)
                 return chosen
@@ -42,18 +40,11 @@ def selected_character(request):
     # No valid stored character: build pool of selectable characters
     # Primary pool: living + dead (not archived)
     owned = list(
-        Character.objects.for_club(club)
-        .filter(owner=membership)
-        .not_archived()
-        .order_by("name")
+        Character.objects.for_club(club).filter(owner=membership).not_archived().order_by("name")
     )
     # Fallback: if no non-archived characters exist, allow archived characters
     if not owned:
-        owned = list(
-            Character.objects.for_club(club)
-            .filter(owner=membership)
-            .order_by("name")
-        )
+        owned = list(Character.objects.for_club(club).filter(owner=membership).order_by("name"))
     chosen = None
     if len(owned) == 1:
         chosen = owned[0]
