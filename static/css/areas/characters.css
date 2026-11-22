@@ -73,6 +73,21 @@
   .wm-sheet-header h1 { font-size: var(--wm-text-2xl); }
 }
 
+/* U143: death note under the "Died" badge. */
+.wm-life-note {
+  color: var(--wm-text-muted);
+  font-size: var(--wm-text-sm);
+  margin-top: var(--wm-space-1);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 39.999rem) {
+  /* Phone: badge and note wrap under the name; the sheet header is a block column. */
+  .wm-sheet-header .wm-badge,
+  .wm-sheet-header .wm-life-note {
+    display: block;
+    width: 100%;
+  }
+}
 /* Forms with a formset of item rows (adjust, consume, transfer). */
 .wm-compact-list { max-width: var(--wm-size-narrow); }
 .wm-recent-changes .wm-compact-list { max-width: none; }
@@ -134,6 +149,8 @@
   .wm-sheet .wm-sheet-table.table > thead > tr > th { background: white; color: black; font-size: 10pt; }
   .wm-sheet-table tr { background: white; }
   .wm-sheet .wm-badge { border: 1px solid black; background: white; color: black; font-size: 10pt; }
+  .wm-badge--danger { border: 1px solid black; background: white; color: black; font-size: 10pt; }
+  .wm-life-note { color: black; background: transparent; }
   .wm-xp-bar { display: none; }
   .wm-xp-text { color: black; }
   /* Phone inventory inline quantity (this task) - hide inline line, show optional columns */

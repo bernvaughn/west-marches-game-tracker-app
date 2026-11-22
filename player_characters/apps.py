@@ -7,6 +7,7 @@ class PlayerCharactersConfig(AppConfig):
     def ready(self):
         from accounts import navigation
         from accounts.apps import is_gm_or_admin
+        from accounts.permissions import _membership
 
         reg = navigation.register
         reg(
@@ -24,4 +25,10 @@ class PlayerCharactersConfig(AppConfig):
         reg("gm", "Award Loot to Party", "characters:bulk_award", is_gm_or_admin, 65)
         reg("character", "New character", "characters:create", None, 50)
         reg("character", "Character slips", "characters:slips", None, 57)
-        reg("character", "Archived characters", "characters:archived", None, 58)
+        reg(
+            "character",
+            "Archived characters",
+            "characters:archived",
+            lambda r: _membership(r.user, r.club) is not None,
+            58,
+        )

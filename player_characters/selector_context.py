@@ -43,8 +43,9 @@ def character_selector_context(character):
 
 
 def all_characters_selector_context(request):
-    """Return a list of (character, context) for all owned characters."""
+    """Return a list of (character, context) for all owned characters, dead last."""
     from .selection import own_characters
 
     characters = list(own_characters(request))
+    characters.sort(key=lambda c: (c.is_dead, c.name.lower()))
     return [(c, character_selector_context(c)) for c in characters]
