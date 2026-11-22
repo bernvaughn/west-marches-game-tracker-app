@@ -304,6 +304,9 @@ EXCLUDED = {
     "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
     "play_sessions:feed_reset": "POST only; admin resets the feed token.",
     "play_sessions_public:feed": "Needs a real feed token; not a demo page.",
+    "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
+    "session page with a seeded recap is captured via play-sessions-detail and "
+    "play-sessions-detail-player at 1280 and 390 px.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",
