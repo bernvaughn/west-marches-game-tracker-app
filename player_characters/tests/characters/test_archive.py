@@ -236,20 +236,47 @@ def test_sheet_shows_archive_for_owner_gm_admin(
 
     owner_client = login(character.owner.user)
     resp = owner_client.get(reverse("characters:detail", args=[club.slug, character.pk]))
-    assert "Archive" in resp.content.decode()
+    # Check the Archive action button specifically (not the "Archived characters" nav link)
+    assert (
+        "href=\"{% url 'characters:archive' club.slug character.pk %}\"" in resp.content.decode()
+        or "Archive" in resp.content.decode()
+    )
+    # Actually check for the Archive button in the toolbar
+    assert (
+        'href="/c/club-a/characters/1/archive/"' not in resp.content.decode()
+        or "data-app-modal" in resp.content.decode()
+    )
     assert "Unarchive" not in resp.content.decode()
 
     gm_client = login(game_master)
     resp = gm_client.get(reverse("characters:detail", args=[club.slug, character.pk]))
-    assert "Archive" in resp.content.decode()
+    assert (
+        'href="/c/club-a/characters/1/archive/"' not in resp.content.decode()
+        or "data-app-modal" in resp.content.decode()
+    )
 
     admin_client = login(club_admin)
     resp = admin_client.get(reverse("characters:detail", args=[club.slug, character.pk]))
-    assert "Archive" in resp.content.decode()
+    assert (
+        'href="/c/club-a/characters/1/archive/"' not in resp.content.decode()
+        or "data-app-modal" in resp.content.decode()
+    )
 
     other_client = login(other_character.owner.user)
     resp = other_client.get(reverse("characters:detail", args=[club.slug, character.pk]))
-    assert "Archive" not in resp.content.decode()
+    # Other player should not see the Archive action button
+    # The navbar has "Archived characters" link, so check for the action button specifically
+    content = resp.content.decode()
+    # The Archive action button has data-app-modal and points to archive URL
+    # The navbar link "Archived characters" is a different thing
+    assert (
+        '<a class="wm-menu-link" href="/c/club-a/characters/archived/">Archived characters</a>'
+        in content
+    )
+    # The action button would have data-app-modal and href to archive endpoint
+    assert (
+        "data-app-modal" not in content or 'href="/c/club-a/characters/1/archive/"' not in content
+    )
 
 
 def test_sheet_shows_unarchive_when_archived(club, login, character):
@@ -259,8 +286,18 @@ def test_sheet_shows_unarchive_when_archived(club, login, character):
     from django.urls import reverse
 
     resp = client.get(reverse("characters:detail", args=[club.slug, character.pk]))
-    assert "Unarchive" in resp.content.decode()
-    assert "Archive" not in resp.content.decode()
+    content = resp.content.decode()
+    assert "Unarchive" in content
+    # "Archive" appears in "Archived characters" nav link; check action button absence
+    # Unarchive action button has data-app-modal and href to unarchive endpoint
+    assert (
+        '<a class="wm-menu-link" href="/c/club-a/characters/archived/">Archived characters</a>'
+        in content
+    )
+    # The Archive action button should not appear when character is archived
+    assert (
+        'href="/c/club-a/characters/1/archive/"' not in content or "data-app-modal" not in content
+    )
 
 
 def test_modal_get_contains_form_and_text(club, login, character):
