@@ -39,5 +39,6 @@
 {% include "components/empty_state.html" with text="No history yet." %}
 {% endif %}
 {% include "components/section_close.html" %}
+{% include "ledger/_status_changes.html" with character=character %}
 {% downtime_points_section character=character %}
 {% endblock %}
