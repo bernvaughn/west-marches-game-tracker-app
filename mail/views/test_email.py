@@ -19,15 +19,14 @@ def _club_test_key(request, club_slug):
 
 @club_admin_required
 @rate_limit(prefix="test_email", limit=5, window=3600, key_func=_club_test_key)
-def test_email(request, club_slug):
+def send_test_email(request, club_slug):
     """Send a test email to an admin of the same club (club admin only)."""
     club = request.club
 
     # Get club admins for recipient selection
     from accounts.models import Membership
-    admins = Membership.objects.filter(
-        club=club, is_club_admin=True
-    ).select_related("user")
+
+    admins = Membership.objects.filter(club=club, is_club_admin=True).select_related("user")
 
     # Get or create mail settings
     settings, _ = ClubMailSettings.objects.get_or_create(club=club)
@@ -39,11 +38,19 @@ def test_email(request, club_slug):
         disabled_reason = "Email is disabled for this site (MAIL_ENABLED is false)."
 
     # Get recent test emails for this club (for log display)
-    recent_tests = EmailMessage.objects.filter(
-        club=club, kind="test"
-    ).order_by("-created")[:10]
+    recent_tests = EmailMessage.objects.filter(club=club, kind="test").order_by("-created")[:10]
 
-    if request.method == "POST" and email_on:
+    # Build context for error responses
+    context = {
+        "club": club,
+        "settings": settings,
+        "admins": admins,
+        "email_on": email_on,
+        "disabled_reason": disabled_reason,
+        "recent_tests": recent_tests,
+    }
+
+    if request.method == "POST":
         # Get selected recipient
         recipient_id = request.POST.get("recipient")
         if not recipient_id:
@@ -65,8 +72,8 @@ def test_email(request, club_slug):
                     ),
                     status=400,
                 )
-            messages.error(request, error)
-            return render(request, "mail/_club_test_card.html", context, status=400)
+            error_context = {**context, "error": error}
+            return render(request, "mail/_club_test_card.html", error_context, status=400)
         else:
             # Verify recipient is an admin of this club
             try:
@@ -90,8 +97,8 @@ def test_email(request, club_slug):
                         ),
                         status=400,
                     )
-                messages.error(request, error)
-                return render(request, "mail/_club_test_card.html", context, status=400)
+                error_context = {**context, "error": error}
+                return render(request, "mail/_club_test_card.html", error_context, status=400)
             else:
                 recipient = recipient_membership.user
                 to_address = recipient.email
@@ -99,7 +106,7 @@ def test_email(request, club_slug):
                 # Build test email
                 subject, text, html = build_test_email(club, request.user)
 
-                # Queue the email with kind="test"
+                # Queue the email with kind="test" (queue_email handles email_enabled check)
                 result = queue_email(
                     kind="test",
                     to=to_address,
@@ -119,18 +126,9 @@ def test_email(request, club_slug):
                     messages.error(request, f"Failed to queue: {result.message.last_error}")
 
     # Refresh recent tests after potential new entry
-    recent_tests = EmailMessage.objects.filter(
-        club=club, kind="test"
-    ).order_by("-created")[:10]
-
-    context = {
-        "club": club,
-        "settings": settings,
-        "admins": admins,
-        "email_on": email_on,
-        "disabled_reason": disabled_reason,
-        "recent_tests": recent_tests,
-    }
+    context["recent_tests"] = EmailMessage.objects.filter(club=club, kind="test").order_by(
+        "-created"
+    )[:10]
 
     if request.headers.get("HX-Request"):
         return render(request, "mail/_club_test_card.html", context)

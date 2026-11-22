@@ -2,12 +2,13 @@ from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import render
 
+from mail.models import ClubMailSettings
+
 from ..club_seeding import seed_new_club
 from ..forms.clubs import ClubCreateForm
 from ..models import Club, User
 from ..passwords import get_or_create_member
 from ..permissions import site_admin_required
-from mail.models import ClubMailSettings
 
 
 @site_admin_required

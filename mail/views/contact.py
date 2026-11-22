@@ -19,8 +19,9 @@ def contact_email(request, club_slug):
         email = request.POST.get("contact_email", "").strip().lower()
         if email:
             # Basic email validation
-            from django.core.validators import validate_email
             from django.core.exceptions import ValidationError
+            from django.core.validators import validate_email
+
             try:
                 validate_email(email)
             except ValidationError:

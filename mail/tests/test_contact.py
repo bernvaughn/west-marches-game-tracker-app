@@ -3,10 +3,8 @@
 import pytest
 from django.urls import reverse
 
-from accounts.models import Club, Membership, User
+from accounts.models import Club
 from mail.models import ClubMailSettings
-from mail.models import EmailMessage
-
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("E10")]
 
@@ -126,6 +124,7 @@ def test_contact_email_not_shown_on_player_page(club_admin, player, login, club)
     c = _login(login(player), player)
     # Try a player page - club home
     from django.urls import reverse
+
     url = reverse("club_home", args=[club.slug])
     r = c.get(url, follow=True)
     body = r.content.decode()
@@ -149,6 +148,7 @@ def test_contact_email_used_as_reply_to(club_admin, login, club, settings):
     ClubMailSettings.objects.create(club=club, contact_email="reply@club.com")
 
     from mail.service import queue_email
+
     result = queue_email(
         kind="welcome",
         to="player@test.com",
