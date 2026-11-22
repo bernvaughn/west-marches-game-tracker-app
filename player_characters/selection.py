@@ -12,7 +12,7 @@ def own_characters(request):
     membership = getattr(request, "membership", None)
     if club is None or membership is None:
         return Character.objects.none()
-    return Character.objects.for_club(club).filter(owner=membership).order_by("name")
+    return Character.objects.for_club(club).filter(owner=membership).not_archived().order_by("name")
 
 
 def selected_character(request):
@@ -28,7 +28,11 @@ def selected_character(request):
             .values_list("character_id", flat=True)
             .first()
         )
-        chosen = next((c for c in owned if c.pk == stored), owned[0])
+        chosen = next((c for c in owned if c.pk == stored), None)
+        if chosen is None:
+            chosen = next((c for c in owned if not c.is_dead), None)
+        if chosen is None and owned:
+            chosen = owned[0]
     setattr(request, _CACHE, chosen)
     return chosen
 
