@@ -1,0 +1,18 @@
+{% comment %}Contact email card for club settings. Shown to club admins only.{% endcomment %}
+{% url 'mail:contact_email' club.slug as contact_url %}
+{% include "components/card_open.html" with title="Contact email" subtitle="Optional email shown as reply-to on outgoing club emails." %}
+<form method="post" action="{{ contact_url }}" class="wm-form" hx-post="{{ contact_url }}" hx-target="closest .wm-card" hx-swap="outerHTML">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="id_contact_email" class="form-label">Contact email</label>
+    <input type="email" name="contact_email" id="id_contact_email" class="form-control" value="{{ settings.contact_email }}" placeholder="club@example.com">
+    {% if error %}
+    <div class="text-danger mt-1">{{ error }}</div>
+    {% endif %}
+    <div class="form-text">Leave blank to clear. This email is used as the reply-to address on emails sent by the club. It is never shown to players or agents.</div>
+  </div>
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-primary">Save</button>
+  </div>
+</form>
+{% include "components/card_close.html" %}

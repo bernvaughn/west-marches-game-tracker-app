@@ -7,6 +7,7 @@ from ..forms.clubs import ClubCreateForm
 from ..models import Club, User
 from ..passwords import get_or_create_member
 from ..permissions import site_admin_required
+from mail.models import ClubMailSettings
 
 
 @site_admin_required
@@ -36,6 +37,8 @@ def club_new(request):
                 name=data["name"], slug=data["slug"], timezone=data["timezone"]
             )
             seed_new_club(club)
+            contact_email = data.get("contact_email", "").strip().lower()
+            ClubMailSettings.objects.create(club=club, contact_email=contact_email)
             membership, temp = get_or_create_member(
                 club,
                 data["admin_email"],
