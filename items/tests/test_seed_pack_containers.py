@@ -9,6 +9,7 @@ from django.core.management.base import CommandError
 from items.containers import roll_container, validate_container_config
 from items.management.commands.seed_pack_containers import PACKS
 from items.models import ContainerSlot, ContainerSlotOption, Item
+from items.pack_seeding import slot_options
 from items.opening import open_container
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_items, record
@@ -29,17 +30,21 @@ def test_seed_command_creates_content_items_slots_and_options(club):
 
     slots = list(pack.slots.order_by("position"))
     expected = PACKS["Diplomat's Pack"]
-    assert len(slots) == len(expected) == 11
+    # Diplomat's Pack now has 12 slots (two case slots)
+    assert len(slots) == len(expected) == 12
 
-    # One fixed slot per content, in order, with the 2024 PHB quantities.
-    for slot, (name, qty_min, qty_max, _value, _symbol) in zip(slots, expected, strict=True):
+    # Walk slots with slot_options: fixed slots have 1 option, case slots have 2
+    for slot, entry in zip(slots, expected, strict=True):
         assert slot.chance_pct == 100
         assert slot.unknown is False
         opts = list(slot.options.all())
-        assert len(opts) == 1
-        assert opts[0].item == Item.objects.get(club=club, name=name)
-        assert opts[0].qty_min == qty_min == qty_max == opts[0].qty_max
-    oil = slots[6].options.get()
+        options = slot_options(entry)
+        assert len(opts) == len(options)
+        for opt, (name, qty_min, qty_max, _value, _symbol) in zip(opts, options, strict=True):
+            assert opt.item == Item.objects.get(club=club, name=name)
+            assert opt.qty_min == qty_min == qty_max == opt.qty_max
+    # Oil is now at index 7 (two case slots before it)
+    oil = slots[7].options.get()
     assert oil.item.name == "Oil (flask)" and oil.qty_min == 2
 
     # Validate
@@ -47,7 +52,7 @@ def test_seed_command_creates_content_items_slots_and_options(club):
 
     # Roll works
     roll = roll_container(pack)
-    assert len(roll.slots) == 11
+    assert len(roll.slots) == 12
     for outcome in roll.slots:
         assert outcome.hit is True
         assert outcome.item_id is not None
@@ -225,6 +230,33 @@ def test_seed_command_all_packs_pass_validation(club):
         pack = Item.objects.get(club=club, name=pack_name)
         validate_container_config(pack)  # Should not raise
 
+    # Verify Entertainer's Pack has the renamed lute
+    entertainer_pack = Item.objects.get(club=club, name="Entertainer's Pack")
+    lute_slot = entertainer_pack.slots.get(position=5)
+    lute_opt = lute_slot.options.get()
+    assert lute_opt.item.name == "Lute (Musical Instrument)"
+    assert lute_opt.item.value_cp == 3500
+    assert lute_opt.item.symbol == "🎵"
+    assert "Instrument (lute)" not in [o.item.name for s in entertainer_pack.slots.all() for o in s.options.all()]
+
+    # Verify Diplomat's Pack case slots
+    diplomat_pack = Item.objects.get(club=club, name="Diplomat's Pack")
+    case_slot_1 = diplomat_pack.slots.get(position=1)
+    case_slot_2 = diplomat_pack.slots.get(position=2)
+    for case_slot in [case_slot_1, case_slot_2]:
+        assert case_slot.chance_pct == 100
+        assert case_slot.unknown is False
+        opts = list(case_slot.options.all())
+        assert len(opts) == 2
+        names = {o.item.name for o in opts}
+        assert names == {"Map Case", "Scroll Case"}
+        for o in opts:
+            assert o.qty_min == 1 == o.qty_max
+            assert o.weight == 1
+            assert o.item.value_cp == 100
+    # No "Map or Scroll Case" item or option exists
+    assert not Item.objects.filter(club=club, name__in=["Map or Scroll Case", "Case, Map or Scroll"]).exists()
+
 
 def test_seed_command_existing_owner_can_open(club, character, player):
     """Character who owned the pack before seeding can open it (if open_container exists)."""
@@ -236,7 +268,7 @@ def test_seed_command_existing_owner_can_open(club, character, player):
 
     pack.refresh_from_db()
     assert pack.is_container is True
-    assert pack.slots.count() == len(PACKS["Diplomat's Pack"])
+    assert pack.slots.count() == 12  # Diplomat's Pack now has 12 slots
 
     opening = open_container(character, pack, player)
     assert opening.container == pack

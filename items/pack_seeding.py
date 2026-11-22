@@ -12,13 +12,24 @@ from django.db import transaction
 from accounts.models import Club
 from items.containers import validate_container_config
 from items.models import ContainerSlot, ContainerSlotOption, Item
+from items.seed_names import MAP_CASE, SCROLL_CASE
 
-# Pack definitions: pack name -> list of (content name, qty_min, qty_max, value_cp, symbol)
-# Based on 2024 PHB contents. All slots are fixed (chance 100, one option, not unknown).
+# Pack definitions: pack name -> list of slots.
+# A slot is either:
+#   - a fixed option tuple (name, qty_min, qty_max, value_cp, symbol), or
+#   - a list of such tuples (one slot with multiple options, weight 1 each, chance 100).
+# All slots: chance 100, unknown=False.
 PACKS = {
     "Diplomat's Pack": [
         ("Chest", 1, 1, 500, "🧰"),
-        ("Map or Scroll Case", 2, 2, 100, "📜"),
+        [
+            (MAP_CASE, 1, 1, 100, "🗺️"),
+            (SCROLL_CASE, 1, 1, 100, "📜"),
+        ],
+        [
+            (MAP_CASE, 1, 1, 100, "🗺️"),
+            (SCROLL_CASE, 1, 1, 100, "📜"),
+        ],
         ("Fine Clothes", 1, 1, 1500, "👔"),
         ("Ink (1 oz)", 1, 1, 1000, "🖋️"),
         ("Ink Pen", 1, 1, 2, "🖋️"),
@@ -93,7 +104,7 @@ PACKS = {
         ("Costume", 2, 2, 500, "🎭"),
         ("Ration", 5, 5, 50, "🍞"),
         ("Waterskin", 1, 1, 20, "💧"),
-        ("Instrument (lute)", 1, 1, 3500, "🎵"),
+        ("Lute (Musical Instrument)", 1, 1, 3500, "🎵"),
         ("Mirror", 1, 1, 500, "🪞"),
     ],
 }
@@ -145,8 +156,18 @@ def _noop(_message: str) -> None:
     pass
 
 
+def slot_options(slot) -> list[tuple]:
+    """Return the list of option tuples for a slot.
+
+    A slot is either a fixed option tuple or a list of option tuples.
+    """
+    if isinstance(slot, list):
+        return list(slot)
+    return [slot]
+
+
 def _process_pack(
-    club: Club, pack_name: str, contents: list[tuple], log: Callable[[str], None]
+    club: Club, pack_name: str, contents: list, log: Callable[[str], None]
 ) -> str:
     """Process a single pack. Returns a status string."""
     pack = _get_pack_item(club, pack_name)
@@ -165,15 +186,14 @@ def _process_pack(
         log(f"  {pack_name}: set is_container=True")
 
     content_items_created = 0
-    for position, (content_name, qty_min, qty_max, value_cp, symbol) in enumerate(contents):
-        # Skip if content is the pack itself
-        if content_name.lower() == pack_name.lower():
-            continue
+    for position, entry in enumerate(contents):
+        options = slot_options(entry)
 
-        content_item, created = _get_or_create_content_item(club, content_name, value_cp, symbol)
-        if created:
-            content_items_created += 1
-            log(f"    Created content item: {content_name}")
+        # Skip if content is the pack itself (only for fixed slots)
+        if len(options) == 1:
+            content_name, _qty_min, _qty_max, _value_cp, _symbol = options[0]
+            if content_name.lower() == pack_name.lower():
+                continue
 
         slot = ContainerSlot.objects.create(
             container=pack,
@@ -181,13 +201,19 @@ def _process_pack(
             unknown=False,
             position=position,
         )
-        ContainerSlotOption.objects.create(
-            slot=slot,
-            item=content_item,
-            qty_min=qty_min,
-            qty_max=qty_max,
-            weight=1,
-        )
+        for content_name, qty_min, qty_max, value_cp, symbol in options:
+            content_item, created = _get_or_create_content_item(club, content_name, value_cp, symbol)
+            if created:
+                content_items_created += 1
+                log(f"    Created content item: {content_name}")
+
+            ContainerSlotOption.objects.create(
+                slot=slot,
+                item=content_item,
+                qty_min=qty_min,
+                qty_max=qty_max,
+                weight=1,
+            )
 
     try:
         validate_container_config(pack)
