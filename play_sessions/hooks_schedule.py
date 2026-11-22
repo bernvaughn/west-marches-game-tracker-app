@@ -6,7 +6,7 @@ from accounts import navigation
 from accounts.apps import is_gm_or_admin
 
 from . import core
-from .services import remaining_in_series
+from .services import rest_of_series
 
 
 def _manage_context(request, session):
@@ -20,8 +20,7 @@ def _manage_context(request, session):
         "cancel_url": reverse("play_sessions:session_cancel", args=[club.slug, session.pk]),
     }
     if session.series_id:
-        remaining = remaining_in_series(session)
-        if remaining.exists():
+        if rest_of_series(session).exclude(pk=session.pk).exists():
             ctx["series_cancel_url"] = reverse(
                 "play_sessions:series_cancel", args=[club.slug, session.pk]
             )

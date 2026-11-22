@@ -113,36 +113,32 @@ def cancel_session(session):
     return session
 
 
-def cancel_rest(session):
-    """Cancel this session and all later uncancelled sessions in the series.
+def rest_of_series(session):
+    """Return the sessions that "cancel the rest" acts on, in date order.
 
-    Uses starts_at >= this session's starts_at, so ties count as later.
-    Sets updated=now explicitly because QuerySet.update() skips auto_now.
-    Returns the count of sessions cancelled.
-    """
-    if not session.series_id:
-        return 0
-
-    now = timezone.now()
-    qs = PlaySession.objects.for_club(session.club).filter(
-        series=session.series,
-        starts_at__gte=session.starts_at,
-        cancelled=False,
-    )
-    count = qs.update(cancelled=True, updated=now)
-    return count
-
-
-def remaining_in_series(session):
-    """Return queryset of later uncancelled sessions in the same series.
-
-    Strictly after this session (starts_at > this session's starts_at).
-    Used by the confirm page and the Manage section.
+    This session and all later uncancelled sessions of its series
+    (starts_at >= this session's starts_at, so ties count as later).
+    The confirm page, the Manage section and cancel_rest all use this
+    one queryset, so the preview always matches the action.
     """
     if not session.series_id:
         return PlaySession.objects.none()
-    return PlaySession.objects.for_club(session.club).filter(
-        series=session.series,
-        starts_at__gt=session.starts_at,
-        cancelled=False,
+    return (
+        PlaySession.objects.for_club(session.club)
+        .filter(
+            series=session.series,
+            starts_at__gte=session.starts_at,
+            cancelled=False,
+        )
+        .order_by("starts_at", "pk")
     )
+
+
+def cancel_rest(session):
+    """Cancel this and all later uncancelled sessions in the series.
+
+    Sets updated=now explicitly because QuerySet.update() skips auto_now.
+    Returns the count of sessions cancelled.
+    """
+    # update() cannot run on an ordered, sliced queryset safely; clear ordering.
+    return rest_of_series(session).order_by().update(cancelled=True, updated=timezone.now())

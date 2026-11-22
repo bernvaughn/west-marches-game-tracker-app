@@ -777,3 +777,81 @@ def test_new_session_nav_entry_for_gm_not_player(client):
     player_nav = navigation.entries_for(player_request)
     player_labels = [entry.label for entry in player_nav.get("gm", [])]
     assert "New session" not in player_labels
+
+
+# ---------------------------------------------------------------------------
+# Confirm page preview matches the action
+# ---------------------------------------------------------------------------
+
+
+def _make_series(client, title, count=3):
+    club = make_club(slug=f"club-{title.lower()}")
+    gm = make_user(f"gm-{title.lower()}@test.com")
+    make_membership(gm, club, is_gm=True)
+    login_client(client, gm)
+    client.post(
+        reverse("play_sessions:session_create", kwargs={"club_slug": club.slug}),
+        {
+            "title": title,
+            "date": "2026-03-01",
+            "start_time": "19:00",
+            "repeat": "weekly",
+            "count": str(count),
+        },
+    )
+    return club, list(PlaySession.objects.filter(title=title).order_by("starts_at"))
+
+
+def _confirm_url(club, session):
+    return reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
+
+
+def test_series_cancel_page_lists_each_session_once_in_date_order(client):
+    club, sessions = _make_series(client, "Preview")
+
+    # First session: all three, in date order
+    response = client.get(_confirm_url(club, sessions[0]))
+    assert response.context["count"] == 3
+    assert response.context["affected_sessions"] == sessions
+    assert response.content.decode().count("<li>Preview") == 3
+
+    # Last session: lists exactly itself, once, with a date
+    response = client.get(_confirm_url(club, sessions[2]))
+    html = response.content.decode()
+    assert response.context["count"] == 1
+    assert html.count("<li>Preview") == 1
+    assert "<li>Preview &ndash;" in html
+
+
+def test_series_cancel_page_count_matches_action_when_current_cancelled(client):
+    club, sessions = _make_series(client, "Mixed")
+    sessions[1].cancelled = True
+    sessions[1].save()
+
+    response = client.get(_confirm_url(club, sessions[1]))
+    assert response.context["count"] == 1
+    assert response.context["affected_sessions"] == [sessions[2]]
+
+    response = client.post(_confirm_url(club, sessions[1]))
+    assert response.status_code == 302
+    sessions[2].refresh_from_db()
+    assert sessions[2].cancelled is True
+    sessions[0].refresh_from_db()
+    assert sessions[0].cancelled is False
+
+
+def test_rest_of_series_includes_ties():
+    from play_sessions.services import cancel_rest, rest_of_series
+
+    club = make_club(slug="ties")
+    gm = make_membership(make_user("ties@test.com"), club, is_gm=True)
+    series = SessionSeries.objects.create(club=club, created_by=gm, rule="weekly")
+    when = datetime(2026, 5, 1, 23, 0, tzinfo=UTC)
+    a = PlaySession.objects.create(
+        club=club, title="A", starts_at=when, game_master=gm, series=series
+    )
+    b = PlaySession.objects.create(
+        club=club, title="B", starts_at=when, game_master=gm, series=series
+    )
+    assert set(rest_of_series(a)) == {a, b}
+    assert cancel_rest(a) == 2

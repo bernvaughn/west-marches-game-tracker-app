@@ -15,7 +15,7 @@ from ..services import (
     cancel_rest,
     cancel_session,
     create_sessions,
-    remaining_in_series,
+    rest_of_series,
     update_session,
 )
 
@@ -129,8 +129,7 @@ def series_cancel(request, club_slug, pk):
             pk=session.pk,
         )
 
-    later = remaining_in_series(session)
-    count = later.count() + 1
+    affected = list(rest_of_series(session))
 
     return render(
         request,
@@ -138,7 +137,7 @@ def series_cancel(request, club_slug, pk):
         {
             "session": session,
             "club": club,
-            "later_sessions": later,
-            "count": count,
+            "affected_sessions": affected,
+            "count": len(affected),
         },
     )
