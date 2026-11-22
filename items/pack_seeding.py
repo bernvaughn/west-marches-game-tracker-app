@@ -166,9 +166,7 @@ def slot_options(slot) -> list[tuple]:
     return [slot]
 
 
-def _process_pack(
-    club: Club, pack_name: str, contents: list, log: Callable[[str], None]
-) -> str:
+def _process_pack(club: Club, pack_name: str, contents: list, log: Callable[[str], None]) -> str:
     """Process a single pack. Returns a status string."""
     pack = _get_pack_item(club, pack_name)
     if not pack:
@@ -202,7 +200,9 @@ def _process_pack(
             position=position,
         )
         for content_name, qty_min, qty_max, value_cp, symbol in options:
-            content_item, created = _get_or_create_content_item(club, content_name, value_cp, symbol)
+            content_item, created = _get_or_create_content_item(
+                club, content_name, value_cp, symbol
+            )
             if created:
                 content_items_created += 1
                 log(f"    Created content item: {content_name}")

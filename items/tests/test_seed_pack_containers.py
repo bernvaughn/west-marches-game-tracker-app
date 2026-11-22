@@ -9,8 +9,8 @@ from django.core.management.base import CommandError
 from items.containers import roll_container, validate_container_config
 from items.management.commands.seed_pack_containers import PACKS
 from items.models import ContainerSlot, ContainerSlotOption, Item
-from items.pack_seeding import slot_options
 from items.opening import open_container
+from items.pack_seeding import slot_options
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_items, record
 
@@ -237,7 +237,8 @@ def test_seed_command_all_packs_pass_validation(club):
     assert lute_opt.item.name == "Lute (Musical Instrument)"
     assert lute_opt.item.value_cp == 3500
     assert lute_opt.item.symbol == "🎵"
-    assert "Instrument (lute)" not in [o.item.name for s in entertainer_pack.slots.all() for o in s.options.all()]
+    all_names = [o.item.name for s in entertainer_pack.slots.all() for o in s.options.all()]
+    assert "Instrument (lute)" not in all_names
 
     # Verify Diplomat's Pack case slots
     diplomat_pack = Item.objects.get(club=club, name="Diplomat's Pack")
@@ -255,7 +256,8 @@ def test_seed_command_all_packs_pass_validation(club):
             assert o.weight == 1
             assert o.item.value_cp == 100
     # No "Map or Scroll Case" item or option exists
-    assert not Item.objects.filter(club=club, name__in=["Map or Scroll Case", "Case, Map or Scroll"]).exists()
+    old_names = ["Map or Scroll Case", "Case, Map or Scroll"]
+    assert not Item.objects.filter(club=club, name__in=old_names).exists()
 
 
 def test_seed_command_existing_owner_can_open(club, character, player):

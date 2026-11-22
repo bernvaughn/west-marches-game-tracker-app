@@ -1,19 +1,17 @@
 """Tests for the Diplomat's Pack and other pack changes (U149, U151)."""
 
 import random
+from io import StringIO
 
 import pytest
 from django.core.management import call_command
-from io import StringIO
 
 from items.containers import loot_preview, roll_container, validate_container_config
 from items.management.commands.seed_pack_containers import PACKS
 from items.models import ContainerSlot, ContainerSlotOption, Item
 from items.opening import open_container
 from items.pack_seeding import seed_pack_containers, slot_options
-from ledger.models import LedgerEntry
 from ledger.services import Line, available_items, record
-
 
 pytestmark = [pytest.mark.django_db]
 
@@ -63,7 +61,8 @@ def test_diplomats_pack_case_slots(club):
         assert o.item.value_cp == 100
 
     # No "Map or Scroll Case" item exists
-    assert not Item.objects.filter(club=club, name__in=["Map or Scroll Case", "Case, Map or Scroll"]).exists()
+    old_names = ["Map or Scroll Case", "Case, Map or Scroll"]
+    assert not Item.objects.filter(club=club, name__in=old_names).exists()
 
     # Fixed slots unchanged (Chest at 0, Fine Clothes at 3, etc.)
     chest = pack.slots.get(position=0)
@@ -101,7 +100,10 @@ def test_diplomats_pack_roll_gives_two_cases(club):
         assert outcome.item_id is not None
 
     # Count case items in the roll
-    case_items = [o for o in roll.slots if o.item_id and Item.objects.get(pk=o.item_id).name in ("Map Case", "Scroll Case")]
+    case_names = ("Map Case", "Scroll Case")
+    case_items = [
+        o for o in roll.slots if o.item_id and Item.objects.get(pk=o.item_id).name in case_names
+    ]
     assert len(case_items) == 2  # Exactly two cases
 
     # Both Map Case and Scroll Case should appear at least once across multiple rolls
@@ -175,13 +177,17 @@ def test_diplomats_pack_open_gives_two_cases(club, character, player):
     assert opening.character == character
 
     # Check result has exactly 2 case items (result is list of dicts with item_id)
-    map_count = sum(1 for r in opening.result if r.get("item_id") and Item.objects.get(pk=r["item_id"]).name == "Map Case")
-    scroll_count = sum(1 for r in opening.result if r.get("item_id") and Item.objects.get(pk=r["item_id"]).name == "Scroll Case")
+    def _is_case(r, name):
+        return r.get("item_id") and Item.objects.get(pk=r["item_id"]).name == name
+
+    map_count = sum(1 for r in opening.result if _is_case(r, "Map Case"))
+    scroll_count = sum(1 for r in opening.result if _is_case(r, "Scroll Case"))
     total_cases = map_count + scroll_count
-    assert total_cases == 2, f"Expected 2 cases, got {total_cases} (Map: {map_count}, Scroll: {scroll_count})"
+    assert total_cases == 2, (
+        f"Expected 2 cases, got {total_cases} (Map: {map_count}, Scroll: {scroll_count})"
+    )
 
     # Pack is used up
-    from ledger.services import available_items
     held = available_items(character)
     assert held.get(pack.pk, 0) == 0
 
@@ -222,6 +228,7 @@ def test_opened_before_change_keeps_old_result(club, character, player):
 
     # Character still holds the old item (2x "Map or Scroll Case")
     from ledger.services import item_quantities
+
     inv = item_quantities(character)
     old_case_id = old_case.pk
     assert inv.get(old_case_id, 0) == 2, f"Expected 2 of old case, got {inv.get(old_case_id, 0)}"
@@ -252,7 +259,8 @@ def test_other_packs_unchanged(club):
         for slot, entry in zip(slots, contents, strict=True):
             options = slot_options(entry)
             opts = list(slot.options.all())
-            assert len(opts) == len(options), f"{pack_name} pos {slot.position}: option count mismatch"
+            msg = f"{pack_name} pos {slot.position}: option count mismatch"
+            assert len(opts) == len(options), msg
             assert slot.chance_pct == 100
             assert slot.unknown is False
             for opt, (name, qty_min, qty_max, _value, _symbol) in zip(opts, options, strict=True):
