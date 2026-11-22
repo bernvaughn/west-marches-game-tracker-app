@@ -504,12 +504,13 @@ def test_url_fallen_reverses(club):
 
 
 def test_stub_views_return_404(login, player, character):
-    """Remaining stub views (archive, unarchive, archived, fallen) return 404 for logged-in member.
-    Death and undo are now implemented (C2)."""
+    """Remaining stub views (archived, fallen) return 404 for logged-in member.
+    Death, undo, archive and unarchive are now implemented (C2, U144)."""
     client = login(player)
     urls = [
-        reverse("characters:archive", args=[character.club.slug, character.pk]),
-        reverse("characters:unarchive", args=[character.club.slug, character.pk]),
+        reverse("characters:archived", args=[character.club.slug]),
+        reverse("characters:fallen", args=[character.club.slug]),
+    ]
         reverse("characters:archived", args=[character.club.slug]),
         reverse("characters:fallen", args=[character.club.slug]),
     ]
