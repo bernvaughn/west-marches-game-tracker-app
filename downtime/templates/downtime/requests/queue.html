@@ -9,14 +9,14 @@
 {% for req in requests %}
 <tr>
 <td class="d-sm-none wm-req-summary">
-  {% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}
+  {% for c in req.characters.all %}{% include "components/request_character_chip.html" with character=c %}{% endfor %}
   <div class="wm-badge-row">
     {% include "components/status_badge.html" with value=req.status text=req.get_status_display %}
     <span class="wm-badge wm-badge--neutral">{{ req.points }} pts</span>
   </div>
   {{ req.note|linebreaksbr }}
 </td>
-<td class="wm-col-optional">{% for c in req.characters.all %}{% include "components/character_chip.html" with name=c.name %}{% endfor %}</td>
+<td class="wm-col-optional">{% for c in req.characters.all %}{% include "components/request_character_chip.html" with character=c %}{% endfor %}</td>
 <td class="wm-col-optional">{% include "components/status_badge.html" with value=req.status text=req.get_status_display %}</td>
 <td class="wm-col-optional">{{ req.points }}</td>
 <td class="wm-col-optional">{{ req.note|linebreaksbr }}</td>
