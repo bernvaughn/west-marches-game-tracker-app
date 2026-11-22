@@ -306,6 +306,8 @@ EXCLUDED = {
     "shops:sell_junk_pick": "HTMX partial endpoint for shop picker modal.",
     "characters:bulk_award": "GM-only page for bulk awarding loot to multiple characters.",
     "accounts:message_detail": "Read-only message detail page; requires specific message PK.",
+    "play_sessions:rsvp_set": "POST only; set RSVP answer for a session.",
+    # C1 death and archive stub views
     "characters:death": "C1 stub view returning 404.",
     "characters:death_undo": "C1 stub view returning 404.",
     "characters:archive": "C1 stub view returning 404.",
@@ -320,6 +322,11 @@ EXCLUDED = {
     "character_options:restore": "POST only.",
     "character_options:delete": "GET shows confirm modal; POST deletes.",
     "character_options:move": "POST only.",
+    # play_sessions schedule - club-scoped, need specific session/club state
+    "play_sessions:session_create": "Needs a club and GM; create form.",
+    "play_sessions:session_edit": "Needs an existing session PK; edit form.",
+    "play_sessions:session_cancel": "POST only; cancels a session.",
+    "play_sessions:series_cancel": "Needs a series session PK; confirm page.",
 }
 
 

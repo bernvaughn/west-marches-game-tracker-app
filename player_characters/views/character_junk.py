@@ -11,6 +11,7 @@ from ledger.services import item_quantities
 from ..access import require_inventory_access
 from ..forms_junk import JunkForm
 from ..junk import JunkError, set_junk
+from ..life import LifeError, sell_block_reason
 from ..models import Character, JunkMark
 
 
@@ -31,10 +32,15 @@ def junk(request, club_slug, pk, item_pk):
                 set_junk(character, item, form.cleaned_data["quantity"], request.user)
             except JunkError as exc:
                 form.add_error(None, str(exc))
+            except LifeError as exc:
+                form.add_error(None, str(exc))
             else:
                 messages.success(request, f"Saved junk marks for {character.name}.")
                 return htmx_or_redirect(request, sheet_url)
     else:
+        if character.is_archived:
+            messages.error(request, sell_block_reason(character))
+            return htmx_or_redirect(request, sheet_url)
         mark = JunkMark.objects.filter(character=character, item=item).first()
         form = JunkForm(initial={"quantity": min(mark.quantity, owned) if mark else 0}, owned=owned)
     return render_modal_or_page(

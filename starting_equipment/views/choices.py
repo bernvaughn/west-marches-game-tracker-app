@@ -7,11 +7,13 @@ from django.urls import reverse
 
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
+from player_characters import life
 from player_characters.models import Character
 from starting_equipment.forms import StartingChoicesForm
 from starting_equipment.models import StartingEquipmentTemplate
 from starting_equipment.services import (
     AlreadyClaimed,
+    CharacterCannotClaim,
     explain_starting_equipment,
     get_choice_groups,
 )
@@ -42,6 +44,11 @@ def choices(request, club_slug, character_pk):
 
     groups = get_choice_groups(character, template)
 
+    # A dead or archived character cannot claim starting equipment.
+    if not life.can_act(character):
+        flash.error(request, life.act_block_reason(character))
+        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+
     # Already claimed: nothing to pick, go back to the sheet.
     if character.starting_equipment_claimed:
         flash.error(request, "Starting equipment has already been claimed for this character.")
@@ -59,6 +66,9 @@ def choices(request, club_slug, character_pk):
                 result = claim_starting_equipment_service(
                     character, template, request.user, picks=picks
                 )
+            except CharacterCannotClaim as exc:
+                flash.error(request, str(exc))
+                return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
             except AlreadyClaimed:
                 flash.error(
                     request, "Starting equipment has already been claimed for this character."
