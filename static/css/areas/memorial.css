@@ -1,0 +1,75 @@
+/* Memorial on a dead character's stall (U142). Built from design tokens only; no raw hex. */
+.wm-memorial {
+  display: inline-block;
+  background: var(--wm-surface-sunken);
+  border: 1px solid var(--wm-border);
+  border-radius: var(--wm-radius-sm) var(--wm-radius-sm) 0 0;
+  color: var(--wm-text);
+  font-size: var(--wm-text-xs);
+  line-height: 1.25;
+  padding: var(--wm-space-1) var(--wm-space-2);
+}
+.wm-memorial-text {
+  font-weight: 600;
+  display: block;
+}
+.wm-memorial-date {
+  color: var(--wm-text-muted);
+  display: block;
+}
+
+/* Tombstone shape for the block (banner / street) variant. */
+.wm-memorial:not(.wm-memorial--inline) {
+  border-radius: var(--wm-radius-md) var(--wm-radius-md) 0 0;
+  padding: var(--wm-space-2) var(--wm-space-3);
+}
+
+/* Inline variant for tight tables: one line, no name. */
+.wm-memorial--inline {
+  border-radius: var(--wm-radius-sm);
+  padding: 1px var(--wm-space-2);
+}
+
+/* Sombre silhouette on memorial stalls. */
+.wm-player-shop-banner--memorial .wm-building,
+.wm-street-lot--memorial .wm-building {
+  color: var(--wm-shop-slate-deep);
+  opacity: 0.6;
+}
+
+/* Slate sign for memorial street lots. */
+.wm-street-lot--memorial .wm-street-sign {
+  background: var(--wm-shop-slate-soft);
+  border-color: var(--wm-shop-slate-deep);
+  color: var(--wm-shop-slate-deep);
+}
+
+/* Narrow street: small text and wrapped name on small screens. */
+@media (max-width: 480px) {
+  .wm-street-lot--memorial .wm-street-name {
+    font-size: var(--wm-text-xs);
+    overflow-wrap: break-word;
+  }
+}
+
+/* Print: keep the words, drop the decoration. */
+@media print {
+  .wm-memorial {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    color: var(--wm-text);
+    font-size: var(--wm-text-sm);
+  }
+  .wm-memorial--inline {
+    padding: 0;
+    background: none;
+    border: 0;
+  }
+  .wm-player-shop-banner--memorial .wm-building,
+  .wm-street-lot--memorial .wm-building {
+    display: none;
+  }
+}

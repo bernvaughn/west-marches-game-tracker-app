@@ -22,10 +22,11 @@
   {% endwith %}
 {% elif lot.stall %}
   {% with stall=lot.stall %}
-  <li class="wm-street-lot wm-street-lot--stall">
+  <li class="wm-street-lot wm-street-lot--stall{% if stall.is_dead %} wm-street-lot--memorial{% endif %}">
     <a class="wm-street-link" href="{% url 'shops:player_shop' club.slug stall.pk %}">
       {% include "shops/_building.html" with key="player_stall" %}
       <span class="wm-street-sign"><span class="wm-street-name">{{ stall.name }}'s stall</span>
+        {% include "shops/_memorial.html" with character=stall %}
         <span class="wm-favorite-wrapper">
           {% include "shops/browse/_star_button.html" with lot=lot is_favorite=lot.is_favorite club=club character=character %}
         </span>
