@@ -299,6 +299,9 @@ EXCLUDED = {
     "characters:death_undo": "C1 stub view returning 404.",
     "characters:archived": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
+    "play_sessions:recap_edit": "Recap and GM notes edit form; not screenshotted separately - the "
+    "session page with a seeded recap is captured via play-sessions-detail and "
+    "play-sessions-detail-player at 1280 and 390 px.",
     # character_options - admin only, HTMX modals
     "character_options:index": "Admin redirect to species list.",
     "character_options:list": "Admin list with HTMX partials; modals are separate.",
