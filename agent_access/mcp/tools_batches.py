@@ -18,6 +18,7 @@ from ledger.coins import format_coins
 from player_characters.models import Character
 
 from .server import ToolError, agent_tool
+from .tools_lookup import character_status
 
 MAX_LINES = 200
 MAX_KEY = 200
@@ -59,17 +60,19 @@ def _review_url(mcp_ctx, club, batch):
 
 def _serialize(batch, mcp_ctx):
     lines = batch.lines.select_related("character", "item", "proposed_item").order_by("pk")
-    return {
-        "batch_id": batch.pk,
-        "status": batch.status,
-        "date": batch.date.isoformat(),
-        "review_url": _review_url(mcp_ctx, batch.club, batch),
-        "lines": [
+    warnings = []
+    lines_data = []
+    for n, line in enumerate(lines, start=1):
+        char_status = character_status(line.character)
+        is_archived = line.character.is_archived
+        lines_data.append(
             {
                 "line": n,
                 "id": line.pk,
                 "character_id": line.character_id,
                 "character_name": line.character.name,
+                "character_status": char_status,
+                "character_archived": is_archived,
                 "item_id": line.item_id,
                 "item_name": line.item.name if line.item else None,
                 "proposed_item_id": line.proposed_item_id,
@@ -80,8 +83,19 @@ def _serialize(batch, mcp_ctx):
                 "note": line.note,
                 "date": line.date.isoformat() if line.date else None,
             }
-            for n, line in enumerate(lines, start=1)
-        ],
+        )
+        if is_archived:
+            warnings.append(
+                f"Line {n}: {line.character.name} is archived. "
+                f"A game master must fix or confirm it."
+            )
+    return {
+        "batch_id": batch.pk,
+        "status": batch.status,
+        "date": batch.date.isoformat(),
+        "review_url": _review_url(mcp_ctx, batch.club, batch),
+        "warnings": warnings,
+        "lines": lines_data,
     }
 
 
@@ -109,6 +123,11 @@ def propose_awards(
     Amounts must be greater than zero. If you send an idempotency_key you used before on this
     connection, the existing batch comes back unchanged with created false. If any line is
     invalid, the whole batch is rejected.
+
+    Archived characters can be named in a line; they are included in the proposal but flagged
+    with a warning in the response's `warnings` list. The batch will be held back on the
+    review page until the game master either fixes the line (changes the character or removes
+    it) or explicitly confirms the archived lines.
     """
     key = (idempotency_key or "").strip()
     if not key or len(key) > MAX_KEY:
