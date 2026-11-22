@@ -23,6 +23,7 @@ from downtime.models import DowntimeAction, DowntimeResult
 from downtime.wheel import wheel_payload
 from ledger import services as ledger_services
 from player_characters import life
+from player_characters.models import Character, SelectedCharacter
 
 COST_CHOICES = ("1", "2", "3+")
 REWARD_CHOICES = ("coins", "items", "mixed")
@@ -171,8 +172,25 @@ class SpendView(ClubScopedMixin, CharacterContextMixin, ClubContextMixin, View):
         action = self.get_club_object_or_404(DowntimeAction, pk=pk)
         character = self.get_selected_character()
         if character is None:
-            messages.error(request, "You have no character to spend points for.")
-            return _back_to_play(request)
+            # U144 hides archived from own_characters, so selected_character
+            # may fall back past an archived stored choice. Look it up by id
+            # so the U140 act guard can refuse it.
+            stored = (
+                SelectedCharacter.objects.filter(membership=request.membership)
+                .values_list("character_id", flat=True)
+                .first()
+            )
+            if stored is not None:
+                character = Character.objects.for_club(self.club).filter(pk=stored).first()
+            else:
+                character = (
+                    Character.objects.for_club(self.club)
+                    .filter(owner=request.membership, archived_at__isnull=False)
+                    .first()
+                )
+            if character is None:
+                messages.error(request, "You have no character to spend points for.")
+                return _back_to_play(request)
         try:
             result = services.spend(character, action, request.user)
         except services.DowntimeError as exc:

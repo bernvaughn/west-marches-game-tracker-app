@@ -11,6 +11,7 @@ from accounts.htmx import hx_response
 from accounts.permissions import admin_or_gm_required, club_member_required
 from accounts.scoping import club_get_object_or_404, club_queryset
 from player_characters import life
+from player_characters.models import Character
 from player_characters.selection import selected_character
 
 from .. import services
@@ -118,6 +119,15 @@ def visit_new(request, club_slug, map_id):
                 req.characters.set(d["characters"])
                 messages.success(request, "Visit request sent.")
                 return redirect("map:requests", club_slug=club_slug)
+        else:
+            # U144 hides archived from own_characters, but a direct id post
+            # must still be refused by the act guard.
+            posted_ids = [int(v) for v in request.POST.getlist("characters") if v.isdigit()]
+            if posted_ids:
+                for c in Character.objects.for_club(request.club).filter(pk__in=posted_ids):
+                    if c.is_archived:
+                        form.add_error("characters", life.act_block_reason(c))
+                        break
     else:
         form = VisitRequestForm(
             characters_qs=chars,
@@ -173,6 +183,15 @@ def credit_new(request, club_slug, location_id, kind):
                 req.characters.set(d["characters"])
                 messages.success(request, "Request sent.")
                 return redirect("map:requests", club_slug=club_slug)
+        else:
+            # U144 hides archived from own_characters, but a direct id post
+            # must still be refused by the act guard.
+            posted_ids = [int(v) for v in request.POST.getlist("characters") if v.isdigit()]
+            if posted_ids:
+                for c in Character.objects.for_club(request.club).filter(pk__in=posted_ids):
+                    if c.is_archived:
+                        form.add_error("characters", life.act_block_reason(c))
+                        break
     else:
         form = CreditRequestForm(characters_qs=chars, initial=_default_character(request))
     if request.method == "POST":
