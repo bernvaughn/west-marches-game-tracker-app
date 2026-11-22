@@ -310,3 +310,4 @@ Open questions:
 - How many clubs and regular players will use the app? Hundreds of regular users, rather than a few tables, would justify another look at sizing.
 - Which domain name should the app use? — `app.downtimemarket.com`, with DNS pointing at the Droplet. A domain is needed for agent access.
 
+
