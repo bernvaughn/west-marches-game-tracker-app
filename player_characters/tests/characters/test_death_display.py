@@ -1,11 +1,12 @@
 """Tests for story U143: Died badge, dead-last sort, status filter, picker and print."""
 
 import datetime
+
+import pytest
 from django.template.loader import render_to_string
 from django.test import RequestFactory
 from django.urls import reverse
 
-import pytest
 from player_characters.life import archive, mark_dead
 from player_characters.models import Character
 from player_characters.selection import selected_character
@@ -70,7 +71,7 @@ def test_sheet_shows_no_badge_for_living(club, login, player, character):
 @pytest.mark.story("U143")
 def test_directory_shows_badge_and_sorts_dead_last(club, login, player):
     owner = _membership(club, player)
-    living = Character.objects.create(club=club, owner=owner, name="Zora")
+    Character.objects.create(club=club, owner=owner, name="Zora")
     dead = Character.objects.create(club=club, owner=owner, name="Aaron")
     _dead(dead, owner, "2026-10-01")
     html = login(player).get(u("characters:directory", club)).content.decode()
@@ -82,7 +83,7 @@ def test_directory_shows_badge_and_sorts_dead_last(club, login, player):
 @pytest.mark.story("U143")
 def test_index_shows_badge_and_sorts_dead_last(club, login, club_admin):
     owner = _membership(club, club_admin)
-    living = Character.objects.create(club=club, owner=owner, name="Zora")
+    Character.objects.create(club=club, owner=owner, name="Zora")
     dead = Character.objects.create(club=club, owner=owner, name="Aaron")
     _dead(dead, owner, "2026-10-01")
     html = login(club_admin).get(u("characters:index", club)).content.decode()
@@ -111,7 +112,7 @@ def test_archived_absent_from_lists_but_reachable_by_url(club, login, player, cl
 @pytest.mark.story("U143")
 def test_admin_filter_living_dead_all(club, login, club_admin):
     owner = _membership(club, club_admin)
-    living = Character.objects.create(club=club, owner=owner, name="Living One")
+    Character.objects.create(club=club, owner=owner, name="Living One")
     dead = Character.objects.create(club=club, owner=owner, name="Dead One")
     _dead(dead, owner, "2026-10-01")
 
@@ -137,7 +138,7 @@ def test_player_cannot_filter(club, login, player):
 @pytest.mark.story("U143")
 def test_index_admin_filter(club, login, club_admin):
     owner = _membership(club, club_admin)
-    living = Character.objects.create(club=club, owner=owner, name="Living One")
+    Character.objects.create(club=club, owner=owner, name="Living One")
     dead = Character.objects.create(club=club, owner=owner, name="Dead One")
     _dead(dead, owner, "2026-10-01")
     admin = login(club_admin)
@@ -163,7 +164,7 @@ def test_archive_link_on_lists(club, login, player, club_admin):
 @pytest.mark.story("U143")
 def test_picker_context_orders_dead_last(club, player):
     owner = _membership(club, player)
-    zeb = Character.objects.create(club=club, owner=owner, name="Zeb")
+    Character.objects.create(club=club, owner=owner, name="Zeb")
     aaron = Character.objects.create(club=club, owner=owner, name="Aaron")
     _dead(aaron, owner, "2026-10-01")
     pairs = all_characters_selector_context(_request(player, club))
@@ -174,7 +175,7 @@ def test_picker_context_orders_dead_last(club, player):
 @pytest.mark.story("U143")
 def test_picker_dropdown_row_includes_died(club, player):
     owner = _membership(club, player)
-    zeb = Character.objects.create(club=club, owner=owner, name="Zeb")
+    Character.objects.create(club=club, owner=owner, name="Zeb")
     aaron = Character.objects.create(club=club, owner=owner, name="Aaron")
     _dead(aaron, owner, "2026-10-01")
     request = _request(player, club)
@@ -184,7 +185,7 @@ def test_picker_dropdown_row_includes_died(club, player):
         {"request": request, "club": club},
     )
     assert "Died 1 Oct 2026" in html
-    assert 'data-character-pk="{}"'.format(aaron.pk) in html
+    assert f'data-character-pk="{aaron.pk}"' in html
 
 
 @pytest.mark.story("U143")
