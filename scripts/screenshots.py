@@ -195,9 +195,7 @@ def main() -> int:
 
         with sync_playwright() as pw:
             try:
-                browser = pw.chromium.launch(
-                    executable_path="/opt/pw/chromium_headless_shell-1254/chrome-headless-shell-linux64/chrome-headless-shell"
-                )
+                browser = pw.chromium.launch()
             except Exception as exc:
                 print(
                     f"Chromium did not start: {exc}\n"
