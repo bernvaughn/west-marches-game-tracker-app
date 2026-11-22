@@ -322,7 +322,7 @@ class TestSeedDefaultStartingEquipment:
         # Modify a line
         holy_symbol_line = (
             StartingEquipmentBackgroundLine.objects.for_club(club)
-            .filter(background_entry=acolyte, item__name="Holy Symbol (Amulet)")
+            .filter(background_entry=acolyte, item__name="Amulet (Holy Symbol)")
             .first()
         )
         holy_symbol_line.quantity = 5
@@ -355,3 +355,13 @@ class TestSeedDefaultStartingEquipment:
 
         lc.refresh_from_db()
         assert lc.coins_cp == 50000  # Original
+
+    def test_no_duplicate_item_names_per_club(self, club):
+        """Seeded items have no duplicate names within a club."""
+        from django.db.models import Count
+
+        seed_default_starting_equipment(club)
+
+        # Check for duplicate item names within the club
+        dupes = Item.objects.for_club(club).values("name").annotate(c=Count("id")).filter(c__gt=1)
+        assert not dupes.exists(), f"Duplicate item names found: {list(dupes)}"

@@ -86,10 +86,10 @@ CLASS_EQUIPMENT = {
             ("Diplomat's Pack", 3900, "🎒", "standard", "", 1, True, "pack"),
             ("Entertainer's Pack", 4000, "🎒", "standard", "", 1, True, "pack"),
             # instrument: Lute OR any musical instrument
-            ("Lute", 3500, "🎵", "standard", "", 1, True, "instrument"),
-            ("Flute", 200, "🎵", "standard", "", 1, True, "instrument"),
-            ("Lyre", 300, "🎵", "standard", "", 1, True, "instrument"),
-            ("Horn", 300, "📯", "standard", "", 1, True, "instrument"),
+            ("Lute (Musical Instrument)", 3500, "🎵", "standard", "", 1, True, "instrument"),
+            ("Flute (Musical Instrument)", 200, "🎵", "standard", "", 1, True, "instrument"),
+            ("Lyre (Musical Instrument)", 300, "🎵", "standard", "", 1, True, "instrument"),
+            ("Horn (Musical Instrument)", 300, "📯", "standard", "", 1, True, "instrument"),
         ],
     },
     "Cleric": {
@@ -97,7 +97,7 @@ CLASS_EQUIPMENT = {
         "items": [
             ("Crossbow Bolts", 100, "🏹", "trivial", "", 20, False, ""),
             ("Shield", 1000, "🛡️", "standard", "", 1, False, ""),
-            ("Holy Symbol (Amulet)", 500, "✝️", "standard", "", 1, False, ""),
+            ("Amulet (Holy Symbol)", 500, "✝️", "standard", "", 1, False, ""),
             # melee_weapon: Mace OR warhammer
             ("Mace", 500, "⚔️", "standard", "", 1, True, "melee_weapon"),
             ("Warhammer", 1500, "⚔️", "standard", "", 1, True, "melee_weapon"),
@@ -120,7 +120,7 @@ CLASS_EQUIPMENT = {
         "items": [
             ("Leather Armor", 1000, "🧥", "standard", "", 1, False, ""),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, False, ""),
-            ("Druidic Focus (Staff)", 500, "🪄", "standard", "", 1, False, ""),
+            ("Staff (Druidic Focus)", 500, "🪄", "standard", "", 1, False, ""),
             # shield_or_weapon: Wooden shield OR any simple weapon
             ("Wooden Shield", 1000, "🛡️", "standard", "", 1, True, "shield_or_weapon"),
             ("Quarterstaff", 200, "🪄", "standard", "", 1, True, "shield_or_weapon"),
@@ -174,7 +174,7 @@ CLASS_EQUIPMENT = {
         "items": [
             ("Shield", 1000, "🛡️", "standard", "", 1, False, ""),
             ("Chain Mail", 7500, "🛡️", "standard", "", 1, False, ""),
-            ("Holy Symbol (Amulet)", 500, "✝️", "standard", "", 1, False, ""),
+            ("Amulet (Holy Symbol)", 500, "✝️", "standard", "", 1, False, ""),
             # weapons: Martial weapon + shield OR two martial weapons (shield stays fixed)
             ("Longsword", 1500, "🗡️", "fine", "", 1, True, "weapons"),
             ("Battleaxe", 1000, "🪓", "standard", "", 1, True, "weapons"),
@@ -238,11 +238,11 @@ CLASS_EQUIPMENT = {
             ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
             # focus: Component pouch OR arcane focus
             ("Component Pouch", 2500, "💼", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Orb)", 2000, "🔮", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Staff)", 500, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Crystal (Arcane Focus)", 1000, "💎", "standard", "", 1, True, "focus"),
+            ("Orb (Arcane Focus)", 2000, "🔮", "standard", "", 1, True, "focus"),
+            ("Rod (Arcane Focus)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Staff (Arcane Focus)", 500, "🪄", "standard", "", 1, True, "focus"),
+            ("Wand (Arcane Focus)", 1000, "🪄", "standard", "", 1, True, "focus"),
             # pack: Dungeoneer's pack OR explorer's pack
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, True, "pack"),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
@@ -261,11 +261,11 @@ CLASS_EQUIPMENT = {
             ("Handaxe", 500, "🪓", "standard", "", 1, True, "ranged"),
             # focus: Component pouch OR arcane focus
             ("Component Pouch", 2500, "💼", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Orb)", 2000, "🔮", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Staff)", 500, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Crystal (Arcane Focus)", 1000, "💎", "standard", "", 1, True, "focus"),
+            ("Orb (Arcane Focus)", 2000, "🔮", "standard", "", 1, True, "focus"),
+            ("Rod (Arcane Focus)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Staff (Arcane Focus)", 500, "🪄", "standard", "", 1, True, "focus"),
+            ("Wand (Arcane Focus)", 1000, "🪄", "standard", "", 1, True, "focus"),
             # pack: Scholar's pack OR dungeoneer's pack
             ("Scholar's Pack", 4000, "🎒", "standard", "", 1, True, "pack"),
             ("Dungeoneer's Pack", 1200, "🎒", "standard", "", 1, True, "pack"),
@@ -280,11 +280,11 @@ CLASS_EQUIPMENT = {
             ("Dagger", 200, "🗡️", "standard", "", 1, True, "weapon"),
             # focus: Component pouch OR arcane focus
             ("Component Pouch", 2500, "💼", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Crystal)", 1000, "💎", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Orb)", 2000, "🔮", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Rod)", 1000, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Staff)", 500, "🪄", "standard", "", 1, True, "focus"),
-            ("Arcane Focus (Wand)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Crystal (Arcane Focus)", 1000, "💎", "standard", "", 1, True, "focus"),
+            ("Orb (Arcane Focus)", 2000, "🔮", "standard", "", 1, True, "focus"),
+            ("Rod (Arcane Focus)", 1000, "🪄", "standard", "", 1, True, "focus"),
+            ("Staff (Arcane Focus)", 500, "🪄", "standard", "", 1, True, "focus"),
+            ("Wand (Arcane Focus)", 1000, "🪄", "standard", "", 1, True, "focus"),
             # pack: Scholar's pack OR explorer's pack
             ("Scholar's Pack", 4000, "🎒", "standard", "", 1, True, "pack"),
             ("Explorer's Pack", 1000, "🎒", "standard", "", 1, True, "pack"),
@@ -303,7 +303,7 @@ BACKGROUND_EQUIPMENT = {
     "Acolyte": {
         "coins_cp": 1500,  # 15 gp
         "items": [
-            ("Holy Symbol (Amulet)", 500, "✝️", "standard", "", 1, False, ""),
+            ("Amulet (Holy Symbol)", 500, "✝️", "standard", "", 1, False, ""),
             ("Prayer Book", 500, "📖", "standard", "", 1, False, ""),
             ("Incense (5 sticks)", 10, "🕯️", "trivial", "", 5, False, ""),
             ("Vestments", 500, "👘", "standard", "", 1, False, ""),
@@ -315,16 +315,34 @@ BACKGROUND_EQUIPMENT = {
         "items": [
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
             # tools: one type of artisan's tools
-            ("Artisan's Tools (Woodcarver's)", 2000, "🔨", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Brewer's)", 2000, "🍺", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Calligrapher's)", 1000, "🖋️", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Carpenter's)", 1000, "🔨", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Leatherworker's)", 2000, "🔨", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Mason's)", 2000, "🔨", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Potter's)", 2000, "🏺", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Smith's)", 2000, "🔨", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Tinker's)", 1000, "🔧", "standard", "", 1, True, "tools"),
-            ("Artisan's Tools (Weaver's)", 2000, "🧵", "standard", "", 1, True, "tools"),
+            ("Woodcarver's Tools (Artisan's Tools)", 2000, "🔨", "standard", "", 1, True, "tools"),
+            ("Brewer's Supplies (Artisan's Tools)", 2000, "🍺", "standard", "", 1, True, "tools"),
+            (
+                "Calligrapher's Supplies (Artisan's Tools)",
+                1000,
+                "🖋️",
+                "standard",
+                "",
+                1,
+                True,
+                "tools",
+            ),
+            ("Carpenter's Tools (Artisan's Tools)", 1000, "🔨", "standard", "", 1, True, "tools"),
+            (
+                "Leatherworker's Tools (Artisan's Tools)",
+                2000,
+                "🔨",
+                "standard",
+                "",
+                1,
+                True,
+                "tools",
+            ),
+            ("Mason's Tools (Artisan's Tools)", 2000, "🔨", "standard", "", 1, True, "tools"),
+            ("Potter's Tools (Artisan's Tools)", 2000, "🏺", "standard", "", 1, True, "tools"),
+            ("Smith's Tools (Artisan's Tools)", 2000, "🔨", "standard", "", 1, True, "tools"),
+            ("Tinker's Tools (Artisan's Tools)", 1000, "🔧", "standard", "", 1, True, "tools"),
+            ("Weaver's Tools (Artisan's Tools)", 2000, "🧵", "standard", "", 1, True, "tools"),
         ],
     },
     "Charlatan": {
@@ -348,17 +366,17 @@ BACKGROUND_EQUIPMENT = {
             ("Costume", 500, "🎭", "standard", "", 1, False, ""),
             ("Mirror", 500, "🪞", "standard", "", 1, False, ""),
             # instrument: one musical instrument
-            ("Musical Instrument (Lute)", 3500, "🎵", "standard", "", 1, True, "instrument"),
-            ("Musical Instrument (Flute)", 200, "🎵", "standard", "", 1, True, "instrument"),
-            ("Musical Instrument (Lyre)", 300, "🎵", "standard", "", 1, True, "instrument"),
-            ("Musical Instrument (Horn)", 300, "📯", "standard", "", 1, True, "instrument"),
-            ("Musical Instrument (Drum)", 600, "🥁", "standard", "", 1, True, "instrument"),
+            ("Lute (Musical Instrument)", 3500, "🎵", "standard", "", 1, True, "instrument"),
+            ("Flute (Musical Instrument)", 200, "🎵", "standard", "", 1, True, "instrument"),
+            ("Lyre (Musical Instrument)", 300, "🎵", "standard", "", 1, True, "instrument"),
+            ("Horn (Musical Instrument)", 300, "📯", "standard", "", 1, True, "instrument"),
+            ("Drum (Musical Instrument)", 600, "🥁", "standard", "", 1, True, "instrument"),
         ],
     },
     "Farmer": {
         "coins_cp": 1000,  # 10 gp
         "items": [
-            ("Carpenter's Tools", 1000, "🔨", "standard", "", 1, False, ""),
+            ("Carpenter's Tools (Artisan's Tools)", 1000, "🔨", "standard", "", 1, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
         ],
     },
@@ -366,7 +384,7 @@ BACKGROUND_EQUIPMENT = {
         "coins_cp": 1000,  # 10 gp
         "items": [
             ("Uniform", 500, "👕", "standard", "", 1, False, ""),
-            ("Horn", 300, "📯", "standard", "", 1, False, ""),
+            ("Horn (Musical Instrument)", 300, "📯", "standard", "", 1, False, ""),
             ("Manacles", 200, "⛓️", "standard", "", 1, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
         ],
@@ -420,7 +438,7 @@ BACKGROUND_EQUIPMENT = {
     "Scribe": {
         "coins_cp": 1000,  # 10 gp
         "items": [
-            ("Calligrapher's Supplies", 1000, "🖋️", "standard", "", 1, False, ""),
+            ("Calligrapher's Supplies (Artisan's Tools)", 1000, "🖋️", "standard", "", 1, False, ""),
             ("Fine Clothes", 1500, "👔", "standard", "", 1, False, ""),
         ],
     },
@@ -430,9 +448,9 @@ BACKGROUND_EQUIPMENT = {
             ("Insignia of Rank", 100, "🎖️", "trivial", "", 1, False, ""),
             ("Common Clothes", 50, "👕", "trivial", "", 1, False, ""),
             # gaming_set: one gaming set
-            ("Gaming Set (Dice)", 100, "🎲", "trivial", "", 1, True, "gaming_set"),
-            ("Gaming Set (Playing Cards)", 100, "🎴", "trivial", "", 1, True, "gaming_set"),
-            ("Gaming Set (Dragonchess)", 100, "♟️", "trivial", "", 1, True, "gaming_set"),
+            ("Dice (Gaming Set)", 100, "🎲", "trivial", "", 1, True, "gaming_set"),
+            ("Playing Cards (Gaming Set)", 100, "🎴", "trivial", "", 1, True, "gaming_set"),
+            ("Dragonchess (Gaming Set)", 100, "♟️", "trivial", "", 1, True, "gaming_set"),
         ],
     },
     "Wayfarer": {
