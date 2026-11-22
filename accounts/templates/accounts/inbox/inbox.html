@@ -42,12 +42,12 @@
     <td>{{ m.sender.user.display_name }}
       <div class="wm-muted-line d-none d-sm-block">{% member_email m.sender.user %}</div>
       <div class="d-sm-none">
-        {% if m.character %}{{ m.character.name|default:"-" }}{% endif %}
+        {% if m.character %}{% include "components/request_character_chip.html" with character=m.character %}{% else %}-{% endif %}
         {% include "accounts/inbox/_message_body.html" with message=m %}
         {% include "components/status_badge.html" with value=m.status text=m.get_status_display %}
       </div>
     </td>
-    <td class="d-none d-sm-table-cell">{{ m.character.name|default:"-" }}</td>
+    <td class="d-none d-sm-table-cell">{% if m.character %}{% include "components/request_character_chip.html" with character=m.character %}{% else %}-{% endif %}</td>
     <td class="wm-msg-col d-none d-sm-table-cell">{% include "accounts/inbox/_message_body.html" with message=m %}</td>
     <td class="wm-date d-none d-sm-table-cell">{{ m.created|date:"DATETIME_FORMAT" }}</td>
     <td class="wm-col-optional">{% include "components/status_badge.html" with value=m.status text=m.get_status_display %}</td>

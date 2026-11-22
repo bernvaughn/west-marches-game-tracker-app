@@ -4,6 +4,7 @@ from django.utils import timezone
 from items.stacked import sale_price as stacked_sale_price
 from items.stacked import unit_label
 from ledger.services import LedgerError, Line, record
+from player_characters.life import require_can_sell
 from shops.models import ShopStock
 from shops.services import ShopClosed, ShopError, is_open, percent_price
 
@@ -33,6 +34,7 @@ def sale_total(shop, item, units):
 
 def sell(character, shop, item, quantity=1, actor=None, today=None):
     """Sell `quantity` of an item to a shop at its buy price. Never touches stock."""
+    require_can_sell(character)
     today = today or timezone.localdate()
     if quantity < 1:
         raise ShopError("Quantity must be at least 1.")
@@ -74,6 +76,7 @@ def sell_many(character, shop, lines, actor=None, today=None):
     """
     from player_characters.junk import reduce_junk
 
+    require_can_sell(character)
     if not lines:
         raise ShopError("Tick at least one item.")
     entries = []

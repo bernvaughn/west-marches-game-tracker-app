@@ -3,6 +3,9 @@
 {% block main_class %}wm-main--narrow{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Adjust "|add:character.name %}
+{% if character.is_archived %}
+{% include "components/alert.html" with level="warning" title="Archived character." text=character.name|add:" is archived. It cannot act or shop. Your adjustment still saves." %}
+{% endif %}
 {% include "ledger/_recent_changes.html" %}
 <form method="post" class="wm-form">
   {% csrf_token %}

@@ -3,6 +3,8 @@ from django.utils import timezone
 
 from items.unit_notes import with_unit_summary
 from ledger.services import Line, available_items, record_many
+from player_characters import life
+from player_characters.models import Character
 
 from .models import QuestCompletion
 
@@ -20,6 +22,10 @@ class QuestLimitReached(QuestError):
 
 
 class QuestNotAllowed(QuestError):
+    pass
+
+
+class CharacterBlocked(QuestError):
     pass
 
 
@@ -50,6 +56,11 @@ def missing_items(quest, character):
 def turn_in(quest, character, actor, today=None):
     today = today or timezone.localdate()
     with transaction.atomic():
+        locked = Character.objects.select_for_update().get(pk=character.pk)
+        try:
+            life.require_can_buy(locked)
+        except life.LifeError as exc:
+            raise CharacterBlocked(str(exc)) from exc
         if quest.club_id != character.club_id:
             raise QuestNotAllowed("This character belongs to a different club.")
         reqs = list(quest.requirements.select_related("item"))

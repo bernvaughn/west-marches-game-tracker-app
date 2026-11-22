@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+
+{% block content %}
+{% include "components/page_header.html" with title=title back_url=back_url back_label="Back" %}
+<p class="text-muted small mb-3">Times are in {{ club.timezone }}.</p>
+{% include "components/form_layout.html" with form=form submit_label="Save" cancel_url=back_url %}
+{% endblock %}

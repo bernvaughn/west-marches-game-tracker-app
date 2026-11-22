@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Club settings{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% url 'club_home' club.slug as club_url %}
+{% include "components/page_header.html" with title="Club settings" subtitle="Set the club time zone." %}
+<div class="wm-narrow-block">
+{% include "components/card_open.html" %}
+{% include "components/alert.html" with level="warning" title="Changing the time zone shifts sessions on the clock" text="Changing the time zone keeps the moment of every session. Sessions can shift on the clock, for example 19:00 can become 16:00. Dates elsewhere in the app do not change." %}
+{% include "components/form_layout.html" with form=form submit_label="Save time zone" cancel_url=club_url %}
+{% include "components/card_close.html" %}
+</div>
+{% endblock %}

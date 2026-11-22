@@ -9,10 +9,12 @@ from django.views.decorators.http import require_POST
 from accounts.htmx import hx_response, is_htmx
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
+from player_characters import life
 from player_characters.models import Character
 from starting_equipment.models import StartingEquipmentTemplate
 from starting_equipment.services import (
     AlreadyClaimed,
+    CharacterCannotClaim,
     get_choice_groups,
 )
 from starting_equipment.services import (
@@ -72,6 +74,13 @@ def claim_starting_equipment(request, club_slug, character_pk):
     # Get active template for club (may be None)
     template = StartingEquipmentTemplate.objects.filter(club=request.club, is_active=True).first()
 
+    # A dead or archived character cannot claim starting equipment.
+    if not life.can_act(character):
+        flash.error(request, life.act_block_reason(character))
+        if is_htmx(request):
+            return hx_response(refresh=True)
+        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
+
     # Choice groups must be picked before anything is granted.
     groups = get_choice_groups(character, template)
     if groups:
@@ -86,6 +95,11 @@ def claim_starting_equipment(request, club_slug, character_pk):
     # No choice groups: grant via the locked service (one entry, no double grant).
     try:
         result = claim_starting_equipment_service(character, template, request.user)
+    except CharacterCannotClaim as exc:
+        flash.error(request, str(exc))
+        if is_htmx(request):
+            return hx_response(refresh=True)
+        return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
     except AlreadyClaimed:
         flash.error(request, "Starting equipment has already been claimed for this character.")
         if is_htmx(request):

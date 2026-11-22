@@ -7,6 +7,7 @@ from django.db import transaction
 from items import stacked
 from items.stacked import unit_label
 from ledger.services import Line, held_items, item_quantities, record_many
+from player_characters.life import require_can_buy, require_can_sell
 
 from . import junk
 from .models import Character
@@ -62,6 +63,8 @@ def buy_from(buyer, seller, item, quantity, actor=None):
         raise PlayerShopError("Enter a quantity of 1 or more.")
     with transaction.atomic():
         seller = Character.objects.select_related("owner").get(pk=seller.pk)
+        require_can_buy(buyer)
+        require_can_sell(seller)
         if buyer.club_id != seller.club_id or item.club_id != seller.club_id:
             raise PlayerShopError("This shop is not in your club.")
         if buyer.owner_id == seller.owner_id:

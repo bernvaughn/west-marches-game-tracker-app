@@ -9,6 +9,7 @@
 {% if existing_user %}
 {% include "components/alert.html" with level="info" title="This email already has an account." text="They will become an admin of the new club. Their password will not change and no new password is shown. Press Create club again to go ahead, or change the email first." %}
 {% endif %}
+<p class="form-text">The time zone can be changed later in Club settings.</p>
 {% include "components/form_layout.html" with form=form submit_label="Create club" cancel_url=clubs_url %}
 {% include "components/card_close.html" %}
 </div>

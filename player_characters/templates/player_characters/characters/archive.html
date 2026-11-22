@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == "archive" %}Archive {{ character.name }}{% else %}Unarchive {{ character.name }}{% endif %}{% endblock %}
+{% block content %}
+{% url "characters:detail" request.club.slug character.pk as back_url %}{% include "components/page_header.html" with title="Archive " title_tail=character.name back_url=back_url back_label="Back to "|add:character.name %}
+{% include "components/card_open.html" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  {% include "player_characters/characters/_archive_body.html" %}
+  <div class="wm-form-actions">
+    {% if mode == "archive" %}<button class="btn btn-danger" type="submit">Archive{% else %}<button class="btn btn-primary" type="submit">Unarchive{% endif %}</button>
+    <a class="btn btn-outline-secondary" href="{{ back_url }}">Cancel</a>
+  </div>
+</form>
+{% include "components/card_close.html" %}
+{% endblock %}

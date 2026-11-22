@@ -1,0 +1,27 @@
+{% if form.non_field_errors %}
+<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">
+  <div>{{ form.non_field_errors|join:" " }}</div>
+</div>
+{% endif %}
+
+{% if mode == "archive" %}
+<ul class="wm-consequence-list">
+  <li>Hidden from character lists and pickers</li>
+  <li>Stall is closed</li>
+  <li>Cannot buy, sell, or act</li>
+  <li>Nothing is deleted — items, coins, ledger, and map credit stay</li>
+  <li>Can be undone</li>
+</ul>
+{% else %}
+<ul class="wm-consequence-list">
+  <li>Comes back to character lists and pickers</li>
+  <li>Stall stays closed</li>
+  <li>Dead stays dead</li>
+</ul>
+{% endif %}
+
+<p>
+  <label class="form-label" for="{{ form.note.id_for_label }}">Note (optional)</label>
+  {{ form.note }}
+  {% if form.note.errors %}<span class="error text-danger d-block" role="alert">{{ form.note.errors|join:" " }}</span>{% endif %}
+</p>
