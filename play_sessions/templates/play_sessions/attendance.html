@@ -22,17 +22,31 @@
       <tbody>
         {% for row in rows %}
           <tr>
-            <td>
-              <input
-                type="checkbox"
-                name="characters"
-                value="{{ row.character.pk }}"
-                {% if row.checked %}checked{% endif %}
-                class="form-check-input wm-attendance-checkbox"
-              />
+            <td class="p-0">
+              <label class="d-flex align-items-center justify-content-center m-0" style="min-width: 44px; min-height: 44px; cursor: pointer;">
+                <input
+                  type="checkbox"
+                  name="characters"
+                  value="{{ row.character.pk }}"
+                  {% if row.checked %}checked{% endif %}
+                  class="form-check-input wm-attendance-checkbox"
+                  aria-label="{{ row.character.name }} played"
+                />
+              </label>
             </td>
             <td>
               <strong>{{ row.character.name }}</strong>
+              <div class="d-md-none small text-muted">
+                {% if row.level %}Level {{ row.level }}{% endif %}{% if row.level and row.char_class %} · {% endif %}{{ row.char_class }}
+                <br />Player: {{ row.player_name }}
+              </div>
+              <div class="d-md-none mt-1">
+                {% if row.answer %}
+                  {% include "components/badge.html" with status=row.answer_status text=row.answer_label %}
+                {% else %}
+                  <span class="small text-muted">No answer</span>
+                {% endif %}
+              </div>
             </td>
             <td class="d-none d-md-table-cell">
               {% if row.level %}{{ row.level }}{% endif %}
@@ -43,7 +57,7 @@
             <td class="d-none d-md-table-cell">{{ row.player_name }}</td>
             <td class="d-none d-md-table-cell">
               {% if row.answer %}
-                {% include "components/badge.html" with status=row.answer|yesno:"success,warning,danger" text=row.answer|title %}
+                {% include "components/badge.html" with status=row.answer_status text=row.answer_label %}
               {% else %}
                 <span class="text-muted">—</span>
               {% endif %}
@@ -62,7 +76,7 @@
   <button type="submit" class="btn btn-primary">Save attendance</button>
 </form>
 
-{% if changes %}
+{% if history %}
   <h3 class="h5 mt-4">History</h3>
   <div class="table-responsive">
     <table class="table table-sm table-hover">
@@ -75,7 +89,7 @@
         </tr>
       </thead>
       <tbody>
-        {% for change in changes %}
+        {% for item in history %}{% with change=item.change %}
           <tr>
             <td>{{ change.character.name }}</td>
             <td>
@@ -90,9 +104,9 @@
               {% endif %}
             </td>
             <td>{{ change.changed_by.display_name|default:change.changed_by.email }}</td>
-            <td>{% localtime on %}{{ change.changed_at|date:"M j, Y H:i" }} {% endlocaltime %}</td>
+            <td>{% localtime off %}{{ item.when|date:"M j, Y H:i" }}{% endlocaltime %}</td>
           </tr>
-        {% endfor %}
+        {% endwith %}{% endfor %}
       </tbody>
     </table>
   </div>

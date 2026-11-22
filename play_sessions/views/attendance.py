@@ -9,8 +9,8 @@ from accounts.scoping import club_get_object_or_404
 
 from .. import core
 from ..attendance_forms import AttendanceForm, RsvpForClubForm
-from ..models import AttendanceChange, PlaySession
-from ..services_attendance import attendance_rows, save_attendance
+from ..models import PlaySession
+from ..services_attendance import attendance_history, attendance_rows, save_attendance
 
 
 @admin_or_gm_required
@@ -36,19 +36,12 @@ def attendance(request, club_slug, pk):
             club, initial={"characters": [r["character"] for r in rows if r["checked"]]}
         )
 
-    # Get recent attendance changes (last 20)
-    changes = (
-        AttendanceChange.objects.filter(session=session)
-        .select_related("character", "changed_by")
-        .order_by("-changed_at")[:20]
-    )
-
     context = {
         "session": session,
         "club": club,
         "rows": rows if request.method != "POST" else attendance_rows(session, club),
         "form": form,
-        "changes": changes,
+        "history": attendance_history(session, club),
     }
     return render(request, "play_sessions/attendance.html", context)
 

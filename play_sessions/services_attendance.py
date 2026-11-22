@@ -8,6 +8,28 @@ from player_characters.models import Character
 from . import core
 from .models import AttendanceChange, PlaySession, SessionAttendance, SessionRSVP
 
+ANSWER_STATUS = {
+    SessionRSVP.Answer.YES: "success",
+    SessionRSVP.Answer.MAYBE: "warning",
+    SessionRSVP.Answer.NO: "danger",
+}
+
+
+def attendance_history(session, club, limit=20):
+    """Return the latest AttendanceChange rows with times in the club zone."""
+    changes = (
+        AttendanceChange.objects.filter(session=session)
+        .select_related("character", "changed_by")
+        .order_by("-changed_at")[:limit]
+    )
+    return [
+        {
+            "change": change,
+            "when": core.to_club_local(club, change.changed_at),
+        }
+        for change in changes
+    ]
+
 
 def active_characters(club):
     """Return active characters for a club, ordered by name.
@@ -146,6 +168,8 @@ def attendance_rows(session, club):
                 "player_name": str(char.owner.user),
                 "checked": checked,
                 "answer": rsvp.answer if rsvp else None,
+                "answer_label": rsvp.get_answer_display() if rsvp else None,
+                "answer_status": ANSWER_STATUS.get(rsvp.answer, "neutral") if rsvp else "neutral",
             }
         )
     return rows
