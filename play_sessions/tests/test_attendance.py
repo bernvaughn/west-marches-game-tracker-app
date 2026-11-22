@@ -500,3 +500,46 @@ def test_no_gm_notes_in_section_html(client):
     response = client.get(url)
 
     assert b"Secret GM notes" not in response.content
+
+
+@pytest.mark.story("P6")
+def test_attendance_history_time_in_club_zone(client):
+    club, gm, player, session = _make_club_and_session()
+    club.timezone = "Asia/Tokyo"
+    club.save()
+    char = Character.objects.create(name="Char", club=club, owner=player)
+    fixed = timezone.datetime(2024, 6, 15, 20, 30, tzinfo=UTC)
+    with patch("django.utils.timezone.now", return_value=fixed):
+        AttendanceChange.objects.create(
+            session=session, character=char, old_played=False, new_played=True, changed_by=gm.user
+        )
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    html = client.get(url).content.decode()
+    # 20:30 UTC is 05:30 the next day in Tokyo.
+    assert "Jun 16, 2024 05:30" in html
+    assert "Jun 15, 2024 20:30" not in html
+
+
+@pytest.mark.story("P6")
+def test_attendance_badge_status_matches_answer(client):
+    club, gm, player, session = _make_club_and_session()
+    for name, answer in [
+        ("Yes Char", SessionRSVP.Answer.YES),
+        ("Maybe Char", SessionRSVP.Answer.MAYBE),
+        ("No Char", SessionRSVP.Answer.NO),
+    ]:
+        char = Character.objects.create(name=name, club=club, owner=player)
+        SessionRSVP.objects.create(
+            session=session, character=char, answer=answer, answered_by=gm.user
+        )
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    response = client.get(url)
+    rows = {r["character"].name: r for r in response.context["rows"]}
+    assert rows["Yes Char"]["answer_status"] == "success"
+    assert rows["Maybe Char"]["answer_status"] == "warning"
+    assert rows["No Char"]["answer_status"] == "danger"
+    html = response.content.decode()
+    assert "wm-badge--warning" in html
+    assert "wm-badge--danger" in html
