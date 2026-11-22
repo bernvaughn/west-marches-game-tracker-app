@@ -31,6 +31,7 @@ MODAL_SELECTORS = {
     "sell_junk_modal": 'a[data-app-modal][href*="/sell-junk/"]',
     "junk_modal": 'a[data-app-modal][href*="/junk/"]',
     "note_modal": 'a[data-app-modal][href*="/note/"]',
+    "archive_modal": 'a[data-app-modal][href*="/archive/"]',
     "consume_modal": 'a[data-app-modal][href*="/consume/"]',
     "stall_buy_modal": 'a[data-app-modal][href*="/stall/"]',
     "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
@@ -563,6 +564,13 @@ def _build_pages() -> list[Page]:
             _c("characters:detail", "aria.pk"),
             action="junk_modal",
             modal_url=_c("characters:junk", "aria.pk", "torch.pk"),
+        ),
+        P(
+            "characters-archive-modal",
+            "alice",
+            _c("characters:detail", "aria.pk"),
+            action="archive_modal",
+            modal_url=_c("characters:archive", "aria.pk"),
         ),
         P("characters-note", "alice", _c("characters:note", "aria.pk", "torch.pk")),
         P(
