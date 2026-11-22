@@ -313,7 +313,7 @@ EXCLUDED = {
     "characters:death": "C1 stub view returning 404.",
     "characters:death_undo": "C1 stub view returning 404.",
     "characters:fallen": "C1 stub view returning 404.",
-# archive and unarchive are implemented (U144), archived is implemented (U145)
+    # archive and unarchive are implemented (U144), archived is implemented (U145)
     "play_sessions:report_csv": "CSV export; no HTML page to screenshot.",
     # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
     # and the public token feed (needs a real token; not a demo page).
