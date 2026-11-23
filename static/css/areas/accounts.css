@@ -352,6 +352,16 @@
 /* Request queues on phones: shared block for inbox, downtime and map queues.
    Kept separate and appended so a rebase is trivial when other children edit this file. */
 
+/* Club settings cards: visual hierarchy across the time zone, contact email and test email cards.
+   Primary card = page purpose (time zone). Secondary/utility cards = subtler. */
+.wm-settings-card--primary > .wm-card {
+  border: 2px solid var(--wm-accent);
+}
+.wm-settings-card--secondary > .wm-card,
+.wm-settings-card--utility > .wm-card {
+  box-shadow: none;
+}
+
 /* Phone-only summary cell: text wraps, no clipping, small gap between children. */
 .wm-req-summary { white-space: normal; overflow-wrap: anywhere; min-width: 0; }
 .wm-req-summary > * + * { margin-top: var(--wm-space-1); }

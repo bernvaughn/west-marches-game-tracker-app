@@ -36,6 +36,18 @@ def test_club_admin_get_settings(club_admin, login, club):
     assert "UTC" in body
 
 
+def test_settings_page_renders_card_hierarchy_markers(club_admin, login, club):
+    """Settings page renders each card role class exactly once."""
+    c = _login(login(club_admin), club_admin)
+    url = reverse(CLUB_SETTINGS, args=[club.slug])
+    r = c.get(url)
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert body.count("wm-settings-card--primary") == 1
+    assert body.count("wm-settings-card--secondary") == 1
+    assert body.count("wm-settings-card--utility") == 1
+
+
 def test_superuser_get_settings(site_admin, login, club):
     """Superuser can open settings."""
     c = _login(login(site_admin), site_admin)
