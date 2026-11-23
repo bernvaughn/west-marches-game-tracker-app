@@ -351,6 +351,9 @@ EXCLUDED = {
     "mail_public:welcome_set_password": "Needs a one-time token; not a demo page.",
     # Mail preferences (E8)
     "mail_public:unsubscribe": "Needs a one-time token; not a demo page.",
+    # Mail forgot password (E4)
+    "mail_public:forgot_password": "Public page; no auth needed. Screenshots captured separately.",
+    "mail_public:reset_password": "Needs a one-time token; not a demo page.",
 }
 
 
