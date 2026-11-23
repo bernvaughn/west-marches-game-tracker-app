@@ -1,0 +1,21 @@
+{% autoescape off %}
+{% block content %}
+This is a confirmation that the email address for your account has been changed.
+
+Old email: {{ old_email }}
+New email: {{ new_email }}
+
+You can now sign in using your new email address.
+
+If you did not make this change, please contact the club administrators immediately.
+{% endblock %}
+
+{% if extra_text %}
+{{ extra_text }}
+{% endif %}
+
+---
+{% for line in footer_lines %}
+{{ line }}
+{% endfor %}
+{% endautoescape %}
