@@ -1,0 +1,10 @@
+This is a test email from {{ club_name }}.
+
+Sent by: {{ sender_name }} ({{ sender_email }})
+
+This is a test. No action is required.
+
+---
+{% for line in footer_lines %}
+{{ line }}
+{% endfor %}

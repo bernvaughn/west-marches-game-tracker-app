@@ -2,6 +2,8 @@ from django.db import transaction
 from django.db.models import Count
 from django.shortcuts import render
 
+from mail.models import ClubMailSettings
+
 from ..club_seeding import seed_new_club
 from ..forms.clubs import ClubCreateForm
 from ..models import Club, User
@@ -36,6 +38,8 @@ def club_new(request):
                 name=data["name"], slug=data["slug"], timezone=data["timezone"]
             )
             seed_new_club(club)
+            contact_email = data.get("contact_email", "").strip().lower()
+            ClubMailSettings.objects.create(club=club, contact_email=contact_email)
             membership, temp = get_or_create_member(
                 club,
                 data["admin_email"],

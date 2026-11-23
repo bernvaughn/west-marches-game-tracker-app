@@ -11,6 +11,7 @@ class ClubCreateForm(forms.Form):
     admin_email = forms.EmailField()
     admin_display_name = forms.CharField(required=False, max_length=150)
     timezone = TimezoneChoiceField(initial=default_timezone)
+    contact_email = forms.EmailField(required=False, label="Contact email")
     # Set when the site admin has seen the "already has an account" notice.
     confirm_existing = forms.BooleanField(required=False, widget=forms.HiddenInput)
 

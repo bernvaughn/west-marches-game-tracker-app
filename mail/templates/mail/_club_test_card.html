@@ -1,0 +1,66 @@
+{% comment %}Test email card for club settings. Shown to club admins only.{% endcomment %}
+{% url 'mail:test_email' club.slug as test_url %}
+{% include "components/card_open.html" with title="Send a test email" subtitle="Send a test email to yourself or another admin of this club." %}
+{% if not email_on %}
+  {% include "components/alert.html" with level="warning" title="Email is disabled" text=disabled_reason %}
+{% endif %}
+<form method="post" action="{{ test_url }}" class="wm-form" hx-post="{{ test_url }}" hx-target="closest .wm-card" hx-swap="outerHTML">
+  {% csrf_token %}
+  <div class="mb-3">
+    <label for="id_recipient" class="form-label">Recipient</label>
+    <select name="recipient" id="id_recipient" class="form-select" {% if not email_on %}disabled{% endif %}>
+      <option value="">-- Select an admin --</option>
+      {% for admin in admins %}
+        <option value="{{ admin.id }}" {% if admin.user == request.user %}selected{% endif %}>
+          {{ admin.user.get_full_name|default:admin.user.email }} ({{ admin.user.email }})
+        </option>
+      {% endfor %}
+    </select>
+    {% if error %}
+    <div class="text-danger mt-1">{{ error }}</div>
+    {% endif %}
+    <div class="form-text">Only club admins can receive test emails.</div>
+  </div>
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-primary" {% if not email_on %}disabled{% endif %}>Send test email</button>
+  </div>
+</form>
+
+{% if recent_tests %}
+<div class="mt-4">
+  <h3 class="wm-card-subtitle">Recent test emails</h3>
+  <div class="table-responsive">
+    <table class="table table-sm wm-table">
+      <thead>
+        <tr>
+          <th>Sent</th>
+          <th>Recipient</th>
+          <th>Status</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for msg in recent_tests %}
+        <tr>
+          <td>{{ msg.created|date:"Y-m-d H:i" }}</td>
+          <td>{{ msg.to_address }}</td>
+          <td>
+            <span class="badge
+              {% if msg.status == 'sent' %}bg-success
+              {% elif msg.status == 'queued' %}bg-info
+              {% elif msg.status == 'sending' %}bg-warning
+              {% else %}bg-danger{% endif %}">
+              {{ msg.get_status_display }}
+            </span>
+          </td>
+          <td>{% if msg.last_error %}{{ msg.last_error }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <p class="text-muted mt-3">No test emails sent yet.</p>
+{% endif %}
+
+{% include "components/card_close.html" %}

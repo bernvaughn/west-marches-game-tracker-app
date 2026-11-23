@@ -68,14 +68,21 @@ class TestUrlDiscovery:
 
         assert club is club_list is urls.club_urls[0]
         assert public is public_list is urls.public_urls[0]
-        # Probe URLs should be present (other urls_* modules may also be discovered)
-        assert "zz_club" in [p.name for p in club]
-        assert "zz_public" in [p.name for p in public]
+        # Probe module's patterns should be present
+        club_names = [p.name for p in club]
+        public_names = [p.name for p in public]
+        assert "zz_club" in club_names
+        assert "zz_public" in public_names
+        # Also check our real patterns are there
+        assert "contact_email" in club_names
+        assert "test_email" in club_names
 
         # Running it again does not duplicate patterns.
+        original_club_count = len(club_list)
+        original_public_count = len(public_list)
         urls.discover()
-        assert "zz_club" in [p.name for p in club]
-        assert "zz_public" in [p.name for p in public]
+        assert len(club_list) == original_club_count
+        assert len(public_list) == original_public_count
 
     def test_discover_raises_on_import_error(self, tmp_path):
         """Discovery raises on import error in urls_* module."""

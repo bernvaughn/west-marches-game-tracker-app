@@ -1,0 +1,18 @@
+{% comment %}Test email result fragment.{% endcomment %}
+{% if message %}
+  <div class="alert alert-{{ message.status|status_to_alert_class }} wm-alert">
+    {% if message.status == 'sent' %}
+      {% include "components/icon.html" with name="check-circle-fill" %}
+      Test email sent successfully to {{ message.to_address }}.
+    {% elif message.status == 'queued' %}
+      {% include "components/icon.html" with name="clock-fill" %}
+      Test email queued for delivery to {{ message.to_address }}.
+    {% elif message.status == 'sending' %}
+      {% include "components/icon.html" with name="arrow-repeat" %}
+      Test email is being sent to {{ message.to_address }}.
+    {% else %}
+      {% include "components/icon.html" with name="x-octagon-fill" %}
+      Test email failed: {{ message.last_error|default:"Unknown error" }}
+    {% endif %}
+  </div>
+{% endif %}
