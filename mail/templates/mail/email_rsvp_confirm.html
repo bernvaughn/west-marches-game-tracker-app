@@ -1,0 +1,100 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+<div class="content">
+  {% if error == "invalid_or_expired" %}
+    <h1>Invalid or Expired Link</h1>
+    <p>This RSVP link is invalid or has expired.</p>
+    <p>RSVP links expire when the session starts.</p>
+
+  {% elif error == "not_for_you" %}
+    <h1>This Link Is Not For You</h1>
+    <p>You are signed in as a different person than the one this link was sent to.</p>
+    <p>Please sign out and use the link from your own email, or contact your club admin.</p>
+
+  {% elif error == "wrong_character" %}
+    <h1>Invalid Character</h1>
+    <p>This RSVP link is for a character you don't own.</p>
+
+  {% elif error == "character_inactive" %}
+    <h1>Character Not Active</h1>
+    <p>This character is no longer active and cannot RSVP.</p>
+
+  {% elif error == "session_cancelled" %}
+    <h1>Session Cancelled</h1>
+    <p>This session has been cancelled.</p>
+
+  {% elif error == "session_started" %}
+    <h1>Session Already Started</h1>
+    <p>This session has already started. RSVPs are closed.</p>
+
+  {% elif error == "invalid_token_data" %}
+    <h1>Invalid Link</h1>
+    <p>This RSVP link contains invalid data.</p>
+
+  {% elif confirmed %}
+    <h1>RSVP Confirmed!</h1>
+    <p>Your RSVP for <strong>{{ character.name }}</strong> has been recorded.</p>
+
+    <div style="background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0;"><strong>Session:</strong> {{ session.title }}</p>
+      <p style="margin: 8px 0 0;"><strong>Date:</strong> {{ session.starts_at|date:"l, F j, Y" }} at {{ session.starts_at|time:"g:i A" }} ({{ club.timezone }})</p>
+      <p style="margin: 8px 0 0;"><strong>Character:</strong> {{ character.name }}</p>
+      <p style="margin: 8px 0 0;"><strong>Your Answer:</strong>
+        {% if current_rsvp.answer == "yes" %}
+          <span style="color: #28a745; font-weight: 600;">Yes</span>
+        {% elif current_rsvp.answer == "maybe" %}
+          <span style="color: #ffc107; font-weight: 600;">Maybe</span>
+        {% else %}
+          <span style="color: #cb2431; font-weight: 600;">No</span>
+        {% endif %}
+      </p>
+      <p style="margin: 8px 0 0;"><strong>Confirmed:</strong> {{ current_rsvp.answered_at|date:"M j, Y" }} at {{ current_rsvp.answered_at|time:"g:i A" }}</p>
+    </div>
+
+  {% else %}
+    <h1>Confirm Your RSVP</h1>
+    <p>Please confirm your RSVP for <strong>{{ character.name }}</strong>.</p>
+
+    <div style="background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0;"><strong>Session:</strong> {{ session.title }}</p>
+      <p style="margin: 8px 0 0;"><strong>Date:</strong> {{ session.starts_at|date:"l, F j, Y" }} at {{ session.starts_at|time:"g:i A" }} ({{ club.timezone }})</p>
+      <p style="margin: 8px 0 0;"><strong>Character:</strong> {{ character.name }}</p>
+      <p style="margin: 8px 0 0;"><strong>Your Selected Answer:</strong>
+        {% if selected_answer == "yes" %}
+          <span style="color: #28a745; font-weight: 600;">Yes</span>
+        {% elif selected_answer == "maybe" %}
+          <span style="color: #ffc107; font-weight: 600;">Maybe</span>
+        {% else %}
+          <span style="color: #cb2431; font-weight: 600;">No</span>
+        {% endif %}
+      </p>
+      {% if current_rsvp %}
+        <p style="margin: 8px 0 0;"><strong>Current RSVP:</strong>
+          {% if current_rsvp.answer == "yes" %}
+            <span style="color: #28a745; font-weight: 600;">Yes</span>
+          {% elif current_rsvp.answer == "maybe" %}
+            <span style="color: #ffc107; font-weight: 600;">Maybe</span>
+          {% else %}
+            <span style="color: #cb2431; font-weight: 600;">No</span>
+          {% endif %}
+          (answered {{ current_rsvp.answered_at|date:"M j, Y" }} at {{ current_rsvp.answered_at|time:"g:i A" }})
+        </p>
+      {% else %}
+        <p style="margin: 8px 0 0; color: #586069;">No previous RSVP for this session.</p>
+      {% endif %}
+    </div>
+
+    {% if show_form %}
+      <form method="post" style="margin-top: 24px;">
+        {% csrf_token %}
+        <input type="hidden" name="confirm" value="1">
+        <button type="submit" class="button" style="padding: 12px 24px; font-size: 16px;">
+          Confirm
+        </button>
+      </form>
+    {% endif %}
+
+  {% endif %}
+</div>
+{% endblock %}

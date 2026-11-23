@@ -503,17 +503,11 @@ def test_url_fallen_reverses(club):
     assert url == f"/c/{club.slug}/characters/fallen/"
 
 
-def test_stub_views_return_404(login, player, character):
-    """Remaining stub views return 404 for logged-in member.
-    Death, undo, archive, unarchive, archived are implemented (C2, U144, U145).
-    Only fallen remains a stub (C15)."""
+def test_fallen_is_no_longer_a_stub(login, player, character):
+    """The fallen view is implemented (C15); it no longer returns 404."""
     client = login(player)
-    urls = [
-        reverse("characters:fallen", args=[character.club.slug]),
-    ]
-    for url in urls:
-        assert client.get(url).status_code == 404
-        assert client.post(url).status_code == 404
+    url = reverse("characters:fallen", args=[character.club.slug])
+    assert client.get(url).status_code == 200
 
 
 # --- Pages still render ---

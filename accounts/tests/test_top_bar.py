@@ -18,6 +18,7 @@ SHORTCUTS = {
     "Sessions": ("play_sessions:calendar", "club"),
     "Shops": ("shops:index", "town"),
     "Downtime": ("downtime:play", "town"),
+    "The Fallen": ("characters:fallen", "club"),
 }
 
 

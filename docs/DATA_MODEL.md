@@ -75,7 +75,7 @@ The site admin "new club" form creates a club and seeds it in one transaction.
 | XP table | Default bands from `map/xp.py` (`copy_default_xp_table`). |
 | Character options | Default species (11), classes (12), backgrounds (16) from `character_options/defaults.py`, seeded by `seed_default_options` in `character_options/services.py`. |
 | Club admin | First admin from the form. The app sets a temporary password and `must_change_password`. |
-| Items | Default item catalogue (about 175 items) from the starting-equipment data and the General Store gear list. Includes 8 stacked gear items (ammunition and small consumables sold in unit bundles). |
+| Items | Default item catalogue (167 items) from the starting-equipment data and the General Store gear list. Includes 8 stacked gear items (ammunition and small consumables sold in unit bundles). |
 | Starting equipment | Active template named "2024 D&D Default". Holds class entries, background entries, and level coins. Each "X or Y" option of the 2024 PHB is a choice group (see below). |
 | Starting packs | The seven standard packs (Explorer's, Priest's, Dungeoneer's, Burglar's, Scholar's, Diplomat's, Entertainer's) are containers with their PHB contents as fixed slots. A character can open them. |
 | Shops | General Store run by Mabel Packwell (halfling grocer), sells at 100%/buys at 75%, stocks all Adventuring Gear plus ammunition, unlimited quantity, in "Always open" rotation at street position 0. Stacked ammunition is stocked as bundle lines whose bundle size matches the item's unit size. |
@@ -89,6 +89,7 @@ Characters, quests, hex maps and locations, downtime actions, ledger entries, me
 - Seeding runs in the club-creation transaction. A failure rolls back the whole club.
 - Every seeder is idempotent. It never overwrites edited rows.
 - Existing clubs are not backfilled. They can run `uv run python manage.py seed_starting_equipment --club <slug>` to get the current catalogue and template, then `uv run python manage.py convert_seeded_bundles --club <slug> --apply` to convert seeded bundle items to stacked items (dry run without `--apply`).
+- The sibling `uv run python manage.py rename_seeded_items --club <slug>` command brings an existing club's item names up to the current seed (dry run by default; add `--apply`). It ships in a sibling story; see docs/DEPLOY.md.
 - A plain run leaves an existing template unchanged. It still adds missing catalogue items and configures packs that have no slots.
 - `--force` upgrades an existing template. It resets entry coins and makes each entry's lines match the default data in order. It deletes stale lines, for example an old fixed line that is now a choice default. A forced run on a template that already matches writes no lines.
 - `seed_pack_containers --club <slug>` configures the packs only. It skips a pack that already has slots.
@@ -117,7 +118,7 @@ A player's email is shown only to club admins (U17). Email is optional and never
 
 ### items
 
-- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (about 175 items). **`is_container`** (bool, default false) marks an item as openable.
+- **Item**: belongs to a club. Name, description, traits and other details, a value in copper (I1), and an optional emoji symbol shown before the name (U44). Items already held or in the ledger are retired rather than deleted. A "unique" item is just an item a shop stocks one of or a game master gives out once; nothing is tracked individually. New clubs start with the default catalogue (167 items). **`is_container`** (bool, default false) marks an item as openable.
 - **Stacked item fields**: **`is_stacked`** (bool, default false) marks an item that is sold in bundles but used one unit at a time; an item is a container or stacked, never both. **`unit_name`** (char, 40, blank) names the unit, such as `sheet`, `ft`, or `arrow`; unit names are never pluralised. **`value_units`** (positive int, default 1) is the number of units that `value_cp` covers (1 for normal items). CHECK rules: a stacked item cannot be a container; `value_units` is at least 1; a stacked item must have a non-blank `unit_name`.
 - **Container slot**: belongs to a container item. `chance_pct` (1–100), `unknown` (bool, masks the slot as `???` before opening), `position` (order). At least one slot is required.
 - **Container slot option**: one row per possible outcome in a slot. `item` (FK Item, PROTECT), `qty_min`, `qty_max` (range, min≤max), `weight` (≥1). One option = fixed entry; several = weighted "pick one" table. Roll order: chance check, then weighted pick, then uniform quantity in [min, max].

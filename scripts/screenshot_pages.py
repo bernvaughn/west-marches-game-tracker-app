@@ -312,9 +312,9 @@ EXCLUDED = {
     # C1 death and archive stub views
     "characters:death": "C1 stub view returning 404.",
     "characters:death_undo": "C1 stub view returning 404.",
-    "characters:fallen": "C1 stub view returning 404.",
     # archive and unarchive are implemented (U144), archived is implemented (U145)
     "play_sessions:report_csv": "CSV export; no HTML page to screenshot.",
+    "mail_public:email_rsvp": "Requires a valid RSVP token; not a demo page.",
     # P3 calendar URLs: club-scoped calendar page, admin-only feed reset (POST),
     # and the public token feed (needs a real token; not a demo page).
     "play_sessions:calendar": "Club-scoped calendar page; covered by play_sessions tests.",
@@ -414,6 +414,8 @@ def _build_pages() -> list[Page]:
         P("characters-index-gm", "gm", _c("characters:index")),
         P("characters-archived-alice", "alice", _c("characters:archived")),
         P("characters-archived-gm", "gm", _c("characters:archived")),
+        P("characters-fallen-alice", "alice", _c("characters:fallen")),
+        P("characters-fallen-gm", "gm", _c("characters:fallen")),
         P("characters-create", "alice", _c("characters:create")),
         P("characters-slips-gm", "gm", _c("characters:slips")),
         P("characters-slips-alice", "alice", _c("characters:slips")),
@@ -741,6 +743,7 @@ def _build_pages() -> list[Page]:
         # Quest turn-in is NOT a modal: it is an inline card with a POST form on the quest
         # detail page, so `quests-detail` already captures it.
     ]
+
     # Role variants. A page that a role cannot reach (403) is left out.
     for role, suffix in (("gm_only", "gm-only"), ("club_admin", "club-admin")):
         pages += [

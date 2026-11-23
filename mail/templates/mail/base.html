@@ -28,7 +28,7 @@
         {% endif %}
       </div>
       <div class="content">
-        {{ content|safe }}
+        {% block content %}{{ content|safe }}{% endblock %}
       </div>
       {% if extra_html %}
       <div class="extra">
