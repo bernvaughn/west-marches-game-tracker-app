@@ -1,0 +1,21 @@
+{% extends "mail/base.html" %}
+{% load i18n %}
+
+{% block content %}
+<p>This is a confirmation that the email address for your account has been changed.</p>
+
+<table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+  <tr>
+    <td style="padding: 8px 0; font-weight: 600; width: 120px;">Old email:</td>
+    <td style="padding: 8px 0; font-family: monospace;">{{ old_email }}</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 0; font-weight: 600;">New email:</td>
+    <td style="padding: 8px 0; font-family: monospace;">{{ new_email }}</td>
+  </tr>
+</table>
+
+<p>You can now sign in using your new email address.</p>
+
+<p style="color: #cb2431; font-weight: 500;">If you did not make this change, please contact the club administrators immediately.</p>
+{% endblock %}

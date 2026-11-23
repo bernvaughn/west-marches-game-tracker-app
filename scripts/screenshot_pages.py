@@ -343,6 +343,8 @@ EXCLUDED = {
     # Mail contact/test email (E10, E11)
     "mail:contact_email": "HTMX partial for contact email card on club settings page.",
     "mail:test_email": "HTMX partial for test email card on club settings page.",
+    # Mail change email (E9)
+    "mail_public:confirm_email": "Requires a valid email change token; not a demo page.",
     # Mail welcome URLs (E3)
     "mail:welcome_resend": "POST only; resend welcome email from People page.",
     "mail:welcome_show_link": "POST only; shows fresh welcome link once (never cached).",
@@ -794,6 +796,7 @@ def _build_pages() -> list[Page]:
         P("shops-street-editor", "club_admin", _c("shops:street_editor")),
         P("quests-manage-club-admin", "club_admin", _c("quests:manage")),
         P("downtime-agenda-club-admin", "club_admin", _c("downtime:agenda")),
+        P("mail-change-email", "alice", _c("mail:change_email")),
     ]
     names = [p.name for p in pages]
     assert len(names) == len(set(names)), "duplicate page names"

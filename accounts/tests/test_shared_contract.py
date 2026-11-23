@@ -70,8 +70,8 @@ def _req(rf, user, club):
 
 @pytest.mark.story("U29")
 def test_real_registry_has_all_groups():
-    # "account" is filled by the Menu template (Log out); "primary" by icon shortcuts (U60).
-    assert {e.group for e in navigation._entries} == set(navigation.GROUPS) - {"account", "primary"}
+    # "account" now has entries from hooks (E9: change email); "primary" by icon shortcuts (U60).
+    assert {e.group for e in navigation._entries} == set(navigation.GROUPS) - {"primary"}
 
 
 @pytest.mark.story("U29")
