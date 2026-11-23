@@ -10,6 +10,7 @@ dependencies = [
     "django-oauth-toolkit>=3.4,<4",
     "django-csp>=4.0,<5",
     "gunicorn>=23",
+    "httpx>=0.27,<1",
 ]
 
 [dependency-groups]

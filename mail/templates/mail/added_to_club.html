@@ -1,0 +1,15 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+<p>You've been added to <strong>{{ club.name }}</strong>!</p>
+
+<p>You're now a member of <strong>{{ club.name }}</strong> on Downtime Market.</p>
+
+<p>You can sign in using your existing Downtime Market account at:</p>
+
+<p style="text-align: center; margin: 32px 0;">
+  <a href="{{ site_url }}" class="button">Go to Downtime Market</a>
+</p>
+
+<p>If you didn't expect this, you can safely ignore this email.</p>
+{% endblock %}

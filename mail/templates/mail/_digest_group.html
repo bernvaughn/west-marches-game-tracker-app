@@ -1,0 +1,12 @@
+<div style="margin-bottom: 24px;">
+  <h4 style="margin: 0 0 12px; color: {{ group_color }};">{{ group_label }} ({{ characters|length }})</h4>
+  {% if characters %}
+    <ul style="margin: 0; padding-left: 20px;">
+      {% for item in characters %}
+        <li style="margin-bottom: 8px;">{{ item.0.name }} — {{ item.1 }}</li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p style="margin: 0; color: #586069; font-style: italic;">(none)</p>
+  {% endif %}
+</div>

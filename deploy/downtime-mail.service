@@ -1,0 +1,16 @@
+[Unit]
+Description=Downtime Market mail jobs
+After=network.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/opt/downtime
+EnvironmentFile=/etc/downtime.env
+ExecStart=/opt/downtime/.venv/bin/uv run python manage.py run_mail_jobs
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -131,13 +131,16 @@ def test_env_example():
             key, value = line.split("=", 1)
             vars_found[key.strip()] = value.strip()
 
-    # Exactly five required variables
+    # Exactly eight required variables (5 original + 3 email)
     required_vars = {
         "DJANGO_SECRET_KEY",
         "DJANGO_ALLOWED_HOSTS",
         "DATABASE_PATH",
         "RATELIMIT_TRUST_XFF",
         "TIME_ZONE",
+        "RESEND_API_KEY",
+        "RESEND_WEBHOOK_SECRET",
+        "EMAIL_FROM",
     }
     assert set(vars_found.keys()) == required_vars, (
         f"Expected {required_vars}, got {set(vars_found.keys())}"
@@ -161,6 +164,15 @@ def test_env_example():
     )
     assert vars_found["RATELIMIT_TRUST_XFF"] == "1", "RATELIMIT_TRUST_XFF should be placeholder"
     assert vars_found["TIME_ZONE"] == "UTC", "TIME_ZONE should be placeholder"
+    assert vars_found["RESEND_API_KEY"] == "re_abcdefghijklmnop", (
+        "RESEND_API_KEY should be placeholder"
+    )
+    assert vars_found["RESEND_WEBHOOK_SECRET"] == "whsec_abcdefghijklmnop", (
+        "RESEND_WEBHOOK_SECRET should be placeholder"
+    )
+    assert vars_found["EMAIL_FROM"] == '"Downtime Market <noreply@downtimemarket.com>"', (
+        "EMAIL_FROM should be placeholder"
+    )
 
     # Commented key generator line
     assert "secrets.token_urlsafe(50)" in content, "Missing commented key generator line"

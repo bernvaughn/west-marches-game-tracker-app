@@ -1,0 +1,16 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+<h2>Session changed: {{ session.title }}</h2>
+
+<p>The following session has been rescheduled:</p>
+
+<p>
+  <strong>Old date:</strong> {{ local_old_start|date:"l, F j, Y" }} at {{ local_old_start|time:"g:i A" }}<br>
+  <strong>New date:</strong> {{ local_new_start|date:"l, F j, Y" }} at {{ local_new_start|time:"g:i A" }}
+  {% if local_new_end %} - {{ local_new_end|time:"g:i A" }}{% endif %}
+  ({{ club.timezone }})<br>
+  <strong>Game Master:</strong> {{ gm_name }}<br>
+  <strong>Location:</strong> {{ location }}
+</p>
+{% endblock %}

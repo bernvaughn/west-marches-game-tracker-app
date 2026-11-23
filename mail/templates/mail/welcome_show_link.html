@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Welcome link resent{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Welcome email resent" subtitle="Fresh sign-in link for "|add:user.email %}
+<div class="alert alert-success">
+  <h4 class="alert-heading">Welcome email queued</h4>
+  <p>A new welcome email with a fresh 7-day sign-in link has been sent to <strong>{{ user.email }}</strong>.</p>
+</div>
+
+<div class="wm-narrow-block">
+{% include "components/card_open.html" with title="Sign-in link (shown once)" %}
+<div class="alert alert-warning">
+  <strong>This link is shown only once and is never cached.</strong> Copy it now if you need to share it manually.
+</div>
+<div class="mb-3">
+  <label class="form-label">Sign-in link</label>
+  <div class="input-group">
+    <input type="text" class="form-control font-monospace" value="{{ welcome_link }}" readonly id="welcome-link">
+    <button class="btn btn-outline-secondary" type="button" data-wm-copy-target="#welcome-link">Copy</button>
+  </div>
+  <div class="form-text">This link expires in 7 days. Older links for this user have been revoked.</div>
+</div>
+<a href="{% url 'accounts:index' club.slug %}" class="btn btn-secondary">Back to People</a>
+{% include "components/card_close.html" %}
+</div>
+{% endblock %}

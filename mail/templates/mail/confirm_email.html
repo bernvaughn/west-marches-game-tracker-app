@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Confirm email change</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+      .container { background: #fff; border: 1px solid #e1e4e8; border-radius: 6px; padding: 32px; }
+      .header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e1e4e8; }
+      .header h1 { margin: 0; font-size: 24px; font-weight: 600; color: #24292e; }
+      .content { margin-bottom: 24px; }
+      .content p { margin: 0 0 16px; }
+      .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #e1e4e8; font-size: 13px; color: #586069; }
+      .button { display: inline-block; padding: 10px 20px; background: #0366d6; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 500; }
+      .button:hover { background: #0256b9; }
+      .button.secondary { background: #6a737d; }
+      .button.secondary:hover { background: #5a6268; }
+      .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; }
+      .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+      .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+      .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        {% if club %}
+          <h1>{{ club.name }}</h1>
+        {% else %}
+          <h1>Downtime Market</h1>
+        {% endif %}
+      </div>
+      <div class="content">
+        {% if error == "invalid_or_expired" %}
+          <div class="alert alert-error">
+            <strong>Invalid or expired link.</strong> This confirmation link is no longer valid. It may have already been used or expired (links expire after 24 hours).
+          </div>
+          <p>Please request a new email change from your account settings.</p>
+
+        {% elif error == "invalid_token_data" %}
+          <div class="alert alert-error">
+            <strong>Invalid link.</strong> This confirmation link contains invalid data.
+          </div>
+
+        {% elif error == "not_for_you" %}
+          <div class="alert alert-error">
+            <strong>This link is for a different account.</strong> Please sign out and try again, or open the link in a private browser window.
+          </div>
+
+        {% elif confirmed %}
+          <div class="alert alert-success">
+            <strong>Email address changed successfully.</strong>
+          </div>
+          <p>{{ message }}</p>
+          <p>Your new email address is: <strong>{{ new_email }}</strong></p>
+          <p>You can now sign in using your new email address.</p>
+
+        {% elif neutral %}
+          <div class="alert alert-info">
+            <strong>{{ message }}</strong>
+          </div>
+
+        {% elif show_form %}
+          <p>Please confirm that you want to change your email address to:</p>
+          <p style="font-size: 18px; font-weight: 600; color: #0366d6;">{{ new_email }}</p>
+          <p>Your current email address ({{ old_email }}) will remain active until you confirm this change.</p>
+
+          <form method="post" style="margin-top: 24px;">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <button type="submit" class="button">Confirm change</button>
+            <a href="{{ site_url }}" class="button secondary" style="margin-left: 8px;">Cancel</a>
+          </form>
+        {% endif %}
+      </div>
+      <div class="footer">
+        <p>This email was sent by {{ club.name|default:"Downtime Market" }}.</p>
+        {% if club %}
+          {% if club.mail_settings.contact_email %}
+            <p>Replies go to {{ club.mail_settings.contact_email }}.</p>
+          {% else %}
+            <p>Replies to this email are not read.</p>
+          {% endif %}
+        {% else %}
+          <p>Replies to this email are not read.</p>
+        {% endif %}
+      </div>
+    </div>
+  </body>
+</html>
