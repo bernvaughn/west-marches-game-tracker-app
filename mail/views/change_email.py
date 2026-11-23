@@ -215,9 +215,11 @@ class ConfirmEmailView(View):
                 },
             )
 
-        # Change the user's email (which is also their sign-in name)
+        # Change the user's email (which is also their sign-in name). Normalize
+        # so the stored email is always lower-cased, matching every other write
+        # path and making login case-insensitive.
         with transaction.atomic():
-            user.email = new_email
+            user.email = new_email.strip().lower()
             user.save(update_fields=["email"])
 
             # Sign out other sessions (like password reset)

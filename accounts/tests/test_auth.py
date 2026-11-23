@@ -11,6 +11,19 @@ def test_login_with_email(client, player):
     assert client.get(reverse("home")).status_code == 200
 
 
+def test_login_with_mixed_case_email(client, player):
+    resp = client.post(reverse("login"), {"username": "Player@Example.COM", "password": "pw"})
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse("home")
+    assert client.get(reverse("home")).status_code == 200
+
+
+def test_login_with_uppercase_email(client, player):
+    resp = client.post(reverse("login"), {"username": "PLAYER@EXAMPLE.COM", "password": "pw"})
+    assert resp.status_code == 302
+    assert resp["Location"] == reverse("home")
+
+
 def test_login_bad_password(client, player):
     resp = client.post(reverse("login"), {"username": "player@example.com", "password": "x"})
     assert resp.status_code == 200
