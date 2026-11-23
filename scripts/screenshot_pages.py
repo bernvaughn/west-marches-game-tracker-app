@@ -347,6 +347,8 @@ EXCLUDED = {
     "mail:welcome_resend": "POST only; resend welcome email from People page.",
     "mail:welcome_show_link": "POST only; shows fresh welcome link once (never cached).",
     "mail_public:welcome_set_password": "Needs a one-time token; not a demo page.",
+    # Mail preferences (E8)
+    "mail_public:unsubscribe": "Needs a one-time token; not a demo page.",
 }
 
 
