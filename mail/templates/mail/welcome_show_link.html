@@ -16,7 +16,7 @@
   <label class="form-label">Sign-in link</label>
   <div class="input-group">
     <input type="text" class="form-control font-monospace" value="{{ welcome_link }}" readonly id="welcome-link">
-    <button class="btn btn-outline-secondary" type="button" onclick="navigator.clipboard.writeText(document.getElementById('welcome-link').value); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy', 2000);">Copy</button>
+    <button class="btn btn-outline-secondary" type="button" data-wm-copy-target="#welcome-link">Copy</button>
   </div>
   <div class="form-text">This link expires in 7 days. Older links for this user have been revoked.</div>
 </div>
