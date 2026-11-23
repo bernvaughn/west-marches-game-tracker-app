@@ -6,6 +6,7 @@ and payload cleanup.
 
 import logging
 import threading
+from dataclasses import dataclass
 from datetime import timedelta
 
 import httpx
@@ -20,6 +21,112 @@ logger = logging.getLogger(__name__)
 # Backoff schedule in minutes: 1, 5, 30
 BACKOFF_MINUTES = [1, 5, 30]
 MAX_ATTEMPTS = 3
+
+
+@dataclass
+class SendResult:
+    """Result of a synchronous send attempt.
+
+    Attributes:
+        ok: True if the send was accepted by Resend.
+        provider_id: Resend message ID on success, empty string on failure.
+        error: Concrete error message on failure, empty string on success.
+    """
+
+    ok: bool
+    provider_id: str
+    error: str
+
+
+def send_now(message: EmailMessage) -> SendResult:
+    """Attempt one synchronous Resend send and return a definite result.
+
+    Does NOT modify the message (caller decides status updates — supports
+    "queued fallback for resilience").
+
+    Args:
+        message: The EmailMessage to send.
+
+    Returns:
+        SendResult with ok, provider_id (on success), or error (on failure).
+    """
+    # Refresh from DB to get latest state
+    message.refresh_from_db()
+
+    if message.status == EmailMessage.Status.SENT:
+        return SendResult(ok=True, provider_id=message.provider_id, error="")
+
+    if message.status == EmailMessage.Status.FAILED:
+        return SendResult(
+            ok=False,
+            provider_id="",
+            error=message.last_error or "already failed",
+        )
+
+    # Get the payload
+    try:
+        payload = message.payload
+    except EmailPayload.DoesNotExist:
+        return SendResult(
+            ok=False,
+            provider_id="",
+            error="no_payload: Email payload not found",
+        )
+
+    # Check RESEND_API_KEY
+    api_key = getattr(settings, "RESEND_API_KEY", "")
+    if not api_key:
+        return SendResult(
+            ok=False,
+            provider_id="",
+            error="no_key: RESEND_API_KEY not configured",
+        )
+
+    from_email = getattr(settings, "EMAIL_FROM", "noreply@localhost")
+    to_address = message.to_address
+    subject = message.subject
+
+    request_payload = {
+        "from": from_email,
+        "to": [to_address],
+        "subject": subject,
+    }
+
+    if payload.reply_to:
+        request_payload["reply_to"] = [payload.reply_to]
+
+    request_payload["text"] = payload.text
+    if payload.html:
+        request_payload["html"] = payload.html
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        with httpx.Client(timeout=10.0) as client:
+            response = client.post(
+                "https://api.resend.com/emails",
+                json=request_payload,
+                headers=headers,
+            )
+            response.raise_for_status()
+            data = response.json()
+            provider_id = data.get("id", "")
+
+        return SendResult(ok=True, provider_id=provider_id, error="")
+
+    except httpx.HTTPStatusError as e:
+        error_code = e.response.status_code
+        error_text = e.response.text[:200]
+        return SendResult(ok=False, provider_id="", error=f"http_{error_code}: {error_text}")
+
+    except httpx.RequestError as e:
+        return SendResult(ok=False, provider_id="", error=f"network: {type(e).__name__}")
+
+    except Exception as e:
+        return SendResult(ok=False, provider_id="", error=f"error: {type(e).__name__}")
 
 
 def schedule_send(message: EmailMessage) -> None:

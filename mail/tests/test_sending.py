@@ -11,10 +11,12 @@ from mail.models import EmailMessage, EmailPayload
 from mail.sending import (
     BACKOFF_MINUTES,
     MAX_ATTEMPTS,
+    SendResult,
     delete_expired_payloads,
     schedule_send,
     send_due_messages,
     send_message,
+    send_now,
 )
 
 
@@ -440,3 +442,209 @@ class TestScheduleSend:
         schedule_send(message)
 
         mock_on_commit.assert_called_once()
+
+
+@pytest.mark.django_db
+class TestSendNow:
+    def test_send_now_success(self, club, settings):
+        """Successful send returns SendResult with ok=True and provider_id."""
+        settings.RESEND_API_KEY = "test_key"
+        settings.EMAIL_FROM = "from@test.com"
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.QUEUED,
+        )
+        EmailPayload.objects.create(
+            message=message,
+            text="Hello",
+            html="<p>Hello</p>",
+            reply_to="reply@test.com",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        with patch("httpx.Client") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"id": "msg_abc"}
+            mock_response.raise_for_status = MagicMock()
+            mock_client.post.return_value = mock_response
+
+            result = send_now(message)
+
+        assert isinstance(result, SendResult)
+        assert result.ok is True
+        assert result.provider_id == "msg_abc"
+        assert result.error == ""
+        # Message should NOT be modified
+        message.refresh_from_db()
+        assert message.status == EmailMessage.Status.QUEUED
+        assert message.provider_id == ""
+
+    def test_send_now_no_key(self, club, settings):
+        """Missing API key returns SendResult with no_key error."""
+        settings.RESEND_API_KEY = ""
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.QUEUED,
+        )
+        EmailPayload.objects.create(
+            message=message,
+            text="Hello",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        result = send_now(message)
+
+        assert isinstance(result, SendResult)
+        assert result.ok is False
+        assert result.provider_id == ""
+        assert result.error == "no_key: RESEND_API_KEY not configured"
+
+    def test_send_now_no_payload(self, club, settings):
+        """Missing payload returns SendResult with no_payload error."""
+        settings.RESEND_API_KEY = "test_key"
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.QUEUED,
+        )
+        # No payload created
+
+        result = send_now(message)
+
+        assert isinstance(result, SendResult)
+        assert result.ok is False
+        assert result.provider_id == ""
+        assert result.error == "no_payload: Email payload not found"
+
+    def test_send_now_http_error(self, club, settings):
+        """HTTP error returns SendResult with http_NNN: error."""
+        settings.RESEND_API_KEY = "test_key"
+        settings.EMAIL_FROM = "from@test.com"
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.QUEUED,
+        )
+        EmailPayload.objects.create(
+            message=message,
+            text="Hello",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        with patch("httpx.Client") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.status_code = 400
+            mock_response.text = "Bad request"
+            mock_client.post.side_effect = httpx.HTTPStatusError(
+                "400 Bad Request", request=MagicMock(), response=mock_response
+            )
+
+            result = send_now(message)
+
+        assert isinstance(result, SendResult)
+        assert result.ok is False
+        assert result.provider_id == ""
+        assert result.error.startswith("http_400:")
+
+    def test_send_now_network_error(self, club, settings):
+        """Network error returns SendResult with network: error."""
+        settings.RESEND_API_KEY = "test_key"
+        settings.EMAIL_FROM = "from@test.com"
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.QUEUED,
+        )
+        EmailPayload.objects.create(
+            message=message,
+            text="Hello",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        with patch("httpx.Client") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+            mock_client.post.side_effect = httpx.ConnectError("Connection refused")
+
+            result = send_now(message)
+
+        assert isinstance(result, SendResult)
+        assert result.ok is False
+        assert result.provider_id == ""
+        assert result.error.startswith("network:")
+
+    def test_send_now_already_sent(self, club, settings):
+        """Already SENT message returns SendResult with ok=True and existing provider_id."""
+        settings.RESEND_API_KEY = "test_key"
+        settings.EMAIL_FROM = "from@test.com"
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.SENT,
+            provider_id="already_sent_123",
+        )
+        EmailPayload.objects.create(
+            message=message,
+            text="Hello",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        with patch("httpx.Client") as mock_client_class:
+            result = send_now(message)
+            mock_client_class.assert_not_called()
+
+        assert isinstance(result, SendResult)
+        assert result.ok is True
+        assert result.provider_id == "already_sent_123"
+        assert result.error == ""
+
+    def test_send_now_already_failed(self, club, settings):
+        """Already FAILED message returns SendResult with ok=False and last_error."""
+        settings.RESEND_API_KEY = "test_key"
+
+        message = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to@test.com",
+            subject="Test",
+            status=EmailMessage.Status.FAILED,
+            last_error="previous error",
+        )
+        EmailPayload.objects.create(
+            message=message,
+            text="Hello",
+            expires_at=timezone.now() + timedelta(hours=1),
+        )
+
+        with patch("httpx.Client") as mock_client_class:
+            result = send_now(message)
+            mock_client_class.assert_not_called()
+
+        assert isinstance(result, SendResult)
+        assert result.ok is False
+        assert result.provider_id == ""
+        assert result.error == "previous error"
