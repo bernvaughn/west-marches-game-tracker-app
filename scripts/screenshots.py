@@ -3,7 +3,7 @@
 Usage:
     uv run python scripts/screenshots.py --out /tmp/shots/before \
         [--pages 'shops-*'] [--width 1920|1280|992|768|390|320 | --widths 1920,768 | --audit]
-        [--keep-db]
+        [--keep-db] [--timeout SECONDS]
 
 `--audit` means widths 1920, 1280, 768 and 390 for every page (it ignores each page's
 default widths). `--widths` takes a comma list. Without them the tool runs the default
@@ -133,8 +133,23 @@ def main() -> int:
     group.add_argument("--widths", type=parse_widths, help="comma list, e.g. 1920,768")
     group.add_argument("--audit", action="store_true", help="1920,1280,768,390 for every page")
     ap.add_argument("--keep-db", action="store_true")
+    ap.add_argument(
+        "--timeout", type=int, default=0, help="Overall timeout in seconds (0 = no limit)"
+    )
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+
+    # Filter pages BEFORE running migrate/seed_demo to avoid wasted work.
+    sys.path.insert(0, str(ROOT))
+    from scripts.screenshot_pages import PAGES, ROLES
+
+    pages = [p for p in PAGES if fnmatch.fnmatch(p.name, args.pages)]
+    if not pages:
+        print(f"No page matches {args.pages!r}.")
+        return 2
+
+    start_time = time.time()
+    timeout_sec = args.timeout
 
     tmp = Path(tempfile.mkdtemp(prefix="shots-db-"))
     env = {
@@ -144,8 +159,9 @@ def main() -> int:
         "DJANGO_DEBUG": "1",
     }
     os.environ.update(env)
-    sys.path.insert(0, str(ROOT))
     for cmd in ("migrate", "seed_demo"):
+        if timeout_sec and time.time() - start_time > timeout_sec:
+            raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
         print(f"Running {cmd}...")
         subprocess.run(
             [sys.executable, "manage.py", cmd],
@@ -154,20 +170,19 @@ def main() -> int:
             check=True,
             capture_output=True,
             text=True,
+            timeout=timeout_sec if timeout_sec else None,
         )
         print(f"{cmd} done")
     import django
 
     django.setup()
     from accounts.demo import DEMO_PASSWORD
-    from scripts.screenshot_pages import PAGES, ROLES, demo_objects, extra_fixtures
+    from scripts.screenshot_pages import demo_objects, extra_fixtures
 
     extra_fixtures()
     demo = demo_objects()
-    pages = [p for p in PAGES if fnmatch.fnmatch(p.name, args.pages)]
-    if not pages:
-        print(f"No page matches {args.pages!r}.")
-        return 2
+    if timeout_sec and time.time() - start_time > timeout_sec:
+        raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
     audit_mode = bool(args.audit or args.widths)
     if args.audit:
         widths = AUDIT_WIDTHS
@@ -178,6 +193,8 @@ def main() -> int:
     else:
         widths = DEFAULT_WIDTHS
     resolved = {p.name: p.url(demo) for p in pages}
+    if timeout_sec and time.time() - start_time > timeout_sec:
+        raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
 
     port = _free_port()
     base = f"http://127.0.0.1:{port}"
@@ -190,7 +207,9 @@ def main() -> int:
     )
     failed = overflow = taken = 0
     try:
-        _wait_for(f"{base}/accounts/login/", server)
+        _wait_for(f"{base}/accounts/login/", server, timeout=timeout_sec if timeout_sec else 30)
+        if timeout_sec and time.time() - start_time > timeout_sec:
+            raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as pw:
@@ -203,6 +222,8 @@ def main() -> int:
                 )
                 return 3
             for width in widths:
+                if timeout_sec and time.time() - start_time > timeout_sec:
+                    raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
                 contexts = {}
                 for page_def in pages:
                     if audit_mode:
@@ -210,6 +231,8 @@ def main() -> int:
                             continue
                     elif width not in page_def.widths:
                         continue
+                    if timeout_sec and time.time() - start_time > timeout_sec:
+                        raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
                     role = page_def.role
                     if role not in contexts:
                         ctx = browser.new_context(
@@ -217,7 +240,9 @@ def main() -> int:
                         )
                         if ROLES[role]:
                             pg = ctx.new_page()
-                            pg.goto(f"{base}/accounts/login/")
+                            pg.goto(
+                                f"{base}/accounts/login/", wait_until="networkidle", timeout=10000
+                            )
                             pg.fill("input[name=username]", ROLES[role])
                             pg.fill("input[name=password]", DEMO_PASSWORD)
                             pg.locator(
@@ -228,7 +253,9 @@ def main() -> int:
                         contexts[role] = ctx
                     page = contexts[role].new_page()
                     try:
-                        resp = page.goto(base + resolved[page_def.name], wait_until="networkidle")
+                        resp = page.goto(
+                            base + resolved[page_def.name], wait_until="networkidle", timeout=10000
+                        )
                         if resp is None or resp.status != 200:
                             print(f"FAIL {page_def.name} {resp.status if resp else 'none'}")
                             failed += 1
