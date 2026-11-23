@@ -5,6 +5,9 @@ from django.shortcuts import redirect, render
 from django.utils.cache import add_never_cache_headers
 from django.views.decorators.http import require_http_methods
 
+from mail.builders import render_email
+from mail.service import queue_email
+from mail.tokens import issue, revoke_older
 from player_characters.models import Character
 
 from ..forms.people import RolesForm, WhitelistForm
@@ -35,6 +38,51 @@ def _whitelist_page(request, form, **extra):
     return render(request, "accounts/people/whitelist.html", ctx)
 
 
+def _queue_welcome_email(club, user, request_user):
+    """Queue a welcome email with a sign-in link for the user.
+
+    Returns (status, message, token_or_None) where status is "queued", "refused", or "failed".
+    """
+    # Revoke older welcome tokens for this user/club
+    revoke_older("welcome", user, club)
+
+    # Issue a new 7-day welcome token
+    raw_token = issue("welcome", user, club=club)
+
+    # Build the welcome link (public URL)
+    from django.urls import reverse
+
+    welcome_link = request_user.build_absolute_uri(
+        reverse("mail_public:welcome_set_password", args=[raw_token])
+    )
+
+    # Build email content
+    subject, text, html = render_email(
+        "welcome",
+        "welcome",
+        {
+            "subject": f"Welcome to {club.name}",
+            "user": user,
+            "club": club,
+            "welcome_link": welcome_link,
+        },
+        club,
+    )
+
+    # Queue the email
+    result = queue_email(
+        kind="welcome",
+        to=user.email,
+        club=club,
+        subject=subject,
+        text=text,
+        html=html,
+        user=user,
+    )
+
+    return result.status, result.message, raw_token if result.status == "queued" else None
+
+
 @club_admin_required
 @rate_limit(
     prefix="whitelist",
@@ -53,6 +101,9 @@ def whitelist(request, club_slug):
     if Membership.objects.filter(club=request.club, user__email__iexact=email).exists():
         messages.info(request, f"{email} is already a member of this club.")
         return redirect("accounts:whitelist", club_slug=request.club.slug)
+
+    send_welcome_link = data.get("send_welcome_link", False)
+
     with transaction.atomic():
         membership, temp = get_or_create_member(
             request.club,
@@ -65,9 +116,73 @@ def whitelist(request, club_slug):
             Character.objects.create(
                 club=request.club, owner=membership, name=data["character_name"].strip()
             )
+
+    # Existing account added to club - send "added_to_club" email (no link)
     if temp is None:
+        # Queue the "added to club" email
+        subject, text, html = render_email(
+            "added_to_club",
+            "added_to_club",
+            {
+                "subject": f"You've been added to {request.club.name}",
+                "user": membership.user,
+                "club": request.club,
+            },
+            request.club,
+        )
+        result = queue_email(
+            kind="welcome",
+            to=membership.user.email,
+            club=request.club,
+            subject=subject,
+            text=text,
+            html=html,
+            user=membership.user,
+        )
+        if result.status == "refused":
+            err = (
+                result.message.last_error
+                if result.message
+                else "Email is disabled or address is suppressed"
+            )
+            messages.warning(request, f"Could not send notification: {err}.")
+        elif result.status == "failed":
+            messages.warning(
+                request,
+                "Could not send notification: "
+                f"{result.message.last_error if result.message else 'Email is disabled'}.",
+            )
         messages.success(request, f"{email} already had an account; added to this club.")
         return redirect("accounts:whitelist", club_slug=request.club.slug)
+
+    # New account created - check if we should send welcome link
+    if send_welcome_link:
+        status, message, token = _queue_welcome_email(request.club, membership.user, request)
+        if status == "queued":
+            messages.success(
+                request,
+                "Welcome email sent to "
+                f"{email} with a 7-day sign-in link. "
+                "No temporary password was shown.",
+            )
+            return redirect("accounts:whitelist", club_slug=request.club.slug)
+        elif status == "refused":
+            messages.warning(
+                request,
+                "Could not send welcome email: "
+                f"{message.last_error if message else 'Address is suppressed'}. "
+                f"Temporary password shown below.",
+            )
+        elif status == "failed":
+            messages.warning(
+                request,
+                "Could not send welcome email: "
+                f"{message.last_error if message else 'Email is disabled'}. "
+                f"Temporary password shown below.",
+            )
+        # Fall through to show temporary password
+
+    # Default behavior: show temporary password
     response = _whitelist_page(
         request, WhitelistForm(), temp_password=temp, temp_user=membership.user
     )
