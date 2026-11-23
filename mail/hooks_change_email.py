@@ -3,8 +3,8 @@
 
 def register():
     """Register nav entry in the 'account' group."""
-    from accounts.navigation import register as register_nav
     from accounts.apps import is_member
+    from accounts.navigation import register as register_nav
 
     register_nav(
         group="account",

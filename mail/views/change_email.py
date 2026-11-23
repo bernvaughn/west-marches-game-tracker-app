@@ -9,8 +9,7 @@ from django.shortcuts import render
 from django.views import View
 
 from accounts.permissions import club_member_required
-from mail.models import OneTimeToken
-from mail.service import queue_email
+from mail.service import email_enabled, queue_email
 from mail.tokens import consume, issue, peek
 
 
@@ -48,8 +47,6 @@ def change_email(request, club_slug):
             error = "Enter a valid email address."
 
     # Check if email is already used by another account (case-insensitive)
-    from django.conf import settings
-
     if not error:
         from accounts.models import User
 
@@ -75,6 +72,18 @@ def change_email(request, club_slug):
             status=400,
         )
 
+    # Check if email is enabled - if not, show neutral answer
+    if not email_enabled():
+        messages.success(
+            request,
+            "If that email address is not already in use, a confirmation link has been sent.",
+        )
+        return render(
+            request,
+            "mail/change_email.html",
+            {"club": club, "current_email": current_email},
+        )
+
     # Issue email_change token (24 hours TTL)
     raw_token = issue(
         purpose="email_change",
@@ -86,9 +95,7 @@ def change_email(request, club_slug):
     # Build confirm URL
     from django.urls import reverse
 
-    confirm_url = request.build_absolute_uri(
-        reverse("mail_public:confirm_email", args=[raw_token])
-    )
+    confirm_url = request.build_absolute_uri(reverse("mail_public:confirm_email", args=[raw_token]))
 
     # Queue confirmation email to NEW address
     subject, text, html = build_confirm_email(
@@ -243,7 +250,10 @@ class ConfirmEmailView(View):
             "confirmed": True,
             "new_email": new_email,
             "club": club,
-            "message": "Your email address has been changed. You can now sign in with your new email address.",
+            "message": (
+                "Your email address has been changed. "
+                "You can now sign in with your new email address."
+            ),
         }
         return render(request, self.template_name, context)
 

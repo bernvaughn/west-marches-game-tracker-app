@@ -2,7 +2,7 @@
 
 from django.urls import path
 
-from .views.change_email import change_email, ConfirmEmailView
+from .views.change_email import ConfirmEmailView, change_email
 
 club_urlpatterns = [
     path("change-email/", change_email, name="change_email"),

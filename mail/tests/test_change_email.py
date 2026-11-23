@@ -1,21 +1,18 @@
 """Tests for change email (E9)."""
 
-import pytest
 from datetime import timedelta
-from unittest.mock import patch
 
+import pytest
 from django.urls import reverse
-from django.utils import timezone
 
 from accounts.models import Club, Membership, User, WhitelistEntry
 from mail.models import EmailMessage, OneTimeToken
-from mail.tokens import consume, peek
-
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("E9")]
 
 
 # ===== Fixtures =====
+
 
 @pytest.fixture
 def club(db):
@@ -48,6 +45,7 @@ def another_user(db):
 
 
 # ===== Club view tests =====
+
 
 def test_change_email_get_requires_member(player, login, club):
     """Only club members can access the change email view."""
@@ -177,6 +175,7 @@ def test_change_email_email_off_neutral_answer(player, login, club, settings):
 def test_change_email_suppressed_address_neutral_answer(player, login, club, settings):
     """Suppressed address gets neutral answer."""
     from mail.suppression import suppress
+
     suppress("new@test.com", "bounce")
 
     settings.MAIL_ENABLED = True
@@ -213,11 +212,14 @@ def test_change_email_whitelist_unchanged(player, login, club, settings):
 
 # ===== ConfirmEmailView tests =====
 
+
 def test_confirm_email_get_shows_page(player, login, club):
     """GET shows confirmation page with new email."""
     # Create a token manually
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).get(url)
@@ -240,7 +242,9 @@ def test_confirm_email_get_invalid_token(player, login, club):
 def test_confirm_email_get_expired_token(player, login, club):
     """GET with expired token shows error."""
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, ttl=timedelta(seconds=-1), extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, ttl=timedelta(seconds=-1), extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).get(url)
@@ -252,7 +256,9 @@ def test_confirm_email_get_expired_token(player, login, club):
 def test_confirm_email_get_wrong_user(player, login, club, another_user):
     """GET with token for different user shows error."""
     from mail.tokens import issue
-    raw = issue("email_change", another_user, club=club, extra={"new_email": "new@test.com", "old_email": "other@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "other@test.com"}
+    raw = issue("email_change", another_user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).get(url)
@@ -265,7 +271,9 @@ def test_confirm_email_post_consumes_token_and_changes_email(player, login, club
     """POST consumes token, changes email, sends notice to old address."""
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).post(url)
@@ -292,7 +300,9 @@ def test_confirm_email_post_token_single_use(player, login, club, settings):
     """Token can only be used once."""
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     # First use
@@ -310,7 +320,9 @@ def test_confirm_email_post_expired_token(player, login, club, settings):
     """Expired token cannot be used."""
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, ttl=timedelta(seconds=-1), extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, ttl=timedelta(seconds=-1), extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).post(url)
@@ -319,11 +331,15 @@ def test_confirm_email_post_expired_token(player, login, club, settings):
     assert "Invalid or expired" in body
 
 
-def test_confirm_email_post_address_already_in_use_neutral(player, login, club, settings, another_user):
+def test_confirm_email_post_address_already_in_use_neutral(
+    player, login, club, settings, another_user
+):
     """If new email is now used by another account, neutral answer, no change."""
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "other@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "other@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).post(url)
@@ -347,7 +363,9 @@ def test_confirm_email_post_case_insensitive_in_use(player, login, club, setting
 
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).post(url)
@@ -364,7 +382,9 @@ def test_confirm_email_post_sends_notice_to_old_address(player, login, club, set
     """After confirmation, old address gets 'email changed' notice."""
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).post(url)
@@ -385,7 +405,9 @@ def test_confirm_email_post_signs_out_other_sessions(player, login, club, settin
     """After confirmation, user is logged out (session cleared)."""
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     client = login(player.user)
@@ -404,7 +426,9 @@ def test_confirm_email_whitelist_entries_unchanged(player, login, club, settings
 
     settings.MAIL_ENABLED = True
     from mail.tokens import issue
-    raw = issue("email_change", player.user, club=club, extra={"new_email": "new@test.com", "old_email": "player@test.com"})
+
+    extra = {"new_email": "new@test.com", "old_email": "player@test.com"}
+    raw = issue("email_change", player.user, club=club, extra=extra)
 
     url = reverse("mail_public:confirm_email", args=[raw])
     r = login(player.user).post(url)
@@ -418,10 +442,12 @@ def test_confirm_email_whitelist_entries_unchanged(player, login, club, settings
 def test_confirm_email_token_24_hour_expiry(player, login, club, settings):
     """Token expires after 24 hours."""
     from mail.tokens import TTLS
+
     assert TTLS["email_change"] == timedelta(hours=24)
 
 
 # ===== Navigation test =====
+
 
 def test_change_email_nav_entry_registered(club_admin, login, club):
     """Nav entry 'My email address' appears in account group for members."""
@@ -436,8 +462,11 @@ def test_change_email_nav_entry_registered(club_admin, login, club):
 
 # ===== Token TTL test =====
 
+
 def test_email_change_token_ttl():
     """Email change token TTL is 24 hours."""
-    from mail.tokens import TTLS
     from datetime import timedelta
+
+    from mail.tokens import TTLS
+
     assert TTLS["email_change"] == timedelta(hours=24)
