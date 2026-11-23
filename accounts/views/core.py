@@ -7,6 +7,7 @@ from django.shortcuts import redirect, render
 from player_characters.models import Character
 
 from ..context_processors import clubs as clubs_context
+from ..forms.login import CaseInsensitiveEmailAuthenticationForm
 from ..models import Membership
 from ..permissions import club_member_required, is_club_admin, is_game_master
 from ..ratelimit import RateLimitMixin, get_client_ip
@@ -21,6 +22,7 @@ class RateLimitedLoginView(RateLimitMixin, LoginView):
     ratelimit_window = settings.RATELIMIT_LOGIN_WINDOW
     ratelimit_key_func = staticmethod(get_client_ip)
     template_name = "registration/login.html"
+    authentication_form = CaseInsensitiveEmailAuthenticationForm
 
 
 rate_limited_login = RateLimitedLoginView.as_view()
