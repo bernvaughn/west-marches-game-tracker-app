@@ -130,6 +130,11 @@ After deploying the stacked-ammunition release, run this once per existing club 
 cd /srv/app && set -a && . /etc/downtime.env && set +a && .venv/bin/python manage.py convert_seeded_bundles --club <slug> --apply
 ```
 
+After deploying the renamed-items release, run this once per existing club on the server (dry run first, then add `--apply` to write):
+```bash
+ssh dm "sudo -u deploy bash -c 'cd /srv/app && set -a && . /etc/downtime.env && set +a && .venv/bin/python manage.py rename_seeded_items --club <slug>'"
+```
+
 ## 5. Rollback
 
 Re-run the deploy command with the previous tag:
