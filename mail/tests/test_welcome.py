@@ -203,7 +203,8 @@ class TestWelcomeQueueEmail:
         assert result.status == "failed"
         assert result.message is not None
         assert result.message.status == EmailMessage.Status.FAILED
-        assert result.message.last_error == "no_key: Email is off for this site"
+        assert "RESEND_API_KEY" in result.message.last_error
+        assert "site admin" in result.message.last_error
 
 
 # ===== View Tests =====
@@ -392,7 +393,10 @@ class TestWelcomeShowLinkView:
             to_address=test_user.email,
             subject="Welcome",
             status=EmailMessage.Status.FAILED,
-            last_error="no_key: Email is off for this site",
+            last_error=(
+                "Email is disabled because RESEND_API_KEY is not configured. "
+                "A site admin needs to set it to enable outgoing email."
+            ),
         )
 
         url = reverse("mail:welcome_show_link", args=[test_club.slug, message.pk])

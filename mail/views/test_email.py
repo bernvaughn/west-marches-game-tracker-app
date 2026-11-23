@@ -9,7 +9,7 @@ from accounts.permissions import club_admin_required
 from accounts.ratelimit import rate_limit
 from mail.builders_test import build_test_email
 from mail.models import ClubMailSettings, EmailMessage
-from mail.service import email_enabled, queue_email
+from mail.service import email_disabled_reason, email_enabled, queue_email
 
 
 def _club_test_key(request, club_slug):
@@ -33,9 +33,7 @@ def send_test_email(request, club_slug):
 
     # Check if email is enabled
     email_on = email_enabled()
-    disabled_reason = None
-    if not email_on:
-        disabled_reason = "Email is disabled for this site (MAIL_ENABLED is false)."
+    disabled_reason = email_disabled_reason()
 
     # Get recent test emails for this club (for log display)
     recent_tests = EmailMessage.objects.filter(club=club, kind="test").order_by("-created")[:10]

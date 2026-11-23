@@ -1,6 +1,9 @@
 {% comment %}Contact email card for club settings. Shown to club admins only.{% endcomment %}
 {% url 'mail:contact_email' club.slug as contact_url %}
 {% include "components/card_open.html" with title="Contact email" subtitle="Optional email shown as reply-to on outgoing club emails." %}
+{% if not email_on %}
+  {% include "components/alert.html" with level="warning" title="Email is disabled" text=disabled_reason %}
+{% endif %}
 <form method="post" action="{{ contact_url }}" class="wm-form" hx-post="{{ contact_url }}" hx-target="closest .wm-card" hx-swap="outerHTML">
   {% csrf_token %}
   <div class="mb-3">
