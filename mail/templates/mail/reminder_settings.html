@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Reminder settings{% endblock %}
+{% block main_class %}wm-main--narrow{% endblock %}
+{% block content %}
+{% url 'club_home' club.slug as club_url %}
+{% include "components/page_header.html" with title="Reminders" subtitle="Choose how many days before a session to send reminders." %}
+<div class="wm-narrow-block">
+{% include "components/card_open.html" %}
+<form method="post" class="wm-form">
+  {% csrf_token %}
+  <fieldset>
+    <legend class="wm-fieldset-legend">Send reminders</legend>
+    <div class="wm-checkbox-group">
+      {% for day in allowed_days %}
+        <label class="wm-checkbox-label">
+          <input type="checkbox" name="reminder_days" value="{{ day }}"
+            {% if day in current_days %}checked{% endif %}>
+          <span>{{ day }} day{% if day != 1 %}s{% endif %} before</span>
+        </label>
+      {% endfor %}
+    </div>
+    <p class="wm-form-hint">Default: 3 days before. Uncheck all to disable reminders.</p>
+  </fieldset>
+  <div class="wm-form-actions">
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-outline-secondary" href="{{ club_url }}">Cancel</a>
+  </div>
+</form>
+{% include "components/card_close.html" %}
+</div>
+{% endblock %}

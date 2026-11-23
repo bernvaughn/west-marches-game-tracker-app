@@ -804,6 +804,7 @@ def _build_pages() -> list[Page]:
         P("quests-manage-club-admin", "club_admin", _c("quests:manage")),
         P("downtime-agenda-club-admin", "club_admin", _c("downtime:agenda")),
         P("mail-change-email", "alice", _c("mail:change_email")),
+        P("mail-reminder-settings", "club_admin", _c("mail:reminder_settings")),
     ]
     names = [p.name for p in pages]
     assert len(names) == len(set(names)), "duplicate page names"
