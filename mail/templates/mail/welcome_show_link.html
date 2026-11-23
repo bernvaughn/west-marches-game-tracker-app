@@ -20,7 +20,7 @@
   </div>
   <div class="form-text">This link expires in 7 days. Older links for this user have been revoked.</div>
 </div>
-<a href="{% url 'accounts:member_list' club.slug %}" class="btn btn-secondary">Back to People</a>
+<a href="{% url 'accounts:index' club.slug %}" class="btn btn-secondary">Back to People</a>
 {% include "components/card_close.html" %}
 </div>
 {% endblock %}

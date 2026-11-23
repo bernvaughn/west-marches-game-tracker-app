@@ -5,6 +5,9 @@ from django.shortcuts import redirect, render
 from django.utils.cache import add_never_cache_headers
 from django.views.decorators.http import require_http_methods
 
+from mail.builders import render_email
+from mail.service import queue_email
+from mail.tokens import issue, revoke_older
 from player_characters.models import Character
 
 from ..forms.people import RolesForm, WhitelistForm
@@ -14,9 +17,6 @@ from ..passwords import get_or_create_member
 from ..permissions import can_see_email, club_admin_required, club_member_required
 from ..ratelimit import rate_limit
 from ..scoping import club_get_object_or_404, club_queryset
-from mail.service import queue_email
-from mail.tokens import issue, revoke_older
-from mail.builders import render_email
 
 
 @club_member_required
@@ -51,6 +51,7 @@ def _queue_welcome_email(club, user, request_user):
 
     # Build the welcome link (public URL)
     from django.urls import reverse
+
     welcome_link = request_user.build_absolute_uri(
         reverse("mail_public:welcome_set_password", args=[raw_token])
     )
@@ -139,9 +140,22 @@ def whitelist(request, club_slug):
             user=membership.user,
         )
         if result.status == "refused":
-            messages.warning(request, f"Could not send notification: {result.message.last_error if result.message else 'Email is disabled or address is suppressed'}.")
+            err = (
+                result.message.last_error
+                if result.message
+                else 'Email is disabled or address is suppressed'
+            )
+            messages.warning(
+                request,
+                "Could not send notification: "
+                f"{err}."
+            )
         elif result.status == "failed":
-            messages.warning(request, f"Could not send notification: {result.message.last_error if result.message else 'Email is disabled'}.")
+            messages.warning(
+                request,
+                "Could not send notification: "
+                f"{result.message.last_error if result.message else 'Email is disabled'}.",
+            )
         messages.success(request, f"{email} already had an account; added to this club.")
         return redirect("accounts:whitelist", club_slug=request.club.slug)
 
@@ -151,20 +165,24 @@ def whitelist(request, club_slug):
         if status == "queued":
             messages.success(
                 request,
-                f"Welcome email sent to {email} with a 7-day sign-in link. No temporary password was shown."
+                "Welcome email sent to "
+                f"{email} with a 7-day sign-in link. "
+                "No temporary password was shown.",
             )
             return redirect("accounts:whitelist", club_slug=request.club.slug)
         elif status == "refused":
             messages.warning(
                 request,
-                f"Could not send welcome email: {message.last_error if message else 'Address is suppressed'}. "
-                f"Temporary password shown below."
+                "Could not send welcome email: "
+                f"{message.last_error if message else 'Address is suppressed'}. "
+                f"Temporary password shown below.",
             )
         elif status == "failed":
             messages.warning(
                 request,
-                f"Could not send welcome email: {message.last_error if message else 'Email is disabled'}. "
-                f"Temporary password shown below."
+                "Could not send welcome email: "
+                f"{message.last_error if message else 'Email is disabled'}. "
+                f"Temporary password shown below.",
             )
         # Fall through to show temporary password
 

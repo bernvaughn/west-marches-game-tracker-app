@@ -1,7 +1,6 @@
 """Tests for welcome email with sign-in link (E3)."""
 
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
@@ -10,9 +9,8 @@ from accounts.forms.people import WhitelistForm
 from accounts.models import Club, Membership
 from accounts.passwords import ComplexityValidator, PasswordHistoryValidator
 from mail.models import EmailMessage, OneTimeToken
-from mail.service import email_enabled, queue_email
+from mail.service import queue_email
 from mail.tokens import consume, issue, peek, revoke_older
-from mail.views.welcome import welcome_set_password, welcome_show_link, welcome_resend
 
 
 @pytest.fixture
@@ -60,6 +58,7 @@ def settings_email_on(settings):
 
 # ===== Form Tests =====
 
+
 @pytest.mark.django_db
 class TestWhitelistForm:
     def test_send_welcome_link_field_exists(self):
@@ -85,11 +84,12 @@ class TestWhitelistForm:
 
 # ===== Token Tests =====
 
+
 @pytest.mark.django_db
 class TestWelcomeTokens:
     def test_welcome_token_ttl_is_7_days(self, test_user):
         """Welcome tokens have 7-day TTL."""
-        raw = issue("welcome", test_user)
+        issue("welcome", test_user)
         token = OneTimeToken.objects.get(user=test_user, purpose="welcome")
         expected_expires = token.created + timedelta(days=7)
         assert abs((token.expires_at - expected_expires).total_seconds()) < 2
@@ -141,6 +141,7 @@ class TestWelcomeTokens:
 
 # ===== Queue Email Tests =====
 
+
 @pytest.mark.django_db
 class TestWelcomeQueueEmail:
     def test_welcome_queued_when_email_on(self, test_club, test_user, settings_email_on):
@@ -162,6 +163,7 @@ class TestWelcomeQueueEmail:
     def test_welcome_refused_for_do_not_email(self, test_club, test_user, settings_email_on):
         """Welcome email refused for do-not-email addresses."""
         from mail.suppression import suppress
+
         suppress(test_user.email, "manual")
 
         result = queue_email(
@@ -206,6 +208,7 @@ class TestWelcomeQueueEmail:
 
 # ===== View Tests =====
 
+
 @pytest.mark.django_db
 class TestWelcomeSetPasswordView:
     def test_get_shows_form_when_token_valid(self, client, test_user, test_club):
@@ -215,7 +218,10 @@ class TestWelcomeSetPasswordView:
         response = client.get(url)
         assert response.status_code == 200
         assert "Set your password" in response.content.decode()
-        assert "valid" in response.content.decode().lower() or "password" in response.content.decode().lower()
+        assert (
+            "valid" in response.content.decode().lower()
+            or "password" in response.content.decode().lower()
+        )
 
     def test_get_shows_error_when_token_invalid(self, client):
         """GET shows error when token is invalid."""
@@ -256,13 +262,17 @@ class TestWelcomeSetPasswordView:
         test_user.save()
 
         url = reverse("mail_public:welcome_set_password", args=[raw])
-        response = client.post(url, {
-            "password": "NewPass123!",
-            "confirm": "NewPass123!",
-        }, follow=True)
+        response = client.post(
+            url,
+            {
+                "password": "NewPass123!",
+                "confirm": "NewPass123!",
+            },
+            follow=True,
+        )
 
         # Should redirect to login
-        assert response.redirect_chain[-1][0].endswith(reverse("account_login"))
+        assert response.redirect_chain[-1][0].endswith(reverse("login"))
 
         # Token should be consumed
         assert peek(raw, "welcome") is None
@@ -276,10 +286,13 @@ class TestWelcomeSetPasswordView:
         """POST rejects mismatched passwords."""
         raw = issue("welcome", test_user, club=test_club)
         url = reverse("mail_public:welcome_set_password", args=[raw])
-        response = client.post(url, {
-            "password": "NewPass123!",
-            "confirm": "DifferentPass123!",
-        })
+        response = client.post(
+            url,
+            {
+                "password": "NewPass123!",
+                "confirm": "DifferentPass123!",
+            },
+        )
         assert response.status_code == 200
         content = response.content.decode()
         assert "do not match" in content.lower()
@@ -288,28 +301,40 @@ class TestWelcomeSetPasswordView:
         """POST rejects password that doesn't meet complexity requirements."""
         raw = issue("welcome", test_user, club=test_club)
         url = reverse("mail_public:welcome_set_password", args=[raw])
-        response = client.post(url, {
-            "password": "weak",
-            "confirm": "weak",
-        })
+        response = client.post(
+            url,
+            {
+                "password": "weak",
+                "confirm": "weak",
+            },
+        )
         assert response.status_code == 200
         content = response.content.decode()
-        assert "uppercase" in content.lower() or "lowercase" in content.lower() or "number" in content.lower() or "special" in content.lower()
+        assert (
+            "uppercase" in content.lower()
+            or "lowercase" in content.lower()
+            or "number" in content.lower()
+            or "special" in content.lower()
+        )
 
     def test_post_rejects_reused_password(self, client, test_user, test_club):
         """POST rejects recently used password."""
-        from accounts.models import PasswordHistory
         from django.contrib.auth.hashers import make_password
+
+        from accounts.models import PasswordHistory
 
         # Add a password to history
         PasswordHistory.objects.create(user=test_user, password_hash=make_password("OldPass123!"))
 
         raw = issue("welcome", test_user, club=test_club)
         url = reverse("mail_public:welcome_set_password", args=[raw])
-        response = client.post(url, {
-            "password": "OldPass123!",
-            "confirm": "OldPass123!",
-        })
+        response = client.post(
+            url,
+            {
+                "password": "OldPass123!",
+                "confirm": "OldPass123!",
+            },
+        )
         assert response.status_code == 200
         content = response.content.decode()
         assert "used recently" in content.lower() or "reused" in content.lower()
@@ -333,6 +358,7 @@ class TestWelcomeSetPasswordView:
         raw = issue("welcome", test_user, club=test_club)
 
         from mail.builders import render_email
+
         subject, text, html = render_email(
             "welcome",
             "welcome",
@@ -354,7 +380,9 @@ class TestWelcomeSetPasswordView:
 
 @pytest.mark.django_db
 class TestWelcomeShowLinkView:
-    def test_admin_can_show_fresh_link_for_failed_message(self, client_with_admin, test_club, test_user):
+    def test_admin_can_show_fresh_link_for_failed_message(
+        self, client_with_admin, test_club, test_user
+    ):
         """Admin can show fresh link for failed welcome message."""
         # Create a failed welcome message
         message = EmailMessage.objects.create(
@@ -390,7 +418,9 @@ class TestWelcomeShowLinkView:
         response = client_with_admin.post(url, follow=True)
 
         # Should redirect with error
-        assert response.redirect_chain[-1][0].endswith(reverse("accounts:whitelist", args=[test_club.slug]))
+        assert response.redirect_chain[-1][0].endswith(
+            reverse("accounts:whitelist", args=[test_club.slug])
+        )
 
     def test_admin_only_for_that_club(self, client_with_admin, admin_user, test_user):
         """Admin of one club cannot show link for another club's message."""
@@ -427,35 +457,44 @@ class TestWelcomeShowLinkView:
         response = client_with_admin.post(url)
 
         assert "Cache-Control" in response.headers
-        assert "no-cache" in response.headers["Cache-Control"] or "no-store" in response.headers["Cache-Control"]
+        assert (
+            "no-cache" in response.headers["Cache-Control"]
+            or "no-store" in response.headers["Cache-Control"]
+        )
 
 
 @pytest.mark.django_db
 class TestWelcomeResendView:
-    def test_admin_can_resend_welcome(self, client_with_admin, test_club, test_user, settings_email_on):
+    def test_admin_can_resend_welcome(
+        self, client_with_admin, test_club_with_user, test_user, settings_email_on
+    ):
         """Admin can resend welcome email from People page."""
         # Create a membership without a welcome message (simulating existing member)
-        membership = Membership.objects.get(user=test_user, club=test_club)
+        membership = Membership.objects.get(user=test_user, club=test_club_with_user)
 
-        url = reverse("mail:welcome_resend", args=[test_club.slug])
+        url = reverse("mail:welcome_resend", args=[test_club_with_user.slug])
         response = client_with_admin.post(url, {"membership_pk": membership.pk}, follow=True)
 
-        assert response.redirect_chain[-1][0].endswith(reverse("accounts:member_list", args=[test_club.slug]))
+        assert response.redirect_chain[-1][0].endswith(
+            reverse("accounts:index", args=[test_club_with_user.slug])
+        )
         # Check a welcome message was queued
         assert EmailMessage.objects.filter(
-            club=test_club, user=test_user, kind=EmailMessage.Kind.WELCOME
+            club=test_club_with_user, user=test_user, kind=EmailMessage.Kind.WELCOME
         ).exists()
 
-    def test_resend_revokes_older_links(self, client_with_admin, test_club, test_user, settings_email_on):
+    def test_resend_revokes_older_links(
+        self, client_with_admin, test_club_with_user, test_user, settings_email_on
+    ):
         """Resend revokes older welcome links."""
         # Issue some tokens first
-        raw1 = issue("welcome", test_user, club=test_club)
-        raw2 = issue("welcome", test_user, club=test_club)
+        raw1 = issue("welcome", test_user, club=test_club_with_user)
+        raw2 = issue("welcome", test_user, club=test_club_with_user)
         assert peek(raw1, "welcome") is not None
         assert peek(raw2, "welcome") is not None
 
-        membership = Membership.objects.get(user=test_user, club=test_club)
-        url = reverse("mail:welcome_resend", args=[test_club.slug])
+        membership = Membership.objects.get(user=test_user, club=test_club_with_user)
+        url = reverse("mail:welcome_resend", args=[test_club_with_user.slug])
         client_with_admin.post(url, {"membership_pk": membership.pk})
 
         # Old tokens should be revoked
@@ -464,14 +503,16 @@ class TestWelcomeResendView:
 
         # New token should exist
         new_messages = EmailMessage.objects.filter(
-            club=test_club, user=test_user, kind=EmailMessage.Kind.WELCOME
+            club=test_club_with_user, user=test_user, kind=EmailMessage.Kind.WELCOME
         ).order_by("-created")
         assert new_messages.count() >= 1
 
 
 @pytest.mark.django_db
 class TestExistingAccountAddedToClub:
-    def test_existing_account_gets_added_to_club_email_no_link(self, client_with_admin, test_club, test_user, settings_email_on):
+    def test_existing_account_gets_added_to_club_email_no_link(
+        self, client_with_admin, test_club, test_user, settings_email_on
+    ):
         """Existing account added to club gets 'added_to_club' email with no link."""
         # User already exists and is member of another club
         other_club = Club.objects.create(name="Other Club", slug="other-club")
@@ -479,19 +520,25 @@ class TestExistingAccountAddedToClub:
 
         # Add to test_club via whitelist
         url = reverse("accounts:whitelist", args=[test_club.slug])
-        response = client_with_admin.post(url, {
-            "email": test_user.email,
-            "display_name": "Test User",
-            "is_club_admin": False,
-            "is_game_master": False,
-            "character_name": "",
-            "send_welcome_link": True,
-        }, follow=True)
+        response = client_with_admin.post(
+            url,
+            {
+                "email": test_user.email,
+                "display_name": "Test User",
+                "is_club_admin": False,
+                "is_game_master": False,
+                "character_name": "",
+                "send_welcome_link": True,
+            },
+            follow=True,
+        )
 
-        assert response.redirect_chain[-1][0].endswith(reverse("accounts:whitelist", args=[test_club.slug]))
+        assert response.redirect_chain[-1][0].endswith(
+            reverse("accounts:whitelist", args=[test_club.slug])
+        )
 
-        # Check an "added_to_club" kind email was queued (actually uses welcome kind but different template)
-        # The template used is added_to_club, which has no link
+        # Check an "added_to_club" kind email was queued (uses welcome kind,
+        # different template). The template used is added_to_club, which has no link
         messages_qs = EmailMessage.objects.filter(
             club=test_club, user=test_user, kind=EmailMessage.Kind.WELCOME
         )
@@ -500,21 +547,29 @@ class TestExistingAccountAddedToClub:
         # Check the payload has no welcome link
         message = messages_qs.first()
         if hasattr(message, "payload") and message.payload:
-            assert "welcome" not in message.payload.text.lower() or "sign-in link" not in message.payload.text.lower()
+            assert (
+                "welcome" not in message.payload.text.lower()
+                or "sign-in link" not in message.payload.text.lower()
+            )
 
-    def test_refused_queue_shows_reason_and_temp_password(self, client_with_admin, test_club, settings):
+    def test_refused_queue_shows_reason_and_temp_password(
+        self, client_with_admin, test_club, settings
+    ):
         """When queue_email refuses, admin sees reason and temporary password."""
         settings.MAIL_ENABLED = False
 
         url = reverse("accounts:whitelist", args=[test_club.slug])
-        response = client_with_admin.post(url, {
-            "email": "newuser@example.com",
-            "display_name": "New User",
-            "is_club_admin": False,
-            "is_game_master": False,
-            "character_name": "",
-            "send_welcome_link": True,
-        })
+        response = client_with_admin.post(
+            url,
+            {
+                "email": "newuser@example.com",
+                "display_name": "New User",
+                "is_club_admin": False,
+                "is_game_master": False,
+                "character_name": "",
+                "send_welcome_link": True,
+            },
+        )
 
         # Should show the whitelist page with temp password
         assert response.status_code == 200
@@ -523,6 +578,7 @@ class TestExistingAccountAddedToClub:
 
 
 # ===== Password Validator Tests =====
+
 
 @pytest.mark.django_db
 class TestPasswordValidators:
@@ -555,14 +611,17 @@ class TestPasswordValidators:
 
     def test_password_history_validator(self, test_user):
         """PasswordHistoryValidator rejects last 5 passwords."""
-        from accounts.models import PasswordHistory
         from django.contrib.auth.hashers import make_password
+
+        from accounts.models import PasswordHistory
 
         validator = PasswordHistoryValidator()
 
         # Add 5 passwords to history
         for i in range(5):
-            PasswordHistory.objects.create(user=test_user, password_hash=make_password(f"OldPass{i}!"))
+            PasswordHistory.objects.create(
+                user=test_user, password_hash=make_password(f"OldPass{i}!")
+            )
 
         # Should reject any of the 5
         for i in range(5):

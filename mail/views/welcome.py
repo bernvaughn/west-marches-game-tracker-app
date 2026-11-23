@@ -1,8 +1,6 @@
 """Welcome email views: public set-password and club admin show-link."""
 
 from django.contrib import messages
-from django.contrib.auth import logout as auth_logout
-from django.contrib.auth import update_session_auth_hash
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.cache import add_never_cache_headers
@@ -10,11 +8,10 @@ from django.views.decorators.http import require_http_methods
 
 from accounts.passwords import ComplexityValidator, PasswordHistoryValidator, save_password_history
 from accounts.permissions import club_admin_required
-
-from mail.models import EmailMessage
-from mail.tokens import consume, issue, revoke_older
-from mail.service import queue_email
 from mail.builders import render_email
+from mail.models import EmailMessage
+from mail.service import queue_email
+from mail.tokens import consume, issue, revoke_older
 
 
 @require_http_methods(["GET", "POST"])
@@ -71,7 +68,11 @@ def welcome_set_password(request, token):
     # Try to consume the token
     consumed = consume(token, "welcome")
     if consumed is None:
-        ctx = {"valid": False, "error": "This link has already been used or has expired.", "club": club}
+        ctx = {
+            "valid": False,
+            "error": "This link has already been used or has expired.",
+            "club": club,
+        }
         response = render(request, "mail/welcome_set_password.html", ctx)
         add_never_cache_headers(response)
         return response
@@ -91,7 +92,7 @@ def welcome_set_password(request, token):
     # and the password change invalidates other sessions automatically in Django
 
     messages.success(request, "Your password has been set. You can now sign in.")
-    return redirect("account_login")
+    return redirect("login")
 
 
 @club_admin_required
@@ -123,9 +124,7 @@ def welcome_show_link(request, club_slug, message_pk):
     raw_token = issue("welcome", user, club=request.club)
 
     # Build the welcome link (public URL)
-    welcome_link = request.build_absolute_uri(
-        f"/mail/welcome/{raw_token}/"
-    )
+    welcome_link = request.build_absolute_uri(f"/mail/welcome/{raw_token}/")
 
     # Build email content
     subject, text, html = render_email(
@@ -152,7 +151,12 @@ def welcome_show_link(request, club_slug, message_pk):
     )
 
     if result.status != "queued":
-        messages.error(request, f"Failed to queue welcome email: {result.message.last_error if result.message else 'Unknown error'}")
+        err = result.message.last_error if result.message else "Unknown error"
+        messages.error(
+            request,
+            "Failed to queue welcome email: "
+            f"{err}",
+        )
         return redirect("accounts:whitelist", club_slug=request.club.slug)
 
     # Show the fresh link once, never cached
@@ -190,9 +194,7 @@ def welcome_resend(request, club_slug):
     raw_token = issue("welcome", user, club=request.club)
 
     # Build the welcome link (public URL)
-    welcome_link = request.build_absolute_uri(
-        f"/mail/welcome/{raw_token}/"
-    )
+    welcome_link = request.build_absolute_uri(f"/mail/welcome/{raw_token}/")
 
     # Build email content
     subject, text, html = render_email(
@@ -221,8 +223,18 @@ def welcome_resend(request, club_slug):
     if result.status == "queued":
         messages.success(request, f"Welcome email resent to {user.email}.")
     elif result.status == "refused":
-        messages.warning(request, f"Could not send welcome email: {result.message.last_error if result.message else 'Address is suppressed'}.")
+        err = result.message.last_error if result.message else "Address is suppressed"
+        messages.warning(
+            request,
+            "Could not send welcome email: "
+            f"{err}.",
+        )
     elif result.status == "failed":
-        messages.warning(request, f"Could not send welcome email: {result.message.last_error if result.message else 'Email is disabled'}.")
+        err = result.message.last_error if result.message else "Email is disabled"
+        messages.warning(
+            request,
+            "Could not send welcome email: "
+            f"{err}.",
+        )
 
-    return redirect("accounts:member_list", club_slug=request.club.slug)
+    return redirect("accounts:index", club_slug=request.club.slug)
