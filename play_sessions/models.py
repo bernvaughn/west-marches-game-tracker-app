@@ -79,7 +79,7 @@ class PlaySession(models.Model):
         ]
         constraints = [
             CheckConstraint(
-                check=Q(ends_at__isnull=True) | Q(ends_at__gte=models.F("starts_at")),
+                condition=Q(ends_at__isnull=True) | Q(ends_at__gte=models.F("starts_at")),
                 name="session_ends_after_starts",
             ),
         ]

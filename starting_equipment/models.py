@@ -64,11 +64,11 @@ class StartingEquipmentClassEntry(models.Model):
         ]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(min_level__lte=models.F("max_level")),
+                condition=models.Q(min_level__lte=models.F("max_level")),
                 name="class_entry_min_level_lte_max_level",
             ),
             models.CheckConstraint(
-                check=models.Q(min_level__gte=1) & models.Q(max_level__lte=20),
+                condition=models.Q(min_level__gte=1) & models.Q(max_level__lte=20),
                 name="class_entry_level_range",
             ),
         ]
