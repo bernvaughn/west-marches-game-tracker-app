@@ -4,11 +4,13 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from accounts.permissions import club_admin_required
 from accounts.ratelimit import rate_limit
 from mail.builders_test import build_test_email
-from mail.models import ClubMailSettings, EmailMessage
+from mail.models import ClubMailSettings, EmailMessage, EmailPayload
+from mail.sending import send_now
 from mail.service import email_disabled_reason, email_enabled, queue_email
 
 
@@ -116,12 +118,41 @@ def send_test_email(request, club_slug):
                     user=request.user,
                 )
 
+                send_result = None
                 if result.status == "queued":
-                    messages.success(request, "Test email queued.")
+                    # Attempt an immediate synchronous send so the user sees a
+                    # definite result. Keep the message QUEUED on failure so the
+                    # background job can retry (queued fallback for resilience).
+                    send_result = send_now(result.message)
+                    if send_result.ok:
+                        result.message.status = EmailMessage.Status.SENT
+                        result.message.provider_id = send_result.provider_id
+                        result.message.sent_at = timezone.now()
+                        result.message.save(update_fields=["status", "provider_id", "sent_at"])
+                        # Payload no longer needed once the email is sent.
+                        try:
+                            result.message.payload.delete()
+                        except EmailPayload.DoesNotExist:
+                            pass
+                        messages.success(
+                            request,
+                            f"Test email sent to {to_address}. "
+                            f"Provider ID: {send_result.provider_id}",
+                        )
+                    else:
+                        # Stay QUEUED for the background retry path.
+                        result.message.last_error = send_result.error
+                        result.message.save(update_fields=["last_error"])
+                        messages.error(
+                            request,
+                            f"Failed to send test email: {send_result.error}",
+                        )
                 elif result.status == "refused":
                     messages.error(request, "Recipient email is suppressed.")
                 else:  # failed
                     messages.error(request, f"Failed to queue: {result.message.last_error}")
+
+                context["send_result"] = send_result
 
     # Refresh recent tests after potential new entry
     context["recent_tests"] = EmailMessage.objects.filter(club=club, kind="test").order_by(
