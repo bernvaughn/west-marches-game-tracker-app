@@ -68,12 +68,12 @@ class TestUrlDiscovery:
 
         assert club is club_list is urls.club_urls[0]
         assert public is public_list is urls.public_urls[0]
-        # Probe module's patterns should be present
+        # Probe module's URLs should be present (along with any other discovered URLs)
         club_names = [p.name for p in club]
         public_names = [p.name for p in public]
         assert "zz_club" in club_names
         assert "zz_public" in public_names
-        # Also check our real patterns are there
+        # Also check our real patterns are there (from main)
         assert "contact_email" in club_names
         assert "test_email" in club_names
 

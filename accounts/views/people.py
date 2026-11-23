@@ -143,13 +143,9 @@ def whitelist(request, club_slug):
             err = (
                 result.message.last_error
                 if result.message
-                else 'Email is disabled or address is suppressed'
+                else "Email is disabled or address is suppressed"
             )
-            messages.warning(
-                request,
-                "Could not send notification: "
-                f"{err}."
-            )
+            messages.warning(request, f"Could not send notification: {err}.")
         elif result.status == "failed":
             messages.warning(
                 request,

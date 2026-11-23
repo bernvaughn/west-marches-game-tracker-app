@@ -154,8 +154,7 @@ def welcome_show_link(request, club_slug, message_pk):
         err = result.message.last_error if result.message else "Unknown error"
         messages.error(
             request,
-            "Failed to queue welcome email: "
-            f"{err}",
+            f"Failed to queue welcome email: {err}",
         )
         return redirect("accounts:whitelist", club_slug=request.club.slug)
 
@@ -226,15 +225,13 @@ def welcome_resend(request, club_slug):
         err = result.message.last_error if result.message else "Address is suppressed"
         messages.warning(
             request,
-            "Could not send welcome email: "
-            f"{err}.",
+            f"Could not send welcome email: {err}.",
         )
     elif result.status == "failed":
         err = result.message.last_error if result.message else "Email is disabled"
         messages.warning(
             request,
-            "Could not send welcome email: "
-            f"{err}.",
+            f"Could not send welcome email: {err}.",
         )
 
     return redirect("accounts:index", club_slug=request.club.slug)
