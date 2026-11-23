@@ -354,6 +354,9 @@ EXCLUDED = {
     # Mail forgot password (E4)
     "mail_public:forgot_password": "Public page; no auth needed. Screenshots captured separately.",
     "mail_public:reset_password": "Needs a one-time token; not a demo page.",
+    # Mail log clear flag and webhook (E2)
+    "mail:clear_flag": "POST only; club admin clears do-not-email flag for an address.",
+    "mail_public:webhook_resend": "POST only; Resend webhook endpoint.",
 }
 
 
