@@ -1,0 +1,18 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+<p>Welcome to <strong>{{ club.name }}</strong>!</p>
+
+<p>You've been invited to join <strong>{{ club.name }}</strong> on Downtime Market.</p>
+
+<p>Click the button below to set your password and sign in:</p>
+
+<p style="text-align: center; margin: 32px 0;">
+  <a href="{{ welcome_link }}" class="button">Set your password and sign in</a>
+</p>
+
+<p>Or copy this link into your browser:</p>
+<p style="word-break: break-all; font-family: monospace; font-size: 13px; color: #586069;">{{ welcome_link }}</p>
+
+<p>This link will expire in 7 days. If you didn't expect this invitation, you can safely ignore this email.</p>
+{% endblock %}

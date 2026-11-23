@@ -1,0 +1,14 @@
+You've been added to {{ club.name }}!
+
+You're now a member of {{ club.name }} on Downtime Market.
+
+You can sign in using your existing Downtime Market account at:
+
+{{ site_url }}
+
+If you didn't expect this, you can safely ignore this email.
+
+---
+{% for line in footer_lines %}
+{{ line }}
+{% endfor %}

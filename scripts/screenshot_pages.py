@@ -340,9 +340,15 @@ EXCLUDED = {
     # Play session attendance URLs require a session PK and club context
     "play_sessions:attendance": "Attendance page; requires session PK and club context.",
     "play_sessions:rsvp_for": "POST-only RSVP override; requires session PK and club context.",
+    # Mail contact/test email (E10, E11)
     "mail:contact_email": "HTMX partial for contact email card on club settings page.",
     "mail:test_email": "HTMX partial for test email card on club settings page.",
+    # Mail change email (E9)
     "mail_public:confirm_email": "Requires a valid email change token; not a demo page.",
+    # Mail welcome URLs (E3)
+    "mail:welcome_resend": "POST only; resend welcome email from People page.",
+    "mail:welcome_show_link": "POST only; shows fresh welcome link once (never cached).",
+    "mail_public:welcome_set_password": "Needs a one-time token; not a demo page.",
 }
 
 

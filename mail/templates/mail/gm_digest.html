@@ -1,0 +1,38 @@
+{% extends "mail/base.html" %}
+
+{% block content %}
+<h2>Game Master Digest: {{ session.title }}</h2>
+
+<p>
+  <strong>Date:</strong> {{ local_start|date:"l, F j, Y" }} at {{ local_start|time:"g:i A" }}
+  {% if local_end %} - {{ local_end|time:"g:i A" }}{% endif %}
+  ({{ club.timezone }})<br>
+  <strong>Location:</strong> {{ session.location|default:"Not specified" }}<br>
+  <strong>Game Master:</strong> {{ game_master.user.display_name|default:game_master.user.email }}
+</p>
+
+<hr style="margin: 24px 0; border: none; border-top: 1px solid #e1e4e8;">
+
+<h3>RSVP Summary</h3>
+
+{% with groups=rsvp_groups %}
+  {% with group_label="YES" group_color="#28a745" characters=groups.yes %}
+    {% include "mail/_digest_group.html" %}
+  {% endwith %}
+  {% with group_label="MAYBE" group_color="#ffc107" characters=groups.maybe %}
+    {% include "mail/_digest_group.html" %}
+  {% endwith %}
+  {% with group_label="NO" group_color="#cb2431" characters=groups.no %}
+    {% include "mail/_digest_group.html" %}
+  {% endwith %}
+  {% with group_label="NOT ANSWERED" group_color="#6a737d" characters=groups.not_answered %}
+    {% include "mail/_digest_group.html" %}
+  {% endwith %}
+{% endwith %}
+
+{% if extra_html %}
+<div class="extra">
+  {{ extra_html|safe }}
+</div>
+{% endif %}
+{% endblock %}

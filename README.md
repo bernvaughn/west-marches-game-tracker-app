@@ -265,6 +265,63 @@ DigitalOcean blocks outgoing mail on ports 25, 465, and 587 on all Droplets and 
 
 Do not run your own mail server on the Droplet.
 
+### Configuration
+
+Add these to `/etc/downtime.env`:
+
+```
+RESEND_API_KEY=re_...           # From Resend dashboard
+RESEND_WEBHOOK_SECRET=whsec_... # From Resend webhook settings
+EMAIL_FROM="Your Club <noreply@yourdomain.com>"
+```
+
+`RESEND_API_KEY` enables sending. Without it, email is disabled (or uses console backend in DEBUG).
+`RESEND_WEBHOOK_SECRET` is required for the bounce/complaint webhook.
+`EMAIL_FROM` must use a domain verified in Resend.
+
+### Running mail jobs
+
+The app uses a single systemd timer that runs every minute:
+
+```bash
+# Install the service and timer
+sudo cp deploy/downtime-mail.service /etc/systemd/system/
+sudo cp deploy/downtime-mail.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now downtime-mail.timer
+```
+
+This runs `run_mail_jobs` which:
+1. Sends due queued emails (`send_queued_email`)
+2. Runs all registered mail jobs (reminders, digests, etc.)
+3. Records each job run in the `JobRun` table
+
+### Manual commands
+
+```bash
+# Send queued emails now
+uv run python manage.py send_queued_email
+
+# Run all mail jobs (sending + registered jobs)
+uv run python manage.py run_mail_jobs
+
+# Send a test email to verify configuration
+uv run python manage.py send_test_email you@example.com
+```
+
+### Retry behavior
+
+- Failed sends are retried 3 times with exponential backoff: 1 min, 5 min, 30 min
+- After 3 failures, the message is marked `failed` with a plain-text reason in `last_error`
+- Email payloads (body content) are deleted after successful send or final failure
+- Expired payloads (older than 24 hours) are deleted by `send_queued_email`
+
+### Security
+
+- The API key is never logged, printed, or stored in the database
+- `last_error` contains only a short error code and message (max 200 chars), never the key
+- Webhook endpoint validates Svix signatures using `RESEND_WEBHOOK_SECRET`
+
 ## Agent access (MCP)
 
 Propose-then-confirm for everything in the first version, with map updates from notes coming soon. Stories A1 to A7 are in [docs/USER_STORIES.md](docs/USER_STORIES.md).
