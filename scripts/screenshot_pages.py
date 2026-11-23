@@ -349,6 +349,8 @@ EXCLUDED = {
     "mail:welcome_resend": "POST only; resend welcome email from People page.",
     "mail:welcome_show_link": "POST only; shows fresh welcome link once (never cached).",
     "mail_public:welcome_set_password": "Needs a one-time token; not a demo page.",
+    # Mail preferences (E8)
+    "mail_public:unsubscribe": "Needs a one-time token; not a demo page.",
 }
 
 
@@ -416,6 +418,8 @@ def _build_pages() -> list[Page]:
         P("site-feedback-new", "alice", lambda d: reverse("feedback_new")),
         # accounts club settings
         P("accounts-club-settings", "gm", _c("accounts:club_settings")),
+        # Mail preferences (E8)
+        P("mail:preferences", "alice", _c("mail:preferences"), widths=BOTH),
         # characters
         P("characters-directory-alice", "alice", _c("characters:directory")),
         P("characters-index-gm", "gm", _c("characters:index")),

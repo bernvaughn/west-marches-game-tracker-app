@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Unsubscribe{% endblock %}
+
+{% block content %}
+<div class="container-fluid wm-page">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card wm-unsubscribe-card">
+        <div class="card-body text-center py-5">
+          {% if success %}
+            <div class="wm-unsubscribe-success">
+              {% include "components/icon.html" with name="check-circle-fill" size="48" class="text-success mb-3" %}
+              <h2 class="wm-unsubscribe-title">Unsubscribed</h2>
+              <p class="lead mb-3">You have been unsubscribed from <strong>{{ display }}</strong>.</p>
+              <p class="text-muted">You will no longer receive these emails.</p>
+              <a href="{% url 'login' %}" class="btn btn-primary mt-3">Sign in to manage other preferences</a>
+            </div>
+
+          {% elif valid %}
+            <div class="wm-unsubscribe-confirm">
+              {% include "components/icon.html" with name="question-circle-fill" size="48" class="text-warning mb-3" %}
+              <h2 class="wm-unsubscribe-title">Unsubscribe from {{ display }}?</h2>
+              <p class="lead mb-4">This will stop <strong>{{ display }}</strong> for this club.</p>
+              <p class="text-muted mb-4">You can re-enable them anytime from your email settings after signing in.</p>
+
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-lg px-5">Yes, unsubscribe</button>
+              </form>
+              <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg px-5 ms-2">Cancel</a>
+            </div>
+
+          {% else %}
+            <div class="wm-unsubscribe-error">
+              {% include "components/icon.html" with name="x-circle-fill" size="48" class="text-danger mb-3" %}
+              <h2 class="wm-unsubscribe-title">Invalid link</h2>
+              <p class="lead mb-3">
+                {% if expired %}
+                  This unsubscribe link has expired.
+                {% else %}
+                  {{ error|default:"This unsubscribe link is invalid or has already been used." }}
+                {% endif %}
+              </p>
+              <p class="text-muted">If you believe this is an error, please contact the club administrator.</p>
+              <a href="{% url 'login' %}" class="btn btn-primary mt-3">Sign in</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
