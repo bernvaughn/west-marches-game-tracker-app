@@ -20,6 +20,8 @@ def contact_email(request, club_slug):
     email_on = email_enabled()
     disabled_reason = email_disabled_reason()
 
+    saved = False
+
     if request.method == "POST":
         email = request.POST.get("contact_email", "").strip().lower()
         if email:
@@ -31,56 +33,35 @@ def contact_email(request, club_slug):
                 validate_email(email)
             except ValidationError:
                 error = "Enter a valid email address."
+                context = {
+                    "club": club,
+                    "settings": settings,
+                    "error": error,
+                    "saved": saved,
+                    "email_on": email_on,
+                    "disabled_reason": disabled_reason,
+                }
                 if request.headers.get("HX-Request"):
                     return HttpResponse(
                         render_to_string(
                             "mail/_club_contact_card.html",
-                            {
-                                "club": club,
-                                "settings": settings,
-                                "error": error,
-                                "email_on": email_on,
-                                "disabled_reason": disabled_reason,
-                            },
+                            context,
                             request=request,
                         ),
                         status=400,
                     )
-                messages.error(request, error)
-                return render(
-                    request,
-                    "mail/_club_contact_card.html",
-                    {
-                        "club": club,
-                        "settings": settings,
-                        "error": error,
-                        "email_on": email_on,
-                        "disabled_reason": disabled_reason,
-                    },
-                    status=400,
-                )
-                messages.error(request, error)
-                return render(
-                    request,
-                    "mail/_club_contact_card.html",
-                    {
-                        "club": club,
-                        "settings": settings,
-                        "error": error,
-                        "email_on": email_on,
-                        "disabled_reason": disabled_reason,
-                    },
-                    status=400,
-                )
+                return render(request, "mail/_club_contact_card.html", context, status=400)
             else:
                 settings.contact_email = email
                 settings.save(update_fields=["contact_email"])
                 messages.success(request, "Contact email saved.")
+                saved = True
         else:
             # Blank is allowed - clear the contact email
             settings.contact_email = ""
             settings.save(update_fields=["contact_email"])
             messages.success(request, "Contact email cleared.")
+            saved = True
 
     # Always render the card partial (for both HTMX and regular requests)
     return render(
@@ -89,6 +70,7 @@ def contact_email(request, club_slug):
         {
             "club": club,
             "settings": settings,
+            "saved": saved,
             "email_on": email_on,
             "disabled_reason": disabled_reason,
         },
