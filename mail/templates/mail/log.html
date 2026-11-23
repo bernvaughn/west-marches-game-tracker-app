@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% load accounts_tags %}
+
+{% block title %}Email log{% endblock %}
+
+{% block content %}
+{% include "components/page_header.html" with title="Email log" subtitle="Email messages sent from this club" %}
+
+<div class="wm-card">
+  <div class="wm-card-body">
+    <div class="wm-table-scroll">
+      <table class="wm-data-table">
+        <thead>
+          <tr>
+            <th>Kind</th>
+            <th>Recipient</th>
+            <th>Status</th>
+            <th>Time</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for msg in page_obj %}
+          <tr>
+            <td>{{ msg.get_kind_display }}</td>
+            <td>{{ msg.to_address }}</td>
+            <td>
+              {% include "components/status_badge.html" with value=msg.status text=msg.get_status_display %}
+            </td>
+            <td>{{ msg.created|date:"Y-m-d H:i" }}</td>
+            <td>
+              {% if msg.status in "failed,bounced" and msg.kind == "welcome" %}
+                {% url 'mail:welcome_show_link' msg.pk as u %}
+                {% if u %}
+                  <a class="btn btn-sm btn-outline-secondary" href="{{ u }}">Show them the link instead</a>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          {% include "components/data_table_empty.html" with cols=5 text="No email messages yet." %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-3" aria-label="Email log pagination">
+      <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link" aria-label="Previous"><span aria-hidden="true">&laquo;</span></span>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+          <li class="page-item active" aria-current="page">
+            <span class="page-link">{{ num }}</span>
+          </li>
+          {% elif num > page_obj.number|add:-3 and num < page_obj.number|add:3 %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+          </li>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link" aria-label="Next"><span aria-hidden="true">&raquo;</span></span>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+</div>
+
+{% if job_runs %}
+<div class="wm-card mt-4">
+  <div class="wm-card-header">
+    <h2 class="wm-card-title">Background jobs</h2>
+  </div>
+  <div class="wm-card-body">
+    <div class="wm-table-scroll">
+      <table class="wm-data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Last run</th>
+            <th>Result</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for job in job_runs %}
+          <tr>
+            <td>{{ job.name }}</td>
+            <td>{% if job.last_run_at %}{{ job.last_run_at|date:"Y-m-d H:i" }}{% else %}Never{% endif %}</td>
+            <td>
+              {% include "components/status_badge.html" with value=job.ok|yesno:"ok,failed" text=job.ok|yesno:"OK,Failed" %}
+            </td>
+            <td>{{ job.note|default:"—" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
