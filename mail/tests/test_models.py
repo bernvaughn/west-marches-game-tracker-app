@@ -1,5 +1,8 @@
+from datetime import datetime
+
 import pytest
 from django.db import IntegrityError
+from django.utils import timezone
 
 from accounts.models import Club, Membership, User
 from mail.models import (
@@ -72,7 +75,7 @@ class TestEmailPayload:
             message=msg,
             text="Hello",
             html="<p>Hello</p>",
-            expires_at="2099-01-01",
+            expires_at=timezone.make_aware(datetime(2099, 1, 1)),
         )
         assert msg.payload == payload
         assert payload.message == msg
@@ -88,7 +91,7 @@ class TestEmailPayload:
             message=msg,
             text="Hello",
             reply_to="reply@example.com",
-            expires_at="2099-01-01",
+            expires_at=timezone.make_aware(datetime(2099, 1, 1)),
         )
         assert payload.reply_to == "reply@example.com"
 
@@ -113,14 +116,14 @@ class TestOneTimeToken:
             purpose="welcome",
             user=user,
             token_hash="a" * 64,
-            expires_at="2099-01-01",
+            expires_at=timezone.make_aware(datetime(2099, 1, 1)),
         )
         with pytest.raises(IntegrityError):
             OneTimeToken.objects.create(
                 purpose="welcome",
                 user=user,
                 token_hash="a" * 64,
-                expires_at="2099-01-01",
+                expires_at=timezone.make_aware(datetime(2099, 1, 1)),
             )
 
     def test_indexes_exist(self):

@@ -70,7 +70,7 @@ class ContainerSlot(models.Model):
         ordering = ["position", "id"]
         constraints = [
             models.CheckConstraint(
-                check=Q(chance_pct__gte=1, chance_pct__lte=100),
+                condition=Q(chance_pct__gte=1, chance_pct__lte=100),
                 name="container_slot_chance_pct_1_100",
             ),
         ]
@@ -94,15 +94,15 @@ class ContainerSlotOption(models.Model):
         ordering = ["id"]
         constraints = [
             models.CheckConstraint(
-                check=Q(qty_min__gte=1),
+                condition=Q(qty_min__gte=1),
                 name="container_slot_option_qty_min_ge_1",
             ),
             models.CheckConstraint(
-                check=Q(qty_max__gte=models.F("qty_min")),
+                condition=Q(qty_max__gte=models.F("qty_min")),
                 name="container_slot_option_qty_max_gte_qty_min",
             ),
             models.CheckConstraint(
-                check=Q(weight__gte=1),
+                condition=Q(weight__gte=1),
                 name="container_slot_option_weight_ge_1",
             ),
         ]

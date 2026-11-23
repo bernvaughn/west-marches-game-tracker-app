@@ -6,6 +6,14 @@ from django.utils import timezone
 
 from .scoping import ClubScopedManager
 
+
+class HttpsURLField(models.URLField):
+    """URLField that assumes HTTPS scheme to silence Django 6.0 deprecation warning."""
+
+    def formfield(self, **kwargs):
+        return super().formfield(**{"assume_scheme": "https", **kwargs})
+
+
 try:
     from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 except ImportError:  # pragma: no cover - Python < 3.9
@@ -187,7 +195,7 @@ class PasswordHistory(models.Model):
 
 
 class SiteSettings(models.Model):
-    donate_url = models.URLField(blank=True)
+    donate_url = HttpsURLField(blank=True)
 
     class Meta:
         verbose_name_plural = "site settings"
