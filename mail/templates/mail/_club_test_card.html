@@ -26,6 +26,20 @@
   </div>
 </form>
 
+{% if send_result %}
+  {% if send_result.ok %}
+    <div class="alert alert-success wm-alert" role="status">
+      {% include "components/icon.html" with name="check-circle-fill" %}
+      <div><span class="wm-alert-title">Sent</span> Provider ID: {{ send_result.provider_id }}</div>
+    </div>
+  {% else %}
+    <div class="alert alert-danger wm-alert" role="alert">
+      {% include "components/icon.html" with name="x-octagon-fill" %}
+      <div><span class="wm-alert-title">Failed</span> Reason: {{ send_result.error }}</div>
+    </div>
+  {% endif %}
+{% endif %}
+
 {% if recent_tests %}
 <div class="mt-4">
   <h3 class="wm-card-subtitle">Recent test emails</h3>

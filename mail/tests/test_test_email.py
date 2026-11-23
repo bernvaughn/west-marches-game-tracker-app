@@ -1,5 +1,8 @@
 """Tests for test email (E11)."""
 
+from unittest.mock import MagicMock, patch
+
+import httpx
 import pytest
 from django.core.cache import cache
 from django.test import override_settings
@@ -252,3 +255,142 @@ def test_test_email_no_recipient_selected(club_admin, login, club, settings):
     r = c.post(url, {})  # No recipient
     assert r.status_code == 400
     assert "Select a recipient" in r.content.decode()
+
+
+def _mock_resend_success(provider_id="resend_msg_123"):
+    """Return an httpx.Client mock whose POST succeeds with provider_id."""
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"id": provider_id}
+    mock_response.raise_for_status = MagicMock()
+    mock_client.post.return_value = mock_response
+    mock_client_class = MagicMock()
+    mock_client_class.return_value.__enter__.return_value = mock_client
+    return mock_client_class
+
+
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
+def test_test_email_immediate_send_success(club_admin, login, club, settings):
+    """Successful synchronous send marks the message SENT and shows provider ID."""
+    from django.core.cache import caches
+
+    caches["default"].clear()
+    settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
+    settings.EMAIL_FROM = "from@test.com"
+    ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
+
+    mock_client_class = _mock_resend_success("resend_msg_123")
+
+    with patch("httpx.Client", mock_client_class):
+        c = _login(login(club_admin), club_admin)
+        url = reverse("mail:test_email", args=[club.slug])
+        recipient_id = club_admin.memberships.get(club=club).id
+        r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
+        assert r.status_code == 200
+
+    msg = EmailMessage.objects.filter(club=club, kind="test").first()
+    assert msg is not None
+    assert msg.status == EmailMessage.Status.SENT
+    assert msg.provider_id == "resend_msg_123"
+    assert msg.sent_at is not None
+
+    body = r.content.decode()
+    assert "Sent" in body
+    assert "resend_msg_123" in body
+
+
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
+def test_test_email_immediate_send_http_error(club_admin, login, club, settings):
+    """Failed synchronous send keeps the message QUEUED and shows the error."""
+    from django.core.cache import caches
+
+    caches["default"].clear()
+    settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
+    settings.EMAIL_FROM = "from@test.com"
+    ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
+
+    mock_client = MagicMock()
+    mock_response = MagicMock()
+    mock_response.status_code = 401
+    mock_response.text = "Unauthorized"
+    mock_client.post.side_effect = httpx.HTTPStatusError(
+        "401 Unauthorized", request=MagicMock(), response=mock_response
+    )
+    mock_client_class = MagicMock()
+    mock_client_class.return_value.__enter__.return_value = mock_client
+
+    with patch("httpx.Client", mock_client_class):
+        c = _login(login(club_admin), club_admin)
+        url = reverse("mail:test_email", args=[club.slug])
+        recipient_id = club_admin.memberships.get(club=club).id
+        r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
+        assert r.status_code == 200
+
+    msg = EmailMessage.objects.filter(club=club, kind="test").first()
+    assert msg is not None
+    assert msg.status == EmailMessage.Status.QUEUED
+    assert "http_401" in msg.last_error
+
+    body = r.content.decode()
+    assert "Failed" in body
+    assert "http_401" in body
+
+
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
+def test_test_email_immediate_send_network_error(club_admin, login, club, settings):
+    """Network error keeps the message QUEUED and shows a concrete reason."""
+    from django.core.cache import caches
+
+    caches["default"].clear()
+    settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
+    settings.EMAIL_FROM = "from@test.com"
+    ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
+
+    mock_client = MagicMock()
+    mock_client.post.side_effect = httpx.ConnectError("Connection refused")
+    mock_client_class = MagicMock()
+    mock_client_class.return_value.__enter__.return_value = mock_client
+
+    with patch("httpx.Client", mock_client_class):
+        c = _login(login(club_admin), club_admin)
+        url = reverse("mail:test_email", args=[club.slug])
+        recipient_id = club_admin.memberships.get(club=club).id
+        r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
+        assert r.status_code == 200
+
+    msg = EmailMessage.objects.filter(club=club, kind="test").first()
+    assert msg is not None
+    assert msg.status == EmailMessage.Status.QUEUED
+
+    body = r.content.decode()
+    assert "Failed" in body
+    assert "network:" in body
+
+
+@override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
+def test_test_email_immediate_send_no_api_key_keeps_queued(club_admin, login, club, settings):
+    """Missing RESEND_API_KEY keeps the message QUEUED for background retry."""
+    from django.core.cache import caches
+
+    caches["default"].clear()
+    settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = ""
+    ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
+
+    c = _login(login(club_admin), club_admin)
+    url = reverse("mail:test_email", args=[club.slug])
+    recipient_id = club_admin.memberships.get(club=club).id
+    r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
+    assert r.status_code == 200
+
+    msg = EmailMessage.objects.filter(club=club, kind="test").first()
+    assert msg is not None
+    assert msg.status == EmailMessage.Status.QUEUED
+    assert "no_key: RESEND_API_KEY not configured" in msg.last_error
+
+    body = r.content.decode()
+    assert "Failed" in body
+    assert "no_key" in body
