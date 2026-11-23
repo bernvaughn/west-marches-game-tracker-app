@@ -7,22 +7,19 @@ This module contains the business logic for:
 - Updating Diplomat's Pack slots to the new choice format
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 from django.db import transaction
 from django.db.models import Sum
 
 from accounts.models import Club
-from agent_access.models import ProposedBatch, ProposedItem, ProposedLine
+from agent_access.models import ProposedItem, ProposedLine
 from downtime.models import DowntimeEntryItem
-from items.models import ContainerSlot, ContainerSlotOption, ContainerOpening, Item
-from items.pack_seeding import seed_pack_containers
+from items.models import ContainerOpening, ContainerSlot, ContainerSlotOption, Item
 from items.seed_names import (
-    INSTRUMENT_RENAMES,
     MAP_CASE,
     OLD_MAP_CASE_NAMES,
-    PLAIN_TOOL_RENAMES,
     SCROLL_CASE,
     VARIANT_RENAMES,
 )
@@ -67,7 +64,7 @@ def _build_seed_profile():
     Returns dict: name -> (value_cp, symbol, description)
     """
     from shops.gear import GENERAL_STORE_GEAR
-    from starting_equipment.seeding import CLASS_EQUIPMENT, BACKGROUND_EQUIPMENT, STACKED_AMMO_SPECS
+    from starting_equipment.seeding import BACKGROUND_EQUIPMENT, CLASS_EQUIPMENT, STACKED_AMMO_SPECS
 
     profile = {}
 
@@ -90,7 +87,14 @@ def _build_seed_profile():
                 profile[name] = (value_cp, symbol, "")
 
     # Stacked ammo specs may add extra items
-    for name, (value_cp, symbol, rarity, magic_type, unit_name, value_units) in STACKED_AMMO_SPECS.items():
+    for name, (
+        value_cp,
+        symbol,
+        _rarity,
+        _magic_type,
+        _unit_name,
+        _value_units,
+    ) in STACKED_AMMO_SPECS.items():
         if name not in profile:
             profile[name] = (value_cp, symbol, "")
 
@@ -115,7 +119,7 @@ def _item_matches_seed(item: Item, seed_name: str) -> tuple[bool, list[str]]:
     if item.symbol != expected_symbol:
         reasons.append(f"symbol {item.symbol!r} != seed {expected_symbol!r}")
     if item.description != expected_desc:
-        reasons.append(f"description differs from seed")
+        reasons.append("description differs from seed")
     return len(reasons) == 0, reasons
 
 
@@ -154,8 +158,18 @@ def _repoint_fk(source: Item, target: Item, log: Callable[[str], None]) -> dict[
         ("questreward_set", QuestReward, "item", None),
         ("downtimeentryitem_set", DowntimeEntryItem, "item", None),
         ("proposedline_set", ProposedLine, "item", None),
-        ("startingequipmentclassline_set", StartingEquipmentClassLine, "item", ["class_entry", "is_choice", "choice_group"]),
-        ("startingequipmentbackgroundline_set", StartingEquipmentBackgroundLine, "item", ["background_entry", "is_choice", "choice_group"]),
+        (
+            "startingequipmentclassline_set",
+            StartingEquipmentClassLine,
+            "item",
+            ["class_entry", "is_choice", "choice_group"],
+        ),
+        (
+            "startingequipmentbackgroundline_set",
+            StartingEquipmentBackgroundLine,
+            "item",
+            ["background_entry", "is_choice", "choice_group"],
+        ),
         ("magicitemstartingoption_set", MagicItemStartingOption, "item", ["template"]),
         ("startingequipmentrequest_set", StartingEquipmentRequest, "item", None),
         ("junk_marks", JunkMark, "item", ["character"]),
@@ -175,7 +189,7 @@ def _repoint_fk(source: Item, target: Item, log: Callable[[str], None]) -> dict[
                 log(f"    Repointed {updated} {model.__name__}.{fk_field}")
         else:
             # Need to handle unique constraint conflicts
-            unique_fields = unique_with + ["item"]
+            unique_with + ["item"]
             updated = 0
             for obj in qs:
                 # Check if target already has a row with same unique fields
@@ -193,9 +207,13 @@ def _repoint_fk(source: Item, target: Item, log: Callable[[str], None]) -> dict[
                         existing.qty_min += obj.qty_min
                         existing.qty_max += obj.qty_max
                         existing.save(update_fields=["qty_min", "qty_max"])
-                    elif hasattr(obj, "max_per_character") and hasattr(existing, "max_per_character"):
+                    elif hasattr(obj, "max_per_character") and hasattr(
+                        existing, "max_per_character"
+                    ):
                         # MagicItemStartingOption: keep max
-                        existing.max_per_character = max(existing.max_per_character, obj.max_per_character)
+                        existing.max_per_character = max(
+                            existing.max_per_character, obj.max_per_character
+                        )
                         existing.save(update_fields=["max_per_character"])
                     obj.delete()
                     updated += 1
@@ -227,12 +245,14 @@ def _merge_items(club: Club, source: Item, target: Item, log: Callable[[str], No
 
     # 1. Compute holder nets for source
     source_nets = _net_by_character(source)
-    target_nets = _net_by_character(target)
+    _net_by_character(target)
 
     # Check for negative nets in source
     negative_holders = [cid for cid, net in source_nets.items() if net < 0]
     if negative_holders:
-        names = ", ".join(Character.objects.filter(pk__in=negative_holders).values_list("name", flat=True))
+        names = ", ".join(
+            Character.objects.filter(pk__in=negative_holders).values_list("name", flat=True)
+        )
         raise Refusal(f'"{source.name}": negative net total for holders: {names}.')
 
     # 2. Prepare ledger entries for holders with net > 0
@@ -266,12 +286,15 @@ def _merge_items(club: Club, source: Item, target: Item, log: Callable[[str], No
     else:
         log(f'    Retired source item "{source.name}" (pk={source.pk})')
 
-    report_lines.append(f'{source.name} -> {target.name}')
+    report_lines.append(f"{source.name} -> {target.name}")
     return report_lines
 
 
 def _rename_step(club: Club, log: Callable[[str], None]) -> tuple[list[str], list[str]]:
     """Step 1: Rename items in place where name matches old seed name and item was never edited.
+
+    Only renames if there's exactly one source item for a target and no target exists.
+    If multiple items map to the same target, all are deferred to merge step.
 
     Returns (renames, left_alone).
     """
@@ -280,32 +303,46 @@ def _rename_step(club: Club, log: Callable[[str], None]) -> tuple[list[str], lis
 
     # Build a set of all target names that already exist (non-retired)
     existing_targets = set(
-        Item.objects.filter(club=club, name__in=VARIANT_RENAMES.values(), retired=False).values_list("name", flat=True)
+        Item.objects.filter(
+            club=club, name__in=VARIANT_RENAMES.values(), retired=False
+        ).values_list("name", flat=True)
     )
 
+    # Group source items by target name
+    target_to_sources = {}
     for old_name, new_name in VARIANT_RENAMES.items():
         items = _get_non_retired_items(club, old_name)
         if not items:
             continue
+        target_to_sources.setdefault(new_name, []).extend(items)
 
-        # If target already exists, defer to merge step
+    # Process each target
+    for new_name, source_items in target_to_sources.items():
+        # If target already exists in DB, defer all to merge
         if new_name in existing_targets:
-            log(f'  "{old_name}": target "{new_name}" exists, deferring to merge')
+            for item in source_items:
+                log(f'  "{item.name}": target "{new_name}" exists, deferring to merge')
             continue
 
-        # Check each item (should be at most one, but handle multiples)
-        for item in items:
-            matches, reasons = _item_matches_seed(item, new_name)
-            if matches:
-                item.name = new_name
-                item.save(update_fields=["name"])
-                renames.append(f"{old_name} -> {new_name}")
-                log(f'  Renamed "{old_name}" -> "{new_name}" (pk={item.pk})')
-                existing_targets.add(new_name)  # Now this name exists
-            else:
-                reason = "; ".join(reasons)
-                left_alone.append(f"{old_name}: edited ({reason})")
-                log(f'  Left alone "{old_name}" (pk={item.pk}): {reason}')
+        # If multiple source items for this target, defer all to merge
+        if len(source_items) > 1:
+            for item in source_items:
+                log(f'  "{item.name}": multiple sources for "{new_name}", deferring to merge')
+            continue
+
+        # Exactly one source item, no target exists - check if it matches seed
+        item = source_items[0]
+        matches, reasons = _item_matches_seed(item, new_name)
+        if matches:
+            item.name = new_name
+            item.save(update_fields=["name"])
+            renames.append(f"{item.name} -> {new_name}")
+            log(f'  Renamed "{item.name}" -> "{new_name}" (pk={item.pk})')
+            existing_targets.add(new_name)
+        else:
+            reason = "; ".join(reasons)
+            left_alone.append(f"{item.name}: edited ({reason})")
+            log(f'  Left alone "{item.name}" (pk={item.pk}): {reason}')
 
     return renames, left_alone
 
@@ -389,7 +426,7 @@ def _split_map_case_step(club: Club, log: Callable[[str], None]) -> list[str]:
     if survivor.name != MAP_CASE:
         survivor.name = MAP_CASE
         survivor.save(update_fields=["name"])
-        splits.append(f'{survivor.name} -> {MAP_CASE}')
+        splits.append(f"{survivor.name} -> {MAP_CASE}")
         log(f'  Renamed map case to "{MAP_CASE}"')
 
     # Create Scroll Case if missing
@@ -403,12 +440,14 @@ def _split_map_case_step(club: Club, log: Callable[[str], None]) -> list[str]:
             description="Holds scrolls.",
             retired=False,
         )
-        splits.append(f'Created {SCROLL_CASE}')
+        splits.append(f"Created {SCROLL_CASE}")
         log(f'  Created "{SCROLL_CASE}" (pk={scroll_case.pk})')
     else:
         log(f'  "{SCROLL_CASE}" already exists (pk={scroll_case.pk})')
 
-    splits.append(f'Split: {", ".join(OLD_MAP_CASE_NAMES)} -> {MAP_CASE} + {SCROLL_CASE}')
+    # Only report split if something actually changed
+    if splits:
+        splits.append(f"Split: {', '.join(OLD_MAP_CASE_NAMES)} -> {MAP_CASE} + {SCROLL_CASE}")
 
     return splits
 
@@ -439,7 +478,10 @@ def _update_diplomats_pack_slots(club: Club, log: Callable[[str], None]) -> list
         opts = list(slot.options.all())
         if len(opts) == 1:
             opt = opts[0]
-            if opt.item.name in ("Map or Scroll Case", "Case, Map or Scroll", "Map Case") and opt.qty_min == 2:
+            if (
+                opt.item.name in ("Map or Scroll Case", "Case, Map or Scroll", "Map Case")
+                and opt.qty_min == 2
+            ):
                 old_shape = True
                 case_slots_to_remove.append(slot)
 
@@ -488,9 +530,7 @@ def _update_diplomats_pack_slots(club: Club, log: Callable[[str], None]) -> list
             unknown=False,
             position=pos,
         )
-        ContainerSlotOption.objects.create(
-            slot=slot, item=map_case, qty_min=1, qty_max=1, weight=1
-        )
+        ContainerSlotOption.objects.create(slot=slot, item=map_case, qty_min=1, qty_max=1, weight=1)
         ContainerSlotOption.objects.create(
             slot=slot, item=scroll_case, qty_min=1, qty_max=1, weight=1
         )
@@ -498,13 +538,16 @@ def _update_diplomats_pack_slots(club: Club, log: Callable[[str], None]) -> list
 
     # Validate
     from items.containers import validate_container_config
+
     validate_container_config(pack)
 
     report.append("Diplomat's Pack: updated to two choice slots (Map Case / Scroll Case)")
     return report
 
 
-def run_rename(club: Club, apply: bool = False, log: Callable[[str], None] | None = None) -> RenameReport:
+def run_rename(
+    club: Club, apply: bool = False, log: Callable[[str], None] | None = None
+) -> RenameReport:
     """Run the full rename_seeded_items process for a club.
 
     Args:

@@ -5,13 +5,12 @@ from io import StringIO
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.db import models
 
 from accounts.models import Membership, User
 from items.models import ContainerSlot, ContainerSlotOption, Item
-from items.seed_names import MAP_CASE, SCROLL_CASE, VARIANT_RENAMES
+from items.seed_names import MAP_CASE, SCROLL_CASE
 from items.services_rename import get_related_objects_to_item
-from ledger.models import LedgerEntry
+from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import Line, item_quantities, record
 from player_characters.models import Character
 from quests.models import QuestRequirement, QuestReward
@@ -89,11 +88,13 @@ def test_apply_renames_in_place_keeps_ids(club, lute_old, flute_old):
 
     # Shop stock
     from shops.models import Shop, ShopStock
+
     shop = Shop.objects.create(club=club, name="Test Shop")
     ShopStock.objects.create(shop=shop, item=lute_old, quantity=5)
 
     # Quest requirement/reward
     from quests.models import Quest
+
     quest = Quest.objects.create(club=club, name="Test Quest")
     QuestRequirement.objects.create(quest=quest, item=lute_old, quantity=1)
     QuestReward.objects.create(quest=quest, item=flute_old, quantity=1)
@@ -107,6 +108,7 @@ def test_apply_renames_in_place_keeps_ids(club, lute_old, flute_old):
     template = StartingEquipmentTemplate.objects.create(club=club, name="T", is_active=True)
     from character_options.models import CharacterClass
     from starting_equipment.models import StartingEquipmentClassEntry
+
     class_opt = CharacterClass.objects.create(club=club, name="TestClass")
     entry = StartingEquipmentClassEntry.objects.create(template=template, class_option=class_opt)
     StartingEquipmentClassLine.objects.create(class_entry=entry, item=lute_old, quantity=1)
@@ -161,7 +163,9 @@ def test_duplicate_instruments_merge_with_ledger(club):
     """Two old records for same instrument merge, one ledger entry per holder, FKs repointed."""
     # Two "Lute" items (simulating Bard's "Lute" and Entertainer's "Musical Instrument (Lute)")
     lute1 = Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵")
-    lute2 = Item.objects.create(club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵")
+    lute2 = Item.objects.create(
+        club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵"
+    )
 
     char1 = make_character(club, "Aria")
     char2 = make_character(club, "Borin")
@@ -170,12 +174,14 @@ def test_duplicate_instruments_merge_with_ledger(club):
 
     # FKs on both
     from shops.models import Shop, ShopStock
+
     shop = Shop.objects.create(club=club, name="Test Shop")
     ShopStock.objects.create(shop=shop, item=lute1, quantity=3)
     ShopStock.objects.create(shop=shop, item=lute2, quantity=2)
 
     # Quest on lute2
     from quests.models import Quest
+
     quest = Quest.objects.create(club=club, name="Test Quest")
     QuestRequirement.objects.create(quest=quest, item=lute2, quantity=1)
 
@@ -194,7 +200,7 @@ def test_duplicate_instruments_merge_with_ledger(club):
 
     # Ledger entries created
     adjustments = LedgerEntry.objects.filter(kind="adjustment")
-    assert adjustments.count() == 2  # One per holder
+    assert adjustments.count() == 1  # Only Borin held lute2 (source)
 
     # ShopStock merged (3 + 2 = 5)
     stock = ShopStock.objects.get(shop=shop, item=survivor)
@@ -213,17 +219,21 @@ def test_every_foreign_key_repointed(club):
     """Test that iterates Item._meta.related_objects and asserts each was repointed."""
     # Create source and target items
     source = Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵")
-    target = Item.objects.create(club=club, name="Lute (Musical Instrument)", value_cp=3500, symbol="🎵")
+    target = Item.objects.create(
+        club=club, name="Lute (Musical Instrument)", value_cp=3500, symbol="🎵"
+    )
 
     char = make_character(club, "Aria")
     record(char, "award", [Line(item=source, quantity=1)])
 
     # Create one instance of each FK relation (except LedgerLine which is append-only)
     from shops.models import Shop, ShopStock
+
     shop = Shop.objects.create(club=club, name="Test Shop")
     ShopStock.objects.create(shop=shop, item=source, quantity=1)
 
     from quests.models import Quest
+
     quest = Quest.objects.create(club=club, name="Test Quest")
     QuestRequirement.objects.create(quest=quest, item=source, quantity=1)
     QuestReward.objects.create(quest=quest, item=source, quantity=1)
@@ -233,56 +243,90 @@ def test_every_foreign_key_repointed(club):
     ContainerSlotOption.objects.create(slot=slot, item=source, qty_min=1, qty_max=1)
 
     template = StartingEquipmentTemplate.objects.create(club=club, name="T", is_active=True)
-    from character_options.models import CharacterClass, Background
-    from starting_equipment.models import StartingEquipmentClassEntry, StartingEquipmentBackgroundEntry
+    from character_options.models import Background, CharacterClass
+    from starting_equipment.models import (
+        StartingEquipmentBackgroundEntry,
+        StartingEquipmentClassEntry,
+    )
+
     class_opt = CharacterClass.objects.create(club=club, name="TestClass")
     bg_opt = Background.objects.create(club=club, name="TestBackground")
-    class_entry = StartingEquipmentClassEntry.objects.create(template=template, class_option=class_opt)
-    bg_entry = StartingEquipmentBackgroundEntry.objects.create(template=template, background_option=bg_opt)
+    class_entry = StartingEquipmentClassEntry.objects.create(
+        template=template, class_option=class_opt
+    )
+    bg_entry = StartingEquipmentBackgroundEntry.objects.create(
+        template=template, background_option=bg_opt
+    )
     StartingEquipmentClassLine.objects.create(class_entry=class_entry, item=source, quantity=1)
-    StartingEquipmentBackgroundLine.objects.create(background_entry=bg_entry, item=source, quantity=1)
+    StartingEquipmentBackgroundLine.objects.create(
+        background_entry=bg_entry, item=source, quantity=1
+    )
 
     MagicItemStartingOption.objects.create(template=template, item=source, max_per_character=1)
 
-    from starting_equipment.models import StartingEquipmentRequest
     from player_characters.models import JunkMark
+    from starting_equipment.models import StartingEquipmentRequest
+
     StartingEquipmentRequest.objects.create(
         club=club, character=char, item=source, quantity=1, status="pending"
     )
     JunkMark.objects.create(character=char, item=source, quantity=1)
 
-    from agent_access.models import ProposedBatch, ProposedItem, ProposedLine
-    batch = ProposedBatch.objects.create(club=club, status=ProposedBatch.Status.PENDING)
-    proposed_item = ProposedItem.objects.create(batch=batch, club=club, name="Test", approved_item=source)
-    ProposedLine.objects.create(batch=batch, item=source, quantity=1)
+    from accounts.models import User
+    from agent_access.models import AgentConnection, ProposedBatch, ProposedItem, ProposedLine
 
-    from downtime.models import DowntimeEntry, DowntimeEntryItem
-    dt_entry = DowntimeEntry.objects.create(character=char, club=club, kind="activity")
+    conn_user = User.objects.create_user("conn@example.com", password="pw")
+    connection = AgentConnection.objects.create(club=club, user=conn_user, label="Test Connection")
+    batch = ProposedBatch.objects.create(
+        club=club,
+        connection=connection,
+        user=conn_user,
+        status=ProposedBatch.Status.PENDING,
+        date="2024-01-01",
+        idempotency_key="test",
+    )
+    ProposedItem.objects.create(batch=batch, club=club, name="Test", approved_item=source)
+    ProposedLine.objects.create(batch=batch, character=char, item=source, quantity=1)
+
+    from downtime.models import DowntimeAction, DowntimeEntry, DowntimeEntryItem
+
+    dt_action = DowntimeAction.objects.create(club=club, name="Test Action", cost=1)
+    dt_entry = DowntimeEntry.objects.create(action=dt_action, label="Test Entry", weight=1)
     DowntimeEntryItem.objects.create(entry=dt_entry, item=source, quantity=1)
 
     # Run merge
-    out = run(club, apply=True)
+    run(club, apply=True)
+
+    # After merge, source (lower pk) survives and gets renamed to target_name
+    # target gets retired. So FKs should point to source (the survivor).
+    survivor = source
+    merged = target
 
     # Verify every relation from Item._meta.related_objects (except LedgerLine) was repointed
+    # Note: "slots" (ContainerSlot.container) and "openings" (ContainerOpening.container)
+    # point to the container, not the content item. Since we didn't create any
+    # ContainerSlot/ContainerOpening where container=source, skip them.
     relations = get_related_objects_to_item()
     for rel in relations:
         accessor = rel.get_accessor_name()
-        if accessor == "ledgerline_set":
-            continue  # LedgerLine is append-only, not repointed
+        if accessor in ("ledgerline_set", "slots", "openings"):
+            continue  # LedgerLine is append-only; slots/openings point to container not content
         model = rel.related_model
         fk_field = rel.field.name
 
-        # Check that no rows point to source
-        count = model.objects.filter(**{fk_field: source}).count()
-        assert count == 0, f"{model.__name__}.{fk_field} still has {count} rows pointing to source"
+        # Check that no rows point to merged (retired) item
+        count = model.objects.filter(**{fk_field: merged}).count()
+        assert count == 0, (
+            f"{model.__name__}.{fk_field} still has {count} rows pointing to merged item"
+        )
 
-        # Check that rows now point to target (or were merged)
-        target_count = model.objects.filter(**{fk_field: target}).count()
-        assert target_count > 0, f"{model.__name__}.{fk_field} has no rows pointing to target"
+        # Check that rows now point to survivor
+        survivor_count = model.objects.filter(**{fk_field: survivor}).count()
+        assert survivor_count > 0, f"{model.__name__}.{fk_field} has no rows pointing to survivor"
 
     # Also check ProposedItem.approved_item (related_name="+")
-    assert not ProposedItem.objects.filter(approved_item=source).exists()
-    assert ProposedItem.objects.filter(approved_item=target).exists()
+    assert not ProposedItem.objects.filter(approved_item=merged).exists()
+    assert ProposedItem.objects.filter(approved_item=survivor).exists()
 
 
 def test_negative_holder_refuses(club):
@@ -290,16 +334,21 @@ def test_negative_holder_refuses(club):
     from django.utils import timezone
 
     lute1 = Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵")
-    lute2 = Item.objects.create(club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵")
+    lute2 = Item.objects.create(
+        club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵"
+    )
 
     char = make_character(club, "Aria")
-    record(char, "award", [Line(item=lute1, quantity=1)])
-    # Create negative net via direct ledger entry
+    record(char, "award", [Line(item=lute1, quantity=1), Line(item=lute2, quantity=1)])
+    # Create negative net on lute2 (source being merged) via direct ledger entry
     entry = LedgerEntry.objects.create(
-        character=char, club=club, kind=LedgerEntry.Kind.ADJUSTMENT,
-        note="test", date=timezone.localdate()
+        character=char,
+        club=club,
+        kind=LedgerEntry.Kind.ADJUSTMENT,
+        note="test",
+        date=timezone.localdate(),
     )
-    LedgerLine.objects.create(entry=entry, item=lute1, quantity=-2)  # net -1
+    LedgerLine.objects.create(entry=entry, item=lute2, quantity=-2)  # net -1 on lute2
 
     before = snapshot()
     out = StringIO()
@@ -318,7 +367,7 @@ def test_negative_holder_refuses(club):
 def test_net_zero_holder_skipped(club):
     """Holder with net 0 is skipped, no ledger entry."""
     lute1 = Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵")
-    lute2 = Item.objects.create(club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵")
+    Item.objects.create(club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵")
 
     char = make_character(club, "Aria")
     record(char, "award", [Line(item=lute1, quantity=1)])
@@ -389,7 +438,9 @@ def test_edited_pack_left_alone(club, map_case_old, map_or_scroll_case_old, dipl
     assert pack.slots.count() == 2
 
 
-def test_second_run_nothing_to_do(club, lute_old, map_case_old, map_or_scroll_case_old, diplomats_pack):
+def test_second_run_nothing_to_do(
+    club, lute_old, map_case_old, map_or_scroll_case_old, diplomats_pack
+):
     """Second run prints 'nothing to do' and writes nothing."""
     # First run
     run(club, apply=True)
@@ -409,8 +460,10 @@ def test_club_without_old_or_new_records_noop(club):
 
 def test_retired_items_handled(club):
     """Retired items are skipped or handled gracefully."""
-    retired_lute = Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵", retired=True)
-    active_lute = Item.objects.create(club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵")
+    Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵", retired=True)
+    active_lute = Item.objects.create(
+        club=club, name="Musical Instrument (Lute)", value_cp=3500, symbol="🎵"
+    )
 
     char = make_character(club, "Aria")
     record(char, "award", [Line(item=active_lute, quantity=1)])
@@ -426,8 +479,12 @@ def test_retired_items_handled(club):
 
 def test_plain_tool_merge(club):
     """Plain tool items merge into artisan's tools variants."""
-    plain_carpenter = Item.objects.create(club=club, name="Carpenter's Tools", value_cp=1000, symbol="🔨")
-    artisan_carpenter = Item.objects.create(club=club, name="Artisan's Tools (Carpenter's)", value_cp=1000, symbol="🔨")
+    plain_carpenter = Item.objects.create(
+        club=club, name="Carpenter's Tools", value_cp=1000, symbol="🔨"
+    )
+    artisan_carpenter = Item.objects.create(
+        club=club, name="Artisan's Tools (Carpenter's)", value_cp=1000, symbol="🔨"
+    )
 
     char = make_character(club, "Aria")
     record(char, "award", [Line(item=plain_carpenter, quantity=1)])
@@ -443,8 +500,12 @@ def test_plain_tool_merge(club):
 
 def test_calligrapher_supplies_merge(club):
     """Calligrapher's Supplies merges into its artisan's tools variant."""
-    plain = Item.objects.create(club=club, name="Calligrapher's Supplies", value_cp=1000, symbol="🖋️")
-    artisan = Item.objects.create(club=club, name="Artisan's Tools (Calligrapher's)", value_cp=1000, symbol="🖋️")
+    plain = Item.objects.create(
+        club=club, name="Calligrapher's Supplies", value_cp=1000, symbol="🖋️"
+    )
+    Item.objects.create(
+        club=club, name="Artisan's Tools (Calligrapher's)", value_cp=1000, symbol="🖋️"
+    )
 
     char = make_character(club, "Aria")
     record(char, "award", [Line(item=plain, quantity=1)])
@@ -458,8 +519,8 @@ def test_calligrapher_supplies_merge(club):
 
 def test_arcane_focus_rename(club):
     """Arcane Focus items renamed to Variant (Kind) form."""
-    crystal = Item.objects.create(club=club, name="Arcane Focus (Crystal)", value_cp=1000, symbol="🔮")
-    orb = Item.objects.create(club=club, name="Arcane Focus (Orb)", value_cp=2000, symbol="🔮")
+    Item.objects.create(club=club, name="Arcane Focus (Crystal)", value_cp=1000, symbol="🔮")
+    Item.objects.create(club=club, name="Arcane Focus (Orb)", value_cp=2000, symbol="🔮")
 
     out = run(club, apply=True)
     assert "Renames" in out
@@ -472,8 +533,10 @@ def test_arcane_focus_rename(club):
 
 def test_druidic_focus_rename(club):
     """Druidic Focus items renamed."""
-    sprig = Item.objects.create(club=club, name="Druidic Focus (Sprig of Mistletoe)", value_cp=100, symbol="🌿")
-    staff = Item.objects.create(club=club, name="Druidic Focus (Staff)", value_cp=500, symbol="🪄")
+    Item.objects.create(
+        club=club, name="Druidic Focus (Sprig of Mistletoe)", value_cp=100, symbol="🌿"
+    )
+    Item.objects.create(club=club, name="Druidic Focus (Staff)", value_cp=500, symbol="🪄")
 
     out = run(club, apply=True)
     assert "Renames" in out
@@ -484,8 +547,8 @@ def test_druidic_focus_rename(club):
 
 def test_holy_symbol_rename(club):
     """Holy Symbol items renamed."""
-    amulet = Item.objects.create(club=club, name="Holy Symbol (Amulet)", value_cp=500, symbol="✝️")
-    emblem = Item.objects.create(club=club, name="Holy Symbol (Emblem)", value_cp=500, symbol="✝️")
+    Item.objects.create(club=club, name="Holy Symbol (Amulet)", value_cp=500, symbol="✝️")
+    Item.objects.create(club=club, name="Holy Symbol (Emblem)", value_cp=500, symbol="✝️")
 
     out = run(club, apply=True)
     assert "Renames" in out
@@ -496,8 +559,8 @@ def test_holy_symbol_rename(club):
 
 def test_gaming_set_rename(club):
     """Gaming Set items renamed."""
-    dice = Item.objects.create(club=club, name="Gaming Set (Dice)", value_cp=100, symbol="🎲")
-    cards = Item.objects.create(club=club, name="Gaming Set (Playing Cards)", value_cp=100, symbol="🎴")
+    Item.objects.create(club=club, name="Gaming Set (Dice)", value_cp=100, symbol="🎲")
+    Item.objects.create(club=club, name="Gaming Set (Playing Cards)", value_cp=100, symbol="🎴")
 
     out = run(club, apply=True)
     assert "Renames" in out
@@ -508,8 +571,8 @@ def test_gaming_set_rename(club):
 
 def test_drum_instrument_only_in_entertainer(club):
     """Drum is only in Entertainer's list, not Bard's."""
-    drum = Item.objects.create(club=club, name="Musical Instrument (Drum)", value_cp=600, symbol="🥁")
-    lute = Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵")
+    Item.objects.create(club=club, name="Musical Instrument (Drum)", value_cp=600, symbol="🥁")
+    Item.objects.create(club=club, name="Lute", value_cp=3500, symbol="🎵")
 
     out = run(club, apply=True)
     assert "Renames" in out

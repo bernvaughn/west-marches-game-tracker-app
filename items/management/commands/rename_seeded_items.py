@@ -24,7 +24,6 @@ Prints a clear report: renames, merges, splits, left alone, refusals.
 """
 
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
 
 from accounts.models import Club
 from items.services_rename import Refusal, run_rename
@@ -93,8 +92,8 @@ class Command(BaseCommand):
 
         if report.left_alone:
             self.stdout.write(self.style.WARNING(f"Left alone ({len(report.left_alone)}):"))
-            for l in report.left_alone:
-                self.stdout.write(f"  {l}")
+            for left_alone_item in report.left_alone:
+                self.stdout.write(f"  {left_alone_item}")
             self.stdout.write("")
 
         if report.refusals:
