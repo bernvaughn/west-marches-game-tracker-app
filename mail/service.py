@@ -28,6 +28,26 @@ def email_enabled() -> bool:
     return getattr(settings, "MAIL_ENABLED", False)
 
 
+def email_disabled_reason() -> str:
+    """Return a user-friendly reason why email is disabled.
+
+    Returns an empty string if email is enabled.
+    """
+    if email_enabled():
+        return ""
+    # Check the root cause: RESEND_API_KEY not configured and not in DEBUG mode
+    from django.conf import settings
+
+    resend_key = getattr(settings, "RESEND_API_KEY", None)
+    debug = getattr(settings, "DEBUG", False)
+    if not resend_key and not debug:
+        return (
+            "Email is disabled because RESEND_API_KEY is not configured. "
+            "A site admin needs to set it to enable outgoing email."
+        )
+    return "Email is disabled for this site."
+
+
 def queue_email(
     kind: str,
     to: str,
@@ -57,6 +77,7 @@ def queue_email(
 
     # Check if email is enabled
     if not email_enabled():
+        disabled_reason = email_disabled_reason()
         message = EmailMessage.objects.create(
             club=club,
             user=user,
@@ -64,7 +85,7 @@ def queue_email(
             to_address=normalized_to,
             subject=subject,
             status=EmailMessage.Status.FAILED,
-            last_error="no_key: Email is off for this site",
+            last_error=disabled_reason or "Email is disabled for this site.",
         )
         return QueueResult(status="failed", message=message)
 

@@ -72,7 +72,8 @@ class TestQueueEmail:
         assert result.message is not None
         msg = result.message
         assert msg.status == EmailMessage.Status.FAILED
-        assert msg.last_error == "no_key: Email is off for this site"
+        assert "RESEND_API_KEY" in msg.last_error
+        assert "site admin" in msg.last_error
         assert not hasattr(msg, "payload") or msg.payload is None
         # Check no payload was created
         assert EmailPayload.objects.count() == 0

@@ -155,8 +155,8 @@ def test_test_email_disabled_when_email_off(club_admin, login, club, settings):
     msg = EmailMessage.objects.filter(club=club, kind="test").first()
     assert msg is not None
     assert msg.status == EmailMessage.Status.FAILED
-    assert "no_key" in msg.last_error
-    assert "Email is off" in msg.last_error
+    assert "RESEND_API_KEY" in msg.last_error
+    assert "site admin" in msg.last_error
 
 
 @override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
@@ -215,8 +215,8 @@ def test_test_email_page_shows_failed_with_reason(club_admin, login, club, setti
     msg = EmailMessage.objects.filter(club=club, kind="test").first()
     assert msg is not None
     assert msg.status == EmailMessage.Status.FAILED
-    assert "no_key" in msg.last_error
-    assert "Email is off" in msg.last_error
+    assert "RESEND_API_KEY" in msg.last_error
+    assert "site admin" in msg.last_error
 
 
 @override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
