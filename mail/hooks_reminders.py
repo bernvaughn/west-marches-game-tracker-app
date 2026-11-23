@@ -9,15 +9,18 @@ from accounts.navigation import register as nav_register
 
 
 def _is_admin_check(request):
-    """Check if user is club admin."""
-    from accounts.permissions import is_club_admin
+    """Check if user is club admin.
 
-    if not request.user.is_authenticated:
+    Reuse request.membership (set by ClubMiddleware) instead of re-querying the
+    database, so rendering this nav entry adds no extra queries per page load.
+    """
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
         return False
-    club = getattr(request, "club", None)
-    if club is None:
-        return False
-    return is_club_admin(request.user, club)
+    if user.is_superuser:
+        return True
+    membership = getattr(request, "membership", None)
+    return bool(membership and membership.is_club_admin)
 
 
 def register():
