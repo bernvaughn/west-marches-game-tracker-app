@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import DoNotEmail, EmailMessage, JobRun
+from .models import ClubMailSettings, DoNotEmail, EmailMessage, JobRun
 
 
 class ReadOnlyAdmin(admin.ModelAdmin):
@@ -47,3 +47,14 @@ class JobRunAdmin(ReadOnlyAdmin):
         if timezone.now() - obj.last_run_at < timezone.timedelta(minutes=15):
             return "Running"
         return "Stopped"
+
+
+@admin.register(ClubMailSettings)
+class ClubMailSettingsAdmin(admin.ModelAdmin):
+    """Per-club mail settings. The contact email is the reply-to on club emails."""
+
+    list_display = ["club", "contact_email", "reminder_days"]
+    search_fields = ["club__name", "club__slug", "contact_email"]
+    raw_id_fields = ["club"]
+    ordering = ["club__name"]
+    list_select_related = ["club"]

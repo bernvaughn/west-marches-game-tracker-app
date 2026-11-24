@@ -3,7 +3,7 @@
 import pytest
 from django.urls import reverse
 
-from mail.models import DoNotEmail, EmailMessage, JobRun
+from mail.models import ClubMailSettings, DoNotEmail, EmailMessage, JobRun
 
 
 @pytest.mark.django_db
@@ -222,3 +222,23 @@ def test_jobrun_timer_never(site_admin, login):
     assert response.status_code == 200
     content = response.content.decode()
     assert "Never" in content
+
+
+@pytest.mark.django_db
+def test_clubmailsettings_admin_changelist_and_change_form(site_admin, login, club):
+    """ClubMailSettings (where the club contact email lives) is in the admin and editable."""
+    settings, _ = ClubMailSettings.objects.get_or_create(club=club)
+    settings.contact_email = "club@example.com"
+    settings.save()
+    client = login(site_admin)
+
+    response = client.get(reverse("admin:mail_clubmailsettings_changelist"))
+    assert response.status_code == 200
+    assert b"club@example.com" in response.content
+
+    url = reverse("admin:mail_clubmailsettings_change", args=[settings.pk])
+    assert client.get(url).status_code == 200
+    data = {"club": club.pk, "contact_email": "new@example.com", "reminder_days": "[1, 3]"}
+    assert client.post(url, data).status_code == 302
+    settings.refresh_from_db()
+    assert settings.contact_email == "new@example.com"
