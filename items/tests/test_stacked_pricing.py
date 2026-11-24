@@ -12,6 +12,10 @@ import pytest
 
 from items.stacked import bundle_label, bundle_price, sale_price, unit_label
 from items.tests.factories import make_arrows, make_rope
+from tests.property_tests import (  # noqa: F401
+    test_buy_then_sell_back_never_profits_when_sell_ge_buy,  # noqa: F401
+    test_split_sales_never_beat_one_sale,  # noqa: F401
+)
 
 
 def item(value_cp, value_units, name="Thing", unit_name="unit", stacked=True):
@@ -89,47 +93,7 @@ def test_selling_in_pieces_never_beats_selling_all_at_once():
     assert sale_price(arrows, 7, 50) >= 7 * sale_price(arrows, 1, 50)
 
 
-# --- property: split sales never beat one sale ----------------------------
-
-
-def _split_sale_total(it, units, buy_percent, parts):
-    return sum(sale_price(it, p, buy_percent) for p in parts if p >= 1)
-
-
-@pytest.mark.story("U129")
-@pytest.mark.parametrize("value_cp", [0, 1, 3, 7, 13, 25, 50, 100, 300])
-@pytest.mark.parametrize("value_units", [1, 2, 3, 7, 10, 20, 50])
-@pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100, 150])
-def test_split_sales_never_beat_one_sale(value_cp, value_units, buy_percent):
-    thing = item(value_cp, value_units, "Thing", "unit")
-    total = sale_price(thing, 100, buy_percent)
-    # two-way and three-way splits
-    assert _split_sale_total(thing, 100, buy_percent, [50, 50]) <= total
-    assert _split_sale_total(thing, 100, buy_percent, [30, 30, 40]) <= total
-    assert _split_sale_total(thing, 100, buy_percent, [1, 1, 98]) <= total
-
-
-# --- property: buy then sell back never profits ---------------------------
-
-
-@pytest.mark.story("U129")
-@pytest.mark.parametrize("value_cp", [0, 1, 3, 7, 13, 25, 50, 100, 300])
-@pytest.mark.parametrize("value_units", [1, 2, 3, 7, 10, 20, 50])
-@pytest.mark.parametrize("sell_percent", [0, 1, 25, 50, 75, 100, 150])
-@pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100])
-def test_buy_then_sell_back_never_profits_when_sell_ge_buy(
-    value_cp, value_units, sell_percent, buy_percent
-):
-    if sell_percent < buy_percent:
-        pytest.skip("only the sell >= buy case is the profit-free guarantee")
-    thing = item(value_cp, value_units, "Thing", "unit")
-    for bundle in (1, 5, 13, 50, 100):
-        cost = bundle_price(thing, bundle, sell_percent)
-        revenue = sale_price(thing, bundle, buy_percent)
-        assert revenue <= cost, (
-            f"profit: buy {bundle} for {cost} cp, sell back for {revenue} cp "
-            f"(sell {sell_percent}% >= buy {buy_percent}%)"
-        )
+# --- property: buy then sell back can profit when sell < buy --------------
 
 
 @pytest.mark.story("U129")
