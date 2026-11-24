@@ -73,11 +73,14 @@ def _get_or_create_gear_item(
     unit_name: str | None = None,
     value_units: int = 1,
     description: str = "",
+    weight_lb: float | None = None,
 ) -> tuple[Item | None, bool]:
     """Get or create a gear item by case-insensitive name.
 
     Returns (item, created). Never overwrites an existing item.
     If the only match is retired, returns (None, False) so the caller can skip it.
+    When ``weight_lb`` is given, the new item is born with that weight
+    (hundredths of a pound); otherwise its weight is left blank.
     """
     existing = Item.objects.filter(club=club, name__iexact=name).order_by("retired", "pk").first()
     if existing:
@@ -86,6 +89,7 @@ def _get_or_create_gear_item(
         return existing, False
 
     rarity = _get_rarity_for_value(value_cp)
+    weight_hundredths = None if weight_lb is None else round(weight_lb * 100)
     item = Item.objects.create(
         club=club,
         name=name,
@@ -97,6 +101,7 @@ def _get_or_create_gear_item(
         is_stacked=unit_name is not None,
         unit_name=unit_name or "",
         value_units=value_units if unit_name else 1,
+        weight_hundredth_lb=weight_hundredths,
         description=description,
     )
     return item, True
@@ -138,6 +143,7 @@ def seed_default_general_store(club: Club) -> GeneralStoreSummary:
                 gear.unit_name,
                 gear.value_units,
                 gear.description,
+                weight_lb=gear.weight_lb,
             )
             if item is not None:
                 bundle_units = gear.value_units if gear.unit_name else 1
