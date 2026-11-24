@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('accounts', '0009_alter_sitesettings_donate_url'),
-        ('items', '0008_item_is_stacked_item_unit_name_item_value_units_and_more'),
+        ('items', '0009_item_weight_hundredth_lb'),
     ]
 
     operations = [
