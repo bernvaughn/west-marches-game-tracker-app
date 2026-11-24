@@ -72,8 +72,8 @@ class TestAgentSearchItemsStacked:
         assert sword_data["unit_name"] == ""
         assert sword_data["value_units"] == 1
 
-        # All previous keys still present
-        expected_keys = {
+        # All previous keys still present (weight_per_unit only for stacked items)
+        base_keys = {
             "id",
             "name",
             "description",
@@ -85,9 +85,15 @@ class TestAgentSearchItemsStacked:
             "is_stacked",
             "unit_name",
             "value_units",
+            "weight_hundredth_lb",
+            "weight",
         }
-        for item_data in [parchment_data, rope_data, sword_data]:
-            assert set(item_data.keys()) == expected_keys
+        # Check non-stacked item (sword) has only base keys
+        assert set(sword_data.keys()) == base_keys
+        # Stacked items have base keys plus weight_per_unit
+        stacked_keys = base_keys | {"weight_per_unit"}
+        assert set(parchment_data.keys()) == stacked_keys
+        assert set(rope_data.keys()) == stacked_keys
 
     def test_other_club_items_never_returned(self, mcp, gm_connection, club, other_club, parchment):
         """Other club's items never returned."""

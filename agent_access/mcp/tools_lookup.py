@@ -1,5 +1,6 @@
 """Agent tools: look up the club's characters and item catalogue (story A2)."""
 
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 
 from django.db.models import Prefetch, Q
@@ -10,6 +11,16 @@ from ledger.coins import format_coins
 from player_characters.models import Character
 
 from .server import agent_tool
+
+
+def _format_weight(hundredths, precision=1):
+    """Format weight in hundredths of a pound as a string."""
+    if hundredths is None:
+        return "not listed"
+    pounds = Decimal(hundredths) / Decimal(100)
+    quantizer = Decimal(10) ** -precision
+    rounded = pounds.quantize(quantizer, rounding=ROUND_HALF_UP)
+    return f"{rounded:.{precision}f} lb"
 
 
 def character_status(character: Character) -> str:
@@ -166,7 +177,12 @@ def search_items(ctx, query: str = "", limit: int = 25) -> dict[str, Any]:
             "is_stacked": item.is_stacked,
             "unit_name": item.unit_name if item.is_stacked else "",
             "value_units": item.value_units if item.is_stacked else 1,
+            "weight_hundredth_lb": item.weight_hundredth_lb,
+            "weight": _format_weight(item.weight_hundredth_lb),
         }
+        if item.is_stacked:
+            item_data["weight_per_unit"] = _format_weight(item.weight_hundredth_lb)
+            # bundle_units would need to be provided by the caller
         if item.is_container:
             # Build preview with unknowns masked (agents never see real unknowns)
             preview = loot_preview(item, viewer_can_see_unknown=False)
