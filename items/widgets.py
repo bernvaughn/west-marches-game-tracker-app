@@ -29,7 +29,8 @@ class ItemPickerWidget(forms.Widget):
             context["widget"]["search_url"] = reverse("items:picker_search", args=[self.club.slug])
         else:
             context["widget"]["search_url"] = ""
-        context["widget"]["value"] = value
+        # Ensure value is string for template comparison in no-JS fallback
+        context["widget"]["value"] = str(value) if value not in (None, "") else ""
         return context
 
     def render(self, name, value, attrs=None, renderer=None):

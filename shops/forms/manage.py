@@ -4,6 +4,7 @@ from django.db.models import Q
 
 from accounts.models import Club
 from items.models import Item
+from items.widgets import ItemPickerWidget
 from shops.models import Shop, ShopStock
 
 PERCENT = [MinValueValidator(0), MaxValueValidator(1000)]
@@ -114,6 +115,7 @@ class StockAddForm(_StockBundleMixin, _StockPercentMixin, forms.ModelForm):
             .filter(retired=False)
             .exclude(Q(is_stacked=False) & Q(stock_entries__shop=shop))
         )
+        self.fields["item"].widget = ItemPickerWidget(club=shop.club)
         self._setup_percent()
         self._setup_bundle(shop)
         # Default bundle_units to 1
