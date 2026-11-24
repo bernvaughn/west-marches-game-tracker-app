@@ -294,6 +294,12 @@ def test_every_foreign_key_repointed(club):
     dt_entry = DowntimeEntry.objects.create(action=dt_action, label="Test Entry", weight=1)
     DowntimeEntryItem.objects.create(entry=dt_entry, item=source, quantity=1)
 
+    # Create RecentItemPick for source
+    from items.models import RecentItemPick
+
+    membership = char.owner
+    RecentItemPick.objects.create(membership=membership, item=source)
+
     # Run merge
     run(club, apply=True)
 

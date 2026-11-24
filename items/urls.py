@@ -17,4 +17,5 @@ urlpatterns = [
     path("<int:pk>/delete/", views.DeleteView.as_view(), name="delete"),
     path("loot-cards/", views.LootCardsPickerView.as_view(), name="loot_cards_picker"),
     path("loot-cards/print/", views.LootCardsPrintView.as_view(), name="loot_cards_print"),
+    path("picker/search/", views.PickerSearchView.as_view(), name="picker_search"),
 ]
