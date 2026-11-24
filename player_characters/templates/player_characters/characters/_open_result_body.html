@@ -3,12 +3,19 @@
    Context: container, rows, error.
    Slice C adds the .wm-chest stage and the aria-live region; the JS in
    container_open.js drives the reveal (Replay included).
+   S1 adds data-fanfare container with container icon for S2 animation.
 {% endcomment %}
 <div data-wm-open-result>
 {% if error %}
   {% include "components/alert.html" with level="danger" title="Could not open" text=error %}
 {% else %}
   <h2>You opened {{ container.name }}</h2>
+
+  {# Data-fanfare container for S2 animation #}
+  <div data-fanfare data-container-icon="{{ container.symbol|default:'📦' }}" aria-hidden="true">
+    <span class="wm-fanfare-container-icon" aria-hidden="true">{{ container.symbol|default:'📦' }}</span>
+  </div>
+
   <div class="wm-chest" aria-hidden="true">
     <div class="wm-chest__base"></div>
     <div class="wm-chest__lid"></div>
