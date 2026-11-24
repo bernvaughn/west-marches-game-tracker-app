@@ -3,7 +3,15 @@
 import pytest
 from django.urls import reverse
 
-from mail.models import ClubMailSettings, DoNotEmail, EmailMessage, JobRun
+from mail.models import (
+    ClubMailSettings,
+    DoNotEmail,
+    EmailMessage,
+    EmailPreference,
+    JobRun,
+    NoticeSent,
+    OneTimeToken,
+)
 
 
 @pytest.mark.django_db
@@ -242,3 +250,87 @@ def test_clubmailsettings_admin_changelist_and_change_form(site_admin, login, cl
     assert client.post(url, data).status_code == 302
     settings.refresh_from_db()
     assert settings.contact_email == "new@example.com"
+
+
+@pytest.mark.django_db
+def test_emailpreference_admin_is_read_only(site_admin, login, player, club):
+    """EmailPreference lists but cannot be added, changed or deleted from the admin."""
+    membership = player.memberships.get(club=club)
+    pref = EmailPreference.objects.create(membership=membership, kind="reminder", enabled=False)
+    client = login(site_admin)
+
+    response = client.get(reverse("admin:mail_emailpreference_changelist"))
+    assert response.status_code == 200
+    assert player.email.encode() in response.content
+    assert client.get(reverse("admin:mail_emailpreference_add")).status_code == 403
+    change = reverse("admin:mail_emailpreference_change", args=[pref.pk])
+    assert client.post(change, {"enabled": "on"}).status_code == 403
+    assert (
+        client.post(reverse("admin:mail_emailpreference_delete", args=[pref.pk])).status_code == 403
+    )
+    pref.refresh_from_db()
+    assert pref.enabled is False
+
+
+@pytest.mark.django_db
+def test_noticesent_admin_is_read_only(site_admin, login, player):
+    """NoticeSent lists but cannot be changed or deleted (deleting would cause a resend)."""
+    notice = NoticeSent.objects.create(kind="reminder", key="session-1", user=player)
+    client = login(site_admin)
+
+    response = client.get(reverse("admin:mail_noticesent_changelist"))
+    assert response.status_code == 200
+    assert b"session-1" in response.content
+    delete = reverse("admin:mail_noticesent_delete", args=[notice.pk])
+    assert client.post(delete, {"post": "yes"}).status_code == 403
+    assert NoticeSent.objects.filter(pk=notice.pk).exists()
+
+
+@pytest.mark.django_db
+def test_onetimetoken_admin_never_shows_token_hash_or_extra(site_admin, login, player, club):
+    """OneTimeToken is read-only and its hash and extra data never appear in the admin."""
+    from django.utils import timezone
+
+    secret_hash = "f" * 64
+    token = OneTimeToken.objects.create(
+        purpose="email_change",
+        user=player,
+        club=club,
+        token_hash=secret_hash,
+        expires_at=timezone.now() + timezone.timedelta(hours=1),
+        extra={"new_email": "pending-address@example.com"},
+    )
+    client = login(site_admin)
+
+    listing = client.get(reverse("admin:mail_onetimetoken_changelist"))
+    assert listing.status_code == 200
+    assert b"Unused" in listing.content
+    assert secret_hash.encode() not in listing.content
+
+    detail = client.get(reverse("admin:mail_onetimetoken_change", args=[token.pk]))
+    assert detail.status_code == 200
+    assert secret_hash.encode() not in detail.content
+    assert b"pending-address@example.com" not in detail.content
+    assert client.get(reverse("admin:mail_onetimetoken_add")).status_code == 403
+    assert (
+        client.post(reverse("admin:mail_onetimetoken_delete", args=[token.pk])).status_code == 403
+    )
+
+
+def test_every_mail_model_is_in_the_admin():
+    """New mail models must be registered, or named here with a reason.
+
+    EmailPayload holds the message body (including links with live tokens) and is
+    deleted after sending, so it stays out of the admin on purpose.
+    """
+    from django.apps import apps
+    from django.contrib import admin as django_admin
+
+    left_out_on_purpose = {"EmailPayload"}
+    registered = {m.__name__ for m in django_admin.site._registry}
+    missing = (
+        {m.__name__ for m in apps.get_app_config("mail").get_models()}
+        - registered
+        - left_out_on_purpose
+    )
+    assert not missing, f"Register these mail models in mail/admin.py: {sorted(missing)}"
