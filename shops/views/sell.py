@@ -100,9 +100,10 @@ def sell_item(request, club_slug, shop_id, item_id):
                     error = str(exc)
                 else:
                     total = sum(line.coins for line in entry.lines.all())
+                    unit_text = StackedPricingService.unit_label(item, quantity)
                     messages.success(
                         request,
-                        f"Sold {StackedPricingService.unit_label(item, quantity)} to {shop} for {format_coins(total)}.",
+                        f"Sold {unit_text} to {shop} for {format_coins(total)}.",
                     )
                     add_recent_shop(request, shop.pk)
                     if is_htmx(request) and request.headers.get("HX-Target") == "#your-inventory":
@@ -148,7 +149,7 @@ def _sell_modal_context(request, shop, character, item):
     after = before - total if character else None
     short = character is not None and after < 0
     units = quantity
-    unit_text = unit_label(item, quantity)
+    unit_text = StackedPricingService.unit_label(item, quantity)
     if item.is_stacked and total == 0:
         error = f"{unit_text} is worth less than 1 cp here. Set it aside instead."
     return {

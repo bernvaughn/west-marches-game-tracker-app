@@ -10,7 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from items.stacked import bundle_label, bundle_price, sale_price, unit_label
+from items.services import StackedPricingService
 from items.tests.factories import make_arrows, make_rope
 from tests.property_tests import (  # noqa: F401
     test_buy_then_sell_back_never_profits_when_sell_ge_buy,  # noqa: F401
@@ -35,31 +35,31 @@ def item(value_cp, value_units, name="Thing", unit_name="unit", stacked=True):
 @pytest.mark.story("U125")
 def test_rope_bundle_of_50_at_100_percent_is_100_cp():
     rope = item(100, 50, "Rope", "ft")
-    assert bundle_price(rope, 50, 100) == 100
+    assert StackedPricingService.bundle_price(rope, 50, 100) == 100
 
 
 @pytest.mark.story("U125")
 def test_rope_bundle_of_10_at_100_percent_is_20_cp():
     rope = item(100, 50, "Rope", "ft")
-    assert bundle_price(rope, 10, 100) == 20
+    assert StackedPricingService.bundle_price(rope, 10, 100) == 20
 
 
 @pytest.mark.story("U125")
 def test_arrows_bundle_of_5_at_100_percent_is_25_cp():
     arrows = item(100, 20, "Arrows", "arrow")
-    assert bundle_price(arrows, 5, 100) == 25
+    assert StackedPricingService.bundle_price(arrows, 5, 100) == 25
 
 
 @pytest.mark.story("U126")
 def test_parchment_one_sheet_at_100_percent_is_10_cp():
     parchment = item(100, 10, "Parchment", "sheet")
-    assert bundle_price(parchment, 1, 100) == 10
+    assert StackedPricingService.bundle_price(parchment, 1, 100) == 10
 
 
 @pytest.mark.story("U129")
 def test_sell_one_parchment_sheet_at_100_percent_is_10_cp():
     parchment = item(100, 10, "Parchment", "sheet")
-    assert sale_price(parchment, 1, 100) == 10
+    assert StackedPricingService.sale_price(parchment, 1, 100) == 10
 
 
 # --- factory-based spec values (DB) --------------------------------------
@@ -69,14 +69,14 @@ def test_sell_one_parchment_sheet_at_100_percent_is_10_cp():
 @pytest.mark.django_db
 def test_factory_rope_bundle_of_50_at_100_percent_is_100_cp(db, club):
     rope = make_rope(club)
-    assert bundle_price(rope, 50, 100) == 100
+    assert StackedPricingService.bundle_price(rope, 50, 100) == 100
 
 
 @pytest.mark.story("U125")
 @pytest.mark.django_db
 def test_factory_arrows_bundle_of_5_at_100_percent_is_25_cp(db, club):
     arrows = make_arrows(club)
-    assert bundle_price(arrows, 5, 100) == 25
+    assert StackedPricingService.bundle_price(arrows, 5, 100) == 25
 
 
 # --- never round per unit -------------------------------------------------
@@ -86,11 +86,13 @@ def test_factory_arrows_bundle_of_5_at_100_percent_is_25_cp(db, club):
 def test_selling_in_pieces_never_beats_selling_all_at_once():
     arrows = item(100, 20, "Arrows", "arrow")
     # 1 arrow at 50% buy: floor(100*1*50/(100*20)) = floor(2.5) = 2
-    assert sale_price(arrows, 1, 50) == 2
+    assert StackedPricingService.sale_price(arrows, 1, 50) == 2
     # 7 arrows at 50% buy: floor(100*7*50/(100*20)) = floor(17.5) = 17
-    assert sale_price(arrows, 7, 50) == 17
+    assert StackedPricingService.sale_price(arrows, 7, 50) == 17
     # Per-unit rounding would give 7 * 2 = 14, never the 17 for the whole.
-    assert sale_price(arrows, 7, 50) >= 7 * sale_price(arrows, 1, 50)
+    assert StackedPricingService.sale_price(arrows, 7, 50) >= 7 * StackedPricingService.sale_price(
+        arrows, 1, 50
+    )
 
 
 # --- property: buy then sell back can profit when sell < buy --------------
@@ -100,8 +102,8 @@ def test_selling_in_pieces_never_beats_selling_all_at_once():
 def test_buy_then_sell_back_can_profit_when_sell_lt_buy():
     """sell_pct < buy_pct breaks the guarantee: the condition matters."""
     thing = item(100, 10, "Parchment", "sheet")
-    cost = bundle_price(thing, 10, 50)  # ceil(100*10*50/(100*10)) = 50
-    revenue = sale_price(thing, 10, 100)  # floor(100*10*100/(100*10)) = 100
+    cost = StackedPricingService.bundle_price(thing, 10, 50)  # ceil(100*10*50/(100*10)) = 50
+    revenue = StackedPricingService.sale_price(thing, 10, 100)  # floor(100*10*100/(100*10)) = 100
     assert revenue > cost
 
 
@@ -111,19 +113,21 @@ def test_buy_then_sell_back_can_profit_when_sell_lt_buy():
 @pytest.mark.story("U123")
 def test_results_are_ints_never_floats():
     rope = item(100, 50, "Rope", "ft")
-    assert type(bundle_price(rope, 10, 100)) is int
-    assert type(sale_price(rope, 7, 50)) is int
+    assert type(StackedPricingService.bundle_price(rope, 10, 100)) is int
+    assert type(StackedPricingService.sale_price(rope, 7, 50)) is int
 
 
 @pytest.mark.story("U123")
 def test_large_values_match_exact_fraction_math():
     rope = item(10**12, 50, "Rope", "ft")
     expected = -(-(10**12 * 10 * 100) // (100 * 50))
-    assert bundle_price(rope, 10, 100) == expected
+    assert StackedPricingService.bundle_price(rope, 10, 100) == expected
     # ceil(a/b) == -(-a//b); compare against Fraction ceiling
     exact = Fraction(10**12 * 10 * 100, 100 * 50)
-    assert bundle_price(rope, 10, 100) == -(-exact.numerator // exact.denominator)
-    assert sale_price(rope, 7, 50) == (10**12 * 7 * 50) // (100 * 50)
+    assert StackedPricingService.bundle_price(rope, 10, 100) == -(
+        -exact.numerator // exact.denominator
+    )
+    assert StackedPricingService.sale_price(rope, 7, 50) == (10**12 * 7 * 50) // (100 * 50)
 
 
 # --- validation ------------------------------------------------------------
@@ -133,16 +137,16 @@ def test_large_values_match_exact_fraction_math():
 @pytest.mark.parametrize(
     "fn, kwargs",
     [
-        (bundle_price, {"bundle_units": 0, "sell_percent": 100}),
-        (bundle_price, {"bundle_units": -1, "sell_percent": 100}),
-        (bundle_price, {"bundle_units": 5, "sell_percent": -1}),
-        (bundle_price, {"bundle_units": 5, "sell_percent": True}),
-        (bundle_price, {"bundle_units": 5, "sell_percent": 50.0}),
-        (sale_price, {"units": 0, "buy_percent": 100}),
-        (sale_price, {"units": -3, "buy_percent": 100}),
-        (sale_price, {"units": 5, "buy_percent": -1}),
-        (sale_price, {"units": 5, "buy_percent": False}),
-        (sale_price, {"units": 5, "buy_percent": 50.0}),
+        (StackedPricingService.bundle_price, {"bundle_units": 0, "sell_percent": 100}),
+        (StackedPricingService.bundle_price, {"bundle_units": -1, "sell_percent": 100}),
+        (StackedPricingService.bundle_price, {"bundle_units": 5, "sell_percent": -1}),
+        (StackedPricingService.bundle_price, {"bundle_units": 5, "sell_percent": True}),
+        (StackedPricingService.bundle_price, {"bundle_units": 5, "sell_percent": 50.0}),
+        (StackedPricingService.sale_price, {"units": 0, "buy_percent": 100}),
+        (StackedPricingService.sale_price, {"units": -3, "buy_percent": 100}),
+        (StackedPricingService.sale_price, {"units": 5, "buy_percent": -1}),
+        (StackedPricingService.sale_price, {"units": 5, "buy_percent": False}),
+        (StackedPricingService.sale_price, {"units": 5, "buy_percent": 50.0}),
     ],
 )
 def test_bad_units_or_negative_percent_raise(fn, kwargs):
@@ -156,8 +160,8 @@ def test_bad_units_or_negative_percent_raise(fn, kwargs):
 def test_zero_percent_prices_to_zero(n):
     """0% is valid shop data (manage form allows 0-1000); it prices to 0."""
     rope = item(100, 50, "Rope", "ft")
-    assert sale_price(rope, n, 0) == 0
-    assert bundle_price(rope, n, 0) == 0
+    assert StackedPricingService.sale_price(rope, n, 0) == 0
+    assert StackedPricingService.bundle_price(rope, n, 0) == 0
 
 
 # --- labels ----------------------------------------------------------------
@@ -166,34 +170,34 @@ def test_zero_percent_prices_to_zero(n):
 @pytest.mark.story("U127")
 def test_unit_label_stacked():
     rope = item(100, 50, "Rope", "ft")
-    assert unit_label(rope, 40) == "40 ft Rope"
+    assert StackedPricingService.unit_label(rope, 40) == "40 ft Rope"
 
 
 @pytest.mark.story("U127")
 def test_unit_label_one_sheet_parchment():
     parchment = item(100, 10, "Parchment", "sheet")
-    assert unit_label(parchment, 1) == "1 sheet Parchment"
+    assert StackedPricingService.unit_label(parchment, 1) == "1 sheet Parchment"
 
 
 @pytest.mark.story("U127")
 def test_unit_label_many_arrows():
     arrows = item(100, 20, "Arrows", "arrow")
-    assert unit_label(arrows, 105) == "105 arrow Arrows"
+    assert StackedPricingService.unit_label(arrows, 105) == "105 arrow Arrows"
 
 
 @pytest.mark.story("U127")
 def test_unit_label_normal_item():
     rope = item(100, 1, "Rope", "ft", stacked=False)
-    assert unit_label(rope, 3) == "3 × Rope"
+    assert StackedPricingService.unit_label(rope, 3) == "3 × Rope"
 
 
 @pytest.mark.story("U125")
 def test_bundle_label_stacked():
     arrows = item(100, 20, "Arrows", "arrow")
-    assert bundle_label(arrows, 100) == "bundle of 100 arrow"
+    assert StackedPricingService.bundle_label(arrows, 100) == "bundle of 100 arrow"
 
 
 @pytest.mark.story("U125")
 def test_bundle_label_normal_item_returns_name():
     rope = item(100, 1, "Rope", "ft", stacked=False)
-    assert bundle_label(rope, 1) == "Rope"
+    assert StackedPricingService.bundle_label(rope, 1) == "Rope"

@@ -189,7 +189,11 @@ def detail(request, club_slug, pk):
 
 
 def _missing_text(missing):
-    return "Missing " + ", ".join(StackedPricingService.unit_label(item, n) for item, n in missing) + "."
+    return (
+        "Missing "
+        + ", ".join(StackedPricingService.unit_label(item, n) for item, n in missing)
+        + "."
+    )
 
 
 @club_member_required

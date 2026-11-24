@@ -71,7 +71,9 @@ def buy(request, club_slug, shop_id, stock_id):
                 stock.refresh_from_db()
                 unit_price = sell_price(stock)
                 if stock.item.is_stacked:
-                    base_value = StackedPricingService.bundle_price(stock.item, stock.bundle_units, 100)
+                    base_value = StackedPricingService.bundle_price(
+                        stock.item, stock.bundle_units, 100
+                    )
                 else:
                     base_value = stock.item.value_cp
                 sell_percent = (

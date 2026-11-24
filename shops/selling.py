@@ -44,9 +44,8 @@ def sell(character, shop, item, quantity=1, actor=None, today=None):
             raise ShopClosed()
         price = sale_total(shop, item, quantity)
         if price == 0 and item.is_stacked:
-            raise ShopError(
-                f"{StackedPricingService.unit_label(item, quantity)} is worth less than 1 cp here. Set it aside instead."
-            )
+            unit_text = StackedPricingService.unit_label(item, quantity)
+            raise ShopError(f"{unit_text} is worth less than 1 cp here. Set it aside instead.")
         lines = [Line(item=item, quantity=-quantity)]
         if price > 0:
             lines.append(Line(coins=price))

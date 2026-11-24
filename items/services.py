@@ -23,7 +23,7 @@ from starting_equipment.models import (
 )
 
 from .models import ContainerSlotOption, Item
-from .stacked import bundle_price, bundle_label, sale_price, unit_label
+from .stacked import bundle_label, bundle_price, sale_price, unit_label
 
 
 def item_is_referenced(item):

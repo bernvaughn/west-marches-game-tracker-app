@@ -27,9 +27,8 @@ class PlayerConsumeForm(BasePlayerConsumeForm):
         quantity = self.cleaned_data["quantity"]
         if quantity > self.available:
             if self.item is not None:
-                raise forms.ValidationError(
-                    f"Only {StackedPricingService.unit_label(self.item, self.available)} available to consume."
-                )
+                label = StackedPricingService.unit_label(self.item, self.available)
+                raise forms.ValidationError(f"Only {label} available to consume.")
             raise forms.ValidationError(f"Only {self.available} available to consume.")
         return quantity
 
@@ -57,10 +56,8 @@ class ConsumeLineFormSet(BaseItemLineFormSet):
                 continue
             available = self.available.get(item.pk, 0)
             if qty > available:
-                form.add_error(
-                    "quantity",
-                    f"Only {StackedPricingService.unit_label(item, available)} available to consume.",
-                )
+                label = StackedPricingService.unit_label(item, available)
+                form.add_error("quantity", f"Only {label} available to consume.")
 
 
 def consume_line_formset(items, available, data=None, *, prefix="items"):

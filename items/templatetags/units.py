@@ -29,4 +29,4 @@ def bundle_label(item, n):
 
     Stacked: "bundle of 100 arrow". Non-stacked: the item name.
     """
-    return stacked.bundle_label(item, n)
+    return StackedPricingService.bundle_label(item, n)

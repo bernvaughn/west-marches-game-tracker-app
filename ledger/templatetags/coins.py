@@ -47,7 +47,9 @@ def downtime_reward_text(entry):
         if line.item_id and line.quantity:
             if line.item.is_stacked:
                 sign = "+" if line.quantity > 0 else "-"
-                parts.append(f"{sign}{StackedPricingService.unit_label(line.item, abs(line.quantity))}")
+                parts.append(
+                    f"{sign}{StackedPricingService.unit_label(line.item, abs(line.quantity))}"
+                )
             else:
                 parts.append(f"{'+' if line.quantity > 0 else ''}{line.quantity} {line.item.name}")
     return ", ".join(parts)

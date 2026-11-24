@@ -77,21 +77,23 @@ def buy_from(buyer, seller, item, quantity, actor=None):
             )
         price = stall_price(item, quantity)
         if price == 0 and item.is_stacked:
-            raise PlayerShopError(f"{StackedPricingService.unit_label(item, quantity)} costs 0 cp at this stall.")
+            label = StackedPricingService.unit_label(item, quantity)
+            raise PlayerShopError(f"{label} costs 0 cp at this stall.")
+        label = StackedPricingService.unit_label(item, quantity)
         entries = record_many(
             [
                 dict(
                     character=buyer,
                     kind="player_shop",
                     lines=[Line(coins=-price), Line(item=item, quantity=quantity)],
-                    note=f"Bought {StackedPricingService.unit_label(item, quantity)} from {seller}'s shop",
+                    note=f"Bought {label} from {seller}'s shop",
                     actor=actor,
                 ),
                 dict(
                     character=seller,
                     kind="player_shop",
                     lines=[Line(coins=price), Line(item=item, quantity=-quantity)],
-                    note=f"Sold {StackedPricingService.unit_label(item, quantity)} to {buyer} from shop",
+                    note=f"Sold {label} to {buyer} from shop",
                     actor=actor,
                 ),
             ]
