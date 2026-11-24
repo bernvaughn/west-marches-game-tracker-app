@@ -161,7 +161,7 @@ main > .wm-messages:first-child, .wm-page-header + .wm-messages { margin-top: va
 .wm-dl { display: grid; grid-template-columns: minmax(7rem, max-content) 1fr; gap: var(--wm-space-2) var(--wm-space-4); margin: 0; }
 .wm-dl dt { color: var(--wm-text-muted); font-weight: 600; font-size: var(--wm-text-sm); }
 .wm-dl dd { margin: 0; }
-@media (max-width: 575.98px) { .wm-dl { grid-template-columns: 1fr; gap: 0; } .wm-dl dd { margin-bottom: var(--wm-space-2); } }
+@media (max-width: 575.98px) { .wm-dl { grid-template-columns: 1fr; gap: 0; } .wm-dl dd { margin-bottom: var(--wm-space-2); } .wm-dl--grid { grid-template-columns: 1fr; gap: var(--wm-space-2); } }
 
 .wm-badge { display: inline-flex; align-items: center; gap: var(--wm-space-1); padding: 2px var(--wm-space-2); border-radius: 999px; font-size: var(--wm-text-xs); font-weight: 600; background: var(--wm-neutral-bg); color: var(--wm-text); border: 1px solid var(--wm-border); }
 .wm-badge--success { background: var(--wm-success-bg); color: var(--wm-success); border-color: var(--wm-success); }

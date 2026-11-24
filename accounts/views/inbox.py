@@ -639,6 +639,7 @@ def message_detail(request, club_slug, pk):
         "accounts/inbox/message_detail.html",
         {
             "msg": msg,
+            "page_title": f"Message #{msg.pk}",
             "is_sender": msg.sender_id == membership.id,
             "is_admin": membership.is_game_master or membership.is_club_admin,
         },
