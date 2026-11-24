@@ -2,6 +2,7 @@ from django import template
 from django.utils.html import format_html, format_html_join
 
 from items.services import StackedPricingService
+from items.values import format_item_value
 from ledger.coins import coin_items, format_coins
 
 register = template.Library()
@@ -53,3 +54,9 @@ def downtime_reward_text(entry):
             else:
                 parts.append(f"{'+' if line.quantity > 0 else ''}{line.quantity} {line.item.name}")
     return ", ".join(parts)
+
+
+@register.filter(name="item_value")
+def item_value(item):
+    """Format an item's value for display."""
+    return format_item_value(item)

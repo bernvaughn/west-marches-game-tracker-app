@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load coins %}
 {% block title %}{% if entry %}Edit {{ entry }}{% else %}New {{ page_title }}{% endif %}{% endblock %}
 
 {% block content %}
@@ -18,6 +19,9 @@
         <div class="row g-2 line-row mb-3 border-start border-secondary">
           <div class="col-md-4 col-lg-5">
             {% include "starting_equipment/_item_picker.html" with form=line_form club=club %}
+            {% if line_form.instance.item %}
+              <div class="small text-muted mt-1">Value: {{ line_form.instance.item|item_value }}</div>
+            {% endif %}
           </div>
           <div class="col-md-2 col-lg-2">
             {{ line_form.quantity }}

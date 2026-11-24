@@ -1,13 +1,13 @@
 {% comment %}
 _item_picker: a club-scoped item picker for entry lines and magic options.
 
-Renders the form's ``item`` field (a select of the club's items) next to a
+Renders the ItemPickerWidget for the form's ``item`` field, with a
 "Browse catalogue" button that opens ``items:references`` in the shared
-app-modal. Self-contained: no shared items templates are changed.
+app-modal as a fallback.
 Context: form (bound form with an ``item`` field), club.
 {% endcomment %}
-<div class="d-flex align-items-end gap-2">
-  {{ form.item }}
+<div class="d-flex flex-column gap-2">
+  <div class="flex-grow-1">{{ form.item }}</div>
   <a
     href="{% url 'items:references' club.slug %}"
     hx-get="{% url 'items:references' club.slug %}"
