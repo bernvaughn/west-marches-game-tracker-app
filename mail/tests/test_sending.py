@@ -327,6 +327,135 @@ class TestSendDueMessages:
         assert msg2.status == EmailMessage.Status.SENT
         assert msg3.status == EmailMessage.Status.QUEUED  # Not sent yet
 
+    def test_send_due_messages_queued_null_next_attempt_at(self, club, settings):
+        """send_due_messages picks up QUEUED messages with next_attempt_at=NULL.
+
+        New messages are created with next_attempt_at=NULL. If the background
+        thread dies before the first attempt, the retry job must pick them up.
+        """
+        settings.RESEND_API_KEY = "test_key"
+        settings.EMAIL_FROM = "from@test.com"
+
+        now = timezone.now()
+
+        # Queued message with next_attempt_at=NULL (new, never attempted)
+        msg1 = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to1@test.com",
+            subject="Test 1",
+            status=EmailMessage.Status.QUEUED,
+            next_attempt_at=None,
+        )
+        EmailPayload.objects.create(message=msg1, text="Hello", expires_at=now + timedelta(hours=1))
+
+        # Queued message due now (normal case)
+        msg2 = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to2@test.com",
+            subject="Test 2",
+            status=EmailMessage.Status.QUEUED,
+            next_attempt_at=now,
+        )
+        EmailPayload.objects.create(message=msg2, text="Hello", expires_at=now + timedelta(hours=1))
+
+        # Not due yet
+        msg3 = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to3@test.com",
+            subject="Test 3",
+            status=EmailMessage.Status.QUEUED,
+            next_attempt_at=now + timedelta(hours=1),
+        )
+        EmailPayload.objects.create(message=msg3, text="Hello", expires_at=now + timedelta(hours=1))
+
+        with patch("httpx.Client") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"id": "msg_123"}
+            mock_response.raise_for_status = MagicMock()
+            mock_client.post.return_value = mock_response
+
+            sent, failed = send_due_messages()
+
+        assert sent == 2
+        assert failed == 0
+        msg1.refresh_from_db()
+        msg2.refresh_from_db()
+        msg3.refresh_from_db()
+        assert msg1.status == EmailMessage.Status.SENT
+        assert msg2.status == EmailMessage.Status.SENT
+        assert msg3.status == EmailMessage.Status.QUEUED  # Not sent yet
+
+    def test_send_due_messages_sending_null_next_attempt_at(self, club, settings):
+        """send_due_messages picks up SENDING messages with next_attempt_at=NULL.
+
+        If a message is stuck in SENDING (e.g., process crashed mid-send),
+        the retry job must pick it up and retry.
+        """
+        settings.RESEND_API_KEY = "test_key"
+        settings.EMAIL_FROM = "from@test.com"
+
+        now = timezone.now()
+
+        # Sending message with next_attempt_at=NULL (stuck in sending)
+        msg1 = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to1@test.com",
+            subject="Test 1",
+            status=EmailMessage.Status.SENDING,
+            next_attempt_at=None,
+            attempts=1,
+        )
+        EmailPayload.objects.create(message=msg1, text="Hello", expires_at=now + timedelta(hours=1))
+
+        # Sending message due now (normal stale case)
+        msg2 = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to2@test.com",
+            subject="Test 2",
+            status=EmailMessage.Status.SENDING,
+            next_attempt_at=now,
+            attempts=1,
+        )
+        EmailPayload.objects.create(message=msg2, text="Hello", expires_at=now + timedelta(hours=1))
+
+        # Not due yet
+        msg3 = EmailMessage.objects.create(
+            club=club,
+            kind="welcome",
+            to_address="to3@test.com",
+            subject="Test 3",
+            status=EmailMessage.Status.SENDING,
+            next_attempt_at=now + timedelta(hours=1),
+            attempts=1,
+        )
+        EmailPayload.objects.create(message=msg3, text="Hello", expires_at=now + timedelta(hours=1))
+
+        with patch("httpx.Client") as mock_client_class:
+            mock_client = MagicMock()
+            mock_client_class.return_value.__enter__.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.json.return_value = {"id": "msg_123"}
+            mock_response.raise_for_status = MagicMock()
+            mock_client.post.return_value = mock_response
+
+            sent, failed = send_due_messages()
+
+        assert sent == 2
+        assert failed == 0
+        msg1.refresh_from_db()
+        msg2.refresh_from_db()
+        msg3.refresh_from_db()
+        assert msg1.status == EmailMessage.Status.SENT
+        assert msg2.status == EmailMessage.Status.SENT
+        assert msg3.status == EmailMessage.Status.SENDING  # Not sent yet
+
 
 @pytest.mark.django_db
 class TestDeleteExpiredPayloads:

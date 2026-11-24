@@ -287,11 +287,16 @@ def send_due_messages() -> tuple[int, int]:
 
     Returns (sent_count, failed_count).
     """
+    from django.db.models import Q
+
     now = timezone.now()
-    due_messages = EmailMessage.objects.filter(
-        status__in=[EmailMessage.Status.QUEUED, EmailMessage.Status.SENDING],
-        next_attempt_at__lte=now,
-    ).select_related("payload")
+    due_messages = (
+        EmailMessage.objects.filter(
+            status__in=[EmailMessage.Status.QUEUED, EmailMessage.Status.SENDING],
+        )
+        .filter(Q(next_attempt_at__lte=now) | Q(next_attempt_at__isnull=True))
+        .select_related("payload")
+    )
 
     sent = 0
     failed = 0
