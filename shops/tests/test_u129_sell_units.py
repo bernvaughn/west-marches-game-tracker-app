@@ -4,7 +4,7 @@ import pytest
 from django.urls import reverse
 
 from items.models import Item
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_coins, item_quantities, record
 from player_characters.junk import junk_value, junk_value_at, set_junk
@@ -143,7 +143,7 @@ def test_confirm_modal_shows_units_and_exact_coins(
     r = c.post(url, {"character": character.id, "quantity": 5}, HTTP_HX_REQUEST="true")
     assert r.status_code == 200
     body = r.content.decode()
-    assert unit_label(parchment, 5) in body  # "5 sheet Parchment"
+    assert StackedPricingService.unit_label(parchment, 5) in body  # "5 sheet Parchment"
     # 5 sheets at 50%: floor(100 * 5 * 50 / 1000) = 25 cp = 2 sp 5 cp
     assert "2 sp" in body and "5 cp" in body
 
@@ -159,7 +159,7 @@ def test_confirm_page_shows_units_and_exact_coins_without_htmx(
     r = c.post(url, {"character": character.id, "quantity": 5})
     assert r.status_code == 200
     body = r.content.decode()
-    assert unit_label(parchment, 5) in body  # "5 sheet Parchment"
+    assert StackedPricingService.unit_label(parchment, 5) in body  # "5 sheet Parchment"
     # 5 sheets at 50%: floor(100 * 5 * 50 / 1000) = 25 cp = 2 sp 5 cp
     assert "2 sp" in body and "5 cp" in body
     # Confirming sells and redirects to the shop detail.

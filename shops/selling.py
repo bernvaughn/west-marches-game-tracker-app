@@ -1,8 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
-from items.stacked import sale_price as stacked_sale_price
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.services import LedgerError, Line, record
 from player_characters.life import require_can_sell
 from shops.models import ShopStock
@@ -28,7 +27,7 @@ def sale_total(shop, item, units):
     """
     pct = buy_percent_for(shop, item)
     if item.is_stacked:
-        return stacked_sale_price(item, units, pct)
+        return StackedPricingService.sale_price(item, units, pct)
     return percent_price(item.value_cp, pct) * units
 
 
@@ -45,9 +44,8 @@ def sell(character, shop, item, quantity=1, actor=None, today=None):
             raise ShopClosed()
         price = sale_total(shop, item, quantity)
         if price == 0 and item.is_stacked:
-            raise ShopError(
-                f"{unit_label(item, quantity)} is worth less than 1 cp here. Set it aside instead."
-            )
+            unit_text = StackedPricingService.unit_label(item, quantity)
+            raise ShopError(f"{unit_text} is worth less than 1 cp here. Set it aside instead.")
         lines = [Line(item=item, quantity=-quantity)]
         if price > 0:
             lines.append(Line(coins=price))
@@ -55,7 +53,7 @@ def sell(character, shop, item, quantity=1, actor=None, today=None):
             character,
             "sale",
             lines,
-            note=f"Sold {unit_label(item, quantity)} to {shop}",
+            note=f"Sold {StackedPricingService.unit_label(item, quantity)} to {shop}",
             actor=actor,
             shop=shop,
         )

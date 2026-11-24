@@ -7,7 +7,7 @@ from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.models import Item
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
 from player_characters.access import owns_character
@@ -127,7 +127,7 @@ def buy(request, club_slug, character_id, item_id):
             "price": price,
             "quantity": quantity,
             "total": total,
-            "unit_text": unit_label(item, quantity) if quantity >= 1 else "",
+            "unit_text": StackedPricingService.unit_label(item, quantity) if quantity >= 1 else "",
             "before": before,
             "after": after,
             "short": buyer is not None and after < 0,

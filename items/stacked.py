@@ -18,6 +18,11 @@ them:
 - Non-stacked items always have ``bundle_units == 1`` (enforced by
   forms/services, not the DB); ``bundle_label`` returns the item name for
   them.
+
+These pure functions remain for backward compatibility. Application code
+should import :class:`items.services.StackedPricingService` instead and call
+its static methods (``sale_price``, ``bundle_price``, ``unit_label``,
+``bundle_label``).
 """
 
 from numbers import Integral

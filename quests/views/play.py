@@ -9,7 +9,7 @@ from django.views.decorators.http import require_POST
 from accounts.htmx import hx_response, is_htmx
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
-from items import stacked
+from items.services import StackedPricingService
 from ledger.services import InsufficientItems, available_items
 from player_characters import life
 from player_characters.selection import selected_character
@@ -189,7 +189,11 @@ def detail(request, club_slug, pk):
 
 
 def _missing_text(missing):
-    return "Missing " + ", ".join(stacked.unit_label(item, n) for item, n in missing) + "."
+    return (
+        "Missing "
+        + ", ".join(StackedPricingService.unit_label(item, n) for item, n in missing)
+        + "."
+    )
 
 
 @club_member_required
@@ -209,7 +213,7 @@ def turn_in(request, club_slug, pk):
             reward_parts.append(f"{rw.coins} gp")
         if rw.item_id and rw.quantity > 0:
             if rw.item.is_stacked:
-                reward_parts.append(stacked.unit_label(rw.item, rw.quantity))
+                reward_parts.append(StackedPricingService.unit_label(rw.item, rw.quantity))
             else:
                 reward_parts.append(f"{rw.quantity} {rw.item.name}")
     reward_summary = ", ".join(reward_parts) if reward_parts else "no reward"

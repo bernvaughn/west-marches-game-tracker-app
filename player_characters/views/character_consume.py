@@ -6,8 +6,8 @@ from django.shortcuts import redirect
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from items import stacked
 from items.models import Item
+from items.services import StackedPricingService
 from ledger.services import LedgerError, Line, available_items, recent_changes, record
 
 from ..access import owns_character
@@ -41,7 +41,9 @@ def player_consume(request, club_slug, pk, item_pk):
             except LedgerError as exc:
                 form.add_error(None, str(exc))
             else:
-                messages.success(request, f"Consumed {stacked.unit_label(item, quantity)}.")
+                messages.success(
+                    request, f"Consumed {StackedPricingService.unit_label(item, quantity)}."
+                )
                 return htmx_or_redirect(request, sheet_url)
     else:
         form = PlayerConsumeForm(item=item, available=available)

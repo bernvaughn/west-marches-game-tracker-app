@@ -2,8 +2,7 @@
 
 from dataclasses import dataclass
 
-from items.stacked import sale_price as stacked_sale_price
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.services import item_quantities
 from shops.selling import sale_total
 
@@ -42,7 +41,7 @@ def junk_rows(character):
 def _base_value(item, qty):
     """Value of `qty` units of `item` at full price (buy percent 100)."""
     if item.is_stacked:
-        return stacked_sale_price(item, qty, 100)
+        return StackedPricingService.sale_price(item, qty, 100)
     return item.value_cp * qty
 
 
@@ -96,7 +95,7 @@ def set_junk(character, item, quantity, actor):
     if quantity > owned:
         if owned < 1:
             raise JunkError(f"{character} owns no {item.name}.")
-        raise JunkError(f"{character} owns only {unit_label(item, owned)}.")
+        raise JunkError(f"{character} owns only {StackedPricingService.unit_label(item, owned)}.")
     if quantity == 0:
         JunkMark.objects.filter(character=character, item=item).delete()
         return None

@@ -6,7 +6,7 @@ from django.utils import timezone
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.coins import format_coins
 from player_characters.junk import junk_rows
 from player_characters.life import LifeError, sell_block_reason
@@ -95,7 +95,7 @@ def _parse(data, character, shop):
         if quantity is None or not 1 <= quantity <= row.quantity:
             return [], f"{row.item}: choose a quantity from 1 to {row.quantity}.", posted
         if row.item.is_stacked and sale_total(shop, row.item, quantity) == 0:
-            unit_text = unit_label(row.item, quantity)
+            unit_text = StackedPricingService.unit_label(row.item, quantity)
             message = f"{unit_text} is worth less than 1 cp here. Set it aside instead."
             return ([], message, posted)
         lines.append((row.item, quantity))

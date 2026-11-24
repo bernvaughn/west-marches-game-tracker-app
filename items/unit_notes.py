@@ -5,7 +5,7 @@ Pure function: no Django imports, no database access.
 
 from ledger.services import Line
 
-from . import stacked
+from .services import StackedPricingService
 
 
 def with_unit_summary(note: str, lines: list[Line]) -> str:
@@ -22,7 +22,7 @@ def with_unit_summary(note: str, lines: list[Line]) -> str:
     parts = []
     for line in lines:
         if line.item and line.item.is_stacked:
-            label = stacked.unit_label(line.item, abs(line.quantity))
+            label = StackedPricingService.unit_label(line.item, abs(line.quantity))
             sign = "+" if line.quantity > 0 else "-"
             parts.append(f"{sign}{label}")
     if not parts:

@@ -2,7 +2,7 @@ from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.services import Line, record
 from player_characters.life import require_can_buy
 from shops.models import ShopStock
@@ -53,7 +53,7 @@ def buy(character, stock, quantity=1, actor=None, today=None, expected_price=Non
                 raise AlreadySold()
         price = sell_price(stock) * quantity
         units = quantity * stock.bundle_units
-        note = f"Bought {unit_label(item, units)} from {shop}"
+        note = f"Bought {StackedPricingService.unit_label(item, units)} from {shop}"
         return record(
             character,
             "purchase",

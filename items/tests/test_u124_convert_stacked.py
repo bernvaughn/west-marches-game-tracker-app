@@ -12,11 +12,11 @@ from agent_access.models import AgentConnection, ProposedBatch, ProposedLine
 from items.models import Item
 from items.services import (
     StackedConversionError,
+    StackedPricingService,
     can_toggle_stacked,
     conversion_preview,
     convert_to_stacked,
 )
-from items.stacked import bundle_price, unit_label
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import Line, item_quantities, record
 from player_characters.models import Character, JunkMark
@@ -196,7 +196,8 @@ def test_convert_writes_one_adjustment_entry_per_holder(club, owned_item, two_ho
     owned_item.refresh_from_db()
     entries = LedgerEntry.objects.filter(kind=LedgerEntry.Kind.ADJUSTMENT).order_by("id")
     assert entries.count() == adjustments_before + 2
-    note = f"Converted to stacked item: each {owned_item.name} is now {unit_label(owned_item, 2)}"
+    unit_text = StackedPricingService.unit_label(owned_item, 2)
+    note = f"Converted to stacked item: each {owned_item.name} is now {unit_text}"
     new_entries = list(entries)[-2:]
     assert all(e.kind == LedgerEntry.Kind.ADJUSTMENT and e.note == note for e in new_entries)
     deltas = sorted(e.lines.first().quantity for e in new_entries)
@@ -242,7 +243,9 @@ def test_convert_shop_lines_become_bundle_lines(club, club_admin):
     assert line.quantity == 7  # stock count unchanged
     assert line.sell_percent == 100
     assert line.buy_percent == 50
-    assert bundle_price(item, 20, 100) == 100  # same as the old whole-copper sell price
+    assert (
+        StackedPricingService.bundle_price(item, 20, 100) == 100
+    )  # same as the old whole-copper sell price
 
 
 def test_convert_junk_marks_scaled(club, owned_item, two_holders):

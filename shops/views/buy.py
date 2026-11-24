@@ -6,7 +6,7 @@ from django.utils import timezone
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from items.stacked import bundle_price
+from items.services import StackedPricingService
 from ledger.coins import format_coins
 from ledger.services import InsufficientFunds, available_coins
 from player_characters.inventory import coin_summary
@@ -30,7 +30,7 @@ def buy(request, club_slug, shop_id, stock_id):
     unit_price = sell_price(stock)
     # For stacked items: value of one bundle at 100% for "vs base" comparison
     if stock.item.is_stacked:
-        base_value = bundle_price(stock.item, stock.bundle_units, 100)
+        base_value = StackedPricingService.bundle_price(stock.item, stock.bundle_units, 100)
     else:
         base_value = stock.item.value_cp
     sell_percent = stock.sell_percent if stock.sell_percent is not None else stock.shop.sell_percent
@@ -71,7 +71,9 @@ def buy(request, club_slug, shop_id, stock_id):
                 stock.refresh_from_db()
                 unit_price = sell_price(stock)
                 if stock.item.is_stacked:
-                    base_value = bundle_price(stock.item, stock.bundle_units, 100)
+                    base_value = StackedPricingService.bundle_price(
+                        stock.item, stock.bundle_units, 100
+                    )
                 else:
                     base_value = stock.item.value_cp
                 sell_percent = (

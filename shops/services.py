@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.db.models.functions import Lower
 from django.utils import timezone
 
-from items.stacked import bundle_price
+from items.services import StackedPricingService
 from ledger.coins import format_coins
 from shops.models import Shop, ShopStock
 
@@ -27,7 +27,7 @@ def sell_price(stock):
     """
     percent = stock.sell_percent if stock.sell_percent is not None else stock.shop.sell_percent
     if stock.item.is_stacked:
-        return bundle_price(stock.item, stock.bundle_units, percent)
+        return StackedPricingService.bundle_price(stock.item, stock.bundle_units, percent)
     return percent_price(stock.item.value_cp, percent)
 
 

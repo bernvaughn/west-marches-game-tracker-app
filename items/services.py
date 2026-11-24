@@ -23,7 +23,7 @@ from starting_equipment.models import (
 )
 
 from .models import ContainerSlotOption, Item
-from .stacked import unit_label
+from .stacked import bundle_label, bundle_price, sale_price, unit_label
 
 
 def item_is_referenced(item):
@@ -235,3 +235,31 @@ def can_toggle_stacked(item):
     if item.pk is None:
         return True
     return not item_is_referenced(item)
+
+
+class StackedPricingService:
+    """Stateless service for stacked item pricing and labels.
+
+    All methods are static and delegate to the pure functions in items.stacked.
+    This is the preferred import path for application code.
+    """
+
+    @staticmethod
+    def sale_price(item, units, buy_percent):
+        """Revenue from selling ``units`` units at ``buy_percent``."""
+        return sale_price(item, units, buy_percent)
+
+    @staticmethod
+    def bundle_price(item, bundle_units, sell_percent):
+        """Price of one bundle of ``bundle_units`` units at ``sell_percent``."""
+        return bundle_price(item, bundle_units, sell_percent)
+
+    @staticmethod
+    def unit_label(item, qty):
+        """Label for a quantity of an item."""
+        return unit_label(item, qty)
+
+    @staticmethod
+    def bundle_label(item, bundle_units):
+        """Label for a shop bundle line."""
+        return bundle_label(item, bundle_units)

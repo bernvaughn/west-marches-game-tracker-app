@@ -1,7 +1,7 @@
 from django import template
 from django.utils.html import format_html, format_html_join
 
-from items import stacked
+from items.services import StackedPricingService
 from ledger.coins import coin_items, format_coins
 
 register = template.Library()
@@ -47,7 +47,9 @@ def downtime_reward_text(entry):
         if line.item_id and line.quantity:
             if line.item.is_stacked:
                 sign = "+" if line.quantity > 0 else "-"
-                parts.append(f"{sign}{stacked.unit_label(line.item, abs(line.quantity))}")
+                parts.append(
+                    f"{sign}{StackedPricingService.unit_label(line.item, abs(line.quantity))}"
+                )
             else:
                 parts.append(f"{'+' if line.quantity > 0 else ''}{line.quantity} {line.item.name}")
     return ", ".join(parts)
