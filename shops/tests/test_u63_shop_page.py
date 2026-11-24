@@ -97,3 +97,22 @@ def test_sell_icon_opens_modal_not_inventory_swap(login, player, club, open_shop
     assert "data-app-modal" in html
     assert "wm-inline-form" not in html
     assert "wm-sell-form" not in html
+
+
+def test_detail_page_shows_item_names_in_inventory(login, player, club, open_shop, item, character):
+    """Plain GET test asserting item names from items/_item_name.html appear in inventory rows."""
+    # Give the character some items
+    record(character, "award", [Line(item=item, quantity=3)])
+
+    html = page(login, player, club, open_shop)
+
+    # Assert item name in inventory rows (items/_item_name.html with info=True)
+    assert item.name in html
+    # Assert the wm-item-symbol class appears if item has a symbol
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in html
+    # Assert the info link appears (info=True is used in _your_inventory.html)
+    # The class is "wm-item-info no-print" so check for wm-item-info as substring
+    assert "wm-item-info" in html
+    assert f'href="{reverse("items:detail", args=[club.slug, item.pk])}"' in html
+    assert f'hx-get="{reverse("items:details_modal", args=[club.slug, item.pk])}"' in html

@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 
 from downtime import services
-from downtime.models import DowntimeResult
+from downtime.models import DowntimeEntryItem, DowntimeResult
 from ledger.models import LedgerEntry
 
 pytestmark = pytest.mark.django_db
@@ -45,3 +45,25 @@ def test_rewards_table(login, club, player, character, action, entries):
     for h in ("Outcome", "Reward", "Chance"):
         assert f'<th scope="col">{h}</th>' in body
     assert "<table" in body and "wm-chalkboard" in body
+
+
+@pytest.mark.story("D10")
+def test_play_page_shows_item_names_in_rewards(
+    login, club, player, character, action, entries, item
+):
+    """Plain GET test asserting item names from items/_item_name.html appear in reward table."""
+
+    # Give the action entries some items so they appear in rewards
+    entry = entries[0]
+    DowntimeEntryItem.objects.create(entry=entry, item=item, quantity=2)
+
+    body = login(player).get(reverse("downtime:play", args=[club.slug])).content.decode()
+
+    # Assert the item name appears (rendered via items/_item_name.html)
+    assert item.name in body
+    # Assert the wm-item-symbol class appears if item has a symbol
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    # Assert the info link appears (info=True is used in _result_body.html but not _jobs.html)
+    # _jobs.html uses {% include "items/_item_name.html" with item=ei.item %} without info=True
+    # So we just check the name is present

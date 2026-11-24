@@ -134,3 +134,32 @@ def test_print_pack_hides_progress(login, club, player, item):
     body = login(player).get(_pack_url(club, character)).content.decode()
     assert quest.name in body
     assert "wm-notice-progress" not in body
+
+
+def test_index_page_shows_item_names_in_notices(
+    login, player, club, character, item, reward_item, give
+):
+    """Plain GET test asserting item names from items/_item_name.html appear in quest notices."""
+    from quests.models import QuestReward
+
+    # Create a quest with both requirements and rewards
+    quest = Quest.objects.create(
+        club=club, name="Test Quest", start_date=timezone.localdate() - timezone.timedelta(days=1)
+    )
+    QuestRequirement.objects.create(quest=quest, item=item, quantity=2)
+    QuestReward.objects.create(quest=quest, item=reward_item, quantity=1)
+    QuestReward.objects.create(quest=quest, coins=500)
+
+    give(character, item, 1)
+
+    body = _index(login(player))
+
+    # Assert requirement item name appears (rendered via items/_item_name.html in _notice.html)
+    assert item.name in body
+    # Assert reward item name appears (rendered via items/_item_name.html in _notice.html)
+    assert reward_item.name in body
+    # Assert the wm-item-symbol class appears if items have symbols
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    if reward_item.symbol:
+        assert 'class="wm-item-symbol"' in body

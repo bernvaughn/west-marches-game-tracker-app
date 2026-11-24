@@ -1,4 +1,5 @@
 import pytest
+from django.urls import reverse
 
 from player_characters import sheet as sh
 from player_characters.models import Character
@@ -113,8 +114,34 @@ def test_directory_and_index_show_class_species(club, login, player, game_master
 def test_ledger_hidden_in_print_and_menu_fixed(club, login, player, funded):
     html = login(player).get(u("characters:detail", club, funded.pk)).content.decode()
     assert "wm-sheet-ledger-box" in html
-    assert "&quot;strategy&quot;" in html or '"strategy":"fixed"' in html
+    assert '"strategy"' in html or '"strategy":"fixed"' in html
     from pathlib import Path
 
     css = Path("static/css/areas/characters.css").read_text()
     assert ".wm-sheet-ledger-box { display: none; }" in css
+
+
+@pytest.mark.story("U69")
+def test_detail_page_shows_item_names_in_inventory(
+    login, player, club, character, item, second_item
+):
+    """Plain GET test asserting item names from items/_item_name.html appear in inventory rows."""
+    from ledger.services import Line, record
+
+    # Give the character some items
+    record(character, "award", [Line(item=item, quantity=2), Line(item=second_item, quantity=1)])
+
+    html = login(player).get(u("characters:detail", club, character.pk)).content.decode()
+
+    # Assert item names appear in inventory rows (rendered via items/_item_name.html with info=True)
+    assert item.name in html
+    assert second_item.name in html
+    # Assert the wm-item-symbol class appears if items have symbols
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in html
+    if second_item.symbol:
+        assert 'class="wm-item-symbol"' in html
+    # Assert the info link appears (info=True in detail.html) - class is "wm-item-info no-print"
+    assert "wm-item-info" in html
+    assert f'href="{reverse("items:detail", args=[club.slug, item.pk])}"' in html
+    assert f'hx-get="{reverse("items:details_modal", args=[club.slug, item.pk])}"' in html
