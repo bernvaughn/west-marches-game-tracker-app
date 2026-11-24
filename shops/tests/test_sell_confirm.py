@@ -62,9 +62,10 @@ def test_confirmed_htmx(club, player, login, character, shop, always_open, loot)
         url(club, shop, loot),
         {"character": character.id, "quantity": 1, "confirmed": "1"},
         HTTP_HX_REQUEST="true",
+        HTTP_HX_TARGET="#your-inventory",
     )
-    assert r.status_code == 204
-    assert r["HX-Redirect"] == reverse("shops:detail", args=[club.slug, shop.id])
+    assert r.status_code == 200
+    assert b'id="your-inventory"' in r.content
     assert sales() == 1
 
 

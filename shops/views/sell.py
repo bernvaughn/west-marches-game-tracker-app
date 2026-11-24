@@ -20,7 +20,7 @@ from shops.models import Shop
 from shops.selling import sale_total
 from shops.selling import sell as do_sell
 from shops.services import ShopError, buy_price, is_open
-from shops.views.browse import add_recent_shop
+from shops.views.browse import _inventory_context, add_recent_shop
 
 
 @club_member_required
@@ -105,6 +105,18 @@ def sell_item(request, club_slug, shop_id, item_id):
                         f"Sold {unit_label(item, quantity)} to {shop} for {format_coins(total)}.",
                     )
                     add_recent_shop(request, shop.pk)
+                    if is_htmx(request) and request.headers.get("HX-Target") == "#your-inventory":
+                        context = {
+                            "shop": shop,
+                            "is_open": is_open(shop, timezone.localdate()),
+                            "club": club,
+                        }
+                        context.update(_inventory_context(character, shop))
+                        return render(
+                            request,
+                            "shops/browse/_your_inventory.html",
+                            context,
+                        )
     if error:
         messages.error(request, error)
     return htmx_or_redirect(request, target)
