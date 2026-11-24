@@ -13,9 +13,8 @@ from django.test import Client
 from django.urls import reverse
 
 from accounts.models import User
-from items.containers import add_slot
 from items.models import Item
-from items.tests.factories import make_container
+from items.tests.factories import add_slot, make_container
 from ledger.services import Line, record
 from player_characters.models import Character
 
