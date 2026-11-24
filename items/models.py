@@ -32,6 +32,11 @@ class Item(models.Model):
     is_stacked = models.BooleanField(default=False)
     unit_name = models.CharField(max_length=40, blank=True)
     value_units = models.PositiveIntegerField(default=1)
+    weight_hundredth_lb = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Weight of one unit in hundredths of a pound. Leave blank if unknown.",
+    )
 
     objects = ClubScopedManager()
 
