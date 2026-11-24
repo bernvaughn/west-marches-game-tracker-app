@@ -229,6 +229,14 @@ All models are club-scoped with `club_path` set and use `ClubScopedManager`. Chi
 - **NoticeSent**: deduplication table for notices (reminders, cancel, change, digests). kind, key (string), user. Unique on (kind, key, user). Key holds ids and start time as text, never a link.
 - **JobRun**: tracks job executions. name (unique), last_run_at, ok (bool), note.
 
+### player_items
+
+- **PlayerItem**: a player-written inventory entry. Belongs to a club and a character. Fields: `name` (max 80), `name_key` (lowercased, collapsed spaces, indexed), `quantity` (positive integer, at least 1), `note` (text, blank), `review` (open, left_as_is, resolved), `resolved_by_change` (nullable FK to PlayerItemChange). A character can have at most 50 PlayerItem rows. The `name_key` is computed on save from `name` for grouping and search.
+- **PlayerItemChange** (append-only): history of every add, edit, remove, promote, merge, or match. Extends `AppendOnlyModel` so rows cannot be updated or deleted. Fields: `club`, `character`, `kind` (added, edited, removed, promoted, merged, matched), `old_name`, `new_name`, `quantity`, `item` (nullable FK to items.Item), `by` (nullable FK to User), `at`, `note`. Ordered by `-at, -id`.
+- **PlayerNotice**: a notice for a membership (player) about item resolution. Fields: `membership` (FK), `club`, `character` (nullable), `kind` (item_promoted, item_merged, item_matched, generic), `text`, `created`, `dismissed_at` (nullable). A notice can be dismissed once; dismissing is idempotent.
+
+All three models are club-scoped via `club_path` and `ClubScopedManager` (or `AppendOnlyManager` for PlayerItemChange).
+
 ## Settled since the first draft
 
 1. Memberships are created when an email is whitelisted, so characters can be assigned before first sign-in.

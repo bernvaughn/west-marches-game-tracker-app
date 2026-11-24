@@ -309,8 +309,9 @@ def test_every_foreign_key_repointed(club):
     relations = get_related_objects_to_item()
     for rel in relations:
         accessor = rel.get_accessor_name()
-        if accessor in ("ledgerline_set", "slots", "openings"):
+        if accessor in ("ledgerline_set", "slots", "openings", "player_item_changes"):
             continue  # LedgerLine is append-only; slots/openings point to container not content
+            # player_item_changes is a nullable FK only set on promote/merge/match
         model = rel.related_model
         fk_field = rel.field.name
 
