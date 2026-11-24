@@ -135,7 +135,7 @@ def test_paging_keeps_filters(monkeypatch, login, game_master, club, character, 
     c = login(game_master)
     r = c.get(index(club), {"character": character.pk})
     html = r.content.decode()
-    nxt = re.search(r'href="([^"]*)">Next', html).group(1).replace("&amp;", "&")
+    nxt = re.search(r'href="([^"]*)">Next', html).group(1).replace("&", "&")
     assert f"character={character.pk}" in nxt and "page=2" in nxt
     r2 = c.get(index(club) + nxt)
     assert "zzother" not in r2.content.decode() and "mine" in r2.content.decode()
@@ -164,7 +164,7 @@ def test_back_link(login, game_master, player, club, character):
     qs = f"?from=ledger&character={character.pk}&kind=award&ledger_page=2&junk=<x>"
     html = login(game_master).get(url + qs).content.decode()
     assert "Back to club ledger" in html
-    assert f"{index(club)}?character={character.pk}&amp;kind=award&amp;page=2" in html
+    assert f"{index(club)}?character={character.pk}&kind=award&page=2" in html
     assert "junk" not in html.split("Back to club ledger")[0].split("<header")[-1]
     assert "Back to sheet" in login(player).get(url + "?from=ledger").content.decode()
     assert "Back to sheet" in login(game_master).get(url).content.decode()
@@ -224,3 +224,67 @@ def test_nav(login, player, game_master, club_admin, club, character):
     for u in (game_master, club_admin):
         html = menus(u)
         assert "Club ledger" in html and ">Ledger<" not in re.sub(r"\s+", "", html)
+
+
+def test_ledger_index_shows_item_names_in_entries(
+    login, game_master, club, character, item, second_item
+):
+    """Plain GET test: item names from items/_item_name.html in ledger index."""
+    from ledger.services import Line, record
+
+    # Create entries with items - give coins first for the purchase
+    record(character, "award", [Line(coins=5000)], note="starting coins")
+    record(character, "award", [Line(item=item, quantity=2)], note="award items")
+    record(
+        character,
+        "purchase",
+        [Line(item=second_item, quantity=1), Line(coins=-50)],
+        note="buy potion",
+    )
+
+    body = login(game_master).get(index(club)).content.decode()
+
+    # Assert item names appear in ledger lines (rendered via items/_item_name.html with info=True)
+    assert item.name in body
+    assert second_item.name in body
+    # Assert the wm-item-symbol class appears if items have symbols
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    if second_item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    # Assert the info link appears (info=True in index.html) - class is "wm-item-info no-print"
+    assert "wm-item-info" in body
+    assert f'href="{reverse("items:detail", args=[club.slug, item.pk])}"' in body
+    assert f'hx-get="{reverse("items:details_modal", args=[club.slug, item.pk])}"' in body
+
+
+def test_ledger_history_shows_item_names_in_entries(
+    login, game_master, club, character, item, second_item
+):
+    """Plain GET test: item names from items/_item_name.html in ledger history."""
+    from ledger.services import Line, record
+
+    # Create entries with items - give coins first for the purchase
+    record(character, "award", [Line(coins=5000)], note="starting coins")
+    record(character, "award", [Line(item=item, quantity=2)], note="award items")
+    record(
+        character,
+        "purchase",
+        [Line(item=second_item, quantity=1), Line(coins=-50)],
+        note="buy potion",
+    )
+
+    body = login(game_master).get(hist(club, character)).content.decode()
+
+    # Assert item names appear in ledger lines (rendered via items/_item_name.html with info=True)
+    assert item.name in body
+    assert second_item.name in body
+    # Assert the wm-item-symbol class appears if items have symbols
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    if second_item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    # Assert the info link appears (info=True in history.html) - class is "wm-item-info no-print"
+    assert "wm-item-info" in body
+    assert f'href="{reverse("items:detail", args=[club.slug, item.pk])}"' in body
+    assert f'hx-get="{reverse("items:details_modal", args=[club.slug, item.pk])}"' in body

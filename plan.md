@@ -1,78 +1,128 @@
-# Implementation Plan: Add or change my email (E9)
+# Implementation Plan: Cross-App Template Include Context Verification
 
-## Files to Create
+## Summary
+The bug in PR 530 was fixed: `accounts/clubs/settings.html` includes `mail/_club_contact_card.html` and `mail/_club_test_card.html`, but the `club_settings` view didn't pass the context those partials need. Commit c07f69c fixed this by adding the required context to the view.
 
-### 1. `mail/views/change_email.py`
-Two views:
-- **Club view** `change_email` (requires sign-in, club member): Shows form to enter new email. On POST: validates new email is not the same as current, not already used by another account (case-insensitive). Issues a 24-hour `email_change` token via `mail.tokens.issue()`, queues confirmation email to the new address with the link. Shows success message that link was sent. Old address stays active until link is used.
-- **Public view** `ConfirmEmailView` (GET/POST at `/mail/email/confirm/<token>/`): GET shows confirm page with new email address. POST consumes token, changes user's email (which is also their sign-in name), sends "email changed" notice to old address, logs out other sessions. Handles: token invalid/expired, address already in use by another account (neutral answer like E4), wrong signed-in user.
+This task requires auditing **all** cross-app template includes where a partial has a dedicated HTMX view that supplies extra context, ensuring parent views pass the same context, and adding plain GET tests.
 
-### 2. `mail/urls_change_email.py`
-- `club_urlpatterns`: `path("change-email/", change_email, name="change_email")`
-- `public_urlpatterns`: `path("email/confirm/<str:token>/", ConfirmEmailView.as_view(), name="confirm_email")`
+## Findings
 
-### 3. `mail/hooks_change_email.py`
-- `register()`: Registers nav entry in "account" group with label "My email address", URL name `mail:change_email`, check `is_member`, order 10.
+### 1. Cross-App Includes with Dedicated HTMX Views (Critical)
 
-### 4. `mail/builders_email_change.py`
-- `build_confirm_email(context)`: Renders text and HTML for the confirmation email sent to the new address. Context: user, club, new_email, confirm_url, site_url. Uses base templates.
+| Parent Template | Included Partial | Partial's HTMX View | Status |
+|-----------------|------------------|---------------------|--------|
+| `accounts/clubs/settings.html` | `mail/_club_contact_card.html` | `mail.views.contact.contact_email` | **FIXED** (c07f69c) |
+| `accounts/clubs/settings.html` | `mail/_club_test_card.html` | `mail.views.test_email.send_test_email` | **FIXED** (c07f69c) |
+| `templates/accounts/_dashboard_downtime_result_modal.html` | `downtime/play/_result_body.html` | `downtime.views.play.SpendView` | **OK** - context passed via `_result_context` |
+| `templates/accounts/_dashboard_downtime_result_modal.html` | `downtime/play/_wheel.html` | `downtime.views.play.SpendView` | **OK** - context passed via `_result_context` |
+| `templates/player_characters/characters/print_session_pack.html` | `quests/_notice.html` | `quests.views.play.detail` | **OK** - context passed explicitly |
+| `templates/player_characters/characters/print_session_pack.html` | `map/_hexmap.html` | `map.views.*` | **OK** - context built via `character_maps` |
+| `items/templates/items/loot_cards_print.html` | `player_characters/characters/_item_card.html` | `player_characters.views.character_print.print_items` | **OK** - context passed explicitly |
 
-### 5. Templates
-- `mail/templates/mail/change_email.html`: Club page with form for new email, shows current email, note that changing email changes sign-in name.
-- `mail/templates/mail/confirm_email.txt` / `confirm_email.html`: Email templates for the confirmation link.
-- `mail/templates/mail/email_changed.txt` / `email_changed.html`: Email templates for the "email changed" notice sent to the old address after confirmation.
+### 2. Cross-App Includes of `items/_item_name.html` (24 occurrences)
 
-### 6. `mail/tests/test_change_email.py`
-Tests covering:
-- Old address works until confirmed
-- Old address gets notice after change
-- Neutral answer for address in use (no email sent)
-- Token single use and expiry (24 hours)
-- Whitelist entries unchanged (test that Whitelist email is not modified)
-- Case-insensitive duplicates caught
+The `items/_item_name.html` partial is included in 24 templates across 6 apps:
+- `downtime` (2): `_result_body.html`, `_jobs.html`
+- `player_characters` (2): `detail.html`, `print_session_pack.html`
+- `shops` (7): `sell/_junk_body.html`, `player/detail.html`, `player/_your_inventory.html`, `player/_confirm_body.html`, `buy/_confirm_body.html`, `browse/_your_inventory.html`, `browse/_stock.html`, `browse/_sell_confirm_body.html`
+- `quests` (3): `play/_turn_in_card.html`, `_notice.html` (2x)
+- `ledger` (3): `index.html`, `_recent_changes.html`, `history.html`
+- `starting_equipment` (7): `template_detail.html` (2x), `entry_list.html` (2x), `choices.html`, `requests/_status_row.html`
 
-## Key Implementation Details
+**Context needed**: `item` (required), `info` (optional), `club` (required when `info=True`)
 
-### Token Extra Data
-When issuing the token, include in `extra`:
-- `new_email`: the new email address
-- `old_email`: the current email address (for the notice)
+**Status**: The `club` is provided by the `clubs` context processor (`accounts.context_processors.clubs`), which adds `club` from `request.club`. All parent views are club-scoped, so this works correctly. No dedicated HTMX view for `_item_name.html` exists.
 
-### Email Change Flow
-1. User visits `/c/<club_slug>/mail/change-email/`, enters new email
-2. View validates: not same as current, not in use by another User (case-insensitive), not in DoNotEmail
-3. Issue `email_change` token (24h TTL) with extra={new_email, old_email}
-4. Build confirm URL: `/mail/email/confirm/<token>/`
-5. Queue email to new address using `queue_email(kind="email_change", ...)`
-6. Show success message
+### 3. Other Cross-App Includes
 
-### Confirmation Flow
-1. GET `/mail/email/confirm/<token>/`: peek token, show confirm page with new email
-2. POST: consume token, validate not expired/used
-3. Check if new_email is already used by another User (case-insensitive) → neutral answer, no email
-4. Change user.email = new_email, save
-5. Sign out other sessions (like password reset)
-6. Send "email changed" notice to old_email via `queue_email(kind="email_change", ...)`
-7. Show success page
+| Parent Template | Included Partial | Status |
+|-----------------|------------------|--------|
+| `player_characters/characters/_open_result_modal.html` | `downtime/play/_result_body.html` | **OK** - same context structure |
+| `templates/accounts/_dashboard_downtime_result_modal.html` | `downtime/play/_result_body.html` | **OK** - handled above |
+| `shops/templates/shops/player/_banner.html` | `shops/_building.html` | **OK** - simple partial, no extra context |
+| `shops/templates/shops/player/_banner.html` | `shops/_memorial.html` | **OK** - same app |
 
-### Neutral Answer for Address in Use
-Same behavior as E4 (forgot password): if the new email belongs to another account, show the same generic success message but send nothing. This prevents email enumeration.
+## Test Coverage Analysis
 
-### Whitelist Entries Unchanged
-The whitelist in `accounts/views/people.py` stores email addresses separately. Changing the user's email should not modify any WhitelistEntry records.
+### Existing Tests for Parent Pages (Plain GET)
 
-### Sign-in Name Change
-Since `User.email` is the sign-in name, changing it changes how the user signs in. The page must say so.
+| Parent View | Test File | Test Function | Asserts Partial Content? |
+|-------------|-----------|---------------|--------------------------|
+| `club_settings` | `accounts/tests/test_club_timezone_ui.py` | `test_settings_page_mail_cards_get_context_on_plain_load` | **Yes** - checks "Email is disabled" banner |
+| `club_settings` | `accounts/tests/test_club_timezone_ui.py` | `test_settings_page_shows_disabled_reason_when_mail_off` | **Yes** - checks disabled reason |
+| `dashboard_downtime_spend_partial` | `accounts/tests/test_dashboard_downtime_browser.py` | `test_dashboard_downtime_spend_reloads_card_and_wheel_spins` | Browser test, not plain GET |
+| `print_session_pack` | `player_characters/tests/characters/test_print_session_pack.py` | `test_owner_sees_pack`, `test_pack_includes_item_cards`, `test_pack_options_exclude_quests`, `test_map_option_prints_character_view` | **Partial** - checks for class names, not specific partial content |
+| `loot_cards_print` | `items/tests/test_u92_loot_cards.py` | `test_print_copies_type`, `test_print_copies_item` | **Partial** - checks for `wm-item-card` class |
+| `downtime:play` | `downtime/tests/test_d8_d9_d10.py` | `test_rewards_table` | **No** - doesn't check item names |
+| `shops:detail` | `shops/tests/test_u63_shop_page.py` | `test_inventory_row_sells_through_sell_item` | **No** - doesn't check item names |
+| `quests:index` | `quests/tests/test_notice_progress.py` | `test_short_quest_shows_have_of_need_and_more` | **Partial** - checks progress text |
+| `quests:detail` | `quests/tests/test_turn_in_card.py` | `test_card_lists_counts_and_missing` | **Partial** - checks item symbol |
+
+### Gaps
+- No plain GET tests for `downtime:play` asserting `items/_item_name.html` content
+- No plain GET tests for `shops:detail` asserting `items/_item_name.html` content
+- No plain GET tests for `quests:index`/`quests:detail` asserting `items/_item_name.html` content
+- No plain GET tests for `ledger:index`/`ledger:history` asserting `items/_item_name.html` content
+- No plain GET tests for `starting_equipment` views asserting `items/_item_name.html` content
+- No plain GET tests for `player_characters:detail` asserting `items/_item_name.html` content
+
+## Implementation Plan
+
+### Phase 1: Verify Context Passing (Read-Only)
+- [ ] Confirm all parent views in Section 1 pass required context (already verified)
+- [ ] Confirm `items/_item_name.html` works via context processor (already verified)
+
+### Phase 2: Add Plain GET Tests for Missing Coverage
+For each parent view that includes a cross-app partial, add a plain GET test asserting the partial's key content:
+
+1. **`downtime:play`** (`downtime/tests/test_d8_d9_d10.py`)
+   - Add test: `test_play_page_shows_item_names_in_rewards`
+   - Assert: Item names from `items/_item_name.html` appear in reward table
+
+2. **`shops:detail`** (`shops/tests/test_u63_shop_page.py`)
+   - Add test: `test_detail_page_shows_item_names_in_inventory`
+   - Assert: Item names from `items/_item_name.html` appear in inventory rows
+
+3. **`quests:index`** (`quests/tests/test_notice_progress.py` or new file)
+   - Add test: `test_index_page_shows_item_names_in_notices`
+   - Assert: Item names from `items/_item_name.html` appear in quest notices
+
+4. **`quests:detail`** (`quests/tests/test_turn_in_card.py` or new file)
+   - Add test: `test_detail_page_shows_item_names_in_requirements_rewards`
+   - Assert: Item names from `items/_item_name.html` appear in requirements/rewards
+
+5. **`ledger:index`** and **`ledger:history`** (new test file if needed)
+   - Add test: `test_ledger_pages_show_item_names_in_entries`
+   - Assert: Item names from `items/_item_name.html` appear in ledger lines
+
+6. **`starting_equipment` views** (new test file if needed)
+   - Add test: `test_template_detail_shows_item_names`
+   - Assert: Item names from `items/_item_name.html` appear in template entries
+
+7. **`player_characters:detail`** (`player_characters/tests/characters/test_*.py`)
+   - Add test: `test_detail_page_shows_item_names_in_inventory`
+   - Assert: Item names from `items/_item_name.html` appear in inventory rows
+
+### Phase 3: Consider Context Processor/Template Tag Refactor (Optional)
+- The mail context (`email_on`, `disabled_reason`, `settings`, `admins`, `recent_tests`) is currently duplicated in `club_settings` view and mail HTMX views. Consider moving to a context processor or template tag for reuse.
+- The `items/_item_name.html` partial's `club` dependency is already handled by the `clubs` context processor.
+
+### Phase 4: Report Findings
+- Document all cross-app includes found
+- Document which were fixed, which were already correct, which need tests
+- Recommend any refactoring (context processor for mail context)
 
 ## Acceptance Criteria Mapping
 
-| Criterion | Proof Stage |
-|-----------|-------------|
-| Changing the address sends a link to the new address; the old address stays active until it is used | review (tests) |
-| Old address gets a notice after the change | review (tests) |
-| An address used by another account gets the neutral answer and no email | review (tests) |
-| Whitelist entries are unchanged | review (tests) |
-| Tests pass; ruff clean; screenshots at 1280 and 390 | verify |
+| Acceptance Item | Proving Stage |
+|-----------------|---------------|
+| List every template that includes a partial whose own view supplies extra context | **plan** (this document) |
+| Check that parent view passes same context | **plan** (verified in findings) |
+| Add plain GET test of each parent page asserting partial's key content | **code** (Phase 2) |
+| Report what was found | **verify** (Phase 4) |
 
-## Proof Stages
-All acceptance items are deferred to `review` stage. The `code` stage implements the feature, `review` stage runs tests and verifies behavior.
+## Next Steps
+1. Transition to `code` stage
+2. Implement Phase 2 tests
+3. Optionally implement Phase 3 refactor
+4. Write final report in `verify` stage

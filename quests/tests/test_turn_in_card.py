@@ -142,3 +142,38 @@ def test_rewards_read_only_no_interactive_elements(login, player, quest, charact
     assert "<button" not in rewards_section
     assert "<input" not in rewards_section
     assert "<a " not in rewards_section
+
+
+@pytest.mark.story("U55")
+def test_detail_page_shows_item_names_in_requirements_rewards(
+    login, player, club, character, item, reward_item, give
+):
+    """Plain GET test: item names from items/_item_name.html in requirements/rewards."""
+    from quests.models import QuestRequirement, QuestReward
+
+    # Create a quest with both requirements and rewards
+    quest = Quest.objects.create(
+        club=club, name="Detail Quest", start_date=timezone.localdate() - timezone.timedelta(days=1)
+    )
+    QuestRequirement.objects.create(quest=quest, item=item, quantity=2)
+    QuestReward.objects.create(quest=quest, item=reward_item, quantity=1)
+    QuestReward.objects.create(quest=quest, coins=500)
+
+    give(character, item, 1)
+
+    body = _body(login(player), quest)
+
+    # Assert requirement item name in turn-in table (items/_item_name.html with info=True)
+    assert item.name in body
+    # Assert reward item name appears in rewards list (rendered via items/_item_name.html)
+    assert reward_item.name in body
+    # Assert the wm-item-symbol class appears if items have symbols
+    if item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    if reward_item.symbol:
+        assert 'class="wm-item-symbol"' in body
+    # Assert the info link appears for requirement items (info=True)
+    # The class is "wm-item-info no-print" so check for wm-item-info as substring
+    assert "wm-item-info" in body
+    assert f'href="{reverse("items:detail", args=["club-a", item.pk])}"' in body
+    assert f'hx-get="{reverse("items:details_modal", args=["club-a", item.pk])}"' in body

@@ -535,3 +535,68 @@ class TestTemplateDetailMissingWarning:
         assert response.status_code == 200
         content = response.content.decode()
         assert template.name in content
+
+
+@pytest.mark.django_db
+class TestTemplateDetailItemNames:
+    """Tests for item names rendered via items/_item_name.html in template detail."""
+
+    def test_template_detail_shows_item_names_in_class_entries(
+        self, client, club_admin, club, template, class_entry, class_item, class_line
+    ):
+        """Plain GET test: item names from items/_item_name.html in class entry lines."""
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+
+        # Assert the class item name appears (rendered via items/_item_name.html)
+        assert class_item.name in content
+        # Assert the wm-item-symbol class appears if item has a symbol
+        if class_item.symbol:
+            assert 'class="wm-item-symbol"' in content
+        # info=True is NOT used in template_detail.html, so no info link expected
+
+    def test_template_detail_shows_item_names_in_background_entries(
+        self, client, club_admin, club, template, bg_entry, bg_item, bg_line
+    ):
+        """Plain GET test: item names from items/_item_name.html in background entry lines."""
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+
+        # Assert the background item name appears (rendered via items/_item_name.html)
+        assert bg_item.name in content
+        # Assert the wm-item-symbol class appears if item has a symbol
+        if bg_item.symbol:
+            assert 'class="wm-item-symbol"' in content
+
+    def test_template_detail_shows_item_names_in_magic_options(
+        self, client, club_admin, club, template, magic_option, magic_item
+    ):
+        """Plain GET test: item names from items/_item_name.html in magic options."""
+        client.force_login(club_admin)
+        url = reverse(
+            "starting_equipment:template_detail",
+            kwargs={"club_slug": club.slug, "pk": template.pk},
+        )
+        response = client.get(url)
+        assert response.status_code == 200
+        content = response.content.decode()
+
+        # Assert the magic item name appears (rendered via items/_item_name.html)
+        # Note: info=True is NOT used for magic options in template_detail.html
+        assert magic_item.name in content
+        # Assert the wm-item-symbol class appears if item has a symbol
+        if magic_item.symbol:
+            assert 'class="wm-item-symbol"' in content
+        # No info link expected since info=True is not used
