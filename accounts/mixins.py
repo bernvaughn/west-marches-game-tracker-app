@@ -16,9 +16,9 @@ from accounts.scoping import (
     club_queryset as _club_queryset,
 )
 from downtime import services as downtime_services
-from player_characters.inventory import coin_summary, inventory_rows
 from player_characters.junk import get_junk_summary
 from player_characters.selection import selected_character
+from player_characters.sheet import coin_summary, inventory_rows
 
 
 class ClubScopedMixin:

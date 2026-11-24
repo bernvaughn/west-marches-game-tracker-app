@@ -1,50 +1,14 @@
-from dataclasses import dataclass
+"""Deprecated: re-export inventory rendering helpers from :mod:`player_characters.sheet`.
 
-from items.models import Item
-from ledger.coins import display_parts
-from ledger.services import coin_balance, held_coins, held_items, item_quantities
+``inventory_rows``, ``coin_summary``, ``InventoryRow`` and ``CoinSummary`` now live in
+``player_characters/sheet.py`` as the single source of truth for character sheet inventory
+rendering. This module remains only for backward compatibility; new code should import from
+``player_characters.sheet`` instead.
+
+``USE_CIRCLE_CAP`` stays here because ``player_characters.item_cards`` and some tests import
+it directly; it is unrelated to inventory rendering.
+"""
+
+from .sheet import CoinSummary, InventoryRow, coin_summary, inventory_rows  # noqa: F401
 
 USE_CIRCLE_CAP = 30
-
-
-@dataclass(frozen=True)
-class InventoryRow:
-    item: Item
-    owned: int
-    held: int
-
-    @property
-    def available(self):
-        return self.owned - self.held
-
-
-@dataclass(frozen=True)
-class CoinSummary:
-    owned: int
-    held: int
-
-    @property
-    def available(self):
-        return self.owned - self.held
-
-    @property
-    def parts(self):
-        return list(zip(("pp", "gp", "sp", "cp"), display_parts(self.owned), strict=True))
-
-    @property
-    def has_holds(self):
-        return self.held > 0
-
-
-def inventory_rows(character):
-    """Owned items (retired included), ordered by item name."""
-    owned = {i: q for i, q in item_quantities(character).items() if q > 0}
-    if not owned:
-        return []
-    held = held_items(character)
-    items = Item.objects.filter(pk__in=owned).order_by("name", "pk")
-    return [InventoryRow(item=i, owned=owned[i.pk], held=held.get(i.pk, 0)) for i in items]
-
-
-def coin_summary(character):
-    return CoinSummary(owned=coin_balance(character), held=held_coins(character))

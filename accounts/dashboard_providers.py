@@ -19,9 +19,9 @@ from ledger.models import LedgerEntry
 from ledger.services import available_items
 from map.models import HexMap
 from map.services import get_uncredited_tiles
-from player_characters.inventory import coin_summary
 from player_characters.junk import get_junk_summary
 from player_characters.player_shop import listed_rows
+from player_characters.sheet import coin_summary
 from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
 from shops.services import open_shops
