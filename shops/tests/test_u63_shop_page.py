@@ -40,8 +40,10 @@ def test_no_old_sell_route_or_button(login, player, club, open_shop, loot):
 def test_inventory_row_sells_through_sell_item(login, player, club, open_shop, loot, character):
     html = page(login, player, club, open_shop)
     url = reverse("shops:sell_item", args=[club.slug, open_shop.id, loot.id])
-    assert f'hx-post="{url}"' in html
-    assert 'name="quantity"' in html and "wm-sell-form" in html and 'aria-label="Sell ' in html
+    assert f'hx-get="{url}?quantity=1"' in html
+    assert 'aria-label="Sell ' in html
+    assert "wm-row-actions-cell" in html
+    assert "data-app-modal" in html
 
 
 def test_no_sell_forms_when_closed(login, player, club, shop, loot, character, closed_shop):
@@ -87,8 +89,11 @@ def test_js_toggles_one_box_at_a_time():
     assert "show(null)" in js
 
 
-def test_sell_form_does_not_inherit_inventory_swap(login, player, club, open_shop, loot, character):
+def test_sell_icon_opens_modal_not_inventory_swap(login, player, club, open_shop, loot, character):
     html = page(login, player, club, open_shop)
-    start = html.index('class="wm-inline-form wm-sell-form wm-row-actions"')
-    form = html[html.rindex("<form", 0, start) : start]
-    assert 'hx-select="unset"' in form and 'hx-swap="innerHTML"' in form
+    url = reverse("shops:sell_item", args=[club.slug, open_shop.id, loot.id])
+    assert f'hx-get="{url}?quantity=1"' in html
+    assert 'hx-target="#app-modal .modal-content"' in html
+    assert "data-app-modal" in html
+    assert "wm-inline-form" not in html
+    assert "wm-sell-form" not in html

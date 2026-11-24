@@ -1,0 +1,40 @@
+{% load coins units quest_needs %}
+{% if not in_modal %}<h2 class="h5">{% include "items/_item_name.html" with item=item %}</h2>{% endif %}
+{% if item.description %}<p>{{ item.description }}</p>{% endif %}
+<dl class="wm-dl wm-shop-sums">
+  <dt>Price each</dt><dd>{{ price|coins }}</dd>
+  <dt>Total</dt><dd>{{ total|coins }}</dd>
+</dl>
+{% if error %}<div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">{% include "components/icon.html" with name="x-octagon-fill" %}<div>{{ error }}</div></div>{% endif %}
+{% if not character %}
+<p>You have no character in this club.</p>
+{% else %}
+<p>Selling as <strong>{{ character.name }}</strong></p>
+{% if form.errors %}<p class="error text-danger" role="alert">{{ form.quantity.errors|join:" " }}</p>{% endif %}
+<p>
+  <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+  <input type="number" name="quantity" id="{{ form.quantity.id_for_label }}" min="1" max="{{ available }}" value="{{ quantity }}" class="form-control w-auto"
+    hx-get="{% url 'shops:sell_item' request.club.slug shop.pk item.pk %}" hx-trigger="input changed delay:300ms" hx-target="#sell-summary" hx-select="#sell-summary" hx-swap="outerHTML" hx-include="closest form">
+</p>
+<div id="sell-summary">
+  <dl class="wm-dl wm-shop-sums">
+    <dt>Units</dt><dd>{{ unit_text }}</dd>
+    <dt>Total</dt><dd>{{ total|coins }}</dd>
+    <dt>Coins before</dt><dd>{{ before|coins }}</dd>
+    <dt>Coins after</dt><dd>{% if short %}<span class="text-danger">{{ after|coins }} (not enough coins)</span>{% else %}{{ after|coins }}{% endif %}</dd>
+  </dl>
+</div>
+{% quest_needs character as needs %}
+{% with names=needs|needed_for:item.pk %}{% if names %}
+<p class="wm-quest-needed-warning text-warning-emphasis">Warning: {{ item.name }} is needed for the quest {{ names|join:", " }}. You may not be able to finish it if you sell.</p>
+{% endif %}{% endwith %}
+<div class="alert alert-warning wm-alert wm-alert--warning" role="alert">{% include "components/icon.html" with name="exclamation-triangle-fill" %}<div>
+  {% if item.is_stacked %}
+    {% if junk_quantity %}Only {{ junk_quantity }} of {{ unit_text }} are marked as junk. All {{ unit_text }} sell and leave your inventory for {{ total|coins }}.{% else %}{{ item.name }} is not marked as junk. Selling {{ unit_text }} pays {{ total|coins }} and it leaves your inventory.{% endif %}
+  {% else %}
+    {% if junk_quantity %}Only {{ junk_quantity }} of these {% if junk_quantity == 1 %}is{% else %}are{% endif %} marked as junk. All {{ quantity }} sell at {{ price|coins }} each and leave your inventory.{% else %}{{ item.name }} is not marked as junk. If you sell it, the shop still pays {{ price|coins }} each and it leaves your inventory.{% endif %}
+  {% endif %}
+</div>
+<input type="hidden" name="quantity" value="{{ quantity }}">
+<input type="hidden" name="confirmed" value="1">
+{% endif %}

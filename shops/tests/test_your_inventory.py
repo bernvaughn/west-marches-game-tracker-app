@@ -106,9 +106,10 @@ def test_browse_card_shows_sell_price_under_name(login, player, club, open_shop,
     assert c.count("wm-inv-sells") == 2
     assert "sells for " + coins(buy_price(open_shop, item)) in c
     assert "sells for " + coins(buy_price(open_shop, gem)) in c
-    # the Sells-for column and the Sell form are still present
+    # the Sells-for column and the sell icon button (row action) are present
     assert "Sells for" in c
-    assert "wm-sell-form" in c
+    assert "wm-row-actions-cell" in c
+    assert "data-app-modal" in c
 
 
 @pytest.mark.story("U46")
