@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from django.test import Client
 
@@ -115,3 +117,36 @@ def char_class(club):
 @pytest.fixture
 def background(club):
     return Background.objects.create(club=club, name="Soldier")
+
+
+@pytest.fixture
+def make_pure_item():
+    """Factory for pure ``SimpleNamespace`` items used by property tests."""
+
+    def _make(value_cp, value_units, name="Thing", unit_name="unit", stacked=True):
+        return SimpleNamespace(
+            name=name,
+            unit_name=unit_name,
+            value_cp=value_cp,
+            value_units=value_units,
+            is_stacked=stacked,
+        )
+
+    return _make
+
+
+@pytest.fixture
+def make_db_item(club):
+    """Factory for DB-backed stacked items used by property tests."""
+
+    def _make(value_cp, value_units, name="Thing", unit_name="unit"):
+        return Item.objects.create(
+            club=club,
+            name=name,
+            is_stacked=True,
+            unit_name=unit_name,
+            value_cp=value_cp,
+            value_units=value_units,
+        )
+
+    return _make

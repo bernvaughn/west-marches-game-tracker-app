@@ -4,7 +4,7 @@ import pytest
 from django.urls import reverse
 
 from items.models import Item
-from items.stacked import bundle_price, sale_price, unit_label
+from items.stacked import unit_label
 from ledger.models import LedgerEntry
 from ledger.services import Line, available_coins, item_quantities, record
 from player_characters.junk import junk_value, junk_value_at, set_junk
@@ -13,6 +13,10 @@ from player_characters.player_shop import PlayerShopError, buy_from, listed_rows
 from shops.models import Rotation, ShopStock
 from shops.selling import SellLineError, buy_percent_for, sale_total, sell, sell_many
 from shops.services import ShopError, buy_price, percent_price
+from tests.property_tests import (
+    assert_buy_then_sell_back_never_profits,
+    assert_split_sales_never_beat_one_sale,
+)
 
 pytestmark = [pytest.mark.story("U129"), pytest.mark.django_db]
 
@@ -62,12 +66,11 @@ def award(character, lines):
 @pytest.mark.parametrize("value_cp", [1, 3, 7, 13, 25, 50, 100, 300])
 @pytest.mark.parametrize("value_units", [2, 3, 7, 10, 20, 50])
 @pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100, 150])
-def test_split_sales_never_beat_one_sale(club, value_cp, value_units, buy_percent):
-    thing = _make_stacked(club, "Thing", "unit", value_cp, value_units)
-    total = sale_price(thing, 100, buy_percent)
-    assert sum(sale_price(thing, p, buy_percent) for p in [50, 50]) <= total
-    assert sum(sale_price(thing, p, buy_percent) for p in [30, 30, 40]) <= total
-    assert sum(sale_price(thing, p, buy_percent) for p in [1, 1, 98]) <= total
+def test_split_sales_never_beat_one_sale(club, make_db_item, value_cp, value_units, buy_percent):
+    thing = make_db_item(value_cp, value_units, "Thing", "unit")
+    assert_split_sales_never_beat_one_sale(
+        thing, 100, buy_percent, [50, 50], [30, 30, 40], [1, 1, 98]
+    )
 
 
 # --- property: buy then sell back never profits when sell pct >= buy pct --
@@ -78,18 +81,13 @@ def test_split_sales_never_beat_one_sale(club, value_cp, value_units, buy_percen
 @pytest.mark.parametrize("sell_percent", [0, 1, 25, 50, 75, 100, 150])
 @pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100])
 def test_buy_then_sell_back_never_profits_when_sell_ge_buy(
-    club, value_cp, value_units, sell_percent, buy_percent
+    club, make_db_item, value_cp, value_units, sell_percent, buy_percent
 ):
     if sell_percent < buy_percent:
         pytest.skip("only the sell >= buy case is the profit-free guarantee")
-    thing = _make_stacked(club, "Thing", "unit", value_cp, value_units)
+    thing = make_db_item(value_cp, value_units, "Thing", "unit")
     for bundle in (1, 5, 13, 50, 100):
-        cost = bundle_price(thing, bundle, sell_percent)
-        revenue = sale_price(thing, bundle, buy_percent)
-        assert revenue <= cost, (
-            f"profit: buy {bundle} for {cost} cp, sell back for {revenue} cp "
-            f"(sell {sell_percent}% >= buy {buy_percent}%)"
-        )
+        assert_buy_then_sell_back_never_profits(thing, bundle, sell_percent, buy_percent)
 
 
 # --- shop sale: price floored once from the total units ------------------
