@@ -6,9 +6,9 @@ After=network.target
 Type=oneshot
 User=deploy
 Group=deploy
-WorkingDirectory=/opt/downtime
+WorkingDirectory=/srv/app
 EnvironmentFile=/etc/downtime.env
-ExecStart=/opt/downtime/.venv/bin/uv run python manage.py run_mail_jobs
+ExecStart=/srv/app/.venv/bin/python manage.py run_mail_jobs
 StandardOutput=journal
 StandardError=journal
 
