@@ -24,6 +24,28 @@ from starting_equipment.models import (
     StartingEquipmentTemplate,
 )
 
+# SRD weights (lb) for starting-equipment items that have a listed weight.
+# Values match shops/gear.py for overlapping names; weight is per unit for
+# stacked items (Arrows, Crossbow Bolts). Items not listed here have no
+# listed SRD weight and are left blank.
+STARTING_EQUIPMENT_WEIGHTS: dict[str, float] = {
+    "Leather Armor": 5,
+    "Component Pouch": 2,
+    "Amulet (Holy Symbol)": 1,
+    "Crowbar": 5,
+    "Costume": 4,
+    "Arrows": 0.05,
+    "Crossbow Bolts": 0.1,
+    "Longsword": 4,
+    "Greataxe": 7,
+    "Shield": 6,
+    "Chain Mail": 55,
+    "Scale Mail": 45,
+    "Spellbook": 3,
+    "Thieves' Tools": 1,
+    "Dart": 0.25,
+}
+
 # Stacked ammunition items shared with the General Store gear list.
 # Each entry: name -> (value_cp, symbol, rarity, magic_type, unit_name, value_units)
 # These match shops/gear.py GENERAL_STORE_GEAR exactly.
@@ -537,6 +559,9 @@ def _create_items(club: Club) -> int:
                     specs["is_stacked"] = True
                     specs["unit_name"] = unit_name
                     specs["value_units"] = value_units
+                weight_lb = STARTING_EQUIPMENT_WEIGHTS.get(name)
+                if weight_lb is not None:
+                    specs["weight_hundredth_lb"] = round(weight_lb * 100)
                 item_specs[name] = specs
 
     # Collect all unique items from background equipment
@@ -555,6 +580,9 @@ def _create_items(club: Club) -> int:
                     specs["is_stacked"] = True
                     specs["unit_name"] = unit_name
                     specs["value_units"] = value_units
+                weight_lb = STARTING_EQUIPMENT_WEIGHTS.get(name)
+                if weight_lb is not None:
+                    specs["weight_hundredth_lb"] = round(weight_lb * 100)
                 item_specs[name] = specs
 
     # Create items
