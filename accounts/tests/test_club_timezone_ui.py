@@ -48,6 +48,27 @@ def test_settings_page_renders_card_hierarchy_markers(club_admin, login, club):
     assert body.count("wm-settings-card--utility") == 1
 
 
+def test_settings_page_mail_cards_get_context_on_plain_load(club_admin, login, club, settings):
+    """Plain GET must give the mail cards their context (not only after HTMX actions)."""
+    settings.MAIL_ENABLED = True
+    c = _login(login(club_admin), club_admin)
+    r = c.get(reverse(CLUB_SETTINGS, args=[club.slug]))
+    body = r.content.decode()
+    assert "Email is disabled" not in body
+    assert club_admin.email in body  # recipient dropdown lists club admins
+
+
+def test_settings_page_shows_disabled_reason_when_mail_off(club_admin, login, club, settings):
+    """When mail really is off, the banner explains why."""
+    settings.MAIL_ENABLED = False
+    settings.RESEND_API_KEY = None
+    settings.DEBUG = False
+    c = _login(login(club_admin), club_admin)
+    body = c.get(reverse(CLUB_SETTINGS, args=[club.slug])).content.decode()
+    assert "Email is disabled" in body
+    assert "RESEND_API_KEY" in body
+
+
 def test_superuser_get_settings(site_admin, login, club):
     """Superuser can open settings."""
     c = _login(login(site_admin), site_admin)
