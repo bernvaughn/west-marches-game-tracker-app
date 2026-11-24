@@ -83,6 +83,20 @@ sudo install -m 644 -o root -g root /srv/app/deploy/downtime-backup.cron /etc/cr
 sudo install -m 640 -o deploy -g deploy /dev/null /var/log/downtime-backup.log
 ```
 
+Install the mail timer unit and timer:
+```bash
+sudo cp /srv/app/deploy/downtime-mail.service /etc/systemd/system/downtime-mail.service
+```
+```bash
+sudo cp /srv/app/deploy/downtime-mail.timer /etc/systemd/system/downtime-mail.timer
+```
+```bash
+sudo systemctl daemon-reload
+```
+```bash
+sudo systemctl enable --now downtime-mail.timer
+```
+
 ## 3. First deploy and first admin
 
 Run this from your own clone of the repo, on your PC. It streams your local `deploy/deploy.sh` onto the Droplet and deploys tag `v0.1.0`:
@@ -215,6 +229,12 @@ The owner's PC pulls `/var/backups/downtime` with `rsync`, using a read-only SSH
 
 ```bash
 journalctl -u downtime
+```
+```bash
+journalctl -u downtime-mail
+```
+```bash
+systemctl list-timers | grep downtime
 ```
 ```bash
 systemctl status caddy

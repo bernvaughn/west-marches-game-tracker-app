@@ -52,6 +52,41 @@ def test_systemd_unit():
     assert "[Install]" in content
 
 
+def test_mail_systemd_unit():
+    """Test that downtime-mail.service has all required keys and correct paths."""
+    service_path = DEPLOY_DIR / "downtime-mail.service"
+    assert service_path.exists(), f"Missing {service_path}"
+
+    content = service_path.read_text()
+
+    # Required keys from spec
+    required_keys = [
+        "User=deploy",
+        "Group=deploy",
+        "WorkingDirectory=/srv/app",
+        "EnvironmentFile=/etc/downtime.env",
+        "ExecStart=/srv/app/.venv/bin/python manage.py run_mail_jobs",
+        "Type=oneshot",
+        "StandardOutput=journal",
+        "StandardError=journal",
+        "After=network.target",
+        "WantedBy=multi-user.target",
+    ]
+
+    for key in required_keys:
+        assert key in content, f"Missing required key in mail unit: {key}"
+
+    # Must NOT have /opt/downtime anywhere
+    assert "/opt/downtime" not in content, "Must not reference /opt/downtime"
+    # Must NOT have uv in ExecStart
+    assert "uv run" not in content, "Must not use uv in ExecStart"
+
+    # Verify sections exist
+    assert "[Unit]" in content
+    assert "[Service]" in content
+    assert "[Install]" in content
+
+
 def test_caddyfile():
     """Test that Caddyfile has correct structure and no security headers."""
     caddy_path = DEPLOY_DIR / "Caddyfile"
