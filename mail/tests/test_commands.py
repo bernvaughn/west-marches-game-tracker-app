@@ -26,7 +26,7 @@ class TestSendQueuedEmailCommand:
 
         now = timezone.now()
 
-        # Due message
+        # Due message (explicit next_attempt_at)
         msg1 = EmailMessage.objects.create(
             kind="welcome",
             to_address="to1@test.com",
@@ -36,14 +36,25 @@ class TestSendQueuedEmailCommand:
         )
         EmailPayload.objects.create(message=msg1, text="Hello", expires_at=now + timedelta(hours=1))
 
-        # Expired payload for non-sent message
+        # Message with next_attempt_at=NULL (new, never attempted) - should also be sent
         msg2 = EmailMessage.objects.create(
             kind="welcome",
             to_address="to2@test.com",
             subject="Test 2",
             status=EmailMessage.Status.QUEUED,
+            next_attempt_at=None,
         )
-        EmailPayload.objects.create(message=msg2, text="Hello", expires_at=now - timedelta(hours=1))
+        EmailPayload.objects.create(message=msg2, text="Hello", expires_at=now + timedelta(hours=1))
+
+        # Expired payload for non-sent message (should be deleted by cleanup, not sent)
+        msg3 = EmailMessage.objects.create(
+            kind="welcome",
+            to_address="to3@test.com",
+            subject="Test 3",
+            status=EmailMessage.Status.QUEUED,
+            next_attempt_at=now + timedelta(hours=1),  # Not due yet
+        )
+        EmailPayload.objects.create(message=msg3, text="Hello", expires_at=now - timedelta(hours=1))
 
         mock_client = MagicMock()
         mock_client_class.return_value.__enter__.return_value = mock_client
@@ -56,12 +67,18 @@ class TestSendQueuedEmailCommand:
         call_command("send_queued_email", stdout=out)
 
         output = out.getvalue()
-        assert "Sent: 1" in output
+        # msg1 and msg2 are sent (due now and NULL next_attempt_at)
+        # msg3 is not due yet, but its expired payload is deleted
+        assert "Sent: 2" in output
         assert "Failed: 0" in output
         assert "Expired payloads deleted: 1" in output
 
         msg1.refresh_from_db()
+        msg2.refresh_from_db()
+        msg3.refresh_from_db()
         assert msg1.status == EmailMessage.Status.SENT
+        assert msg2.status == EmailMessage.Status.SENT
+        assert msg3.status == EmailMessage.Status.QUEUED  # Not sent, not due yet
 
     @override_settings(RESEND_API_KEY="", EMAIL_FROM="from@test.com")
     def test_send_queued_email_no_key_fails_messages(self):
