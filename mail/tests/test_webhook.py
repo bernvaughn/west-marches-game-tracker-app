@@ -1,5 +1,6 @@
 """Tests for Resend webhook (E2)."""
 
+import base64
 import hashlib
 import hmac
 import time
@@ -12,16 +13,21 @@ from mail.models import DoNotEmail, EmailMessage
 pytestmark = [pytest.mark.django_db]
 
 
+# Resend/Svix secret format: "whsec_" + base64 of the real key bytes.
+SECRET = "whsec_" + base64.b64encode(b"test_secret_123").decode()
+
+
 def _make_signature(secret, svix_id, svix_timestamp, body):
-    """Compute Svix-style signature for testing."""
+    """Compute a Svix signature the way Resend does: base64 HMAC keyed by the decoded secret."""
+    key = base64.b64decode(secret.removeprefix("whsec_"))
     signed_payload = f"{svix_id}.{svix_timestamp}.{body}".encode()
-    return hmac.new(secret.encode(), signed_payload, hashlib.sha256).hexdigest()
+    return base64.b64encode(hmac.new(key, signed_payload, hashlib.sha256).digest()).decode()
 
 
 @pytest.fixture(autouse=True)
 def _set_webhook_secret(settings):
     """Set the webhook secret for all tests."""
-    settings.RESEND_WEBHOOK_SECRET = "test_secret_123"
+    settings.RESEND_WEBHOOK_SECRET = SECRET
 
 
 class TestResendWebhook:
@@ -31,7 +37,7 @@ class TestResendWebhook:
         url = reverse("mail_public:webhook_resend")
         r = client.post(
             url,
-            data='{"type": "email.delivered", "email_id": "test-123"}',
+            data='{"type": "email.delivered", "data": {"email_id": "test-123"}}',
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=str(int(time.time())),
@@ -46,7 +52,7 @@ class TestResendWebhook:
         # Missing svix-id
         r = client.post(
             url,
-            data='{"type": "email.delivered", "email_id": "test-123"}',
+            data='{"type": "email.delivered", "data": {"email_id": "test-123"}}',
             content_type="application/json",
             HTTP_SVIX_TIMESTAMP=str(int(time.time())),
             HTTP_SVIX_SIGNATURE="v1=sig",
@@ -56,7 +62,7 @@ class TestResendWebhook:
         # Missing svix-timestamp
         r = client.post(
             url,
-            data='{"type": "email.delivered", "email_id": "test-123"}',
+            data='{"type": "email.delivered", "data": {"email_id": "test-123"}}',
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_SIGNATURE="v1=sig",
@@ -66,7 +72,7 @@ class TestResendWebhook:
         # Missing svix-signature
         r = client.post(
             url,
-            data='{"type": "email.delivered", "email_id": "test-123"}',
+            data='{"type": "email.delivered", "data": {"email_id": "test-123"}}',
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=str(int(time.time())),
@@ -77,8 +83,8 @@ class TestResendWebhook:
         """Timestamp >5 min old -> 401."""
         url = reverse("mail_public:webhook_resend")
         old_timestamp = str(int(time.time()) - 400)  # > 5 min
-        body = '{"type": "email.delivered", "email_id": "test-123"}'
-        sig = _make_signature("test_secret_123", "msg_123", old_timestamp, body)
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+        sig = _make_signature(SECRET, "msg_123", old_timestamp, body)
 
         r = client.post(
             url,
@@ -86,7 +92,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=old_timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 401
 
@@ -94,8 +100,8 @@ class TestResendWebhook:
         """Timestamp >5 min in future -> 401."""
         url = reverse("mail_public:webhook_resend")
         future_timestamp = str(int(time.time()) + 400)  # > 5 min
-        body = '{"type": "email.delivered", "email_id": "test-123"}'
-        sig = _make_signature("test_secret_123", "msg_123", future_timestamp, body)
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+        sig = _make_signature(SECRET, "msg_123", future_timestamp, body)
 
         r = client.post(
             url,
@@ -103,7 +109,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=future_timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 401
 
@@ -111,7 +117,7 @@ class TestResendWebhook:
         """Wrong signature -> 401."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.delivered", "email_id": "test-123"}'
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
         # Wrong signature
         sig = "wrong_signature"
 
@@ -121,7 +127,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 401
 
@@ -129,8 +135,8 @@ class TestResendWebhook:
         """Computes signature with test secret, processes event."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.delivered", "email_id": "test-123"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         # Create a message with this provider_id
         EmailMessage.objects.create(
@@ -146,7 +152,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 200
 
@@ -154,8 +160,8 @@ class TestResendWebhook:
         """Delivered event -> status=sent, last_error='delivered'."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.delivered", "email_id": "prov-456"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.delivered", "data": {"email_id": "prov-456"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         msg = EmailMessage.objects.create(
             provider_id="prov-456",
@@ -171,7 +177,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 200
 
@@ -184,8 +190,8 @@ class TestResendWebhook:
         """Bounced event -> status=bounced, DoNotEmail created."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.bounced", "email_id": "prov-789"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.bounced", "data": {"email_id": "prov-789"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         msg = EmailMessage.objects.create(
             provider_id="prov-789",
@@ -201,7 +207,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 200
 
@@ -216,8 +222,8 @@ class TestResendWebhook:
         """Complained event -> status=complained, DoNotEmail created."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.complained", "email_id": "prov-999"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.complained", "data": {"email_id": "prov-999"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         msg = EmailMessage.objects.create(
             provider_id="prov-999",
@@ -233,7 +239,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 200
 
@@ -248,8 +254,8 @@ class TestResendWebhook:
         """Unknown provider_id returns 200 (no error)."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.delivered", "email_id": "unknown-123"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.delivered", "data": {"email_id": "unknown-123"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         r = client.post(
             url,
@@ -257,7 +263,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         # Should acknowledge but not error
         assert r.status_code == 200
@@ -273,7 +279,7 @@ class TestResendWebhook:
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
         body = "not valid json"
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         r = client.post(
             url,
@@ -281,7 +287,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 400
 
@@ -290,7 +296,7 @@ class TestResendWebhook:
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
         body = '{"type": "email.delivered"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         r = client.post(
             url,
@@ -298,16 +304,16 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 400
 
-    def test_webhook_signature_without_v1_prefix(self, client):
-        """Signature without v1= prefix works."""
+    def test_webhook_accepts_any_matching_signature_in_list(self, client):
+        """Svix sends space-separated signatures during key rotation; any v1 match passes."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.delivered", "email_id": "test-123"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+        good = _make_signature(SECRET, "msg_123", timestamp, body)
 
         EmailMessage.objects.create(
             provider_id="test-123",
@@ -322,16 +328,98 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=sig,  # No v1= prefix
+            HTTP_SVIX_SIGNATURE=f"v1,AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= v1,{good}",
         )
         assert r.status_code == 200
+
+    def test_webhook_rejects_signature_without_v1_prefix(self, client):
+        """A bare signature with no 'v1,' version is not a Svix signature."""
+        url = reverse("mail_public:webhook_resend")
+        timestamp = str(int(time.time()))
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
+
+        r = client.post(
+            url,
+            data=body,
+            content_type="application/json",
+            HTTP_SVIX_ID="msg_123",
+            HTTP_SVIX_TIMESTAMP=timestamp,
+            HTTP_SVIX_SIGNATURE=sig,
+        )
+        assert r.status_code == 401
+
+    def test_webhook_rejects_old_hex_scheme(self, client, settings):
+        """The signature scheme the app used before (hex HMAC of the raw secret) is rejected."""
+        url = reverse("mail_public:webhook_resend")
+        timestamp = str(int(time.time()))
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+        signed = f"msg_123.{timestamp}.{body}".encode()
+        old = hmac.new(SECRET.encode(), signed, hashlib.sha256).hexdigest()
+
+        r = client.post(
+            url,
+            data=body,
+            content_type="application/json",
+            HTTP_SVIX_ID="msg_123",
+            HTTP_SVIX_TIMESTAMP=timestamp,
+            HTTP_SVIX_SIGNATURE=f"v1={old}",
+        )
+        assert r.status_code == 401
+
+    def test_webhook_secret_not_base64_is_rejected(self, client, settings):
+        """A misconfigured secret (not whsec_ + base64) fails closed with 401."""
+        settings.RESEND_WEBHOOK_SECRET = "whsec_not base64 !!"
+        url = reverse("mail_public:webhook_resend")
+        timestamp = str(int(time.time()))
+        body = '{"type": "email.delivered", "data": {"email_id": "test-123"}}'
+
+        r = client.post(
+            url,
+            data=body,
+            content_type="application/json",
+            HTTP_SVIX_ID="msg_123",
+            HTTP_SVIX_TIMESTAMP=timestamp,
+            HTTP_SVIX_SIGNATURE="v1,AAAA",
+        )
+        assert r.status_code == 401
+
+    def test_webhook_real_resend_payload_shape(self, client):
+        """A full Resend-style event: email_id lives under data, with other fields beside it."""
+        url = reverse("mail_public:webhook_resend")
+        timestamp = str(int(time.time()))
+        body = (
+            '{"type": "email.delivered", "created_at": "2026-11-24T18:31:25.720Z", '
+            '"data": {"created_at": "2026-11-24T18:31:25.166Z", "email_id": "prov-real", '
+            '"from": "Downtime Market <noreply@mail.downtimemarket.com>", '
+            '"to": ["gm@example.com"], "subject": "Test email"}}'
+        )
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
+        msg = EmailMessage.objects.create(
+            provider_id="prov-real",
+            kind="test",
+            to_address="gm@example.com",
+            subject="Test email",
+        )
+
+        r = client.post(
+            url,
+            data=body,
+            content_type="application/json",
+            HTTP_SVIX_ID="msg_123",
+            HTTP_SVIX_TIMESTAMP=timestamp,
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
+        )
+        assert r.status_code == 200
+        msg.refresh_from_db()
+        assert msg.status == EmailMessage.Status.SENT
 
     def test_webhook_bounce_updates_existing_dne(self, client):
         """Bounce updates reason if DoNotEmail already exists with different reason."""
         url = reverse("mail_public:webhook_resend")
         timestamp = str(int(time.time()))
-        body = '{"type": "email.bounced", "email_id": "prov-bounce"}'
-        sig = _make_signature("test_secret_123", "msg_123", timestamp, body)
+        body = '{"type": "email.bounced", "data": {"email_id": "prov-bounce"}}'
+        sig = _make_signature(SECRET, "msg_123", timestamp, body)
 
         EmailMessage.objects.create(
             provider_id="prov-bounce",
@@ -349,7 +437,7 @@ class TestResendWebhook:
             content_type="application/json",
             HTTP_SVIX_ID="msg_123",
             HTTP_SVIX_TIMESTAMP=timestamp,
-            HTTP_SVIX_SIGNATURE=f"v1={sig}",
+            HTTP_SVIX_SIGNATURE=f"v1,{sig}",
         )
         assert r.status_code == 200
 
