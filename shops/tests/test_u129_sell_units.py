@@ -13,9 +13,9 @@ from player_characters.player_shop import PlayerShopError, buy_from, listed_rows
 from shops.models import Rotation, ShopStock
 from shops.selling import SellLineError, buy_percent_for, sale_total, sell, sell_many
 from shops.services import ShopError, buy_price, percent_price
-from tests.property_tests import (
-    assert_buy_then_sell_back_never_profits,
-    assert_split_sales_never_beat_one_sale,
+from tests.property_tests import (  # noqa: F401
+    test_buy_then_sell_back_never_profits_when_sell_ge_buy,  # noqa: F401
+    test_split_sales_never_beat_one_sale,  # noqa: F401
 )
 
 pytestmark = [pytest.mark.story("U129"), pytest.mark.django_db]
@@ -58,36 +58,6 @@ def open_shop(club, shop):
 
 def award(character, lines):
     record(character, "award", lines)
-
-
-# --- property: split sales never beat one sale (DB-backed) ----------------
-
-
-@pytest.mark.parametrize("value_cp", [1, 3, 7, 13, 25, 50, 100, 300])
-@pytest.mark.parametrize("value_units", [2, 3, 7, 10, 20, 50])
-@pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100, 150])
-def test_split_sales_never_beat_one_sale(club, make_db_item, value_cp, value_units, buy_percent):
-    thing = make_db_item(value_cp, value_units, "Thing", "unit")
-    assert_split_sales_never_beat_one_sale(
-        thing, 100, buy_percent, [50, 50], [30, 30, 40], [1, 1, 98]
-    )
-
-
-# --- property: buy then sell back never profits when sell pct >= buy pct --
-
-
-@pytest.mark.parametrize("value_cp", [0, 1, 3, 7, 13, 25, 50, 100, 300])
-@pytest.mark.parametrize("value_units", [1, 2, 3, 7, 10, 20, 50])
-@pytest.mark.parametrize("sell_percent", [0, 1, 25, 50, 75, 100, 150])
-@pytest.mark.parametrize("buy_percent", [0, 1, 25, 50, 75, 100])
-def test_buy_then_sell_back_never_profits_when_sell_ge_buy(
-    club, make_db_item, value_cp, value_units, sell_percent, buy_percent
-):
-    if sell_percent < buy_percent:
-        pytest.skip("only the sell >= buy case is the profit-free guarantee")
-    thing = make_db_item(value_cp, value_units, "Thing", "unit")
-    for bundle in (1, 5, 13, 50, 100):
-        assert_buy_then_sell_back_never_profits(thing, bundle, sell_percent, buy_percent)
 
 
 # --- shop sale: price floored once from the total units ------------------
