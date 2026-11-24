@@ -51,17 +51,20 @@ class CharacterContextMixinTests(TestCase):
 
     @patch("accounts.mixins.inventory_rows")
     @patch("accounts.mixins.coin_summary")
-    @patch("accounts.mixins.junk_rows")
-    @patch("accounts.mixins.junk_value")
+    @patch("accounts.mixins.get_junk_summary")
     @patch("accounts.mixins.downtime_services.balance")
     def test_get_character_context_with_character(
-        self, mock_balance, mock_junk_value, mock_junk_rows, mock_coin_summary, mock_inventory_rows
+        self, mock_balance, mock_get_junk_summary, mock_coin_summary, mock_inventory_rows
     ):
         character = MagicMock(spec=Character)
         mock_inventory_rows.return_value = ["row1", "row2"]
         mock_coin_summary.return_value = "coin_summary"
-        mock_junk_rows.return_value = ["junk1"]
-        mock_junk_value.return_value = 100
+        mock_get_junk_summary.return_value = {
+            "rows": ["junk1"],
+            "count": 1,
+            "value": 100,
+            "value_at_shop": lambda shop: 50,
+        }
         mock_balance.return_value = 50
 
         result = self.mixin.get_character_context(character)
@@ -74,17 +77,15 @@ class CharacterContextMixinTests(TestCase):
 
         mock_inventory_rows.assert_called_once_with(character)
         mock_coin_summary.assert_called_once_with(character)
-        mock_junk_rows.assert_called_once_with(character)
-        mock_junk_value.assert_called_once_with(character, ["junk1"])
+        mock_get_junk_summary.assert_called_once_with(character)
         mock_balance.assert_called_once_with(character)
 
     @patch("accounts.mixins.inventory_rows")
     @patch("accounts.mixins.coin_summary")
-    @patch("accounts.mixins.junk_rows")
-    @patch("accounts.mixins.junk_value")
+    @patch("accounts.mixins.get_junk_summary")
     @patch("accounts.mixins.downtime_services.balance")
     def test_get_character_context_without_character(
-        self, mock_balance, mock_junk_value, mock_junk_rows, mock_coin_summary, mock_inventory_rows
+        self, mock_balance, mock_get_junk_summary, mock_coin_summary, mock_inventory_rows
     ):
         result = self.mixin.get_character_context(None)
 
@@ -96,8 +97,7 @@ class CharacterContextMixinTests(TestCase):
 
         mock_inventory_rows.assert_not_called()
         mock_coin_summary.assert_not_called()
-        mock_junk_rows.assert_not_called()
-        mock_junk_value.assert_not_called()
+        mock_get_junk_summary.assert_not_called()
         mock_balance.assert_not_called()
 
     @patch("accounts.mixins.selected_character")

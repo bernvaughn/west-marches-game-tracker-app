@@ -59,6 +59,31 @@ def junk_value_at(character, shop, rows=None):
     return sum(sale_total(shop, r.item, r.quantity) for r in rows)
 
 
+def get_junk_summary(character):
+    """
+    Unified junk summary for a character.
+
+    Returns a dict with:
+    - rows: list[JunkRow] - all junk rows
+    - count: int - number of junk item types
+    - value: int - total junk value at full price (100% buy percent)
+    - value_at_shop: Callable[[Shop], int] - function that returns total value at a specific shop
+    """
+    rows = junk_rows(character)
+    count = len(rows)
+    value = junk_value(character, rows)
+
+    def value_at_shop(shop):
+        return junk_value_at(character, shop, rows)
+
+    return {
+        "rows": rows,
+        "count": count,
+        "value": value,
+        "value_at_shop": value_at_shop,
+    }
+
+
 def set_junk(character, item, quantity, actor):
     """Mark, change or (quantity 0) unmark junk. Owner, GM or club admin only."""
     require_inventory_access(actor, character)

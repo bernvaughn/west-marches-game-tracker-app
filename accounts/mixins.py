@@ -17,7 +17,7 @@ from accounts.scoping import (
 )
 from downtime import services as downtime_services
 from player_characters.inventory import coin_summary, inventory_rows
-from player_characters.junk import junk_rows, junk_value
+from player_characters.junk import get_junk_summary
 from player_characters.selection import selected_character
 
 
@@ -57,13 +57,13 @@ class CharacterContextMixin:
             }
 
         rows = inventory_rows(character)
-        junk = junk_rows(character)
+        summary = get_junk_summary(character)
 
         return {
             "inventory_rows": rows,
             "coin_summary": coin_summary(character),
-            "junk_rows": junk,
-            "junk_value": junk_value(character, junk),
+            "junk_rows": summary["rows"],
+            "junk_value": summary["value"],
             "downtime_balance": downtime_services.balance(character),
         }
 
