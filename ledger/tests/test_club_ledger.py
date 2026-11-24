@@ -135,7 +135,7 @@ def test_paging_keeps_filters(monkeypatch, login, game_master, club, character, 
     c = login(game_master)
     r = c.get(index(club), {"character": character.pk})
     html = r.content.decode()
-    nxt = re.search(r'href="([^"]*)">Next', html).group(1).replace("&", "&")
+    nxt = re.search(r'href="([^"]*)">Next', html).group(1).replace("&amp;", "&")
     assert f"character={character.pk}" in nxt and "page=2" in nxt
     r2 = c.get(index(club) + nxt)
     assert "zzother" not in r2.content.decode() and "mine" in r2.content.decode()
@@ -164,7 +164,7 @@ def test_back_link(login, game_master, player, club, character):
     qs = f"?from=ledger&character={character.pk}&kind=award&ledger_page=2&junk=<x>"
     html = login(game_master).get(url + qs).content.decode()
     assert "Back to club ledger" in html
-    assert f"{index(club)}?character={character.pk}&kind=award&page=2" in html
+    assert f"{index(club)}?character={character.pk}&amp;kind=award&amp;page=2" in html
     assert "junk" not in html.split("Back to club ledger")[0].split("<header")[-1]
     assert "Back to sheet" in login(player).get(url + "?from=ledger").content.decode()
     assert "Back to sheet" in login(game_master).get(url).content.decode()
