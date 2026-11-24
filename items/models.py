@@ -116,6 +116,32 @@ class ContainerSlotOption(models.Model):
         return f"{self.item.name} x{self.qty_min}-{self.qty_max} on slot {self.slot_id}"
 
 
+class RecentItemPick(models.Model):
+    club_path = "membership__club"
+
+    membership = models.ForeignKey(
+        "accounts.Membership",
+        on_delete=models.CASCADE,
+        related_name="recent_item_picks",
+    )
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="recent_picks")
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        ordering = ["-used_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership", "item"],
+                name="recent_item_pick_unique_membership_item",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.membership} picked {self.item}"
+
+
 class ContainerOpening(AppendOnlyModel):
     club_path = "character__club"
 

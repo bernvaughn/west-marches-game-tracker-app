@@ -1,0 +1,50 @@
+{% comment %}
+_picker_results: partial template for item picker search results.
+
+Context:
+- items: queryset of Items with display_value attribute
+- query: search query string
+- include_retired: boolean
+- multi: boolean for multi-pick mode
+{% endcomment %}
+{% load accounts_tags %}
+
+{% if items %}
+  {% for item in items %}
+    <button
+      type="button"
+      class="dropdown-item wm-item-picker-result d-flex align-items-center gap-2"
+      role="option"
+      data-item-id="{{ item.pk }}"
+      data-item-name="{{ item.name }}"
+      data-item-value="{{ item.display_value }}"
+      {% if item.symbol %}data-item-symbol="{{ item.symbol }}"{% endif %}
+    >
+      {% if item.symbol %}
+        <span class="wm-item-symbol" aria-hidden="true">{{ item.symbol }}</span>
+      {% else %}
+        <span class="wm-item-symbol wm-item-symbol-empty" aria-hidden="true">{% include "components/icon.html" with name="box" %}</span>
+      {% endif %}
+      <div class="flex-grow-1 text-start">
+        <div class="fw-medium">{{ item.name }}</div>
+        {% if item.traits %}
+          <div class="small text-muted">{{ item.traits|truncatewords:8 }}</div>
+        {% endif %}
+        {% if item.magic_type %}
+          <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ item.get_magic_type_display }}</span>
+        {% endif %}
+      </div>
+      <div class="wm-item-picker-value text-end">
+        <span class="small text-muted">{{ item.display_value }}</span>
+      </div>
+    </button>
+  {% endfor %}
+{% else %}
+  <div class="dropdown-item-text text-muted text-center py-3">
+    {% if query %}
+      No items match "{{ query }}".
+    {% else %}
+      Start typing to search items.
+    {% endif %}
+  </div>
+{% endif %}
