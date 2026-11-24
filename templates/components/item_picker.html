@@ -1,0 +1,72 @@
+{% comment %}
+item_picker: shared item picker component.
+
+Context:
+- widget.club: the club (for search URL)
+- widget.multi: boolean, true for multi-pick
+- widget.search_url: URL for the picker search endpoint
+- widget.value: current value (item pk or list of pks)
+- widget.attrs: HTML attributes (id, name, etc.)
+{% endcomment %}
+{% load static coins %}
+
+{% with widget_id=widget.attrs.id|default:"item_picker_"|add:widget.name|slugify %}
+<div class="wm-item-picker" data-item-picker data-multi="{{ widget.multi|yesno:'true,false' }}">
+  {# Hidden input holds the selected value(s) #}
+  <input
+    type="hidden"
+    name="{{ widget.name }}"
+    id="{{ widget_id }}"
+    value="{{ widget.value|default:'' }}"
+    {% if widget.attrs.required %}required{% endif %}
+  >
+
+  {# Search input #}
+  <div class="wm-item-picker-search">
+    <label class="visually-hidden" for="{{ widget_id }}_search">Search items</label>
+    <input
+      type="search"
+      id="{{ widget_id }}_search"
+      class="form-control"
+      placeholder="Search items by name, type, or trait..."
+      autocomplete="off"
+      aria-controls="{{ widget_id }}_results"
+      aria-expanded="false"
+      hx-get="{{ widget.search_url }}"
+      hx-target="#{{ widget_id }}_results"
+      hx-trigger="input changed delay:200ms, search"
+      hx-indicator="#{{ widget_id }}_spinner"
+      {% if widget.multi %}data-multi="true"{% endif %}
+    >
+    <span id="{{ widget_id }}_spinner" class="htmx-indicator spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+  </div>
+
+  {# Results list (populated by HTMX) #}
+  <div
+    id="{{ widget_id }}_results"
+    class="wm-item-picker-results dropdown-menu w-100"
+    role="listbox"
+    aria-label="Search results"
+  ></div>
+
+  {# No-JS fallback: plain select #}
+  <noscript>
+    <label class="visually-hidden" for="{{ widget_id }}_fallback">Select item</label>
+    <select
+      id="{{ widget_id }}_fallback"
+      name="{{ widget.name }}"
+      class="form-select"
+      {% if widget.multi %}multiple{% endif %}
+    >
+      <option value="">-- Select item --</option>
+      {% if widget.club %}
+        {% for item in widget.club.items.all %}
+          <option value="{{ item.pk }}" {% if item.pk|stringformat:"s" in widget.value|default:"" %}selected{% endif %}>
+            {{ item.name }} {% if item.value_cp %}({{ item.value_cp|coins }}){% endif %}
+          </option>
+        {% endfor %}
+      {% endif %}
+    </select>
+  </noscript>
+</div>
+{% endwith %}

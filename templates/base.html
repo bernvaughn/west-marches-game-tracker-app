@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="{% static 'css/areas/shops.css' %}">
   <link rel="stylesheet" href="{% static 'css/areas/memorial.css' %}">
   <link rel="stylesheet" href="{% static 'css/areas/containers.css' %}">
+  <link rel="stylesheet" href="{% static 'css/item_picker.css' %}">
   <link rel="stylesheet" href="{% static 'css/print.css' %}" media="print">
   {# htmx 2.0.4, vendored #}
   <script src="{% static 'htmx.min.js' %}" defer></script>
@@ -30,6 +31,7 @@
   <script src="{% static 'js/container_open.js' %}" defer></script>
   <script src="{% static 'js/print_page.js' %}" defer></script>
   <script src="{% static 'js/clipboard.js' %}" defer></script>
+  <script src="{% static 'js/item_picker.js' %}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 <a class="visually-hidden-focusable wm-skip-link no-print" href="#main">Skip to main content</a>
