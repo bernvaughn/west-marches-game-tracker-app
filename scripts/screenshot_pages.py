@@ -357,6 +357,7 @@ EXCLUDED = {
     # Mail log clear flag and webhook (E2)
     "mail:clear_flag": "POST only; club admin clears do-not-email flag for an address.",
     "mail_public:webhook_resend": "POST only; Resend webhook endpoint.",
+    "items:picker_search": "HTMX partial endpoint for item picker search results; not a full page.",
 }
 
 
