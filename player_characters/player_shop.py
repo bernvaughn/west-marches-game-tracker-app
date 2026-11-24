@@ -4,8 +4,7 @@ from dataclasses import dataclass
 
 from django.db import transaction
 
-from items import stacked
-from items.stacked import unit_label
+from items.services import StackedPricingService
 from ledger.services import Line, held_items, item_quantities, record_many
 from player_characters.life import require_can_buy, require_can_sell
 
@@ -26,7 +25,7 @@ class ListedRow:
 
 def stall_price(item, units):
     """Price of a whole stall listing: sale_price at 100%, computed once for the quantity."""
-    return stacked.sale_price(item, units, 100)
+    return StackedPricingService.sale_price(item, units, 100)
 
 
 def listed_rows(character):
@@ -78,21 +77,21 @@ def buy_from(buyer, seller, item, quantity, actor=None):
             )
         price = stall_price(item, quantity)
         if price == 0 and item.is_stacked:
-            raise PlayerShopError(f"{unit_label(item, quantity)} costs 0 cp at this stall.")
+            raise PlayerShopError(f"{StackedPricingService.unit_label(item, quantity)} costs 0 cp at this stall.")
         entries = record_many(
             [
                 dict(
                     character=buyer,
                     kind="player_shop",
                     lines=[Line(coins=-price), Line(item=item, quantity=quantity)],
-                    note=f"Bought {unit_label(item, quantity)} from {seller}'s shop",
+                    note=f"Bought {StackedPricingService.unit_label(item, quantity)} from {seller}'s shop",
                     actor=actor,
                 ),
                 dict(
                     character=seller,
                     kind="player_shop",
                     lines=[Line(coins=price), Line(item=item, quantity=-quantity)],
-                    note=f"Sold {unit_label(item, quantity)} to {buyer} from shop",
+                    note=f"Sold {StackedPricingService.unit_label(item, quantity)} to {buyer} from shop",
                     actor=actor,
                 ),
             ]

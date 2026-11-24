@@ -9,7 +9,7 @@ units available for the item.
 from django import forms
 from django.forms import formset_factory
 
-from items import stacked
+from items.services import StackedPricingService
 from player_characters.forms import BaseItemLineFormSet, ItemLineForm
 from player_characters.forms_adjust import PlayerConsumeForm as BasePlayerConsumeForm
 
@@ -28,7 +28,7 @@ class PlayerConsumeForm(BasePlayerConsumeForm):
         if quantity > self.available:
             if self.item is not None:
                 raise forms.ValidationError(
-                    f"Only {stacked.unit_label(self.item, self.available)} available to consume."
+                    f"Only {StackedPricingService.unit_label(self.item, self.available)} available to consume."
                 )
             raise forms.ValidationError(f"Only {self.available} available to consume.")
         return quantity
@@ -59,7 +59,7 @@ class ConsumeLineFormSet(BaseItemLineFormSet):
             if qty > available:
                 form.add_error(
                     "quantity",
-                    f"Only {stacked.unit_label(item, available)} available to consume.",
+                    f"Only {StackedPricingService.unit_label(item, available)} available to consume.",
                 )
 
 

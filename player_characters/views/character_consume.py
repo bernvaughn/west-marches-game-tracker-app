@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from accounts.htmx import htmx_or_redirect, render_modal_or_page
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from items import stacked
+from items.services import StackedPricingService
 from items.models import Item
 from ledger.services import LedgerError, Line, available_items, recent_changes, record
 

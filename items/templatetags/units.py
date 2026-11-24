@@ -9,7 +9,7 @@ Usage::
 
 from django import template
 
-from items import stacked
+from items.services import StackedPricingService
 
 register = template.Library()
 
@@ -20,7 +20,7 @@ def with_units(item, qty):
 
     Stacked: "40 ft Rope". Normal: "3 × Rope".
     """
-    return stacked.unit_label(item, qty)
+    return StackedPricingService.unit_label(item, qty)
 
 
 @register.filter
