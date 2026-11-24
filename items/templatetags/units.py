@@ -5,11 +5,13 @@ Usage::
     {% load units %}
     {{ item|with_units:qty }}
     {{ item|bundle_label:n }}
+    {{ item|item_value }}
 """
 
 from django import template
 
 from items.services import StackedPricingService
+from items.values import format_item_value
 
 register = template.Library()
 
@@ -30,3 +32,15 @@ def bundle_label(item, n):
     Stacked: "bundle of 100 arrow". Non-stacked: the item name.
     """
     return StackedPricingService.bundle_label(item, n)
+
+
+@register.filter
+def item_value(item):
+    """Format an item's value for display.
+
+    Returns empty string for None. Uses format_item_value for plain,
+    stacked, and no-value items.
+    """
+    if item is None:
+        return ""
+    return format_item_value(item)
