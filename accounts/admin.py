@@ -30,6 +30,8 @@ class UserAdmin(BaseUserAdmin):
 class ClubAdmin(admin.ModelAdmin):
     list_display = ["name", "slug", "created"]
     search_fields = ["name", "slug"]
+    date_hierarchy = "created"
+    ordering = ["name"]
 
 
 @admin.register(Membership)
@@ -46,6 +48,8 @@ class WhitelistEntryAdmin(admin.ModelAdmin):
     list_filter = ["club"]
     search_fields = ["email"]
     autocomplete_fields = ["club"]
+    date_hierarchy = "created"
+    ordering = ["-created"]
 
 
 @admin.register(Message)
@@ -54,14 +58,22 @@ class MessageAdmin(admin.ModelAdmin):
     list_filter = ["club", "kind", "status"]
     search_fields = ["body", "sender__user__email", "character__name"]
     autocomplete_fields = ["club", "sender", "character"]
+    date_hierarchy = "created"
+    ordering = ["-created"]
 
 
 @admin.register(SiteFeedback)
 class SiteFeedbackAdmin(admin.ModelAdmin):
     list_display = ["kind", "status", "user", "club", "created"]
-    list_filter = ["kind", "status"]
+    list_filter = ["club", "kind", "status"]
     search_fields = ["body", "user__email", "club__name"]
     autocomplete_fields = ["user", "club"]
+    date_hierarchy = "created"
+    ordering = ["-created"]
 
 
-admin.site.register(SiteSettings)
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ["donate_url"]
+    search_fields = ["donate_url"]
+    ordering = ["-pk"]
