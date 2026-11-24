@@ -11,7 +11,7 @@ from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
 from items.stacked import unit_label
 from ledger.coins import format_coins
-from player_characters.junk import junk_rows
+from player_characters.junk import get_junk_summary
 from player_characters.selection import selected_character
 from quests.services import needed_by_open_quests
 from shops.buying import buy as buy_service
@@ -78,7 +78,8 @@ def quick_action_sell_junk(request, club_slug):
 
 def _rows_sell(character, shop, posted=None):
     """Junk rows with price, line total, quest warning and tick state."""
-    rows = junk_rows(character)
+    summary = get_junk_summary(character)
+    rows = summary["rows"]
     needs = needed_by_open_quests(character) if rows else {}
     out = []
     for r in rows:
@@ -106,7 +107,8 @@ def _rows_sell(character, shop, posted=None):
 
 def _parse_sell(data, character, shop):
     """Return (lines, error, posted) from form data. A bad id or quantity refuses the sale."""
-    junk = {r.item.pk: r for r in junk_rows(character)}
+    summary = get_junk_summary(character)
+    junk = {r.item.pk: r for r in summary["rows"]}
     ticked = data.getlist("item")
     quantities = {}
     for pk in junk:

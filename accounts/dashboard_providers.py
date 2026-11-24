@@ -20,7 +20,7 @@ from ledger.services import available_items
 from map.models import HexMap
 from map.services import get_uncredited_tiles
 from player_characters.inventory import coin_summary
-from player_characters.junk import junk_rows, junk_value
+from player_characters.junk import get_junk_summary
 from player_characters.player_shop import listed_rows
 from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
@@ -65,14 +65,13 @@ def build_header_stats(character: "Character") -> dict:
     """Build header stats dict: coins, downtime, junk count/value, unread messages."""
     coin_sum = coin_summary(character)
     downtime_balance = downtime_services.balance(character)
-    junk = junk_rows(character)
-    junk_val = junk_value(character, junk)
+    summary = get_junk_summary(character)
 
     return {
         "coin_summary": coin_sum,
         "downtime_balance": downtime_balance,
-        "junk_count": len(junk),
-        "junk_value": junk_val,
+        "junk_count": summary["count"],
+        "junk_value": summary["value"],
     }
 
 
@@ -117,12 +116,13 @@ class QuickActionsProvider(BaseDashboardProvider):
 
     def get_context(self, request: HttpRequest, club, character, membership) -> dict:
         today = timezone.localdate()
-        has_junk = len(junk_rows(character)) > 0
+        summary = get_junk_summary(character)
+        has_junk = summary["count"] > 0
         has_potions = get_healing_potion_stock(club, today).exists()
         return {
             "has_junk": has_junk,
             "has_potions": has_potions,
-            "junk_count": len(junk_rows(character)) if has_junk else 0,
+            "junk_count": summary["count"] if has_junk else 0,
         }
 
     def should_show(self, request: HttpRequest, club, character, membership) -> bool:

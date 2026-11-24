@@ -31,6 +31,7 @@ from starting_equipment.services import (
 
 from ..access import can_edit_character, owns_character
 from ..character_forms import CharacterForm, HandoverForm
+from ..junk import get_junk_summary
 from ..models import Character
 from ..notes import item_notes
 from ..player_shop import listed_quantity
@@ -283,13 +284,14 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             ]
         if can_view:
             char_ctx = self.get_character_context(character)
+            junk_summary = get_junk_summary(character)
             ctx["abilities"] = ability_rows(character)
             ctx["passive_perception"] = passive_perception_label(character.perception_bonus)
             ctx["xp_progress"] = xp_progress(character)
             ctx["rows"] = char_ctx["inventory_rows"]
             ctx["coins"] = char_ctx["coin_summary"]
-            ctx["junk"] = {r.item.pk: r.quantity for r in char_ctx["junk_rows"]}
-            ctx["junk_value"] = char_ctx["junk_value"]
+            ctx["junk"] = {r.item.pk: r.quantity for r in junk_summary["rows"]}
+            ctx["junk_value"] = junk_summary["value"]
             raw_notes = item_notes(character)
             notes = {}
             for item_pk, text in raw_notes.items():
@@ -302,7 +304,7 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
                     "aria": "Edit note" if text else "Add note",
                 }
             ctx["notes"] = notes
-            needs = needed_by_open_quests(character) if char_ctx["junk_rows"] else {}
+            needs = needed_by_open_quests(character) if junk_summary["rows"] else {}
             ctx["quest_needs"] = {pk: needs[pk] for pk in ctx["junk"] if pk in needs}
             if character.shop_open:
                 ctx["shop_listed"] = listed_quantity(character)

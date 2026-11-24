@@ -36,7 +36,7 @@ def listed_rows(character):
     held = held_items(character)
     owned = item_quantities(character)
     rows = []
-    for row in junk.junk_rows(character):
+    for row in junk.get_junk_summary(character)["rows"]:
         available = owned.get(row.item.pk, 0) - held.get(row.item.pk, 0)
         quantity = min(row.quantity, available)
         if quantity > 0:
