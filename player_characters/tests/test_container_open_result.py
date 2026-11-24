@@ -1,7 +1,5 @@
 """Tests for the container open result template (S1: Server markup and no-animation view)."""
 
-import secrets
-
 import pytest
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -237,19 +235,28 @@ def test_full_page_via_view_shows_container_icon(login, player, club, character,
     assert "Sword" in content
 
 
+class AlwaysMissRNG:
+    """RNG that always makes chance checks miss (returns above range for randint)."""
+
+    def randint(self, a, b):
+        return b + 1  # Always above range -> chance check always fails
+
+    def randrange(self, n):
+        return 0  # Always pick first option if called
+
+
 def test_empty_result_via_view_shows_message(login, player, club, character, club_admin):
     """Empty result via view shows friendly message."""
     container = make_container(club, "Empty Box")
     container.symbol = "📦"
     container.save()
-    # Slot with 50% chance - we'll force a miss with seeded RNG
+    # Slot with 50% chance - AlwaysMissRNG forces the chance check to fail
     nothing = Item.objects.create(club=club, name="Nothing", value_cp=1)
     add_slot(container, [(nothing, 1, 1, 1)], chance_pct=50)
     award(character, container, actor=club_admin)
 
-    # Use a seeded RNG that will fail the 50% chance check
-    rng = secrets.SystemRandom(42)  # This seed makes randint(1,100) > 50
-    opening = open_container(character, container, club_admin, rng=rng)
+    # AlwaysMissRNG makes the chance check fail, so no items are rolled
+    opening = open_container(character, container, club_admin, rng=AlwaysMissRNG())
     rows = opening_view_model(opening)
     assert rows == []  # Empty result
 
