@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "starting_equipment",
     "mail",
     "play_sessions",
+    "player_items",
 ]
 
 MIDDLEWARE = [
