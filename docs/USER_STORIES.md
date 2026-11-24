@@ -1299,6 +1299,97 @@ Rules for every story in this round:
 - The starting equipment claim still grants the same things as before (an instrument choice still lets a Bard pick one of the five).
 - The demo club (`seed_demo`) uses the new names.
 
+## Round 22: item weight, better item pickers, player-written items, loot fanfare (2026-11-24)
+
+Four groups of stories. Weight is information only. Pickers get clearer. Players can write their own items and admins can later make them real. Opening a container gets a little fanfare.
+
+### Weight and carrying capacity
+
+Rules for these stories: weight is **information only**. Nothing in the app ever blocks a buy, a sale, an award, or an opening because of weight. Weight is in pounds, to one decimal place.
+
+**U154 Give items a weight.** As a club admin, I want to set an optional weight on a catalogue item, so players can see how heavy things are. *(items)*
+- A blank weight means "not listed". It is never treated as zero.
+- A stacked item (U123) takes the weight of one unit, for example 0.05 lb per arrow, and the bundle or total weight is worked out from the units.
+- A container's own weight does not include what is inside it. Contents weigh what they weigh once they are in an inventory.
+- The weight shows on item details, item cards, and shop lines, next to the value.
+- The agent's item search shows the weight (A2).
+- The 2024 SRD gear list the app already seeds gets its book weights, for existing and new clubs, through a dry-run-first catch-up command like the other seed conversions. Items an admin edited are left alone.
+
+**U155 See what my character carries.** As a player, I want my character sheet to show the total weight I carry and my carrying capacity, so I get a feel for what is too much. *(player_characters)*
+- The sheet shows "Carrying 62.5 lb of 150 lb". Items without a weight are not counted, and the sheet says how many, for example "3 items have no weight listed".
+- The default capacity is 15 times the character's Strength score (the 5e rule). A character with no Strength set shows only what it carries, with no capacity.
+- When the total is over the capacity the sheet says so, in a calm way. It never prevents anything (see the rules above).
+- Each inventory row shows its weight, and its total for stacked items.
+- Coins do not count by default.
+
+**U156 Set my capacity by hand.** As a player, I want to override my character's carrying capacity, so odd cases such as a mule or a bag of holding are handled. *(player_characters)*
+- An optional number on the edit form. When set, it replaces the Strength-based figure. Blank puts back the default.
+- A club admin can choose in club settings whether coins count toward carrying weight, at 50 coins to the pound. The default is off.
+
+### Item pickers for admins and game masters
+
+**U157 Show the value in every item picker.** As a club admin or game master, I want each item to show its value when I choose items for container contents, quests, downtime rewards, shop stock, and starting equipment, so I can set fair rewards without opening another page. *(items, shops, quests, downtime, starting_equipment)*
+- Each choice shows the value in the usual coin form (U29, U30), for example "Rope, 1 gp". A stacked item shows its value and unit, for example "1 gp per 50 ft".
+- Items with no value show "no value", not a blank.
+- Where a form lists several items, such as a reward table, it shows the total value of the chosen items and the expected value of the whole table, using the entry weights.
+- The same value display is used in the agent's batch review page (A4).
+
+**U158 A better item picker.** As a club admin or game master, I want one good item picker used everywhere items are chosen, so adding items to shops, quests, rewards, containers, and starting equipment is quick. *(items, shops, quests, downtime, starting_equipment, agent_access)*
+- Type to search by name. The list narrows as I type. It also matches the magic item type and a trait word.
+- Filters for magic item type and rarity. A "recently used" list at the top.
+- Each choice shows its icon, name, and value (U157). Pressing Enter picks the top match. The keyboard works throughout.
+- It still works with no JavaScript, as a plain list with a search box.
+- Picking several items at once is allowed where a form takes many (a reward table, a quest's requirements).
+- It replaces the existing pickers. Nothing about what a form saves changes.
+- Retired items do not show unless a filter asks for them.
+
+### Player-written items
+
+A **player-written item** is a free-text entry on a character's inventory. It has a name and a quantity but no catalogue record, no value, and no sale. It lets a player record something now, and lets an admin make it real later.
+
+**U159 Add a player-written item.** As a player, I want to add something to my character's inventory by typing its name, without waiting for an admin, so my sheet matches what happened in play. *(player_characters)*
+- The form asks for a name, a quantity (whole number, 1 or more), and an optional note. Names are at most 80 characters.
+- The item shows on the sheet, marked "Player-written", in the same list as other items.
+- A player-written item is **unsellable**. It cannot be sold to a shop, listed in a player stall (U64), turned in to a quest (Q1), or used as a reward. It can be edited and removed by its owner, and a game master or club admin can edit or remove it too.
+- It does not count in carrying weight and it has no value.
+- Each add, edit, and remove is recorded in the character's history with the date. No coins are involved.
+- A character may hold up to 50 player-written entries. More are refused with a clear message.
+- Dead characters may keep their entries. Archived characters cannot change them (U144).
+
+**U160 Review player-written items.** As a club admin, I want a page listing every player-written item in my club, so I can see what players are recording and decide what to do. *(player_characters, items)*
+- The page groups entries by name, ignoring case and spacing, so "Rusty dagger" and "rusty  dagger" are one row. Each row shows the total quantity, how many characters hold it, and the dates.
+- I can search, sort by how common an entry is, and open a row to see the holders.
+- A row can be marked "leave as is" so it stops showing in the review list, without changing the entries.
+- The page shows a count of entries waiting for review. It is linked from the "Club admin" menu.
+
+**U161 Promote a player-written item.** As a club admin, I want to turn a player-written item into a real catalogue item, so players can use, sell, and print it. *(items, player_characters, ledger)*
+- I choose "Promote" on a row (U160). A form asks for the name, description, value, and whether it can be sold, with the entry's name as the starting point. The new item can also be marked retired or hidden from shops.
+- Every character holding it gets the real item in the same quantity, and the player-written entry is removed. Each holder gets one ledger entry that says it was promoted.
+- Nothing about coins changes.
+- It is refused, and nothing changes, if the new item's name already exists. The form then suggests choosing the existing item instead (U162).
+
+**U162 Merge into one real item, or match to an existing one.** As a club admin, I want to combine several similar player-written items into one real item, or match them to an item already in the catalogue, so my catalogue stays clean. *(items, player_characters, ledger)*
+- I tick several rows (U160) and choose either "Make one new item" (like U161) or "Match to an existing item", picked with the item picker (U158).
+- The app suggests matches by similar name, such as "Dagger" for "rusty dagger" and "old dagger", but never chooses for me.
+- Each holder ends up with one stack of the chosen item. Quantities add up. A holder who already had the real item gets the quantities added to it.
+- A holder with two merged entries gets one ledger entry that lists what was combined. The changed entries are removed, and the history keeps the old names.
+- The whole merge happens in one step, and is refused if anything fails. A short preview shows each holder's before and after.
+
+**U163 Tell the player.** As a player, I want to be told when one of my player-written items became a real item, so I know what happened to it. *(player_characters, accounts)*
+- A note appears on the dashboard and the character sheet, for example "Your 'old dagger' is now 'Dagger' in the catalogue." The note says what was done, whether promoted, merged, or matched, and shows the item's value if players can see it.
+- Notes can be dismissed, and are kept for 30 days.
+- It is a small, general notice list for the player. The same list can carry other notices later. Email about it comes with the email work (round 20), only for people who choose it.
+
+### Loot fanfare
+
+**U164 Items pop out of the container.** As a player, I want the items I get from opening a container to pop out of it one after another, so opening a pack feels like opening a present. *(items, player_characters)*
+- After the server has rolled the contents (U109), the result modal shows the container's icon. The rolled items' icons pop out of it, one by one with a small bounce, and settle in a row with their names and quantities.
+- The result is already decided before the animation starts, so it can never change it. A button replays the animation without rolling again (like D11).
+- Items found through an "unknown" slot show their real icon only after they are rolled, never in the preview (U110).
+- A sound toggle, off by default, matches the downtime wheel's. The page remembers the choice.
+- With reduced motion turned on, or without JavaScript, the items show straight away with no animation.
+- Opening a container with nothing rolled shows a short, friendly "empty" message instead.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -1501,6 +1592,8 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
 - **Email (E1-E11).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
 - **Item names (U148-U153).** A variant item is named "Variant (Kind)", for example "Drum (Musical Instrument)". Renames keep the same item record, so nothing a player owns changes. The store sells "Map Case" and "Scroll Case" separately, and the Diplomat's Pack rolls each of its two cases between them. Existing clubs catch up with a dry-run-by-default command.
+- **Weight (U154-U156).** Weight is information only and never blocks anything. Default capacity is 15 times Strength, with a per-character override.
+- **Player-written items (U159-U163).** A free-text inventory entry with a name and quantity, no value, and no sale. Admins review, promote, merge, or match them to catalogue items, and the player gets a note.
 - **Left for later.** Lore and the donate service.
 
 ## Database and feature notes
