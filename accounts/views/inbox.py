@@ -445,7 +445,7 @@ def message_give(request, club_slug, pk, kind):
     formset = None
     if kind == "items":
         items = Item.objects.for_club(request.club).filter(retired=False)
-        formset = item_line_formset(items, data, extra=3)
+        formset = item_line_formset(items, data, extra=3, club=request.club)
 
     back = _filter_of(data or request.GET)
 
@@ -486,7 +486,7 @@ def message_give(request, club_slug, pk, kind):
             # Return empty form (HTMX or full page)
             form = GRANT_FORMS[kind](None, **kwargs)
             if formset is not None:
-                formset = item_line_formset(items, None, extra=3)
+                formset = item_line_formset(items, None, extra=3, club=request.club)
             ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
             return render_modal_or_page(
                 request, "accounts/inbox/_give_form.html", "accounts/inbox/give.html", ctx

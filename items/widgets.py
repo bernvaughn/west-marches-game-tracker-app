@@ -27,8 +27,15 @@ class ItemPickerWidget(forms.Widget):
         context["widget"]["multi"] = self.multi
         if self.club:
             context["widget"]["search_url"] = reverse("items:picker_search", args=[self.club.slug])
+            # For no-JS fallback: items excluding retired, unless the current value is retired
+            current_pk = str(value) if value not in (None, "") else ""
+            qs = self.club.items.filter(retired=False)
+            if current_pk:
+                qs = qs | self.club.items.filter(pk=current_pk)
+            context["widget"]["fallback_items"] = qs.order_by("name")
         else:
             context["widget"]["search_url"] = ""
+            context["widget"]["fallback_items"] = []
         # Ensure value is string for template comparison in no-JS fallback
         context["widget"]["value"] = str(value) if value not in (None, "") else ""
         return context

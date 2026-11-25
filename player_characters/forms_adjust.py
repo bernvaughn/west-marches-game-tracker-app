@@ -1,6 +1,7 @@
 from django import forms
 from django.utils import timezone
 
+from items.widgets import ItemPickerWidget
 from ledger.coins import CoinsField
 from ledger.services import Line
 from player_characters.forms import BaseItemLineFormSet, ItemLineForm, item_line_formset
@@ -11,7 +12,7 @@ from player_characters.forms import BaseItemLineFormSet, ItemLineForm, item_line
 BULK_MAX_ROWS = 500
 
 
-def bulk_item_line_formset(items, data=None, *, prefix):
+def bulk_item_line_formset(items, data=None, *, prefix, club=None):
     """Formset factory for bulk award with a high max_num.
 
     Uses the same ItemLineForm and BaseItemLineFormSet as the
@@ -28,7 +29,7 @@ def bulk_item_line_formset(items, data=None, *, prefix):
         max_num=BULK_MAX_ROWS,
         validate_max=True,
     )
-    return factory(data, prefix=prefix, form_kwargs={"items": items})
+    return factory(data, prefix=prefix, form_kwargs={"items": items, "club": club})
 
 
 class _DateNoteMixin(forms.Form):
@@ -49,9 +50,11 @@ class BulkAwardItemLineForm(forms.Form):
         help_text="Override item value in cp (optional)",
     )
 
-    def __init__(self, *args, items, **kwargs):
+    def __init__(self, *args, items, club=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["item"].queryset = items
+        if club is not None:
+            self.fields["item"].widget = ItemPickerWidget(club=club)
 
     def clean(self):
         data = super().clean()
@@ -83,7 +86,7 @@ class BulkAwardCharacterForm(forms.Form):
     coins = CoinsField(required=False, label="Coins")
     note = forms.CharField(max_length=500, required=False)
 
-    def __init__(self, *args, items, **kwargs):
+    def __init__(self, *args, items, club=None, **kwargs):
         super().__init__(*args, **kwargs)
         char = self.initial.get("character")
         char_pk = char.pk if char else "new"
@@ -91,6 +94,7 @@ class BulkAwardCharacterForm(forms.Form):
             items,
             data=self.data if self.is_bound else None,
             prefix=f"items-{char_pk}",
+            club=club,
         )
 
     def clean(self):
