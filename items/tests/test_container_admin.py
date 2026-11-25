@@ -98,9 +98,11 @@ def test_option_picker_lists_only_club_items(login, club_admin, club, other_club
     soup = BeautifulSoup(r.content, "html.parser")
     item_selects = soup.select('select[name*="-item"]')
     for select in item_selects:
-        options = [opt.text for opt in select.find_all("option")]
+        options = [opt.get_text(" ", strip=True) for opt in select.find_all("option")]
         assert "Foreign Item" not in options, f"Foreign Item found in picker: {options}"
-        assert "Local Item" in options, f"Local Item missing from picker: {options}"
+        assert any("Local Item" in opt for opt in options), (
+            f"Local Item missing from picker: {options}"
+        )
 
 
 def test_posting_foreign_club_item_rejected(login, club_admin, club, other_club):
