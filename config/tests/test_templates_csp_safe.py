@@ -207,7 +207,12 @@ def _referenced_js_files():
 
 #: JS files that are loaded by other scripts (not directly by templates).
 #: These are exempt from the "every static/js file must be referenced" test.
-_JS_ALLOW_LIST = frozenset()
+_JS_ALLOW_LIST = frozenset(
+    {
+        "player_items_merge.js",
+        "player_items_review.js",
+    }
+)
 
 #: Templates with known Alpine expressions that need eval but are being
 #: fixed by a sibling task (command palette). These are excluded from the
