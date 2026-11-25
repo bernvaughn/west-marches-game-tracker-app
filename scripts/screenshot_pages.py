@@ -361,6 +361,8 @@ EXCLUDED = {
     "player_items:add": "HTMX add-item modal fragment from character sheet.",
     "player_items:edit": "HTMX edit-item modal fragment from character sheet.",
     "player_items:remove": "HTMX remove confirm modal from character sheet.",
+    "player_items:leave_as_is": "POST only; marks a group as left as is.",
+    "player_items:leave_as_is_confirm": "HTMX confirm modal for leave-as-is; not a full page.",
 }
 
 
@@ -819,6 +821,7 @@ def _build_pages() -> list[Page]:
         ),
         P("mail-change-email", "alice", _c("mail:change_email")),
         P("mail-reminder-settings", "club_admin", _c("mail:reminder_settings")),
+        P("player-items-review", "club_admin", _c("player_items:review")),
     ]
     names = [p.name for p in pages]
     assert len(names) == len(set(names)), "duplicate page names"
