@@ -163,16 +163,8 @@
         items.forEach(function (item) {
           item.removeEventListener("animationend", onItemEnd);
         });
-        // Show final row with fade-in
-        if (reveal) {
-          reveal.style.display = "";
-          reveal.style.opacity = "0";
-          reveal.style.transition = "opacity 300ms ease-out";
-          requestAnimationFrame(function () {
-            reveal.style.opacity = "1";
-          });
-        }
-        if (containerIconEl) containerIconEl.style.display = "none";
+        // Settle items into the row flow: clear absolute positioning and transforms
+        showFinalRow(root);
         liveText(root, messageFor(root));
         playSettle();
       }
