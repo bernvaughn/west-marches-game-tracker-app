@@ -1390,6 +1390,29 @@ A **player-written item** is a free-text entry on a character's inventory. It ha
 - With reduced motion turned on, or without JavaScript, the items show straight away with no animation.
 - Opening a container with nothing rolled shows a short, friendly "empty" message instead.
 
+## Round 23: weight and value on the sheet and catalogue (2026-11-25)
+
+Two stories. Weight and value are read-only. Nothing is edited here.
+
+### Sheet inventory (U165)
+
+**U165 See weight and value on my character sheet.** As a player, I want my character's inventory to show each item's weight and base value, so I can see what I am carrying without opening another page. *(player_characters, items)*
+- The inventory table gains two columns: "Value" and "Weight".
+- For a stacked item, the cell shows the total (units held x per-unit value or weight). A tooltip on the cell shows the per-unit figure, for example "1 gp per 50 ft" or "0.05 lb each".
+- Values come from `Item.value_cp` and `value_units`. Weight comes from the item's weight field (U154). Both are computed in the view in one pass, with no extra query per row.
+- An item with no weight listed shows a dash in the Weight column; the sheet still shows the carrying summary from U155.
+- On phones, the Weight column hides first behind the row details, then the Value column, so the table stays readable.
+- Both columns appear on the printed character sheet.
+- GM-only details (U96) are never shown.
+
+### Catalogue table (U166)
+
+**U166 Sort and filter by weight in the catalogue.** As a club admin, I want a sortable Weight column in the item catalogue table, so I can find heavy or weightless items and spot items with no weight listed. *(items)*
+- The catalogue index table gains a "Weight" column showing the item's weight or a dash for "not listed".
+- Clicking the column header sorts by weight. "Not listed" items always sort last, in both ascending and descending order.
+- A "No weight listed" filter shows only items with no weight set. It combines with the existing filters (magic type, rarity, retired, hidden).
+- The table stays compact on phones.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
