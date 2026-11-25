@@ -20,6 +20,7 @@ from accounts.permissions import (
     club_member_required,
     is_club_admin,
 )
+from items.models import ClubWeightSettings
 from ledger.models import LedgerEntry, LedgerLine
 from quests.services import needed_by_open_quests
 from starting_equipment.models import StartingEquipmentTemplate
@@ -295,8 +296,11 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             ctx["passive_perception"] = passive_perception_label(character.perception_bonus)
             ctx["xp_progress"] = xp_progress(character)
             ctx["rows"] = char_ctx["inventory_rows"]
+            weight_settings, _ = ClubWeightSettings.objects.get_or_create(club=character.club)
             total_hundredths, unweighted_count, unweighted_names = calculate_carried_weight(
-                char_ctx["inventory_rows"]
+                char_ctx["inventory_rows"],
+                character=character,
+                club_weight_settings=weight_settings,
             )
             capacity_hundredths = carrying_capacity(character)
             ctx.update(

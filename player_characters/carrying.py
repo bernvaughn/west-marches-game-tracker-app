@@ -10,21 +10,20 @@ None means "not listed", never zero.
 
 from decimal import Decimal
 
-from player_characters.sheet import InventoryRow
 
-
-def calculate_carried_weight(inventory_rows: list[InventoryRow]) -> tuple[int, int, list[str]]:
-    """Sum carried weight over inventory rows.
+def calculate_carried_weight(inventory_rows, character=None, club_weight_settings=None):
+    """Sum carried weight over inventory rows, including coin weight if enabled.
 
     Returns (total_hundredths, unweighted_count, unweighted_names).
 
     total_hundredths is the sum of item.weight_hundredth_lb * units over all
-    rows whose item has a weight listed. units is row.owned (stacked items
-    use the owned quantity as units; non-stacked items weigh once per owned
-    item). unweighted_names lists the names of items with no weight listed.
+    rows whose item has a weight listed, plus coin weight when enabled.
+    units is row.owned (stacked items use the owned quantity as units;
+    non-stacked items weigh once per owned item).
+    unweighted_names lists the names of items with no weight listed.
     """
     total = 0
-    unweighted_names: list[str] = []
+    unweighted_names = []
     for row in inventory_rows:
         item = row.item
         units = row.owned
@@ -32,6 +31,13 @@ def calculate_carried_weight(inventory_rows: list[InventoryRow]) -> tuple[int, i
             unweighted_names.append(item.name)
         else:
             total += item.weight_hundredth_lb * units
+
+    # Add coin weight when enabled and character provided
+    if character is not None and club_weight_settings is not None:
+        from player_characters.coin_weight import coin_weight_hundredths
+
+        total += coin_weight_hundredths(character, club_weight_settings)
+
     return total, len(unweighted_names), unweighted_names
 
 
@@ -48,9 +54,11 @@ def default_capacity(character) -> int | None:
 def carrying_capacity(character) -> int | None:
     """Carrying capacity for the character.
 
-    For S3 this is the default capacity (15 x Strength). S4 will add the
-    manual override, so this is kept separate to extend.
+    Manual override (carrying_capacity_lb) replaces default if set.
+    Otherwise uses 15 x Strength.
     """
+    if character.carrying_capacity_lb is not None:
+        return character.carrying_capacity_lb * 100
     return default_capacity(character)
 
 
