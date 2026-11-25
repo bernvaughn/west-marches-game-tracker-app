@@ -53,6 +53,33 @@ def _form_view(request, quest):
     form = QuestForm(data, instance=instance, club=club, initial=initial)
     reqs = RequirementFormSet(data, prefix="req", **kwargs)
     rews = RewardFormSet(data, prefix="rew", **kwargs)
+
+    # Compute reward total: sum of item value * quantity for each
+    # reward with an item. For stacked items, value_cp is for
+    # value_units units, so per-unit value = value_cp / value_units.
+    reward_total_cp = 0
+
+    def _item_value_cp(item, quantity):
+        if item.is_stacked and item.value_units:
+            return (item.value_cp * quantity) // item.value_units
+        return item.value_cp * quantity
+
+    if request.method == "POST":
+        # Use cleaned_data after validation
+        for f in rews.forms:
+            cd = getattr(f, "cleaned_data", None)
+            if cd and not cd.get("DELETE"):
+                item = cd.get("item")
+                quantity = cd.get("quantity") or 0
+                if item:
+                    reward_total_cp += _item_value_cp(item, quantity)
+    else:
+        # GET request: compute from existing instance
+        if quest:
+            for reward in quest.rewards.all():
+                if reward.item:
+                    reward_total_cp += _item_value_cp(reward.item, reward.quantity)
+
     if request.method == "POST":
         valid = [form.is_valid(), reqs.is_valid(), rews.is_valid()]
         if all(valid):
@@ -70,7 +97,13 @@ def _form_view(request, quest):
         request,
         "quests/manage/_form_modal.html",
         "quests/manage/form.html",
-        {"form": form, "reqs": reqs, "rews": rews, "quest": quest},
+        {
+            "form": form,
+            "reqs": reqs,
+            "rews": rews,
+            "quest": quest,
+            "reward_total_cp": reward_total_cp,
+        },
     )
 
 
