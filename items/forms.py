@@ -9,6 +9,7 @@ from . import rarity
 from .magic_types import NONE_LABEL, MagicType
 from .models import ContainerSlot, ContainerSlotOption, Item
 from .services import can_toggle_stacked
+from .widgets import ItemPickerWidget
 
 
 class ItemForm(forms.ModelForm):
@@ -238,7 +239,7 @@ class SlotOptionForm(forms.ModelForm):
         model = ContainerSlotOption
         fields = ["item", "qty_min", "qty_max", "weight"]
         widgets = {
-            "item": forms.Select(attrs={"class": "form-select form-select-sm"}),
+            "item": ItemPickerWidget(),
             "qty_min": forms.NumberInput(attrs={"min": 1, "class": "form-control form-control-sm"}),
             "qty_max": forms.NumberInput(attrs={"min": 1, "class": "form-control form-control-sm"}),
             "weight": forms.NumberInput(attrs={"min": 1, "class": "form-control form-control-sm"}),
@@ -254,6 +255,8 @@ class SlotOptionForm(forms.ModelForm):
                 .exclude(pk=container.pk if container else None)
                 .order_by("name")
             )
+            # Give the picker widget the club so it can build the search URL.
+            self.fields["item"].widget.club = club
         self.fields["item"].label = "Item"
         self.fields["qty_min"].label = "Qty min"
         self.fields["qty_max"].label = "Qty max"
