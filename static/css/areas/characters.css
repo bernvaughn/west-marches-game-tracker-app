@@ -156,6 +156,14 @@
   /* Phone inventory inline quantity (this task) - hide inline line, show optional columns */
   .wm-sheet-owned-inline { display: none; }
   .wm-sheet-table .wm-col-optional { display: table-cell; }
+  .wm-sheet-table .wm-col-weight, .wm-sheet-table .wm-col-value { display: table-cell; }}
+
+/* U165: hide Weight first, then Value, as the screen narrows. */
+@media screen and (max-width: 767.98px) {
+  th.wm-col-weight, td.wm-col-weight { display: none; }
+}
+@media screen and (max-width: 575.98px) {
+  th.wm-col-value, td.wm-col-value { display: none; }
 }
 
 /* XP progress bar (gamification): slim bar under the XP number, text only in print. */
