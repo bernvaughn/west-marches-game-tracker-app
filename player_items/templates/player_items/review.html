@@ -8,57 +8,69 @@
   <button class="btn btn-outline-secondary" type="submit">Search</button>
   <a class="btn btn-outline-secondary" href="{% url 'player_items:review' club.slug %}">Clear</a>
 </form>
-<div class="wm-table-scroll">
-<table class="table table-sm table-striped wm-data-table">
-  <thead>
-    <tr>
-      <th><a href="?sort=name&dir={{ next_dir.name }}&q={{ q }}">Name{% if sort == "name" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
-      <th class="num"><a href="?sort=quantity&dir={{ next_dir.quantity }}&q={{ q }}">Total qty{% if sort == "quantity" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
-      <th class="num"><a href="?sort=holders&dir={{ next_dir.holders }}&q={{ q }}">Holders{% if sort == "holders" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
-      <th><a href="?sort=first&dir={{ next_dir.first }}&q={{ q }}">First added{% if sort == "first" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
-      <th><a href="?sort=last&dir={{ next_dir.last }}&q={{ q }}">Last added{% if sort == "last" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
-      <th class="actions">Action</th>
-    </tr>
-  </thead>
-  <tbody>
-  {% for g in groups %}
-    <tr>
-      <td>{{ g.display_name }}</td>
-      <td class="num">{{ g.total_quantity }}</td>
-      <td class="num">{{ g.holder_count }}</td>
-      <td>{{ g.first_date|date:"Y-m-d" }}</td>
-      <td>{{ g.last_date|date:"Y-m-d" }}</td>
-      <td class="actions">
-        <a
-          href="{% url 'player_items:leave_as_is_confirm' club.slug %}?name_key={{ g.name_key }}"
-          hx-get="{% url 'player_items:leave_as_is_confirm' club.slug %}?name_key={{ g.name_key }}"
-          hx-target="#app-modal .modal-content"
-          data-app-modal
-          class="btn btn-sm btn-outline-secondary"
-          data-wm-tooltip
-          title="Leave this group as is"
-          aria-label="Leave {{ g.display_name }} as is"
-        >
-          Leave as is
-        </a>
-        <a
-          href="{% url 'player_items:promote' club.slug g.name_key %}"
-          hx-get="{% url 'player_items:promote' club.slug g.name_key %}"
-          hx-target="#app-modal .modal-content"
-          data-app-modal
-          class="btn btn-sm btn-outline-secondary"
-          data-wm-tooltip
-          title="Promote this group"
-          aria-label="Promote {{ g.display_name }}"
-        >
-          Promote
-        </a>
-      </td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="6" class="text-center">No open player-item groups to review.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-</div>
+<form id="review-form" method="post" action="{% url 'player_items:merge_form' club.slug %}" hx-post="{% url 'player_items:merge_form' club.slug %}" hx-target="#app-modal .modal-content">
+  {% csrf_token %}
+  <div class="wm-table-scroll">
+  <table class="table table-sm table-striped wm-data-table">
+    <thead>
+      <tr>
+        <th style="width: 40px;"><input type="checkbox" id="select-all" aria-label="Select all groups"></th>
+        <th><a href="?sort=name&dir={{ next_dir.name }}&q={{ q }}">Name{% if sort == "name" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+        <th class="num"><a href="?sort=quantity&dir={{ next_dir.quantity }}&q={{ q }}">Total qty{% if sort == "quantity" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+        <th class="num"><a href="?sort=holders&dir={{ next_dir.holders }}&q={{ q }}">Holders{% if sort == "holders" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+        <th><a href="?sort=first&dir={{ next_dir.first }}&q={{ q }}">First added{% if sort == "first" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+        <th><a href="?sort=last&dir={{ next_dir.last }}&q={{ q }}">Last added{% if sort == "last" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+        <th class="actions">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for g in groups %}
+      <tr>
+        <td><input type="checkbox" name="name_keys" value="{{ g.name_key }}" class="group-checkbox" data-name="{{ g.display_name }}"></td>
+        <td>{{ g.display_name }}</td>
+        <td class="num">{{ g.total_quantity }}</td>
+        <td class="num">{{ g.holder_count }}</td>
+        <td>{{ g.first_date|date:"Y-m-d" }}</td>
+        <td>{{ g.last_date|date:"Y-m-d" }}</td>
+        <td class="actions">
+          <a
+            href="{% url 'player_items:leave_as_is_confirm' club.slug %}?name_key={{ g.name_key }}"
+            hx-get="{% url 'player_items:leave_as_is_confirm' club.slug %}?name_key={{ g.name_key }}"
+            hx-target="#app-modal .modal-content"
+            data-app-modal
+            class="btn btn-sm btn-outline-secondary"
+            data-wm-tooltip
+            title="Leave this group as is"
+            aria-label="Leave {{ g.display_name }} as is"
+          >
+            Leave as is
+          </a>
+          <a
+            href="{% url 'player_items:promote' club.slug g.name_key %}"
+            hx-get="{% url 'player_items:promote' club.slug g.name_key %}"
+            hx-target="#app-modal .modal-content"
+            data-app-modal
+            class="btn btn-sm btn-outline-secondary"
+            data-wm-tooltip
+            title="Promote this group"
+            aria-label="Promote {{ g.display_name }}"
+          >
+            Promote
+          </a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-center">No open player-item groups to review.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div class="mt-3 d-flex gap-2 no-print">
+    <button type="submit" id="merge-selected-btn" class="btn btn-primary" disabled>
+      Merge selected
+    </button>
+  </div>
+</form>
+<script src="/static/js/player_items_review.js" defer></script>
 {% endblock %}
