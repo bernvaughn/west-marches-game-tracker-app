@@ -46,6 +46,7 @@ class IndexView(ClubScopedMixin, PermissionMixin, View):
         is_admin = self.is_club_admin(request.user, request.club)
         is_gm = self.is_game_master(request.user, request.club)
         show_retired = is_admin and request.GET.get("retired") == "1"
+        no_weight = request.GET.get("no_weight") == "1"
         items = self.get_club_queryset(Item)
         if not show_retired:
             items = items.filter(retired=False)
@@ -56,6 +57,8 @@ class IndexView(ClubScopedMixin, PermissionMixin, View):
             items = items.filter(magic_type=magic_type)
         else:
             magic_type = ""
+        if no_weight:
+            items = items.filter(weight_hundredth_lb__isnull=True)
         items = list(items)
         for_sale = available_item_ids(request.club, timezone.localdate())
         show_counts = is_admin or is_gm
@@ -65,6 +68,34 @@ class IndexView(ClubScopedMixin, PermissionMixin, View):
             own = counts.get(i.pk)
             i.owner_count = own.characters if own else 0
             i.held_total = own.held if own else 0
+        # Sort by weight
+        weight_sort = request.GET.get("weight", "")
+        if weight_sort == "asc":
+            items.sort(key=lambda i: (i.weight_hundredth_lb is None, i.weight_hundredth_lb or 0))
+        elif weight_sort == "desc":
+            items.sort(key=lambda i: (i.weight_hundredth_lb is None, -(i.weight_hundredth_lb or 0)))
+        # Build sort URLs preserving other params
+        from urllib.parse import parse_qsl, urlencode
+
+        base_params = dict(parse_qsl(request.META.get("QUERY_STRING", "")))
+        base_params.pop("weight", None)
+
+        def url_for(sort_val):
+            params = dict(base_params)
+            if sort_val:
+                params["weight"] = sort_val
+            return "?" + urlencode(params) if params else ""
+
+        weight_off_url = url_for("")
+        weight_asc_url = url_for("asc")
+        weight_desc_url = url_for("desc")
+        # retired_qs now includes no_weight
+        retired_qs_parts = []
+        if magic_type:
+            retired_qs_parts.append(f"magic_type={magic_type}")
+        if no_weight:
+            retired_qs_parts.append("no_weight=1")
+        retired_qs = "&" + "&".join(retired_qs_parts) if retired_qs_parts else ""
         return render(
             request,
             "items/index.html",
@@ -76,7 +107,12 @@ class IndexView(ClubScopedMixin, PermissionMixin, View):
                 "show_counts": show_counts,
                 "magic_type": magic_type,
                 "magic_types": [("none", NONE_LABEL), *MagicType.choices],
-                "retired_qs": f"&magic_type={magic_type}" if magic_type else "",
+                "retired_qs": retired_qs,
+                "weight_sort": weight_sort,
+                "weight_asc_url": weight_asc_url,
+                "weight_desc_url": weight_desc_url,
+                "weight_off_url": weight_off_url,
+                "no_weight": no_weight,
             },
         )
 
