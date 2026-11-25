@@ -28,4 +28,9 @@ urlpatterns = [
     path("review/merge/", merge.merge_form, name="merge_form"),
     path("review/merge/confirm/", merge.merge_confirm, name="merge_confirm"),
     path("suggest/", merge.suggest_matches_view, name="suggest"),
+    path(
+        "notices/<int:pk>/dismiss/",
+        views.dismiss_notice,
+        name="dismiss_notice",
+    ),
 ]

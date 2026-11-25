@@ -22,6 +22,7 @@ from map.services import get_uncredited_tiles
 from player_characters.junk import get_junk_summary
 from player_characters.player_shop import listed_rows
 from player_characters.sheet import coin_summary
+from player_items.models import PlayerNotice
 from quests.models import Quest, QuestCompletion
 from shops.models import ShopStock
 from shops.services import open_shops
@@ -129,6 +130,29 @@ class QuickActionsProvider(BaseDashboardProvider):
         # Always show so the partial endpoint returns 200 even when empty,
         # allowing HTMX refresh to work after the last junk sale.
         return True
+
+
+class NoticesDashboardProvider(BaseDashboardProvider):
+    """Undismissed notices for the membership (item promote/merge/match)."""
+
+    key = "notices"
+    order = 2
+    template = "accounts/_dashboard_notices.html"
+
+    def get_context(self, request: HttpRequest, club, character, membership) -> dict:
+        notices = (
+            PlayerNotice.objects.for_club(club)
+            .filter(membership=membership, dismissed_at__isnull=True)
+            .select_related("character")
+        )
+        return {"notices": notices, "club": club}
+
+    def should_show(self, request: HttpRequest, club, character, membership) -> bool:
+        return (
+            PlayerNotice.objects.for_club(club)
+            .filter(membership=membership, dismissed_at__isnull=True)
+            .exists()
+        )
 
 
 class DowntimeDashboardProvider(BaseDashboardProvider):

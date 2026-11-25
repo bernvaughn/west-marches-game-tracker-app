@@ -41,6 +41,7 @@ class AccountsConfig(AppConfig):
             MapDashboardProvider,
             MessagesDashboardProvider,
             MyMessagesDashboardProvider,
+            NoticesDashboardProvider,
             PlayerShopDashboardProvider,
             QuestsDashboardProvider,
             QuickActionsProvider,
@@ -72,6 +73,7 @@ class AccountsConfig(AppConfig):
         # Register built-in dashboard providers
         register_provider(HeaderDashboardProvider())
         register_provider(QuestsDashboardProvider())
+        register_provider(NoticesDashboardProvider())
         register_provider(DowntimeDashboardProvider())
         register_provider(MapDashboardProvider())
         register_provider(MessagesDashboardProvider())

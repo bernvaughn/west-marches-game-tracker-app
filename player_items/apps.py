@@ -12,7 +12,7 @@ class PlayerItemsConfig(AppConfig):
         from accounts import navigation
         from accounts.apps import is_admin
         from accounts.permissions import can_view_inventory
-        from player_items.models import PlayerItem
+        from player_items.models import PlayerItem, PlayerNotice
 
         def entries_context(request, character):
             """Return the player-written entries for a character's sheet."""
@@ -30,6 +30,30 @@ class PlayerItemsConfig(AppConfig):
             template="player_items/_entries.html",
             context_fn=entries_context,
             visible_fn=entries_visible,
+        )
+
+        def notices_context(request, character):
+            """Return the undismissed notices for a character's owner."""
+            notices = (
+                PlayerNotice.objects.for_club(request.club)
+                .filter(membership=character.owner, dismissed_at__isnull=True)
+                .select_related("character")
+            )
+            return {"notices": notices}
+
+        def notices_visible(request, character):
+            return (
+                PlayerNotice.objects.for_club(request.club)
+                .filter(membership=character.owner, dismissed_at__isnull=True)
+                .exists()
+            )
+
+        register_sheet_section(
+            key="player_notices",
+            order=60,
+            template="player_items/_notices.html",
+            context_fn=notices_context,
+            visible_fn=notices_visible,
         )
 
         def open_review_group_label(request):
