@@ -2,6 +2,8 @@
 
 from django import forms
 
+from items.widgets import ItemPickerWidget
+
 NAME_MAX = 80
 
 
@@ -155,6 +157,7 @@ class MergeForm(forms.Form):
             from items.models import Item
 
             self.fields["item"].queryset = Item.objects.for_club(club).order_by("name")
+            self.fields["item"].widget = ItemPickerWidget(club=club)
         # Populate name_keys choices from initial data or submitted data
         name_keys = self.initial.get("name_keys")
         if not name_keys and hasattr(self.data, "getlist"):
