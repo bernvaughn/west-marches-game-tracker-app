@@ -4,6 +4,8 @@ from zoneinfo import available_timezones
 
 from django import forms
 
+from items.models import ClubWeightSettings
+
 from ..models import Club
 
 
@@ -46,3 +48,18 @@ class ClubSettingsForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["timezone"].choices = timezone_choices(self.instance.timezone)
         self.fields["timezone"].initial = self.instance.timezone
+
+
+class ClubWeightSettingsForm(forms.ModelForm):
+    """Form for editing club weight settings."""
+
+    class Meta:
+        model = ClubWeightSettings
+        fields = ["count_coin_weight"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["count_coin_weight"].help_text = (
+            "Count coins toward carrying weight at 50 coins per pound. "
+            "Uses the minimum number of physical coins (platinum, gold, silver, copper)."
+        )

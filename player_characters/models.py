@@ -128,6 +128,12 @@ class Character(models.Model):
         validators=[MinValueValidator(1)],
         help_text="Optional. Whole number from 1.",
     )
+    carrying_capacity_lb = models.PositiveIntegerField(
+        "Carrying capacity (lb)",
+        null=True,
+        blank=True,
+        help_text="Manual override for carrying capacity in pounds. Blank uses 15 × Strength.",
+    )
     perception_bonus = models.SmallIntegerField(
         null=True,
         blank=True,

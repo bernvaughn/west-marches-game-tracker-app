@@ -142,6 +142,29 @@ class RecentItemPick(models.Model):
         return f"{self.membership} picked {self.item}"
 
 
+class ClubWeightSettings(models.Model):
+    """Club-level settings for weight tracking."""
+
+    club_path = "club"
+
+    club = models.OneToOneField(
+        "accounts.Club", on_delete=models.CASCADE, related_name="weight_settings"
+    )
+    count_coin_weight = models.BooleanField(
+        "Count coin weight",
+        default=False,
+        help_text="Count coins toward carrying weight at 50 coins per pound.",
+    )
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        verbose_name_plural = "Club weight settings"
+
+    def __str__(self):
+        return f"Weight settings for {self.club}"
+
+
 class ContainerOpening(AppendOnlyModel):
     club_path = "character__club"
 
