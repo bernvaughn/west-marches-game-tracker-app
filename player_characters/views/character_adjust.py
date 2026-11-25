@@ -67,7 +67,7 @@ def adjust(request, club_slug, pk):
     stacked_units = items.filter(is_stacked=True).values("name", "unit_name")
     post = request.method == "POST"
     form = AdjustForm(request.POST if post else None)
-    formset = item_line_formset(items, request.POST if post else None)
+    formset = item_line_formset(items, request.POST if post else None, club=request.club)
     if post:
         valid = form.is_valid() and formset.is_valid()
         sign = form.cleaned_data.get("sign") if valid else None
@@ -96,7 +96,7 @@ def consume(request, club_slug, pk):
     )
     post = request.method == "POST"
     form = ConsumeForm(request.POST if post else None)
-    formset = consume_line_formset(items, avail, request.POST if post else None)
+    formset = consume_line_formset(items, avail, request.POST if post else None, club=request.club)
     if post and _handle(request, character, form, formset, -1, "consumed"):
         messages.success(request, f"Consumed from {character.name}.")
         return redirect("characters:detail", club_slug=club_slug, pk=character.pk)
@@ -242,7 +242,9 @@ def bulk_award(request, club_slug):
                     item_id = formset_data.get(f"{prefix}-{i}-item_id", "")
                     if item_id:
                         formset_data[f"{prefix}-{i}-item"] = item_id
-                item_formset = bulk_item_line_formset(items, data=formset_data, prefix=prefix)
+                item_formset = bulk_item_line_formset(
+                    items, data=formset_data, prefix=prefix, club=request.club
+                )
                 if not item_formset.is_valid():
                     formset_messages = list(item_formset.non_form_errors())
                     for formset_form in item_formset.forms:

@@ -60,11 +60,11 @@ class ConsumeLineFormSet(BaseItemLineFormSet):
                 form.add_error("quantity", f"Only {label} available to consume.")
 
 
-def consume_line_formset(items, available, data=None, *, prefix="items"):
+def consume_line_formset(items, available, data=None, *, prefix="items", club=None):
     """Formset for the GM consume page, capped at units available per item."""
     factory = formset_factory(
         ItemLineForm, formset=ConsumeLineFormSet, extra=3, max_num=3, validate_max=True
     )
-    formset = factory(data, prefix=prefix, form_kwargs={"items": items})
+    formset = factory(data, prefix=prefix, form_kwargs={"items": items, "club": club})
     formset.available = available or {}
     return formset

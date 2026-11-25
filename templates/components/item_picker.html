@@ -59,13 +59,11 @@ Context:
       {% if widget.multi %}multiple{% endif %}
     >
       <option value="">-- Select item --</option>
-      {% if widget.club %}
-        {% for item in widget.club.items.all %}
-          <option value="{{ item.pk }}" {% if item.pk|stringformat:"s" in widget.value|default:"" %}selected{% endif %}>
-            {{ item.name }} {% if item.value_cp %}({{ item.value_cp|coins }}){% endif %}
-          </option>
-        {% endfor %}
-      {% endif %}
+      {% for item in widget.fallback_items %}
+        <option value="{{ item.pk }}" {% if item.pk|stringformat:"s" in widget.value|default:"" %}selected{% endif %}>
+          {{ item.name }} {% if item.value_cp %}({{ item.value_cp|coins }}){% endif %}
+        </option>
+      {% endfor %}
     </select>
   </noscript>
 </div>

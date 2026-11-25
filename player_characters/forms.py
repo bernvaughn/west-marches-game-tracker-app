@@ -1,6 +1,7 @@
 from django import forms
 from django.forms import formset_factory
 
+from items.widgets import ItemPickerWidget
 from ledger.services import Line
 
 
@@ -8,9 +9,11 @@ class ItemLineForm(forms.Form):
     item = forms.ModelChoiceField(queryset=None, required=False)
     quantity = forms.IntegerField(min_value=1, required=False)
 
-    def __init__(self, *args, items, **kwargs):
+    def __init__(self, *args, items, club=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["item"].queryset = items
+        if club is not None:
+            self.fields["item"].widget = ItemPickerWidget(club=club)
 
     def clean(self):
         data = super().clean()
@@ -35,11 +38,11 @@ class BaseItemLineFormSet(forms.BaseFormSet):
             seen.add(item.pk)
 
 
-def item_line_formset(items, data=None, *, extra=3, prefix="items"):
+def item_line_formset(items, data=None, *, extra=3, prefix="items", club=None):
     factory = formset_factory(
         ItemLineForm, formset=BaseItemLineFormSet, extra=extra, max_num=extra, validate_max=True
     )
-    return factory(data, prefix=prefix, form_kwargs={"items": items})
+    return factory(data, prefix=prefix, form_kwargs={"items": items, "club": club})
 
 
 def formset_lines(formset, sign):
