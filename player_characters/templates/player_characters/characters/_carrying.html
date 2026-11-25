@@ -1,0 +1,9 @@
+{% if carrying_line %}
+<p class="wm-sheet-note">{{ carrying_line }}</p>
+{% endif %}
+{% if unweighted_count %}
+<p class="wm-sheet-note">{{ unweighted_count }} item{{ unweighted_count|pluralize }} have no weight listed</p>
+{% endif %}
+{% if over_capacity %}
+<p class="wm-sheet-note">Over capacity</p>
+{% endif %}

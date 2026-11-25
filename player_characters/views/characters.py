@@ -30,6 +30,12 @@ from starting_equipment.services import (
 )
 
 from ..access import can_edit_character, owns_character
+from ..carrying import (
+    calculate_carried_weight,
+    carrying_capacity,
+    format_carrying_line,
+    over_capacity,
+)
 from ..character_forms import CharacterForm, HandoverForm
 from ..junk import get_junk_summary
 from ..models import Character
@@ -289,6 +295,20 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             ctx["passive_perception"] = passive_perception_label(character.perception_bonus)
             ctx["xp_progress"] = xp_progress(character)
             ctx["rows"] = char_ctx["inventory_rows"]
+            total_hundredths, unweighted_count, unweighted_names = calculate_carried_weight(
+                char_ctx["inventory_rows"]
+            )
+            capacity_hundredths = carrying_capacity(character)
+            ctx.update(
+                {
+                    "carrying_total_hundredths": total_hundredths,
+                    "carrying_capacity_hundredths": capacity_hundredths,
+                    "carrying_line": format_carrying_line(total_hundredths, capacity_hundredths),
+                    "unweighted_count": unweighted_count,
+                    "unweighted_names": unweighted_names,
+                    "over_capacity": over_capacity(total_hundredths, capacity_hundredths),
+                }
+            )
             ctx["coins"] = char_ctx["coin_summary"]
             ctx["junk"] = {r.item.pk: r.quantity for r in junk_summary["rows"]}
             ctx["junk_value"] = junk_summary["value"]
