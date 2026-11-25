@@ -24,6 +24,8 @@ class SheetSection:
 
 
 _sections: dict[str, SheetSection] = {}
+_app_defaults: dict[str, SheetSection] = {}
+_cleared: bool = False
 
 
 def register_sheet_section(
@@ -38,6 +40,11 @@ def register_sheet_section(
     A repeated ``key`` replaces the old entry (safe for ``ready()`` called
     twice during tests or hot reload).
 
+    Sections registered before the first test-only clear are treated as
+    app-defaults: they are restored by :func:`restore_app_defaults` after a
+    test fixture wipes the live registry, so later test files still see the
+    sheet sections apps provide at app load.
+
     Args:
         key: Unique identifier for the section.
         order: Sort order (lower renders first). Ties broken by key.
@@ -47,13 +54,16 @@ def register_sheet_section(
         visible_fn: Optional callable ``(request, character) -> bool``.
             A falsy result skips the section.
     """
-    _sections[key] = SheetSection(
+    section = SheetSection(
         key=key,
         order=order,
         template=template,
         context_fn=context_fn,
         visible_fn=visible_fn,
     )
+    _sections[key] = section
+    if not _cleared:
+        _app_defaults[key] = section
 
 
 def get_sheet_sections(request, character) -> list[dict]:
@@ -100,6 +110,30 @@ def get_sheet_sections(request, character) -> list[dict]:
     return result
 
 
+def restore_app_defaults() -> None:
+    """Re-register every app-default section into the live registry.
+
+    Test fixtures that clear the live registry wipe the app-default sections
+    registered at app load. Call this after clearing so later test files
+    still see the character sheet sections that apps provide.
+    """
+    for section in _app_defaults.values():
+        register_sheet_section(
+            section.key,
+            section.order,
+            section.template,
+            section.context_fn,
+            section.visible_fn,
+        )
+
+
 def _clear_sections() -> None:
-    """Clear all registered sections (for tests only)."""
+    """Clear all registered sections (for tests only).
+
+    App-defaults registered before the first clear are preserved in
+    :data:`_app_defaults` and can be restored with
+    :func:`restore_app_defaults`.
+    """
+    global _cleared
+    _cleared = True
     _sections.clear()

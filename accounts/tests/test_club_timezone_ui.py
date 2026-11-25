@@ -44,7 +44,7 @@ def test_settings_page_renders_card_hierarchy_markers(club_admin, login, club):
     assert r.status_code == 200
     body = r.content.decode()
     assert body.count("wm-settings-card--primary") == 1
-    assert body.count("wm-settings-card--secondary") == 1
+    assert body.count("wm-settings-card--secondary") == 2
     assert body.count("wm-settings-card--utility") == 1
 
 

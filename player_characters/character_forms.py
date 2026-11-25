@@ -112,6 +112,7 @@ class CharacterForm(forms.ModelForm):
             "perception_bonus",
             "xp",
             "description",
+            "carrying_capacity_lb",
         ]
         widgets = {
             "level": forms.NumberInput(attrs={"min": 1}),
@@ -121,6 +122,7 @@ class CharacterForm(forms.ModelForm):
             "perception_bonus": forms.NumberInput(attrs={"min": -20, "max": 30}),
             "xp": forms.NumberInput(attrs={"min": 0}),
             "description": forms.Textarea(attrs={"rows": 6}),
+            "carrying_capacity_lb": forms.NumberInput(attrs={"min": 1}),
         }
 
     def __init__(self, *args, club, choose_owner=False, **kwargs):
