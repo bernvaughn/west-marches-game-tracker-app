@@ -4,6 +4,7 @@ from .merge import (
     merge_form,
     suggest_matches_view,
 )
+from .notices import dismiss_notice
 
 __all__ = [
     "add_entry",
@@ -12,4 +13,5 @@ __all__ = [
     "merge_form",
     "merge_confirm",
     "suggest_matches_view",
+    "dismiss_notice",
 ]

@@ -12,6 +12,7 @@ from datetime import date
 from django.db import transaction
 
 from items.models import Item
+from items.values import format_item_value
 from ledger.models import LedgerEntry
 from ledger.services import Line, record_many
 from player_items.models import PlayerItem, PlayerItemChange, PlayerNotice
@@ -85,11 +86,15 @@ def _group_by_character(entries):
     return [groups[character_id] for character_id in order]
 
 
-def _notice_text(old_names, new_name, character_name, kind: str) -> str:
+def _notice_text(old_names, new_name, character_name, kind: str, item: Item | None = None) -> str:
     old = ", ".join(f'"{n}"' for n in old_names)
     if len(old_names) == 1:
-        return f'Item {old} for {character_name} {kind} to "{new_name}".'
-    return f'Items {old} for {character_name} {kind} to "{new_name}".'
+        text = f'Item {old} for {character_name} {kind} to "{new_name}".'
+    else:
+        text = f'Items {old} for {character_name} {kind} to "{new_name}".'
+    if item is not None and item.value_cp > 0:
+        text = f"{text[:-1]} (value: {format_item_value(item)})."
+    return text
 
 
 def resolve(club, entries, target: Target, by, *, mode: str = "promote"):
@@ -189,6 +194,6 @@ def resolve(club, entries, target: Target, by, *, mode: str = "promote"):
                 club=club,
                 character=character,
                 kind=notice_kind,
-                text=_notice_text(old_names, item.name, character.name, notice_verb),
+                text=_notice_text(old_names, item.name, character.name, notice_verb, item),
             )
     return item

@@ -1,0 +1,40 @@
+{% comment %}Notices dashboard card: undismissed player notices with a dismiss button per notice.{% endcomment %}
+<div
+  id="dashboard-card-notices"
+  data-refresh-url="{% url 'accounts:dashboard_partial' club.slug 'notices' %}"
+  class="wm-dashboard-section card wm-card-raised h-100"
+>
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="bell" label="Notices" %}
+      Notices
+    </h3>
+  </div>
+  <div class="card-body p-0">
+    <ul class="list-group list-group-flush">
+      {% for notice in provider_context.notices %}
+      <li
+        id="notice-{{ notice.pk }}"
+        class="list-group-item d-flex align-items-center justify-content-between px-3 py-2"
+      >
+        <span class="badge text-bg-info">{{ notice.get_kind_display }}</span>
+        <span class="flex-grow-1 ms-2 small">{{ notice.text }}</span>
+        <button
+          type="button"
+          class="btn btn-sm btn-outline-secondary flex-shrink-0"
+          hx-post="{% url 'player_items:dismiss_notice' club.slug notice.pk %}"
+          hx-target="#notice-{{ notice.pk }}"
+          hx-swap="outerHTML"
+          aria-label="Dismiss notice"
+        >
+          {% include "components/icon.html" with name="x" label="Dismiss" %}
+        </button>
+      </li>
+      {% empty %}
+      <li class="list-group-item text-center py-4 text-muted small">
+        No new notices.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>

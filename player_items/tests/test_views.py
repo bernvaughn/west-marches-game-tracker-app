@@ -8,6 +8,7 @@ from player_items.models import (
     MAX_ITEMS_PER_CHARACTER,
     PlayerItem,
     PlayerItemChange,
+    PlayerNotice,
 )
 from player_items.services import add_player_item
 from quests.models import Quest, QuestReward
@@ -291,3 +292,72 @@ def test_player_item_not_in_quest_reward(club, login, player, character):
     QuestReward.objects.create(quest=quest, item=None, quantity=0, coins=10)
     body = login(player).get(reverse("quests:detail", args=[club.slug, quest.pk])).content.decode()
     assert "Reward Item" not in body
+
+
+# --- notices: dismiss view ------------------------------------------------
+
+
+def make_notice(club, membership, character, text="Notice."):
+    return PlayerNotice.objects.create(
+        membership=membership,
+        club=club,
+        character=character,
+        kind=PlayerNotice.Kind.ITEM_PROMOTED,
+        text=text,
+    )
+
+
+def test_dismiss_own_notice_htmx(club, login, player, character):
+    owner = club.memberships.get(user=player)
+    notice = make_notice(club, owner, character)
+    c = login(player)
+    r = c.post(
+        reverse("player_items:dismiss_notice", args=[club.slug, notice.pk]),
+        HTTP_HX_REQUEST="true",
+    )
+    assert r.status_code == 204
+    notice.refresh_from_db()
+    assert notice.dismissed_at is not None
+
+
+def test_dismiss_own_notice_redirects_without_htmx(club, login, player, character):
+    owner = club.memberships.get(user=player)
+    notice = make_notice(club, owner, character)
+    c = login(player)
+    r = c.post(reverse("player_items:dismiss_notice", args=[club.slug, notice.pk]))
+    assert r.status_code == 302
+    assert r["Location"] == reverse("accounts:player_dashboard", args=[club.slug])
+    notice.refresh_from_db()
+    assert notice.dismissed_at is not None
+
+
+def test_dismiss_another_members_notice_is_403(club, login, player, other_player, character):
+    owner = club.memberships.get(user=player)
+    notice = make_notice(club, owner, character)
+    c = login(other_player)
+    r = c.post(
+        reverse("player_items:dismiss_notice", args=[club.slug, notice.pk]),
+        HTTP_HX_REQUEST="true",
+    )
+    assert r.status_code == 403
+    notice.refresh_from_db()
+    assert notice.dismissed_at is None
+
+
+def test_dismiss_unknown_notice_is_404(club, login, player):
+    c = login(player)
+    r = c.post(
+        reverse("player_items:dismiss_notice", args=[club.slug, 99999]),
+        HTTP_HX_REQUEST="true",
+    )
+    assert r.status_code == 404
+
+
+def test_dismiss_requires_post(club, login, player, character):
+    owner = club.memberships.get(user=player)
+    notice = make_notice(club, owner, character)
+    c = login(player)
+    r = c.get(reverse("player_items:dismiss_notice", args=[club.slug, notice.pk]))
+    assert r.status_code == 405
+    notice.refresh_from_db()
+    assert notice.dismissed_at is None
