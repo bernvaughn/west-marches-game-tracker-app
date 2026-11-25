@@ -378,6 +378,9 @@ EXCLUDED = {
     "player_items:remove": "HTMX remove confirm modal from character sheet.",
     "player_items:leave_as_is": "POST only; marks a group as left as is.",
     "player_items:leave_as_is_confirm": "HTMX confirm modal for leave-as-is; not a full page.",
+    "player_items:merge_form": "HTMX modal for merge form; opened from review page.",
+    "player_items:merge_confirm": "POST only; confirms merge from preview modal.",
+    "player_items:suggest": "HTMX partial endpoint for item suggestions; not a page.",
 }
 
 

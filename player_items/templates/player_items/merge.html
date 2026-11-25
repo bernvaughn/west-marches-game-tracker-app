@@ -1,0 +1,141 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}{{ modal_title }}{% endblock %}
+{% block body %}
+<form
+  method="post"
+  action="{{ form_action }}"
+  hx-post="{{ form_action }}"
+  hx-target="#app-modal .modal-content"
+  id="merge-form"
+  data-suggest-url="{% url 'player_items:suggest' club.slug %}"
+>
+  {% csrf_token %}
+  {% for nk in form.initial.name_keys %}
+  <input type="hidden" name="name_keys" value="{{ nk }}">
+  {% endfor %}
+  {% if form.non_field_errors %}
+  <div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">
+    <div>{{ form.non_field_errors|join:" " }}</div>
+  </div>
+  {% endif %}
+
+  <p>
+    <label class="form-label">{{ form.mode.label }}</label>
+    <div class="btn-group w-100" role="radiogroup">
+      {% for value, label in form.mode.field.choices %}
+      <input
+        type="radio"
+        name="{{ form.mode.name }}"
+        value="{{ value }}"
+        id="{{ form.mode.id_for_label }}_{{ value }}"
+        class="btn-check"
+        {% if form.mode.value == value %}checked{% endif %}
+        autocomplete="off"
+      >
+      <label class="btn btn-outline-primary" for="{{ form.mode.id_for_label }}_{{ value }}">{{ label }}</label>
+      {% endfor %}
+    </div>
+    {% if form.mode.errors %}
+    <span class="error text-danger d-block" role="alert">{{ form.mode.errors|join:" " }}</span>
+    {% endif %}
+  </p>
+
+  <div id="merge-fields" class="mt-3">
+    <div id="merge-mode-fields" data-mode="merge">
+      <p>
+        <label class="form-label" for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+        {{ form.name }}
+        {% if form.name.errors %}
+        <span class="error text-danger d-block" role="alert">{{ form.name.errors|join:" " }}</span>
+        {% endif %}
+        <span class="form-text">The catalogue item to create from these entries.</span>
+      </p>
+      <p>
+        <label class="form-label" for="{{ form.is_stacked.id_for_label }}">{{ form.is_stacked.label }}</label>
+        {{ form.is_stacked }}
+        {% if form.is_stacked.errors %}
+        <span class="error text-danger d-block" role="alert">{{ form.is_stacked.errors|join:" " }}</span>
+        {% endif %}
+      </p>
+      <p id="merge-unit-name-field" style="display: none;">
+        <label class="form-label" for="{{ form.unit_name.id_for_label }}">{{ form.unit_name.label }}</label>
+        {{ form.unit_name }}
+        {% if form.unit_name.errors %}
+        <span class="error text-danger d-block" role="alert">{{ form.unit_name.errors|join:" " }}</span>
+        {% endif %}
+        <span class="form-text">Required for stacked items, e.g. ft, sheet, arrow.</span>
+      </p>
+    </div>
+
+    <div id="match-mode-fields" data-mode="match" style="display: none;">
+      <p>
+        <label class="form-label" for="{{ form.item.id_for_label }}">{{ form.item.label }}</label>
+        {% include "components/item_picker.html" with widget=form.item %}
+        {% if form.item.errors %}
+        <span class="error text-danger d-block" role="alert">{{ form.item.errors|join:" " }}</span>
+        {% endif %}
+        <span class="form-text">Select the existing catalogue item to match these entries to.</span>
+      </p>
+    </div>
+  </div>
+
+  <p>
+    <label class="form-label" for="{{ form.quantity_factor.id_for_label }}">{{ form.quantity_factor.label }}</label>
+    {{ form.quantity_factor }}
+    {% if form.quantity_factor.errors %}
+    <span class="error text-danger d-block" role="alert">{{ form.quantity_factor.errors|join:" " }}</span>
+    {% endif %}
+    <span class="form-text">Multiply each holder's total quantity by this factor.</span>
+  </p>
+
+  <h3 class="mt-3">Selected groups</h3>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th class="num">Entries</th>
+        <th class="num">Total qty</th>
+        <th class="num">Holders</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for g in groups %}
+      <tr>
+        <td>{{ g.display_name }}</td>
+        <td class="num">{{ g.entries }}</td>
+        <td class="num">{{ g.total_quantity }}</td>
+        <td class="num">{{ g.holder_count }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h3 class="mt-3">Holders</h3>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Character</th>
+        <th>Owner</th>
+        <th class="num">Entries</th>
+        <th class="num">Total qty</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for h in holders %}
+      <tr>
+        <td>{{ h.character.name }}</td>
+        <td>{{ h.owner.user.display_name }}</td>
+        <td class="num">{{ h.entries|length }}</td>
+        <td class="num">{{ h.total_quantity }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <script src="/static/js/player_items_merge.js" defer></script>
+</form>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit" form="merge-form">Preview</button>
+{% endblock %}

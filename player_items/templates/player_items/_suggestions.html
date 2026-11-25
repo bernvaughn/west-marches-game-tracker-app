@@ -1,0 +1,19 @@
+{% if suggestions %}
+<div class="wm-suggestions mt-2">
+  <div class="form-text">Suggestions:</div>
+  <ul class="list-unstyled mb-0">
+  {% for s in suggestions %}
+    <li>
+      <button type="button"
+        class="btn btn-sm btn-link p-0 text-decoration-none"
+        hx-post="{% url 'player_items:merge_form' club.slug %}"
+        hx-target="#app-modal .modal-content"
+        hx-vals='{"name": "{{ s|escapejs }}"}'
+        data-wm-tooltip
+        title="Use this name"
+      >{{ s }}</button>
+    </li>
+  {% endfor %}
+  </ul>
+</div>
+{% endif %}

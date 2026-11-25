@@ -1,0 +1,69 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}{{ modal_title }}{% endblock %}
+{% block body %}
+<form
+  method="post"
+  action="{{ confirm_url }}"
+  hx-post="{{ confirm_url }}"
+  hx-target="#app-modal .modal-content"
+  id="merge-preview-form"
+>
+  {% csrf_token %}
+
+  <div class="alert alert-info wm-alert wm-alert--info" role="alert">
+    <strong>Preview:</strong> Review the changes below. Each holder will receive exactly one ledger entry.
+    {% if mode == "merge" %}
+    A new item <strong>"{{ target_name }}"</strong> will be created.
+    {% else %}
+    Entries will be matched to existing item <strong>"{{ target_name }}"</strong>.
+    {% endif %}
+    {% if target_is_stacked %}
+    (Stacked item, unit: {{ target_unit_name }})
+    {% endif %}
+    Quantity factor: {{ quantity_factor }}.
+  </div>
+
+  <h3>Per-holder changes</h3>
+  <div class="table-responsive">
+    <table class="table table-sm">
+      <thead>
+        <tr>
+          <th>Character</th>
+          <th>Owner</th>
+          <th>Current items (selected groups)</th>
+          <th class="num">Current total</th>
+          <th>New item</th>
+          <th class="num">New total</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for h in holders %}
+        <tr>
+          <td>{{ h.character.name }}</td>
+          <td>{{ h.owner.user.display_name }}</td>
+          <td>
+            <ul class="mb-0">
+            {% for ci in h.current_items %}
+              <li>{{ ci.name }} x{{ ci.quantity }}</li>
+            {% endfor %}
+            </ul>
+          </td>
+          <td class="num">{{ h.total_quantity }}</td>
+          <td>{{ target_name }}</td>
+          <td class="num">
+            {% if mode == "match" and h.existing_quantity > 0 %}
+              <span class="text-muted">{{ h.existing_quantity }} + </span>
+            {% endif %}
+            <strong>{{ h.new_total_quantity }}</strong>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</form>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
+<button class="btn btn-primary" type="submit" form="merge-preview-form">Confirm</button>
+{% endblock %}
