@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import review
+from .views import promote, review
 
 app_name = "player_items"
 
@@ -24,4 +24,5 @@ urlpatterns = [
     path("review/", review.review, name="review"),
     path("review/confirm/", review.leave_as_is_confirm, name="leave_as_is_confirm"),
     path("review/leave-as-is/", review.leave_as_is, name="leave_as_is"),
+    path("review/<str:name_key>/promote/", promote.promote, name="promote"),
 ]
