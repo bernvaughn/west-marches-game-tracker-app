@@ -1,0 +1,42 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}{{ modal_title }}{% endblock %}
+{% block body %}
+<form
+  method="post"
+  action="{{ form_action }}"
+  hx-post="{{ form_action }}"
+  hx-target="#app-modal .modal-content"
+>
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="error alert alert-danger wm-alert wm-alert--danger" role="alert">
+    <div>{{ form.non_field_errors|join:" " }}</div>
+  </div>
+  {% endif %}
+  <p>
+    <label class="form-label" for="{{ form.name.id_for_label }}">Name</label>
+    {{ form.name }}
+    {% if form.name.errors %}
+    <span class="error text-danger d-block" role="alert">{{ form.name.errors|join:" " }}</span>
+    {% endif %}
+  </p>
+  <p>
+    <label class="form-label" for="{{ form.quantity.id_for_label }}">Quantity</label>
+    {{ form.quantity }}
+    {% if form.quantity.errors %}
+    <span class="error text-danger d-block" role="alert">{{ form.quantity.errors|join:" " }}</span>
+    {% endif %}
+  </p>
+  <p>
+    <label class="form-label" for="{{ form.note.id_for_label }}">Note</label>
+    {{ form.note }}
+    {% if form.note.errors %}
+    <span class="error text-danger d-block" role="alert">{{ form.note.errors|join:" " }}</span>
+    {% endif %}
+  </p>
+</form>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-primary" type="submit">{{ button_label }}</button>
+{% endblock %}
