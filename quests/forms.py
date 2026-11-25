@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 
 from items.models import Item
+from items.widgets import ItemPickerWidget
 from ledger.coins import CoinsField
 
 from .models import Quest, QuestRequirement, QuestReward
@@ -56,6 +57,8 @@ class _ItemRowForm(forms.ModelForm):
         self.fields["item"].queryset = Item.objects.for_club(club).filter(
             Q(retired=False) | Q(pk=current)
         )
+        # Use the shared picker widget
+        self.fields["item"].widget = ItemPickerWidget(club=club)
 
 
 class RequirementForm(_ItemRowForm):
