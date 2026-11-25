@@ -41,6 +41,18 @@
         >
           Leave as is
         </a>
+        <a
+          href="{% url 'player_items:promote' club.slug g.name_key %}"
+          hx-get="{% url 'player_items:promote' club.slug g.name_key %}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          class="btn btn-sm btn-outline-secondary"
+          data-wm-tooltip
+          title="Promote this group"
+          aria-label="Promote {{ g.display_name }}"
+        >
+          Promote
+        </a>
       </td>
     </tr>
   {% empty %}
