@@ -1,0 +1,68 @@
+<h2 class="wm-sheet-box-title" id="sheet-player-entries">Player-written items</h2>
+{% if entries %}
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th class="num">Qty</th>
+      <th>Note</th>
+      <th class="no-print">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in entries %}
+    <tr>
+      <td>
+        {{ entry.name }}
+        {% include "components/badge.html" with text="Player-written" status="neutral" %}
+      </td>
+      <td class="num">{{ entry.quantity }}</td>
+      <td>{{ entry.note|linebreaksbr }}</td>
+      <td class="no-print">
+        <a
+          href="{% url 'player_items:edit' club.slug character.pk entry.pk %}"
+          hx-get="{% url 'player_items:edit' club.slug character.pk entry.pk %}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          class="btn btn-sm btn-outline-secondary"
+          data-wm-tooltip
+          title="Edit this item"
+          aria-label="Edit {{ entry.name }}"
+        >
+          {% include "components/icon.html" with name="pencil" label="Edit" %}
+        </a>
+        <a
+          href="{% url 'player_items:remove' club.slug character.pk entry.pk %}"
+          hx-get="{% url 'player_items:remove' club.slug character.pk entry.pk %}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          class="btn btn-sm btn-outline-danger"
+          data-wm-tooltip
+          title="Remove this item"
+          aria-label="Remove {{ entry.name }}"
+        >
+          {% include "components/icon.html" with name="trash" label="Remove" %}
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="wm-sheet-note">No player-written items yet.</p>
+{% endif %}
+{% if can_add %}
+<button
+  type="button"
+  hx-get="{% url 'player_items:add' club.slug character.pk %}"
+  hx-target="#app-modal .modal-content"
+  hx-swap="innerHTML"
+  data-app-modal
+  class="btn btn-sm btn-outline-secondary no-print"
+  data-wm-tooltip
+  title="Add a player-written item to this character's sheet"
+  aria-label="Add player-written item"
+>
+  {% include "components/icon.html" with name="plus" label="Add player-written item" %}
+</button>
+{% endif %}

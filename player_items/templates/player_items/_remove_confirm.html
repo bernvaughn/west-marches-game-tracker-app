@@ -1,0 +1,23 @@
+{% extends "components/modal_frame.html" %}
+{% block title %}Remove player-written item{% endblock %}
+{% block body %}
+<p>
+  Remove
+  <strong>{{ player_item.name }}</strong>
+  (x{{ player_item.quantity }})
+  from {{ character.name }}'s sheet?
+</p>
+<p class="wm-sheet-note">This cannot be undone. A history row is kept.</p>
+<form
+  method="post"
+  action="{{ form_action }}"
+  hx-post="{{ form_action }}"
+  hx-target="#app-modal .modal-content"
+>
+  {% csrf_token %}
+</form>
+{% endblock %}
+{% block footer %}
+<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+<button class="btn btn-danger" type="submit">Remove</button>
+{% endblock %}
