@@ -4,6 +4,7 @@ from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils import timezone
 
 from items.models import Item
+from items.widgets import ItemPickerWidget
 from ledger.coins import CoinsField
 from player_characters.models import Character
 
@@ -70,6 +71,7 @@ class EntryItemForm(forms.ModelForm):
         self.fields["item"].queryset = Item.objects.for_club(club).filter(
             Q(retired=False) | Q(pk=current)
         )
+        self.fields["item"].widget = ItemPickerWidget(club=club)
 
 
 EntryItemFormSet = inlineformset_factory(

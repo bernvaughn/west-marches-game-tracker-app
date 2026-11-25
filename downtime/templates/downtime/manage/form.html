@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static coins units downtime_points %}
 {% block title %}{% if action %}Edit {{ action.name }}{% else %}New downtime action{% endif %}{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/areas/downtime.css' %}">
@@ -25,10 +25,18 @@
       <h3 class="h6">Items</h3>
       {{ f.nested.management_form }}
       {{ f.nested.non_form_errors }}
-      {% for n in f.nested %}<div class="wm-reward-item">{{ n.non_field_errors }}{{ n }}</div>{% endfor %}
+      {% for n in f.nested %}
+        <div class="wm-reward-item">{{ n.non_field_errors }}{{ n }}</div>
+        {% if n.instance.item %}
+          <div class="wm-reward-item-value text-muted small">Value: {{ n.instance.item|item_value }}</div>
+        {% endif %}
+      {% endfor %}
     </div>
   </fieldset>
   {% endfor %}
+  {% if entries|expected_value_total %}
+    <div class="wm-reward-ev text-muted small mt-2">Expected value: {{ entries|expected_value_total }}</div>
+  {% endif %}
   <div class="wm-form-actions">
     <button class="btn btn-primary" type="submit">Save</button>
     <a class="btn btn-outline-secondary" href="{% url 'downtime:actions' club.slug %}">Cancel</a>
