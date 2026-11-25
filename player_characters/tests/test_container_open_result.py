@@ -145,6 +145,52 @@ def test_no_js_markup_complete(club):
     assert "wm-reveal--armed" not in html
 
 
+def test_data_wm_reveal_nested_inside_data_fanfare(club):
+    """data-wm-reveal must be a descendant of [data-fanfare] for S2 animation."""
+    container = make_container(club, "Test Chest")
+    container.symbol = "🎁"
+    container.save()
+    sword = Item.objects.create(club=club, name="Sword", symbol="⚔️", value_cp=100)
+    add_slot(container, [(sword, 1, 1, 1)], chance_pct=100)
+
+    html = render_to_string(
+        "player_characters/characters/_open_result_body.html",
+        {"container": container, "rows": [{"item": sword, "qty": 1}], "error": None},
+    )
+    # data-fanfare must wrap data-wm-reveal (and wm-chest, data-wm-live)
+    # Find the start of the data-fanfare <div element
+    fanfare_attr = html.index("data-fanfare")
+    # Go backwards to find the opening <div
+    div_start = html.rindex("<div", 0, fanfare_attr)
+    # Find the matching closing </div> for the data-fanfare element
+    depth = 0
+    fanfare_end = div_start
+    for i in range(div_start, len(html)):
+        if html.startswith("<div", i):
+            depth += 1
+        elif html.startswith("</div>", i):
+            depth -= 1
+            if depth == 0:
+                fanfare_end = i + 6
+                break
+    fanfare_block = html[div_start:fanfare_end]
+    assert "data-wm-reveal" in fanfare_block
+    assert 'class="wm-chest"' in fanfare_block
+    assert "data-wm-live" in fanfare_block
+    # The S2 JS uses container.querySelector('[data-wm-reveal]') inside [data-fanfare]
+    assert "data-wm-reveal" in fanfare_block
+    # data-wm-reveal should NOT be outside data-fanfare (siblings)
+    # Count exact attribute occurrences (not substrings like data-wm-reveal-item)
+    import re
+
+    assert len(re.findall(r"data-wm-reveal(?:\s|>|$)", html)) == 1
+    assert html.count("data-fanfare") == 1
+    # Verify structure: data-fanfare > wm-chest + data-wm-reveal + data-wm-live
+    assert len(re.findall(r"data-wm-reveal(?:\s|>|$)", fanfare_block)) == 1
+    assert len(re.findall(r'class="wm-chest"', fanfare_block)) == 1
+    assert len(re.findall(r"data-wm-live(?:\s|>|$)", fanfare_block)) == 1
+
+
 def test_preview_never_leaks_unknown_items(club):
     """Preview page (loot_preview with viewer_can_see_unknown=False) never
     contains unknown slot's real item icon or name."""

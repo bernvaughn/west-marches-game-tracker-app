@@ -14,24 +14,23 @@
   {# Data-fanfare container for S2 animation #}
   <div data-fanfare data-container-icon="{{ container.symbol|default:'📦' }}" aria-hidden="true">
     <span class="wm-fanfare-container-icon" aria-hidden="true">{{ container.symbol|default:'📦' }}</span>
+    <div class="wm-chest" aria-hidden="true">
+      <div class="wm-chest__base"></div>
+      <div class="wm-chest__lid"></div>
+    </div>
+    <div data-wm-reveal>
+      {% if rows %}
+        <ul>
+        {% for row in rows %}
+          <li data-wm-reveal-item>+{{ row.qty }} {% include "items/_item_name.html" with item=row.item %}</li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        <p class="wm-sheet-note">Nothing was inside.</p>
+      {% endif %}
+    </div>
+    <p class="visually-hidden" role="status" aria-live="polite" data-wm-live></p>
   </div>
-
-  <div class="wm-chest" aria-hidden="true">
-    <div class="wm-chest__base"></div>
-    <div class="wm-chest__lid"></div>
-  </div>
-  <div data-wm-reveal>
-    {% if rows %}
-      <ul>
-      {% for row in rows %}
-        <li data-wm-reveal-item>+{{ row.qty }} {% include "items/_item_name.html" with item=row.item %}</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p class="wm-sheet-note">Nothing was inside.</p>
-    {% endif %}
-  </div>
-  <p class="visually-hidden" role="status" aria-live="polite" data-wm-live></p>
 {% endif %}
 </div>
 {% include "player_characters/characters/_fanfare_assets.html" %}
