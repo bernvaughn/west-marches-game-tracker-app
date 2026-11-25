@@ -358,9 +358,9 @@ EXCLUDED = {
     "mail:clear_flag": "POST only; club admin clears do-not-email flag for an address.",
     "mail_public:webhook_resend": "POST only; Resend webhook endpoint.",
     "items:picker_search": "HTMX partial endpoint for item picker search results; not a full page.",
-    "player_items:add": "HTMX add-item modal fragment opened from the character sheet (`characters-detail`).",
-    "player_items:edit": "HTMX edit-item modal fragment opened from the character sheet (`characters-detail`).",
-    "player_items:remove": "HTMX remove-item confirm modal fragment opened from the character sheet (`characters-detail`).",
+    "player_items:add": "HTMX add-item modal fragment from character sheet.",
+    "player_items:edit": "HTMX edit-item modal fragment from character sheet.",
+    "player_items:remove": "HTMX remove confirm modal from character sheet.",
 }
 
 
