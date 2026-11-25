@@ -36,6 +36,7 @@ MODAL_SELECTORS = {
     "consume_modal": 'a[data-app-modal][href*="/consume/"]',
     "stall_buy_modal": 'a[data-app-modal][href*="/stall/"]',
     "give_items_modal": 'a[data-app-modal][href*="/give/items/"]',
+    "promote_modal": 'a[data-app-modal][href*="/promote/"]',
     "status_modal": 'a[data-app-modal][href*="/status/"]',
     "where_to_buy_modal": 'a[data-app-modal][href*="/where-to-buy/"]',
     "details_modal": 'a[data-app-modal][href*="/details-modal/"]',
@@ -111,6 +112,19 @@ def _downtime_result(aria):
         )
 
 
+def _player_written_items(club, aria):
+    """Open player-written items so the review page and promote modal have content."""
+    from player_items.models import PlayerItem
+
+    for name, quantity in (("Moonberry Tart", 2), ("Iron Ration", 1)):
+        PlayerItem.objects.get_or_create(
+            club=club,
+            character=aria,
+            name=name,
+            defaults={"quantity": quantity},
+        )
+
+
 def _play_session(club):
     """A game night next week, run by the demo game master."""
     from datetime import timedelta
@@ -162,6 +176,7 @@ def extra_fixtures():
     _role_users(club)
     _junk(aria)
     _point_request(club, aria)
+    _player_written_items(club, aria)
     _downtime_result(aria)
     _play_session(club)
 
@@ -822,6 +837,13 @@ def _build_pages() -> list[Page]:
         P("mail-change-email", "alice", _c("mail:change_email")),
         P("mail-reminder-settings", "club_admin", _c("mail:reminder_settings")),
         P("player-items-review", "club_admin", _c("player_items:review")),
+        P(
+            "player-items-promote",
+            "club_admin",
+            _c("player_items:review"),
+            action="promote_modal",
+            modal_url=lambda d: reverse("player_items:promote", args=[d.slug, "moonberry tart"]),
+        ),
     ]
     names = [p.name for p in pages]
     assert len(names) == len(set(names)), "duplicate page names"
