@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load coins %}
+{% load coins units %}
 {% block title %}Batch #{{ batch.pk }}{% endblock %}
 {% block content %}
 {% url 'agent_access:batches' club.slug as back_url %}{% include "components/back_link.html" with url=back_url label="Back to batches" %}
@@ -35,7 +35,18 @@
           {% include "components/character_chip.html" with name=row.line.character.name %}
           {% if row.archived %}{% include "components/badge.html" with status="warning" text="Archived" %}{% elif row.dead %}{% include "components/badge.html" with status="neutral" text="Died "|add:row.line.character.died_on|date:"Y-m-d" %}{% endif %}
         </td>
-        <td>{% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }} {% include "components/badge.html" with status="info" text="New item" %}{% else %}—{% endif %}</td>
+        <td>
+          {% if row.line.item %}
+            {{ row.line.item.name }}
+            {% if row.line.item|item_value %}
+              <span class="text-muted small ms-2">{{ row.line.item|item_value }}</span>
+            {% endif %}
+          {% elif row.line.proposed_item %}
+            {{ row.line.proposed_item.name }} {% include "components/badge.html" with status="info" text="New item" %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
         <td class="num">{% if row.line.quantity %}{{ row.line.quantity }}{% else %}—{% endif %}</td>
         <td class="num">{% if row.line.coins %}{% include "components/coins.html" with value=row.line.coins %}{% else %}—{% endif %}</td>
         <td class="text-muted wm-agent-note">{{ row.line.note|default:"—" }}</td>
@@ -52,7 +63,7 @@
 {% include "components/card_open.html" with title="Edit lines" subtitle="Open a line to change it. Nothing reaches the ledger until you confirm." %}
   {% for row in rows %}
   <details class="wm-agent-line-edit" id="edit-line-{{ row.line.pk }}"{% if row.form.errors %} open{% endif %}>
-    <summary>{% include "components/icon.html" with name="chevron-down" %}<span>Line {{ row.n }} · {{ row.line.character.name }} · {% if row.line.item %}{{ row.line.item.name }}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }}{% else %}{{ row.line.coins|coins }}{% endif %}</span></summary>
+    <summary>{% include "components/icon.html" with name="chevron-down" %}<span>Line {{ row.n }} · {{ row.line.character.name }} · {% if row.line.item %}{{ row.line.item.name }}{% if row.line.item|item_value %} ({{ row.line.item|item_value }}){% endif %}{% elif row.line.proposed_item %}{{ row.line.proposed_item.name }}{% else %}{{ row.line.coins|coins }}{% endif %}</span></summary>
     <form class="wm-form" method="post" action="{% url 'agent_access:batch_line_edit' club.slug batch.pk row.line.pk %}">
       {% csrf_token %}
       <div class="wm-agent-line-grid">{{ row.form }}</div>
