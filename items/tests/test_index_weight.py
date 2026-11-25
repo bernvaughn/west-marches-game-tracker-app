@@ -56,8 +56,24 @@ def test_weight_column_shows_dash_for_not_listed(login, player, club, weighted_i
     c = login(player)
     r = c.get(url("index", club))
     content = r.content.decode()
-    # No weight listed should show em dash
-    assert "—" in content
+    # No weight listed should show em dash in the weight cell
+    # Find all rows, then find the one containing Ghost
+    import re
+
+    rows = re.findall(r"<tr>.*?</tr>", content, re.DOTALL)
+    ghost_row = None
+    for row in rows:
+        if "Ghost" in row and "Ghost" in row.split("<td>")[1]:
+            ghost_row = row
+            break
+    assert ghost_row, "Ghost item row not found"
+    # Count td elements to find weight column (5th data column)
+    tds = re.findall(r"<td[^>]*>.*?</td>", ghost_row, re.DOTALL)
+    # Columns: Name, Rarity, Magic type, Value, Weight, [Characters, Held], Actions
+    # Weight is the 5th column (index 4)
+    weight_cell = tds[4] if len(tds) > 4 else None
+    assert weight_cell, "Weight cell not found in Ghost row"
+    assert "—" in weight_cell, f"Weight cell should show em dash, got: {weight_cell}"
 
 
 def test_sort_weight_ascending_puts_lightest_first(login, club_admin, club, weighted_items):
