@@ -15,10 +15,17 @@ from player_characters.templatetags.character_tags import sheet_sections as shee
 
 @pytest.fixture(autouse=True)
 def _clear_sections():
-    """Clear sections before and after each test."""
+    """Clear sections before and after each test, then restore app defaults.
+
+    Clearing isolates each test's own registrations. Restoring the app-default
+    sections afterward keeps later test files (for example player_items'
+    sheet tests) from seeing a wiped registry when they run in the same
+    worker as this file.
+    """
     sheet_sections._clear_sections()
     yield
     sheet_sections._clear_sections()
+    sheet_sections.restore_app_defaults()
 
 
 def u(name, club, pk=None):
