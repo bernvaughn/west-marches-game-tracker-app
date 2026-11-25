@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Review player items{% endblock %}
+{% block content %}
+{% include "components/page_header.html" with title="Review player items" %}
+<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3 no-print">
+  <div><label for="id_q" class="form-label">Search</label>
+  <input type="text" name="q" id="id_q" class="form-control" value="{{ q }}" placeholder="Filter by item name"></div>
+  <button class="btn btn-outline-secondary" type="submit">Search</button>
+  <a class="btn btn-outline-secondary" href="{% url 'player_items:review' club.slug %}">Clear</a>
+</form>
+<div class="wm-table-scroll">
+<table class="table table-sm table-striped wm-data-table">
+  <thead>
+    <tr>
+      <th><a href="?sort=name&dir={{ next_dir.name }}&q={{ q }}">Name{% if sort == "name" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+      <th class="num"><a href="?sort=quantity&dir={{ next_dir.quantity }}&q={{ q }}">Total qty{% if sort == "quantity" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+      <th class="num"><a href="?sort=holders&dir={{ next_dir.holders }}&q={{ q }}">Holders{% if sort == "holders" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+      <th><a href="?sort=first&dir={{ next_dir.first }}&q={{ q }}">First added{% if sort == "first" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+      <th><a href="?sort=last&dir={{ next_dir.last }}&q={{ q }}">Last added{% if sort == "last" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
+      <th class="actions">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for g in groups %}
+    <tr>
+      <td>{{ g.display_name }}</td>
+      <td class="num">{{ g.total_quantity }}</td>
+      <td class="num">{{ g.holder_count }}</td>
+      <td>{{ g.first_date|date:"Y-m-d" }}</td>
+      <td>{{ g.last_date|date:"Y-m-d" }}</td>
+      <td class="actions">
+        <a
+          href="{% url 'player_items:leave_as_is_confirm' club.slug %}?name_key={{ g.name_key }}"
+          hx-get="{% url 'player_items:leave_as_is_confirm' club.slug %}?name_key={{ g.name_key }}"
+          hx-target="#app-modal .modal-content"
+          data-app-modal
+          class="btn btn-sm btn-outline-secondary"
+          data-wm-tooltip
+          title="Leave this group as is"
+          aria-label="Leave {{ g.display_name }} as is"
+        >
+          Leave as is
+        </a>
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6" class="text-center">No open player-item groups to review.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

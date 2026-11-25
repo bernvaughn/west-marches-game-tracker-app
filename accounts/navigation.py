@@ -22,7 +22,9 @@ MENU_GROUPS = (
 
 class NavEntry(NamedTuple):
     group: str
-    label: str
+    # label is either a static string or a callable(request) -> str so the
+    # label can be computed per request (e.g. a dynamic count).
+    label: object
     url_name: str
     check: object
     order: int
@@ -76,12 +78,16 @@ def entries_for(request):
     # Compare full names ("shops:index"), so entries in a namespace can match.
     current = match.view_name if match else None
     shortcuts = []
-    for entry in sorted(_entries, key=lambda e: (e.order, e.label)):
+    for entry in sorted(
+        _entries, key=lambda e: (e.order, e.label if isinstance(e.label, str) else "")
+    ):
         if entry.check is not None and not entry.check(request):
             continue
+        # A label may be a callable(request) -> str (dynamic label).
+        label = entry.label(request) if callable(entry.label) else entry.label
         active = current is not None and current in (entry.url_name, *entry.also_current)
         link = NavLink(
-            entry.label,
+            label,
             reverse(entry.url_name, args=[club.slug]),
             entry.url_name,
             active,
