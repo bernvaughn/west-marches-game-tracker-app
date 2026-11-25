@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 
 from items.models import Item
-from ledger.coins import display_parts
+from items.weights import format_weight, item_weight_total
+from ledger.coins import display_parts, format_coins
 from ledger.services import coin_balance, held_coins, held_items, item_quantities
 
 from .models import ABILITIES
@@ -158,3 +159,48 @@ def inventory_rows(character):
 
 def coin_summary(character):
     return CoinSummary(owned=coin_balance(character), held=held_coins(character))
+
+
+def inventory_values(rows):
+    """Compute base value and weight for each inventory row, in one pass.
+
+    Reads already-fetched Item attributes (no extra queries). Returns a list of
+    dicts parallel to ``rows`` with keys:
+    value_cp, value_text, value_per_unit_text,
+    weight_hundredths, weight_text, weight_per_unit_text.
+    """
+    out = []
+    for row in rows:
+        item = row.item
+        units = row.owned
+
+        # --- value (total and per-unit) ---
+        if item.is_stacked:
+            per_unit_cp = item.value_cp // item.value_units
+            total_cp = per_unit_cp * units
+        else:
+            per_unit_cp = item.value_cp
+            total_cp = item.value_cp
+        value_text = format_coins(total_cp) if total_cp else "no value"
+        value_per_unit_text = format_coins(per_unit_cp) if per_unit_cp else "no value"
+
+        # --- weight (total and per-unit) ---
+        total_hundredths = item_weight_total(item, units)
+        if total_hundredths is None:
+            weight_text = "—"
+            weight_per_unit_text = "—"
+        else:
+            weight_text = format_weight(total_hundredths, precision=1)
+            weight_per_unit_text = format_weight(item.weight_hundredth_lb, precision=1)
+
+        out.append(
+            {
+                "value_cp": total_cp,
+                "value_text": value_text,
+                "value_per_unit_text": value_per_unit_text,
+                "weight_hundredths": total_hundredths,
+                "weight_text": weight_text,
+                "weight_per_unit_text": weight_per_unit_text,
+            }
+        )
+    return out

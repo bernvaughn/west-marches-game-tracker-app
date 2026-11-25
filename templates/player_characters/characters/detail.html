@@ -107,7 +107,7 @@
       {% endif %}
       {% if rows %}
       <div class="wm-table-scroll wm-sheet-inventory"><table class="table table-sm wm-data-table wm-sheet-table">
-        <thead><tr><th>Item</th><th class="num wm-col-optional">Owned</th><th class="num wm-col-optional">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
+        <thead><tr><th>Item</th><th class="num wm-col-value">Value</th><th class="num wm-col-weight">Weight</th><th class="num wm-col-optional">Owned</th><th class="num wm-col-optional">Available</th><th class="no-print"><span class="visually-hidden">Actions</span></th></tr></thead>
         <tbody>
         {% for r in rows %}
         <tr>
@@ -116,6 +116,8 @@
             {% for pk, quests in quest_needs.items %}{% if pk == r.item.pk %}<div class="wm-sheet-note">Needed for quest: {% for q in quests %}{{ q.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}{% endfor %}
             {% if not is_owner %}{% for pk, note in notes.items %}{% if pk == r.item.pk and note.text %}<div class="wm-sheet-note">{{ note.text|linebreaksbr }}</div>{% endif %}{% endfor %}{% endif %}
             <small class="wm-sheet-owned-inline">{% if r.item.is_stacked %}{{ r.owned }} {{ r.item.unit_name }}{% else %}&times; {{ r.owned }}{% endif %}{% if r.available != r.owned %}&middot; {% if r.item.is_stacked %}{{ r.available }} {{ r.item.unit_name }}{% else %}{{ r.available }}{% endif %} available{% endif %}</small></td>
+          <td class="num wm-col-value"{% if r.item.is_stacked %} data-wm-tooltip title="{{ r.value_per_unit_text }} per {{ r.item.unit_name }}"{% endif %}>{{ r.value_text }}</td>
+          <td class="num wm-col-weight"{% if r.item.is_stacked and r.weight_hundredths is not None %} data-wm-tooltip title="{{ r.weight_per_unit_text }} per {{ r.item.unit_name }}"{% endif %}>{{ r.weight_text }}</td>
           <td class="num wm-col-optional">{% if r.item.is_stacked %}{% if r.owned > 0 %}{{ r.item|with_units:r.owned }}{% else %}0{% endif %}{% else %}{{ r.owned }}{% endif %}</td>
           <td class="num wm-col-optional">{% if r.item.is_stacked %}{% if r.available > 0 %}{{ r.item|with_units:r.available }}{% else %}0{% endif %}{% else %}{{ r.available }}{% endif %}</td>
           <td class="no-print wm-row-actions-cell">

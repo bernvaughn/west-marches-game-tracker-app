@@ -46,6 +46,7 @@ from ..selection import selected_character
 from ..sheet import (
     ability_rows,
     edit_current_values,
+    inventory_values,
     passive_perception_label,
     xp_progress,
 )
@@ -295,7 +296,23 @@ class DetailView(ClubScopedMixin, PermissionMixin, CharacterContextMixin, ClubCo
             ctx["abilities"] = ability_rows(character)
             ctx["passive_perception"] = passive_perception_label(character.perception_bonus)
             ctx["xp_progress"] = xp_progress(character)
-            ctx["rows"] = char_ctx["inventory_rows"]
+            rows = char_ctx["inventory_rows"]
+            row_values = inventory_values(rows)
+            ctx["rows"] = [
+                {
+                    "item": r.item,
+                    "owned": r.owned,
+                    "held": r.held,
+                    "available": r.available,
+                    "value_text": v["value_text"],
+                    "value_cp": v["value_cp"],
+                    "value_per_unit_text": v["value_per_unit_text"],
+                    "weight_text": v["weight_text"],
+                    "weight_hundredths": v["weight_hundredths"],
+                    "weight_per_unit_text": v["weight_per_unit_text"],
+                }
+                for r, v in zip(rows, row_values, strict=False)
+            ]
             weight_settings, _ = ClubWeightSettings.objects.get_or_create(club=character.club)
             total_hundredths, unweighted_count, unweighted_names = calculate_carried_weight(
                 char_ctx["inventory_rows"],
