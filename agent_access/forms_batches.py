@@ -2,6 +2,7 @@ from django import forms
 from django.db.models import Q
 
 from items.models import Item
+from items.widgets import ItemPickerWidget
 from ledger.coins import CoinsField
 from player_characters.models import Character
 
@@ -10,7 +11,9 @@ from .models import ProposedItem
 
 class LineForm(forms.Form):
     character = forms.ModelChoiceField(queryset=Character.objects.none())
-    item = forms.ModelChoiceField(queryset=Item.objects.none(), required=False)
+    item = forms.ModelChoiceField(
+        queryset=Item.objects.none(), required=False, widget=ItemPickerWidget()
+    )
     proposed_item = forms.ModelChoiceField(queryset=ProposedItem.objects.none(), required=False)
     quantity = forms.IntegerField(min_value=0, required=False)
     coins = CoinsField(required=False)
@@ -29,6 +32,7 @@ class LineForm(forms.Form):
         self.fields["item"].queryset = Item.objects.for_club(club).filter(
             Q(retired=False) | Q(pk=line.item_id)
         )
+        self.fields["item"].widget.club = club
         self.fields["proposed_item"].queryset = ProposedItem.objects.for_club(club).filter(
             ~Q(status=ProposedItem.Status.REJECTED) | Q(pk=line.proposed_item_id)
         )

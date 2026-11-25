@@ -8,6 +8,7 @@ from django.forms import inlineformset_factory
 
 from character_options.models import Background, CharacterClass
 from items.models import Item
+from items.widgets import ItemPickerWidget
 from starting_equipment.models import (
     MagicItemStartingOption,
     StartingEquipmentBackgroundEntry,
@@ -63,6 +64,11 @@ class ClassLineForm(ClubItemMixin, forms.ModelForm):
         model = StartingEquipmentClassLine
         fields = ["item", "quantity", "is_choice", "choice_group"]
 
+    def __init__(self, *args, club=None, **kwargs):
+        super().__init__(*args, club=club, **kwargs)
+        if club is not None:
+            self.fields["item"].widget = ItemPickerWidget(club=club)
+
 
 ClassLineFormSet = inlineformset_factory(
     StartingEquipmentClassEntry,
@@ -107,6 +113,11 @@ class BackgroundLineForm(ClubItemMixin, forms.ModelForm):
         model = StartingEquipmentBackgroundLine
         fields = ["item", "quantity", "is_choice", "choice_group"]
 
+    def __init__(self, *args, club=None, **kwargs):
+        super().__init__(*args, club=club, **kwargs)
+        if club is not None:
+            self.fields["item"].widget = ItemPickerWidget(club=club)
+
 
 BackgroundLineFormSet = inlineformset_factory(
     StartingEquipmentBackgroundEntry,
@@ -132,6 +143,11 @@ class MagicOptionForm(ClubItemMixin, forms.ModelForm):
     class Meta:
         model = MagicItemStartingOption
         fields = ["item", "max_per_character", "notes"]
+
+    def __init__(self, *args, club=None, **kwargs):
+        super().__init__(*args, club=club, **kwargs)
+        if club is not None:
+            self.fields["item"].widget = ItemPickerWidget(club=club)
 
 
 class StartingChoicesForm(forms.Form):

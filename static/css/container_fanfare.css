@@ -1,0 +1,159 @@
+/* Container fanfare animation (S2).
+   Scoped under [data-fanfare] so it only affects the fanfare container.
+   The final row (data-wm-reveal) is the no-JS / reduced-motion view.
+ */
+
+/* Fanfare container: holds the large container icon during animation.
+   Hidden by default; shown only when armed. */
+[data-fanfare] {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Large container icon in the middle (shown during animation, hidden otherwise). */
+[data-fanfare] .wm-fanfare-container-icon {
+  display: none;
+  line-height: 1;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  animation: wm-fanfare-container-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  z-index: 10;
+}
+
+[data-fanfare].wm-fanfare--armed .wm-fanfare-container-icon {
+  display: block;
+}
+
+/* The reveal row (final items list) - hidden during animation, shown after. */
+[data-fanfare] [data-wm-reveal] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  opacity: 1;
+  transition: opacity 300ms ease-out;
+}
+
+/* Individual item during fanfare: absolute positioned, animated from container. */
+[data-fanfare].wm-fanfare--armed [data-wm-reveal-item] {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  animation:
+    wm-fanfare-item-pop 500ms cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    wm-fanfare-item-settle 400ms cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: calc(var(--wm-fanfare-i, 0) * 250ms);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Pop out from container with arc bounce. */
+@keyframes wm-fanfare-item-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+  }
+  40% {
+    opacity: 1;
+    transform:
+      translate(
+        calc(-50% + cos(var(--wm-fanfare-angle, 0deg)) * var(--wm-fanfare-distance, 200px)),
+        calc(-50% + sin(var(--wm-fanfare-angle, 0deg)) * var(--wm-fanfare-distance, 200px) * -0.3)
+      )
+      scale(1.2)
+      rotate(var(--wm-fanfare-angle, 0deg));
+  }
+  70% {
+    transform:
+      translate(
+        calc(-50% + cos(var(--wm-fanfare-angle, 0deg)) * var(--wm-fanfare-distance, 200px) * 0.8),
+        calc(-50% + sin(var(--wm-fanfare-angle, 0deg)) * var(--wm-fanfare-distance, 200px) * -0.1)
+      )
+      scale(0.9)
+      rotate(calc(var(--wm-fanfare-angle, 0deg) * 0.5));
+  }
+  100% {
+    opacity: 1;
+    transform:
+      translate(
+        calc(-50% + cos(var(--wm-fanfare-angle, 0deg)) * var(--wm-fanfare-distance, 200px)),
+        calc(-50% + sin(var(--wm-fanfare-angle, 0deg)) * var(--wm-fanfare-distance, 200px))
+      )
+      scale(1)
+      rotate(0deg);
+  }
+}
+
+/* Settle into final position (handed off to the reveal row's natural flow). */
+@keyframes wm-fanfare-item-settle {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Container icon pop animation. */
+@keyframes wm-fanfare-container-pop {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* Replay and sound toggle buttons. */
+[data-fanfare] .wm-fanfare-replay,
+[data-fanfare] .wm-fanfare-sound {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+[data-fanfare] .wm-fanfare-sound {
+  min-width: 2.5rem;
+}
+
+/* Reduced motion: skip all animations, show final row immediately. */
+@media (prefers-reduced-motion: reduce) {
+  [data-fanfare] .wm-fanfare-container-icon {
+    display: none !important;
+    animation: none !important;
+  }
+  [data-fanfare] [data-wm-reveal] {
+    display: flex !important;
+    opacity: 1 !important;
+    transition: none !important;
+  }
+  [data-fanfare].wm-fanfare--armed [data-wm-reveal-item] {
+    position: static !important;
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+    pointer-events: auto !important;
+  }
+  [data-fanfare] .wm-fanfare-replay,
+  [data-fanfare] .wm-fanfare-sound {
+    display: none !important;
+  }
+}
+
+/* Small screens: adjust container icon size. */
+@media (max-width: 480px) {
+  [data-fanfare] .wm-fanfare-container-icon {
+    font-size: clamp(3rem, 20vw, 5rem) !important;
+  }
+}

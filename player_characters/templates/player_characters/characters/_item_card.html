@@ -1,4 +1,4 @@
-{% load coins units %}<article class="wm-item-card wm-pass{% if full %} wm-item-card--full{% endif %}">
+{% load coins units weights %}<article class="wm-item-card wm-pass{% if full %} wm-item-card--full{% endif %}">
   <div class="wm-item-card-body">
   <p class="wm-item-card-brand wm-wordmark">✦ downtime market ✦</p>
   {% if card.item.symbol %}<p class="wm-item-card-icon" aria-hidden="true">{{ card.item.symbol }}</p>{% endif %}
@@ -12,6 +12,13 @@
     <li class="wm-pill"><span class="wm-pill-label">Qty</span> <span class="wm-pill-value">{{ card.qty }}</span></li>
     {% endif %}
     {% if card.item.magic_type %}<li class="wm-pill"><span class="wm-pill-label">Type</span> <span class="wm-pill-value">{{ card.item.get_magic_type_display }}</span></li>{% endif %}
+    {% if card.item.weight_hundredth_lb is not None %}
+      {% if card.item.is_stacked %}
+      <li class="wm-pill"><span class="wm-pill-label">Weight</span> <span class="wm-pill-value">{{ card.item.weight_hundredth_lb|weight_display }} per {{ card.item.unit_name }}, {{ card.item|weight_total:card.qty|weight_display:2 }} total</span></li>
+      {% else %}
+      <li class="wm-pill"><span class="wm-pill-label">Weight</span> <span class="wm-pill-value">{{ card.item.weight_hundredth_lb|weight_display }}</span></li>
+      {% endif %}
+    {% endif %}
   </ul>
   <hr class="wm-pass-rule">
   {% if card.item.description %}<div><strong>Description</strong>{{ card.item.description|linebreaks }}</div>{% endif %}

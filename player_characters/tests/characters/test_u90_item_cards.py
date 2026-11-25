@@ -136,7 +136,6 @@ def test_cap_message(login, club, player, character, item):
     give(character, item, CARD_CAP + 1)
     r, b = get(login, player, all_url(club, character, copies="item"))
     assert r.status_code == 200 and "more than 90 cards" in b and CARD not in b
-    give(character, item, 0) if False else None
     _, ok = get(login, player, all_url(club, character, copies="type"))
     assert ok.count(CARD) == 1
 

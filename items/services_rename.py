@@ -16,7 +16,7 @@ from django.db.models import Sum
 from accounts.models import Club
 from agent_access.models import ProposedItem, ProposedLine
 from downtime.models import DowntimeEntryItem
-from items.models import ContainerOpening, ContainerSlot, ContainerSlotOption, Item
+from items.models import ContainerOpening, ContainerSlot, ContainerSlotOption, Item, RecentItemPick
 from items.seed_names import (
     MAP_CASE,
     OLD_MAP_CASE_NAMES,
@@ -173,6 +173,7 @@ def _repoint_fk(source: Item, target: Item, log: Callable[[str], None]) -> dict[
         ("magicitemstartingoption_set", MagicItemStartingOption, "item", ["template"]),
         ("startingequipmentrequest_set", StartingEquipmentRequest, "item", None),
         ("junk_marks", JunkMark, "item", ["character"]),
+        ("recent_picks", RecentItemPick, "item", ["membership"]),
     ]
 
     for accessor, model, fk_field, unique_with in relations:

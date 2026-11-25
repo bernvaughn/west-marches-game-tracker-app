@@ -35,6 +35,13 @@ class ItemForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={"min": 1, "class": "form-control"}),
         help_text="How many units the value covers. 1 for a normal item.",
     )
+    weight = forms.IntegerField(
+        required=False,
+        min_value=0,
+        label="Weight (hundredths of lb)",
+        widget=forms.NumberInput(attrs={"min": 0, "class": "form-control"}),
+        help_text="Weight of one unit in hundredths of a pound. Leave blank if unknown.",
+    )
 
     class Meta:
         model = Item
@@ -51,6 +58,7 @@ class ItemForm(forms.ModelForm):
             "is_stacked",
             "unit_name",
             "value_units",
+            "weight",
         ]
         field_order = [
             "name",
@@ -65,6 +73,7 @@ class ItemForm(forms.ModelForm):
             "is_stacked",
             "unit_name",
             "value_units",
+            "weight",
         ]
         widgets = {"rarity": forms.Select(attrs={"data-rarity-select": ""})}
 
@@ -96,6 +105,7 @@ class ItemForm(forms.ModelForm):
             self.initial["is_stacked"] = self.instance.is_stacked
             self.initial["unit_name"] = self.instance.unit_name
             self.initial["value_units"] = self.instance.value_units
+            self.initial["weight"] = self.instance.weight_hundredth_lb
             # Add is_container field only on edit page (instance exists)
             self.fields["is_container"] = forms.BooleanField(
                 required=False,
@@ -153,6 +163,8 @@ class ItemForm(forms.ModelForm):
             self.instance.value_units = 1
         if "is_container" in self.cleaned_data:
             self.instance.is_container = self.cleaned_data["is_container"]
+        weight = self.cleaned_data.get("weight")
+        self.instance.weight_hundredth_lb = weight if weight is not None else None
         return super().save(commit=commit)
 
 

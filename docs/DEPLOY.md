@@ -149,6 +149,14 @@ After deploying the renamed-items release, run this once per existing club on th
 ssh dm "sudo -u deploy bash -c 'cd /srv/app && set -a && . /etc/downtime.env && set +a && .venv/bin/python manage.py rename_seeded_items --club <slug>'"
 ```
 
+After deploying the weight-seeding release, run this once per existing club on the server (it is a dry run until you add `--apply`, and safe to run twice):
+```bash
+ssh dm "sudo -u deploy bash -c 'cd /srv/app && set -a && . /etc/downtime.env && set +a && .venv/bin/python manage.py seed_item_weights --club <slug>'"
+```
+```bash
+ssh dm "sudo -u deploy bash -c 'cd /srv/app && set -a && . /etc/downtime.env && set +a && .venv/bin/python manage.py seed_item_weights --club <slug> --apply'"
+```
+
 ## 5. Rollback
 
 Re-run the deploy command with the previous tag:

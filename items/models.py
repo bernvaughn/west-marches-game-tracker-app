@@ -32,6 +32,11 @@ class Item(models.Model):
     is_stacked = models.BooleanField(default=False)
     unit_name = models.CharField(max_length=40, blank=True)
     value_units = models.PositiveIntegerField(default=1)
+    weight_hundredth_lb = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Weight of one unit in hundredths of a pound. Leave blank if unknown.",
+    )
 
     objects = ClubScopedManager()
 
@@ -109,6 +114,32 @@ class ContainerSlotOption(models.Model):
 
     def __str__(self):
         return f"{self.item.name} x{self.qty_min}-{self.qty_max} on slot {self.slot_id}"
+
+
+class RecentItemPick(models.Model):
+    club_path = "membership__club"
+
+    membership = models.ForeignKey(
+        "accounts.Membership",
+        on_delete=models.CASCADE,
+        related_name="recent_item_picks",
+    )
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="recent_picks")
+    used_at = models.DateTimeField(auto_now_add=True)
+
+    objects = ClubScopedManager()
+
+    class Meta:
+        ordering = ["-used_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["membership", "item"],
+                name="recent_item_pick_unique_membership_item",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.membership} picked {self.item}"
 
 
 class ContainerOpening(AppendOnlyModel):
