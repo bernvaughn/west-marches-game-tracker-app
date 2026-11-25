@@ -190,3 +190,82 @@ def test_coin_weight_exact_50_boundary(club, club_admin):
     record(char, "award", [Line(coins=500)], actor=club_admin)
     settings = ClubWeightSettings.objects.create(club=club, count_coin_weight=True)
     assert coin_weight_hundredths(char, settings) == 10  # 5 coins * 2
+
+
+# --- sheet integration ---
+
+
+def test_sheet_shows_capacity_override(club, login, club_admin):
+    """Character sheet shows manual capacity override instead of default."""
+    c = _login(login(club_admin), club_admin)
+    owner = Membership.objects.get(user=club_admin, club=club)
+    char = Character.objects.create(
+        club=club,
+        owner=owner,
+        name="Override Char",
+        strength=14,
+        carrying_capacity_lb=200,
+    )
+    # Default would be 15 * 14 = 210 lb = 21000 hundredths
+    # Override is 200 lb = 20000 hundredths
+    detail_url = reverse("characters:detail", args=[club.slug, char.pk])
+    r = c.get(detail_url)
+    body = r.content.decode()
+    assert "Carrying 0 lb of 200 lb" in body
+
+
+def test_sheet_uses_default_when_blank_override(club, login, club_admin):
+    """Blank carrying_capacity_lb shows default 15 x Strength."""
+    c = _login(login(club_admin), club_admin)
+    owner = Membership.objects.get(user=club_admin, club=club)
+    char = Character.objects.create(
+        club=club,
+        owner=owner,
+        name="Default Char",
+        strength=12,
+        carrying_capacity_lb=None,
+    )
+    # Default = 15 * 12 = 180 lb = 18000 hundredths
+    detail_url = reverse("characters:detail", args=[club.slug, char.pk])
+    r = c.get(detail_url)
+    body = r.content.decode()
+    assert "Carrying 0 lb of 180 lb" in body
+
+
+def test_sheet_includes_coin_weight_when_enabled(club, login, club_admin):
+    """Character sheet includes coin weight when club weight settings enabled."""
+    c = _login(login(club_admin), club_admin)
+    owner = Membership.objects.get(user=club_admin, club=club)
+    char = Character.objects.create(
+        club=club,
+        owner=owner,
+        name="Coin Char",
+    )
+    # Give 50000 cp = 50 pp = 50 coins = 1 lb = 100 hundredths
+    record(char, "award", [Line(coins=50000)], actor=club_admin)
+    # Enable coin weight
+    ClubWeightSettings.objects.create(club=club, count_coin_weight=True)
+
+    detail_url = reverse("characters:detail", args=[club.slug, char.pk])
+    r = c.get(detail_url)
+    body = r.content.decode()
+    assert "Carrying 1 lb" in body
+
+
+def test_sheet_excludes_coin_weight_when_disabled(club, login, club_admin):
+    """Character sheet excludes coin weight when club weight settings disabled."""
+    c = _login(login(club_admin), club_admin)
+    owner = Membership.objects.get(user=club_admin, club=club)
+    char = Character.objects.create(
+        club=club,
+        owner=owner,
+        name="No Coin Char",
+    )
+    # Give 50000 cp = 50 pp = 50 coins
+    record(char, "award", [Line(coins=50000)], actor=club_admin)
+    # Coin weight is off by default
+
+    detail_url = reverse("characters:detail", args=[club.slug, char.pk])
+    r = c.get(detail_url)
+    body = r.content.decode()
+    assert "Carrying 0 lb" in body
