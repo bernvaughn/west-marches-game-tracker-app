@@ -1,12 +1,20 @@
-"""Service functions for attendance feature (P5, P6)."""
+"""Service functions for attendance feature (P5, P6, P14, P15)."""
 
 from django.db import transaction
 from django.utils import timezone
 
+from accounts.models import Membership
 from player_characters.models import Character
 
 from . import core
-from .models import AttendanceChange, PlaySession, SessionAttendance, SessionRSVP
+from .models import (
+    AttendanceChange,
+    AttendanceHint,
+    PlayerRSVP,
+    PlaySession,
+    SessionAttendance,
+    SessionRSVP,
+)
 
 ANSWER_STATUS = {
     SessionRSVP.Answer.YES: "success",
@@ -41,137 +49,170 @@ def active_characters(club):
     return [c for c in qs if core.character_is_active(c)]
 
 
+def _members_and_characters(club):
+    """Return active characters grouped by their owning membership.
+
+    Returns (members, owner_to_chars): membership objects keyed by id, and
+    member id to list of active characters.
+    """
+    owner_to_chars = {}
+    for char in active_characters(club):
+        owner_to_chars.setdefault(char.owner_id, []).append(char)
+    members = {
+        m.id: m
+        for m in Membership.objects.for_club(club)
+        .filter(id__in=owner_to_chars.keys())
+        .select_related("user")
+    }
+    return members, owner_to_chars
+
+
 def who_is_coming(session):
     """Return grouped RSVP data for the "Who is coming" section.
 
+    Members (not characters) are grouped by their PlayerRSVP answer: yes,
+    maybe, no. Members who have not answered are listed separately. Each
+    member's active characters are shown as a plain-text hint next to the name.
+
     Returns a dict with:
     - "groups": list of (answer_label, [rows]) for yes, maybe, no
-    - "unanswered": list of player dicts with character names
-
-    Only active characters are considered. Players who have no active
-    character with an RSVP for this session are "unanswered".
+    - "unanswered": list of member rows
+    - "hinted_pks": character PKs that have an AttendanceHint
     """
-    active = active_characters(session.club)
-    if not active:
-        return {"groups": [], "unanswered": []}
+    members, owner_to_chars = _members_and_characters(session.club)
+    if not owner_to_chars:
+        return {"groups": [], "unanswered": [], "hinted_pks": []}
 
-    # Get all RSVPs for these characters in this session
-    rsvp_qs = SessionRSVP.objects.filter(
-        session=session,
-        character__in=[c.pk for c in active],
-    ).select_related("character", "character__owner__user")
-    rsvp_map = {r.character_id: r for r in rsvp_qs}
+    rsvp_map = {
+        r.member_id: r
+        for r in PlayerRSVP.objects.filter(session=session).select_related("member__user")
+    }
+    hinted_pks = list(
+        AttendanceHint.objects.filter(session=session).values_list("character_id", flat=True)
+    )
 
-    # Group characters by answer
+    member_rows = []
+    for member_id, chars in owner_to_chars.items():
+        member = members.get(member_id)
+        if member is None:
+            continue
+        rsvp = rsvp_map.get(member_id)
+        member_rows.append(
+            {
+                "member": member,
+                "player_name": str(member.user),
+                "characters": chars,
+                "character_names": ", ".join(char.name for char in chars),
+                "answer": rsvp.answer if rsvp else None,
+                "answer_label": rsvp.get_answer_display() if rsvp else None,
+            }
+        )
+    member_rows.sort(key=lambda row: row["player_name"])
+
     answer_order = [
         (SessionRSVP.Answer.YES, "Yes"),
         (SessionRSVP.Answer.MAYBE, "Maybe"),
         (SessionRSVP.Answer.NO, "No"),
     ]
     groups = []
-    answered_character_ids = set()
+    answered_member_ids = set()
     for answer_value, answer_label in answer_order:
-        rows = []
-        for char in active:
-            rsvp = rsvp_map.get(char.pk)
-            if rsvp and rsvp.answer == answer_value:
-                answered_character_ids.add(char.pk)
-                rows.append(
-                    {
-                        "character": char,
-                        "level": char.level,
-                        "char_class": char.char_class,
-                        "player_name": str(char.owner.user),
-                    }
-                )
+        rows = [row for row in member_rows if row["answer"] == answer_value]
         if rows:
+            answered_member_ids.update(row["member"].id for row in rows)
             groups.append((answer_label, rows))
 
-    # Find players who have not answered on any of their active characters
-    # Group active characters by owner
-    owner_to_chars = {}
-    for char in active:
-        owner_to_chars.setdefault(char.owner_id, []).append(char)
+    unanswered = [row for row in member_rows if row["member"].id not in answered_member_ids]
 
-    unanswered = []
-    for _owner_id, chars in owner_to_chars.items():
-        # Check if any of this owner's active characters has an RSVP
-        has_answered = any(c.pk in answered_character_ids for c in chars)
-        if not has_answered:
-            # Use the first character's owner for player name
-            first_char = chars[0]
-            player_name = str(first_char.owner.user)
-            character_names = ", ".join(c.name for c in chars)
-            unanswered.append(
-                {
-                    "player_name": player_name,
-                    "character_names": character_names,
-                }
-            )
-
-    return {"groups": groups, "unanswered": unanswered}
+    return {
+        "groups": groups,
+        "unanswered": unanswered,
+        "hinted_pks": hinted_pks,
+    }
 
 
 def attendance_rows(session, club):
     """Return attendance rows for the attendance page.
 
-    For each active character:
-    - checked: existing SessionAttendance.played if row exists, else RSVP == yes
-    - answer: RSVP answer or None
+    Starts from the members who answered yes. One row per member, listing that
+    member's active characters as checkboxes. None are ticked at first unless an
+    existing attendance row or an AttendanceHint says otherwise.
 
-    Sorted: yes first, then maybe, no, not answered; then by name.
+    Each row:
+    - "member", "player_name": the member
+    - "characters": list of {"character", "checked"} dicts
+    - "answer"/"answer_label"/"answer_status": the member's RSVP answer
+
+    Sorted by member name.
     """
     active = active_characters(club)
     if not active:
         return []
 
-    # Get existing attendance
+    active_pks = {c.pk for c in active}
+    yes_member_ids = set(
+        PlayerRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES).values_list(
+            "member_id", flat=True
+        )
+    )
+
+    _, owner_to_chars = _members_and_characters(club)
+
     att_qs = SessionAttendance.objects.filter(
         session=session,
-        character__in=[c.pk for c in active],
+        character__in=list(active_pks),
     ).select_related("character")
     att_map = {a.character_id: a for a in att_qs}
 
-    # Get RSVPs
-    rsvp_qs = SessionRSVP.objects.filter(
-        session=session,
-        character__in=[c.pk for c in active],
-    ).select_related("character")
-    rsvp_map = {r.character_id: r for r in rsvp_qs}
+    hinted_pks = set(
+        AttendanceHint.objects.filter(session=session, character__in=list(active_pks)).values_list(
+            "character_id", flat=True
+        )
+    )
 
-    def sort_key(char):
-        rsvp = rsvp_map.get(char.pk)
-        if rsvp:
-            if rsvp.answer == SessionRSVP.Answer.YES:
-                return (0, char.name)
-            elif rsvp.answer == SessionRSVP.Answer.MAYBE:
-                return (1, char.name)
-            elif rsvp.answer == SessionRSVP.Answer.NO:
-                return (2, char.name)
-        return (3, char.name)
+    rsvp_map = {
+        r.member_id: r
+        for r in PlayerRSVP.objects.filter(session=session, member_id__in=yes_member_ids)
+    }
 
-    active.sort(key=sort_key)
+    members = {
+        m.id: m
+        for m in Membership.objects.for_club(club)
+        .filter(id__in=yes_member_ids)
+        .select_related("user")
+    }
 
     rows = []
-    for char in active:
-        att = att_map.get(char.pk)
-        rsvp = rsvp_map.get(char.pk)
-        if att:
-            checked = att.played
-        else:
-            checked = rsvp.answer == SessionRSVP.Answer.YES if rsvp else False
+    for member_id in yes_member_ids:
+        member = members.get(member_id)
+        if member is None:
+            continue
+        rsvp = rsvp_map.get(member_id)
+        char_rows = []
+        for char in owner_to_chars.get(member_id, []):
+            att = att_map.get(char.pk)
+            if att is not None:
+                checked = att.played
+            else:
+                checked = char.pk in hinted_pks
+            char_rows.append(
+                {
+                    "character": char,
+                    "checked": checked,
+                }
+            )
         rows.append(
             {
-                "character": char,
-                "level": char.level,
-                "char_class": char.char_class,
-                "player_name": str(char.owner.user),
-                "checked": checked,
+                "member": member,
+                "player_name": str(member.user),
+                "characters": char_rows,
                 "answer": rsvp.answer if rsvp else None,
                 "answer_label": rsvp.get_answer_display() if rsvp else None,
                 "answer_status": ANSWER_STATUS.get(rsvp.answer, "neutral") if rsvp else "neutral",
             }
         )
+
+    rows.sort(key=lambda row: row["player_name"])
     return rows
 
 
@@ -187,13 +228,18 @@ def save_attendance(session, selected_ids, by, club):
     Returns:
         List of Character instances whose attendance was written or changed.
 
+    Scope: the active characters of members who answered yes (including
+    never-answered members a manager added as yes). Characters of members who
+    answered maybe/no or never answered are never written here.
+
     First save (no SessionAttendance rows exist yet): creates rows for all
-    active characters, sends signal with all written characters, writes NO
-    AttendanceChange records.
+    in-scope characters, sends signal with all written characters, writes NO
+    AttendanceChange records. Any AttendanceHint entries are removed.
 
     Subsequent saves: updates existing rows where played changed, creates
     AttendanceChange for each changed row (old_played=None if no row existed
     before). Sends signal once with changed characters (may be empty list).
+    AttendanceHint entries are removed on every confirm.
     """
     active = active_characters(club)
     active_pks = {c.pk for c in active}
@@ -201,13 +247,20 @@ def save_attendance(session, selected_ids, by, club):
     # Filter selected_ids to only active characters
     selected_ids = {pk for pk in selected_ids if pk in active_pks}
 
+    yes_member_ids = set(
+        PlayerRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES).values_list(
+            "member_id", flat=True
+        )
+    )
+    scope = [c for c in active if c.owner_id in yes_member_ids]
+
     # Check if this is the first save (no attendance rows exist yet)
     first_save = not session.attendance.exists()
 
     changed_characters = []
 
     with transaction.atomic():
-        for char in active:
+        for char in scope:
             new_played = char.pk in selected_ids
             existing = session.attendance.filter(character=char).first()
 
@@ -247,6 +300,10 @@ def save_attendance(session, selected_ids, by, club):
                     )
                 changed_characters.append(char)
 
+        # Hints only pre-tick the checkbox: once attendance is confirmed they
+        # are removed and never become SessionAttendance rows.
+        AttendanceHint.objects.filter(session=session).delete()
+
     # Send signal exactly once after the atomic block
     core.attendance_saved.send(
         sender=PlaySession,
@@ -256,3 +313,29 @@ def save_attendance(session, selected_ids, by, club):
     )
 
     return changed_characters
+
+
+def set_player_rsvp(session, member, answer, by):
+    """Create or update a per-player (member) RSVP for a session.
+
+    Args:
+        session: PlaySession instance.
+        member: Membership instance answering.
+        answer: One of "yes", "maybe", "no".
+        by: User who is answering (may be different from the member's user).
+
+    Returns:
+        The created/updated PlayerRSVP instance.
+
+    Raises:
+        ValueError: if answer is not a valid choice.
+    """
+    if answer not in SessionRSVP.Answer.values:
+        raise ValueError(f"Invalid RSVP answer: {answer}")
+
+    rsvp, _ = PlayerRSVP.objects.update_or_create(
+        session=session,
+        member=member,
+        defaults={"answer": answer, "answered_by": by, "answered_at": timezone.now()},
+    )
+    return rsvp

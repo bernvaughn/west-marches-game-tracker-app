@@ -356,6 +356,7 @@ EXCLUDED = {
     # Play session attendance URLs require a session PK and club context
     "play_sessions:attendance": "Attendance page; requires session PK and club context.",
     "play_sessions:rsvp_for": "POST-only RSVP override; requires session PK and club context.",
+    "play_sessions:bringing": "POST-only HTMX endpoint; creates an AttendanceHint.",
     # Mail contact/test email (E10, E11)
     "mail:contact_email": "HTMX partial for contact email card on club settings page.",
     "mail:test_email": "HTMX partial for test email card on club settings page.",
