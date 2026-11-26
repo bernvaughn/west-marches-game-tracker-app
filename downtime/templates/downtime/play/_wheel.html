@@ -2,7 +2,7 @@
   data-near-miss="{{ wheel.near_miss.prev }} {{ wheel.near_miss.next }}"
   data-slice-count="{{ wheel.slices|length }}">
   <svg viewBox="-110 -110 220 220" role="img" aria-label="Wheel for {{ result.action.name }}">
-    <g class="wm-wheel-disc" style="transform: rotate({{ wheel.final_rotation }}deg)">
+    <g class="wm-wheel-disc" transform="rotate({{ wheel.final_rotation }})">
       {% for s in wheel.slices %}
       <path d="{{ s.path }}" fill="{{ s.colour }}" stroke="#fff" stroke-width="1"{% if forloop.counter0 == wheel.chosen %} data-chosen-slice{% endif %}{% if forloop.counter0 == wheel.near_miss.prev or forloop.counter0 == wheel.near_miss.next %} data-near-miss{% endif %}/>
       <text x="{{ s.label_x }}" y="{{ s.label_y }}" transform="rotate({{ s.label_rotate }} {{ s.label_x }} {{ s.label_y }})" class="wm-wheel-label" text-anchor="middle" dominant-baseline="middle">{{ s.label|truncatechars:18 }}</text>
@@ -14,7 +14,7 @@
   <figcaption>
     <ul class="wm-wheel-legend list-unstyled">
       {% for s in wheel.slices %}
-      <li><span class="wm-wheel-swatch" style="background: {{ s.colour }}"></span> {{ s.label }} <span class="text-muted">({{ s.percent|floatformat:1 }}%)</span></li>
+      <li><span class="wm-wheel-swatch wm-wheel-swatch--{{ forloop.counter0 }}"></span> {{ s.label }} <span class="text-muted">({{ s.percent|floatformat:1 }}%)</span></li>
       {% endfor %}
     </ul>
   </figcaption>

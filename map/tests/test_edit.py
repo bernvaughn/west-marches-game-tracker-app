@@ -87,7 +87,7 @@ def test_name_colour_symbol_shown(login, club, hex_map, game_master):
     tile = c.get(url("tile", club, hex_map.pk, 1, 1)).content.decode()
     assert "Spire" in tile and "blue" in tile and "S*" in tile
     svg = c.get(url("detail", club, hex_map.pk)).content.decode()
-    assert "fill: blue" in svg and ">S*</text>" in svg
+    assert 'fill="blue"' in svg and ">S*</text>" in svg
 
 
 @pytest.mark.story("M4")

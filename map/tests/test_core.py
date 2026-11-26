@@ -27,7 +27,7 @@ def test_player_404_on_archived(login, club, player):
 def test_detail_editor_sees_all(login, club, hex_map, tile_location, game_master):
     html = login(game_master).get(url("detail", club, hex_map.pk)).content.decode()
     assert url("tile", club, hex_map.pk, 1, 0) in html
-    assert "fill: red" in html
+    assert 'fill="red"' in html
 
 
 def test_detail_player_only_visited(login, club, hex_map, tile_location, player, player_character):

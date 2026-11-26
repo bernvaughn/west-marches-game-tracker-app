@@ -40,6 +40,10 @@
   height: 1em;
 }
 
+/* Rarity hint items stack vertically; toggled via the `hidden` attribute by
+   item_rarity.js (CSSOM, CSP-safe). */
+.wm-rarity-item { display: block; }
+
 
 /* ---- Shop colour presets: --wm-shop-tint (soft) and --wm-shop-edge (deep) ---- */
 .wm-shop-banner--parchment, .wm-shop-card--parchment { --wm-shop-tint: var(--wm-shop-parchment-soft); --wm-shop-edge: var(--wm-shop-parchment-deep); }

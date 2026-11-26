@@ -33,8 +33,9 @@
 .wm-notice-progress li { display: flex; align-items: baseline; gap: var(--wm-space-2); margin: 0 0 var(--wm-space-1); }
 .wm-notice-req { flex: 0 0 auto; }
 .wm-notice-have { flex: 0 0 auto; }
-.wm-notice-bar { flex: 1; border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); background: var(--wm-neutral-bg); height: 6px; overflow: hidden; display: flex; align-items: center; }
-.wm-notice-fill { height: 100%; width: 0%; background: var(--wm-accent); }
+.wm-notice-bar { flex: 1; appearance: none; border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); background: var(--wm-neutral-bg); height: 6px; overflow: hidden; }
+.wm-notice-bar::-webkit-progress-value { background: var(--wm-accent); }
+.wm-notice-bar::-moz-progress-bar { background: var(--wm-accent); }
 .wm-notice-short { margin: var(--wm-space-2) 0 0; font-size: var(--wm-text-sm); color: var(--wm-danger); }
 
 @media print {

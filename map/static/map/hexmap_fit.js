@@ -6,6 +6,9 @@
   function fit() {
     var svg = document.querySelector(".hexmap--fit svg");
     if (!svg) return;
+    // CSP-safe: set min size through the CSSOM, not a style attribute.
+    if (svg.dataset.minW) svg.style.minWidth = svg.dataset.minW + "px";
+    if (svg.dataset.minH) svg.style.minHeight = svg.dataset.minH + "px";
     var box = svg.parentElement;
     var rect = svg.getBoundingClientRect();
     var top = rect.top + window.scrollY;

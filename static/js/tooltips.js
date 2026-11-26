@@ -50,7 +50,7 @@
     var charClass = data.class || '—';
     var species = data.species || '—';
     return `
-      <div class="wm-preview-card p-2" style="min-width: 220px;">
+      <div class="wm-preview-card p-2">
         <div class="d-flex align-items-center gap-2 mb-2">
           <span class="wm-avatar wm-avatar-sm" aria-hidden="true">${data.name ? data.name[0].toUpperCase() : '?'}</span>
           <div>

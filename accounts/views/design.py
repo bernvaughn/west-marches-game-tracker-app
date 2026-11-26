@@ -1,5 +1,6 @@
 import datetime
 
+from csp.decorators import csp_update
 from django import forms
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -37,6 +38,7 @@ def _demoted_sample(template, context):
 
 
 @site_admin_required
+@csp_update({"style-src-attr": ["'unsafe-inline'"]})
 def design_reference(request):
     form = DemoForm(
         {"name": "", "level": 3, "agree": ""}

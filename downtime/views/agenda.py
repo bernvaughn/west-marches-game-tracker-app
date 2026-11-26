@@ -33,7 +33,6 @@ class AgendaItem:
     # Filled in by month_weeks for each week segment.
     col_start: int = 0
     span: int = 1
-    lane: int = 0
     continues_left: bool = False
     continues_right: bool = False
     pk: int | None = field(default=None, repr=False)
@@ -137,20 +136,21 @@ def month_weeks(year, month, items):
             )
             segments.append(seg)
         lane_ends = []  # last occupied column per lane
+        lanes: list = []  # bars assigned to each lane
         for seg in sorted(segments, key=lambda s: (s.col_start, -s.span)):
             for lane, end_col in enumerate(lane_ends):
                 if end_col < seg.col_start:
-                    seg.lane = lane
                     lane_ends[lane] = seg.col_start + seg.span - 1
+                    lanes[lane].append(seg)
                     break
             else:
-                seg.lane = len(lane_ends)
                 lane_ends.append(seg.col_start + seg.span - 1)
+                lanes.append([seg])
         weeks.append(
             {
                 "days": [{"date": d, "in_month": d.month == month} for d in days],
                 "bars": segments,
-                "lane_count": len(lane_ends),
+                "lanes": lanes,
             }
         )
     return weeks

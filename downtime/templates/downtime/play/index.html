@@ -21,7 +21,7 @@
        hx-include="#downtime-filters"
        hx-target="#downtime-jobs"
        hx-swap="outerHTML"
-       style="display: none;"></div>
+       hidden></div>
   <form id="downtime-filters" method="get" action="{% url 'downtime:play' club.slug %}"
   hx-get="{% url 'downtime:play' club.slug %}"
   hx-trigger="change"

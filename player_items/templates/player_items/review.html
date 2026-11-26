@@ -14,7 +14,7 @@
   <table class="table table-sm table-striped wm-data-table">
     <thead>
       <tr>
-        <th style="width: 40px;"><input type="checkbox" id="select-all" aria-label="Select all groups"></th>
+        <th class="wm-col-w-40px"><input type="checkbox" id="select-all" aria-label="Select all groups"></th>
         <th><a href="?sort=name&dir={{ next_dir.name }}&q={{ q }}">Name{% if sort == "name" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
         <th class="num"><a href="?sort=quantity&dir={{ next_dir.quantity }}&q={{ q }}">Total qty{% if sort == "quantity" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>
         <th class="num"><a href="?sort=holders&dir={{ next_dir.holders }}&q={{ q }}">Holders{% if sort == "holders" %}{% if direction == "asc" %} ▲{% else %} ▼{% endif %}{% endif %}</a></th>

@@ -438,3 +438,14 @@ main:focus { outline: none; }
 @media (min-width: 1280px) {
   .wm-command-window { top: 10vh; width: 48rem; }
 }
+
+.wm-preview-card { min-width: 220px; }
+
+/* Fixed column widths (replaces inline style="width: ..." on <th>/<input>, which
+   CSP style-src 'self' blocks). */
+.wm-col-w-40px { width: 40px; }
+.wm-col-w-54px { width: 54px; }
+.wm-col-w-80px { width: 80px; }
+.wm-col-w-100px { width: 100px; }
+.wm-col-w-120px { width: 120px; }
+.wm-col-w-2rem { width: 2rem; }

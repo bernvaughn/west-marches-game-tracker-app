@@ -180,6 +180,7 @@
 /* XP progress bar (gamification): slim bar under the XP number, text only in print. */
 .wm-xp { margin-top: var(--wm-space-1); }
 .wm-xp-bar {
+  appearance: none;
   height: 6px;
   border: 1px solid var(--wm-border);
   border-radius: var(--wm-radius-sm, 3px);
@@ -187,7 +188,9 @@
   overflow: hidden;
   width: 14rem;
 }
-.wm-xp-fill { height: 100%; width: 0%; background: var(--wm-accent); }
+.wm-xp-bar::-webkit-progress-bar { background: var(--wm-neutral-bg); }
+.wm-xp-bar::-webkit-progress-value { background: var(--wm-accent); }
+.wm-xp-bar::-moz-progress-bar { background: var(--wm-accent); }
 .wm-xp-text { margin: 0; font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
 
 /* U59: inventory row actions now live in components.css (U84 S1). */

@@ -162,7 +162,7 @@ def test_stall_sign_link_and_image(login, club, player, item):
     body = street(login, player, club)
     assert "Aria&#x27;s stall" in body or "Aria's stall" in body
     assert reverse("shops:player_shop", args=[club.slug, c.pk]) in body
-    assert "player_stall.svg" in body
+    assert "wm-building--player_stall" in body
     assert "wm-street-lot--stall" in body
     # inside the screen-reader list of shop links
     assert body.index('aria-label="Shops"') < body.index("wm-street-lot--stall")
@@ -219,7 +219,7 @@ def test_banner_is_stall_look(login, club, player, other_player, item):
     url = reverse("shops:player_shop", args=[club.slug, c.pk])
     body = login(other_player).get(url).content.decode()
     assert "Aria&#x27;s stall" in body or "Aria's stall" in body
-    assert "player_stall.svg" in body
+    assert "wm-building--player_stall" in body
     assert "wm-shop-silhouette" not in body
     assert "wm-shop-keeper-name" not in body
 

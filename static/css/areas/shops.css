@@ -30,6 +30,20 @@
   -webkit-mask: var(--wm-building-src) center bottom / contain no-repeat;
   mask: var(--wm-building-src) center bottom / contain no-repeat;
 }
+/* One class per building key; the svg url() lives in the stylesheet (no inline
+   style attribute, so CSP style-src 'self' does not block it). Relative to this
+   CSS file: static/css/areas/ -> static/shops/buildings/. */
+.wm-building--apothecary { --wm-building-src: url('../../shops/buildings/apothecary.svg'); }
+.wm-building--chapel { --wm-building-src: url('../../shops/buildings/chapel.svg'); }
+.wm-building--general_store { --wm-building-src: url('../../shops/buildings/general_store.svg'); }
+.wm-building--guild_hall { --wm-building-src: url('../../shops/buildings/guild_hall.svg'); }
+.wm-building--inn { --wm-building-src: url('../../shops/buildings/inn.svg'); }
+.wm-building--player_stall { --wm-building-src: url('../../shops/buildings/player_stall.svg'); }
+.wm-building--smithy { --wm-building-src: url('../../shops/buildings/smithy.svg'); }
+.wm-building--stable { --wm-building-src: url('../../shops/buildings/stable.svg'); }
+.wm-building--stall { --wm-building-src: url('../../shops/buildings/stall.svg'); }
+.wm-building--tent { --wm-building-src: url('../../shops/buildings/tent.svg'); }
+.wm-building--tower { --wm-building-src: url('../../shops/buildings/tower.svg'); }
 /* Signs sit below the building at every width (U77; replaces U54's wide-screen layout). */
 .wm-street-sign {
   position: static; margin: var(--wm-space-1) 0; padding: .125rem 1px; display: flex; flex-direction: column;

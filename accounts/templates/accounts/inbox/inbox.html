@@ -32,7 +32,7 @@
     <div id="inbox-list" hx-get="{{ request.get_full_path }}" hx-trigger="inboxChanged from:body" hx-select="#inbox-list" hx-swap="outerHTML" hx-disinherit="*">
     <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-queue-table">
       <thead><tr>
-        <th scope="col" class="text-center" style="width: 2rem;"></th>
+        <th scope="col" class="text-center wm-col-w-2rem"></th>
         <th>From</th><th class="d-none d-sm-table-cell">Character</th><th class="wm-msg-col d-none d-sm-table-cell">Message</th><th class="d-none d-sm-table-cell">Date</th><th class="wm-col-optional">Status</th><th class="actions">Actions</th>
       </tr></thead>
   <tbody>
