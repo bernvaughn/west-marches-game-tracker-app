@@ -2,7 +2,7 @@
    Activated with Cmd/Ctrl+K. Requires Alpine.js and static/js/command_palette.js.
    Place once in base.html, outside main.
 {% endcomment %}{% load static %}
-<div x-data="wmCommandPalette" class="wm-command-palette no-print" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" style="display: none;">
+<div x-data="wmCommandPalette" class="wm-command-palette no-print" x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
   <div class="wm-command-backdrop" @click="closePalette" aria-hidden="true"></div>
   <div class="wm-command-window" role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="wm-command-header">

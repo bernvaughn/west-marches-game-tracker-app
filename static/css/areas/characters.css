@@ -166,6 +166,17 @@
   th.wm-col-value, td.wm-col-value { display: none; }
 }
 
+/* Notice text with custom indent (replaces inline style) */
+.wm-sheet-notice-text--indented {
+  margin: 0 0 0 1.25rem;
+  padding: 0;
+}
+
+/* Legend with custom font size (replaces inline style) */
+.wm-sheet-box-title--inline-size {
+  font-size: 1rem;
+}
+
 /* XP progress bar (gamification): slim bar under the XP number, text only in print. */
 .wm-xp { margin-top: var(--wm-space-1); }
 .wm-xp-bar {
