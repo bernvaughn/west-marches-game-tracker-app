@@ -9,7 +9,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Club, Membership, User
-from play_sessions import core
 from play_sessions.calendar import month_grid, next_session, parse_month
 from play_sessions.feed import build_ics, get_or_create_token
 from play_sessions.models import PlayerRSVP, PlaySession
@@ -505,14 +504,14 @@ def test_calendar_coming_up_list_renders_above_grid(client, club, game_master):
     club.save()
     gm_membership = Membership.objects.get(user=game_master, club=club)
     now = timezone.now()
-    
+
     _session_s1(club, starts_at=now + timedelta(hours=2), title="S1", gm=gm_membership)
     _session_s1(club, starts_at=now + timedelta(days=1), title="S2", gm=gm_membership)
     _session_s1(club, starts_at=now + timedelta(days=2), title="S3", gm=gm_membership)
     _session_s1(club, starts_at=now + timedelta(days=3), title="S4", gm=gm_membership)
     _session_s1(club, starts_at=now + timedelta(days=4), title="S5", gm=gm_membership)
     _session_s1(club, starts_at=now + timedelta(days=5), title="S6", gm=gm_membership)
-    
+
     client.force_login(game_master)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     response = client.get(url)
@@ -537,10 +536,12 @@ def test_calendar_coming_up_identical_across_month_nav(client, club, game_master
     club.save()
     gm_membership = Membership.objects.get(user=game_master, club=club)
     now = timezone.now()
-    
-    _session_s1(club, starts_at=now + timedelta(days=10), title="August session", gm=gm_membership)
-    _session_s1(club, starts_at=now + timedelta(days=40), title="September session", gm=gm_membership)
-    
+
+    aug = now + timedelta(days=10)
+    sep = now + timedelta(days=40)
+    _session_s1(club, starts_at=aug, title="August session", gm=gm_membership)
+    _session_s1(club, starts_at=sep, title="September session", gm=gm_membership)
+
     client.force_login(game_master)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     # View July (current month)
@@ -549,7 +550,7 @@ def test_calendar_coming_up_identical_across_month_nav(client, club, game_master
     r2 = client.get(url + "?month=2024-08")
     # View September
     r3 = client.get(url + "?month=2024-09")
-    
+
     # Coming up list should be identical in all three responses
     for r in [r1, r2, r3]:
         assert r.status_code == 200
@@ -568,15 +569,21 @@ def test_calendar_coming_up_cancelled_marked_and_no_answer_badge(client, club, g
     gm_membership = Membership.objects.get(user=game_master, club=club)
     membership = _membership(club, "player@test.com")
     now = timezone.now()
-    
-    cancelled = _session_s1(club, starts_at=now + timedelta(days=2), title="Cancelled session", cancelled=True, gm=gm_membership)
+
+    cancelled = _session_s1(
+        club,
+        starts_at=now + timedelta(days=2),
+        title="Cancelled session",
+        cancelled=True,
+        gm=gm_membership,
+    )
     _session_s1(club, starts_at=now + timedelta(days=3), title="Normal session", gm=gm_membership)
     PlayerRSVP.objects.create(session=cancelled, member=membership, answer="yes")
-    
+
     client.force_login(player)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     response = client.get(url)
-    
+
     assert response.status_code == 200
     content = response.content.decode()
     assert "Cancelled" in content
@@ -590,16 +597,20 @@ def test_calendar_coming_up_first_non_cancelled_has_next_badge(client, club, gam
     club.timezone = "America/New_York"
     club.save()
     gm_membership = Membership.objects.get(user=game_master, club=club)
-    membership = _membership(club, "player@test.com")
+    _membership(club, "player@test.com")
     now = timezone.now()
-    
-    _session_s1(club, starts_at=now + timedelta(days=1), title="Cancelled first", cancelled=True, gm=gm_membership)
-    _session_s1(club, starts_at=now + timedelta(days=2), title="Tomorrow session", gm=gm_membership)
-    
+
+    cancelled_first = now + timedelta(days=1)
+    tomorrow = now + timedelta(days=2)
+    _session_s1(
+        club, starts_at=cancelled_first, title="Cancelled first", cancelled=True, gm=gm_membership
+    )
+    _session_s1(club, starts_at=tomorrow, title="Tomorrow session", gm=gm_membership)
+
     client.force_login(player)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     response = client.get(url)
-    
+
     assert response.status_code == 200
     content = response.content.decode()
     assert "Tomorrow session" in content
@@ -615,38 +626,46 @@ def test_calendar_coming_up_show_month_link_appears_when_different_month(client,
     club.save()
     gm_membership = Membership.objects.get(user=game_master, club=club)
     now = timezone.now()
-    
+
     # Get the current month in the club's timezone
     from play_sessions import core
-    club_zone = core.club_zone(club)
+
+    core.club_zone(club)
     now_local = core.to_club_local(club, now)
     current_month_start = now_local.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    current_month_end = (current_month_start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(seconds=1)
-    
+    current_month_end = (current_month_start.replace(day=28) + timedelta(days=4)).replace(
+        day=1
+    ) - timedelta(seconds=1)
+
     # First session is in a different month (use 60 days to ensure next month)
-    _session_s1(club, starts_at=now + timedelta(days=60), title="Next month session", gm=gm_membership)
-    
+    next_month = now + timedelta(days=60)
+    _session_s1(club, starts_at=next_month, title="Next month session", gm=gm_membership)
+
     client.force_login(game_master)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     response = client.get(url)
-    
+
     assert response.status_code == 200
     content = response.content.decode()
     assert "Show that month" in content
-    
+
     # Now add a session in the current month (use a date in the current month)
     # Find a date in the current month that's in the future
-    days_until_end_of_month = (current_month_end.date() - now_local.date()).days
-    if days_until_end_of_month > 1:
+    days_until_end = (current_month_end.date() - now_local.date()).days
+    if days_until_end > 1:
         # There's room in the current month
-        session_in_current_month = now + timedelta(days=min(5, days_until_end_of_month - 1))
+        offset = min(5, days_until_end - 1)
+        session_in_current_month = now + timedelta(days=offset)
     else:
-        # Current month is ending, use tomorrow (which might be next month)
-        # In this case, just use a date we know is in the current month
-        session_in_current_month = core.from_club_local(club, current_month_start + timedelta(days=1))
-    
-    _session_s1(club, starts_at=session_in_current_month, title="This month session", gm=gm_membership)
-    
+        # Current month is ending, use a date we know is in the current month
+        session_in_current_month = core.from_club_local(
+            club, current_month_start + timedelta(days=1)
+        )
+
+    _session_s1(
+        club, starts_at=session_in_current_month, title="This month session", gm=gm_membership
+    )
+
     response = client.get(url)
     content = response.content.decode()
     # First upcoming is now in current month, so no show-month link
@@ -659,14 +678,16 @@ def test_calendar_coming_up_show_month_link_navigates_to_that_month(client, club
     club.save()
     gm_membership = Membership.objects.get(user=game_master, club=club)
     now = timezone.now()
-    
-    _session_s1(club, starts_at=now + timedelta(days=30), title="Next month session", gm=gm_membership)
-    
+
+    next_month = now + timedelta(days=30)
+    _session_s1(club, starts_at=next_month, title="Next month session", gm=gm_membership)
+
     client.force_login(game_master)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     # Follow the show month link
-    response = client.get(url + "?month=" + (now + timedelta(days=30)).strftime("%Y-%m"))
-    
+    month_param = next_month.strftime("%Y-%m")
+    response = client.get(url + "?month=" + month_param)
+
     assert response.status_code == 200
     content = response.content.decode()
     # Calendar should now show that month
@@ -675,20 +696,22 @@ def test_calendar_coming_up_show_month_link_navigates_to_that_month(client, club
     assert "Next month session" in content
 
 
-def test_calendar_coming_up_empty_state_with_add_session_link(client, club, game_master, club_admin, player):
+def test_calendar_coming_up_empty_state_with_add_session_link(
+    client, club, game_master, club_admin, player
+):
     """Empty state shows message and 'Add a session' link for GM/admin but not player."""
     club.timezone = "UTC"
     club.save()
-    
+
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
-    
+
     # Player sees empty state without add link
     client.force_login(player)
     response = client.get(url)
     content = response.content.decode()
     assert "No sessions are scheduled yet." in content
     assert "Add a session" not in content
-    
+
     # GM sees add link
     client.force_login(game_master)
     response = client.get(url)
@@ -697,7 +720,7 @@ def test_calendar_coming_up_empty_state_with_add_session_link(client, club, game
     assert "Add a session" in content
     # Check the link points to session_create with club slug
     assert f"/{club.slug}/sessions/new/" in content
-    
+
     # Club admin sees add link
     client.force_login(club_admin)
     response = client.get(url)
@@ -717,14 +740,14 @@ def test_calendar_coming_up_club_scoped_other_clubs_excluded(client, club, game_
     gm_membership = Membership.objects.get(user=game_master, club=club)
     other_gm = _membership(other_club, "gm2@test.com", is_game_master=True)
     now = timezone.now()
-    
+
     _session_s1(club, starts_at=now + timedelta(days=1), title="Our session", gm=gm_membership)
     _session_s1(other_club, starts_at=now + timedelta(days=1), title="Their session", gm=other_gm)
-    
+
     client.force_login(game_master)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     response = client.get(url)
-    
+
     assert response.status_code == 200
     content = response.content.decode()
     assert "Our session" in content
@@ -737,14 +760,16 @@ def test_calendar_coming_up_capped_at_five(client, club, game_master):
     club.save()
     gm_membership = Membership.objects.get(user=game_master, club=club)
     now = timezone.now()
-    
+
     for i in range(7):
-        _session_s1(club, starts_at=now + timedelta(days=i+1), title=f"S{i+1}", gm=gm_membership)
-    
+        _session_s1(
+            club, starts_at=now + timedelta(days=i + 1), title=f"S{i + 1}", gm=gm_membership
+        )
+
     client.force_login(game_master)
     url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
     response = client.get(url)
-    
+
     assert response.status_code == 200
     content = response.content.decode()
     # Check only the coming-up section
