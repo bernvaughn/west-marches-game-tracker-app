@@ -290,6 +290,17 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 
+# Session lifetime — bounded to limit exposure if a session cookie is stolen.
+# Default: 7 days (604800 seconds). Django's default is 2 weeks (1209600 seconds).
+# A shorter window reduces the time an attacker can use a stolen cookie,
+# while still allowing weekly sessions for user convenience.
+# Override with DJANGO_SESSION_COOKIE_AGE (seconds) and
+# DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE ("1", "true", "True", "yes" -> True).
+SESSION_COOKIE_AGE = int(os.environ.get("DJANGO_SESSION_COOKIE_AGE", "604800"))
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.environ.get(
+    "DJANGO_SESSION_EXPIRE_AT_BROWSER_CLOSE", "0"
+) not in ("0", "false", "False", "")
+
 # Clickjacking
 X_FRAME_OPTIONS = "DENY"
 
