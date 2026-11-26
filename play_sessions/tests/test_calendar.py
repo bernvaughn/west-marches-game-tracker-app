@@ -399,6 +399,118 @@ def test_player_dashboard_next_session_card(client, club, player, character):
     assert "Dashboard session" in response.content.decode()
 
 
+def _gm_membership(club):
+    gm = Membership.objects.filter(club=club, is_game_master=True).first()
+    if gm is None:
+        gm_user = User.objects.create_user(email="gm@test.com", password="pw", display_name="Gm")
+        gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
+    return gm
+
+
+def test_player_dashboard_shows_upcoming_list_up_to_three(client, club, player, character):
+    club.timezone = "UTC"
+    club.save()
+    gm = _gm_membership(club)
+    today = timezone.now()
+    _session(club, "Session One", today + timedelta(days=1), gm=gm)
+    _session(club, "Session Two", today + timedelta(days=2), gm=gm)
+    _session(club, "Session Three", today + timedelta(days=3), gm=gm)
+    client.force_login(player)
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    assert response.status_code == 200
+    content = response.content.decode()
+    for title in ("Session One", "Session Two", "Session Three"):
+        assert title in content
+    assert reverse("play_sessions:calendar", kwargs={"club_slug": club.slug}) in content
+
+
+def test_player_dashboard_shows_fewer_than_three_and_empty(client, club, player, character):
+    club.timezone = "UTC"
+    club.save()
+    gm = _gm_membership(club)
+    _session(club, "Lone session", timezone.now() + timedelta(days=1), gm=gm)
+    client.force_login(player)
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Lone session" in content
+    assert "No sessions are scheduled yet." not in content
+
+    PlaySession.objects.filter(club=club).delete()
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    content = response.content.decode()
+    assert "No sessions are scheduled yet." in content
+
+
+def test_player_dashboard_cancelled_marked_no_answer_badge(client, club, player, character):
+    club.timezone = "UTC"
+    club.save()
+    gm = _gm_membership(club)
+    player_membership = Membership.objects.get(user=player, club=club)
+    cancelled = _session(
+        club,
+        "Cancelled session",
+        timezone.now() + timedelta(days=1),
+        cancelled=True,
+        gm=gm,
+    )
+    PlayerRSVP.objects.create(session=cancelled, member=player_membership, answer="yes")
+    client.force_login(player)
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Cancelled session" in content
+    assert "Cancelled" in content
+    assert "You: Yes" not in content
+
+
+def test_dashboard_list_matches_upcoming_sessions_query(client, club, player, character):
+    """Dashboard list uses the shared query: same order, is_next and when_text."""
+    club.timezone = "UTC"
+    club.save()
+    gm = _gm_membership(club)
+    membership = Membership.objects.get(user=player, club=club)
+    today = timezone.now()
+    s_one = _session(club, "Session One", today + timedelta(days=1), gm=gm)
+    s_two = _session(club, "Session Two", today + timedelta(days=3), gm=gm)
+    _session(club, "Session Three", today + timedelta(days=5), gm=gm)
+
+    from play_sessions.upcoming import upcoming_sessions
+
+    data = upcoming_sessions(club, today, membership, 3)
+    rows = data["sessions"]
+    assert [r["id"] for r in rows] == [s_one.pk, s_two.pk, rows[2]["id"]]
+    assert rows[0]["is_next"] is True
+    assert rows[0]["when_text"] == "tomorrow"
+    assert rows[1]["is_next"] is False
+    assert rows[1]["when_text"] is None
+
+    client.force_login(player)
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    assert response.status_code == 200
+    content = response.content.decode()
+    # Same order as the shared query, first non-cancelled row is "Next".
+    assert content.index("Session One") < content.index("Session Two")
+    assert "Next" in content
+    assert "tomorrow" in content
+
+
+def test_club_home_shows_upcoming_list_gm_and_admin(client, club, game_master, club_admin):
+    club.timezone = "UTC"
+    club.save()
+    gm = _gm_membership(club)
+    _session(club, "Club home session", timezone.now() + timedelta(days=2), gm=gm)
+    calendar_url = reverse("play_sessions:calendar", kwargs={"club_slug": club.slug})
+    for user in (game_master, club_admin):
+        client.force_login(user)
+        response = client.get(reverse("club_home", kwargs={"club_slug": club.slug}))
+        assert response.status_code == 200, f"{user.email} club_home"
+        content = response.content.decode()
+        assert "Club home session" in content
+        assert calendar_url in content
+        client.logout()
+
+
 def test_isolation_club_b_not_in_club_a(client, club, game_master):
     club.timezone = "UTC"
     club.save()

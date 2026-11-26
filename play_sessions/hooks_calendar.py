@@ -7,7 +7,8 @@ circular imports at app load time.
 
 from django.utils import timezone
 
-from .calendar import next_session
+from .core import can_manage_sessions
+from .upcoming import upcoming_sessions
 
 
 def register():
@@ -27,14 +28,14 @@ def register():
     )
 
     class NextSessionDashboardProvider(BaseDashboardProvider):
-        """'Next session' card for the player dashboard."""
+        """'Upcoming sessions' list for the player dashboard."""
 
         key = "next_session"
         order = 2
         template = "play_sessions/_next_session.html"
 
         def get_context(self, request, club, character, membership):
-            return _next_session_ctx(club, membership)
+            return _next_session_ctx(request, club, membership)
 
         def should_show(self, request, club, character, membership):
             # Always show so the HTMX partial endpoint never 404s.
@@ -43,15 +44,16 @@ def register():
     register_provider(NextSessionDashboardProvider())
 
 
-def _next_session_ctx(club, membership=None):
-    """Wrap ``next_session`` so the empty state is ``{"session": None}``."""
-    session = next_session(club, timezone.now())
-    if session is not None and membership is not None:
-        from .models import PlayerRSVP
+def _next_session_ctx(request, club, membership=None):
+    """Wrap ``upcoming_sessions`` for the dashboard provider.
 
-        my_rsvp = PlayerRSVP.objects.filter(
-            session_id=session["session_id"], member=membership
-        ).first()
-        if my_rsvp:
-            session["my_answer"] = my_rsvp.answer
-    return {"session": session, "club": club}
+    Returns ``{"coming_up", "club", "membership", "can_manage_sessions"}``.
+    """
+    now = timezone.now()
+    data = upcoming_sessions(club, now, membership, limit=3)
+    return {
+        "coming_up": data["sessions"],
+        "club": club,
+        "membership": membership,
+        "can_manage_sessions": can_manage_sessions(request.user, club),
+    }
