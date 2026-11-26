@@ -561,7 +561,7 @@ From using the build after round 8 (U67–U77, D1–D4). Kept as built: the spin
 
 ## Round 10: stories from the ninth look and new features (2026-11-13)
 
-From using the build after round 9, plus new print designs and public pages. Story numbers continue from U83, D7 and M18. The UI consistency pass (U82) audit did not cover the modal scrolling or the reward table, so U84 and D8 stand.
+From using the build after round 9, plus new print designs and public pages. Story numbers continue from U93, D7 and M18. The UI consistency pass (U82) audit did not cover the modal scrolling or the reward table, so U84 and D8 stand.
 
 ### Fixes
 
@@ -1413,6 +1413,42 @@ Two stories. Weight and value are read-only. Nothing is edited here.
 - A "No weight listed" filter shows only items with no weight set. It combines with the existing filters (magic type, rarity, retired, hidden).
 - The table stays compact on phones.
 
+## Round 24: menu icons, categories, and role colours (2026-11-26)
+
+The hamburger menu has grown with every epic: Character, Town, Map, Club, Account, plus Game master and Club admin lists. It is text only, and people who are both players and game masters cannot tell at a glance which links are for them to play and which are for running the club. This round adds icons, regroups links by use, and colours role-only links with a key.
+
+### Icons and categories (U167)
+
+**U167 Add icons and regroup the hamburger menu by use.** As anyone in a club, I want every link in the side menu to show an icon and every category heading to show an icon, and I want the links regrouped into clear categories by use, so I can find pages faster and tell at a glance which links are for playing and which are for running the club. *(accounts, player_characters, shops, quests, map, downtime, items, ledger, sessions, agent_access, starting_equipment)*
+- Every `NavEntry` gets a sensible Bootstrap Icons id. Entries without an explicit icon receive one based on their category.
+- The current `MENU_GROUPS` (Character, Town, Map, Club, Account) are replaced with new categories that group links by what they are for. The proposed categories and their Bootstrap Icons ids are:
+
+| Category | Icon | Links (by audience) |
+|---|---|---|
+| **Character** `person` | **Player:** My character, Character directory, New character, Character slips, Archived characters, Ledger (my history) |
+| **Town** `shop` | **Player:** Shops, Quests, Downtime |
+| **Map** `map` | **Player:** All maps, XP table, Map requests |
+| **Club** `people` | **Player:** People, Message the admins, Request stock, Sessions, The Fallen, Items |
+| **Account** `gear` | **Player:** (footer: Your clubs, Change password, Donate) |
+| **Game Master** `person-gear` | **Game Master:** All characters, Award Loot to Party, Map requests, New map, Downtime points, Agent access, Agent connections, Agent batches, Proposed items, Downtime point requests, New session |
+| **Club Admin** `gear-fill` | **Club Admin:** Members, Whitelist, Inbox, Club settings, Manage shops, Rotations, Manage quests, Item catalogue, Starting Equipment Templates, Agenda, Downtime actions, Attendance report, Session settings |
+
+- The new categories replace `MENU_GROUPS` in `accounts/navigation.py`. Each category has its icon stored alongside it.
+- The "Game Master" and "Club Admin" categories appear only for people who hold those roles. A person with both roles sees both.
+- Moving a link between categories must not change its URL, its permission check, or its order within the category beyond what the new categories need.
+- The `gm` and `admin` registration groups in `GROUPS` are kept for backward compatibility; existing `navigation.register` calls continue to work.
+- The club home page (U60) and side menu (U59) adopt the new categories automatically via the updated `menu_sections` filter.
+
+### Colour by role and the key (U168)
+
+**U168 Colour role links and show a legend.** As a game master or club admin, I want links that are only for my role to be coloured by role with a text mark, and I want a small legend at the bottom of the menu explaining the colours, so I can distinguish player, game master, and club admin links without relying on colour alone. *(accounts)*
+- Three design tokens in `static/css/tokens.css`: `--nav-role-player` (default, no colour), `--nav-role-gm`, `--nav-role-admin`. Each token defines a left-border colour and a badge background colour. Contrast is checked in both light and dark themes.
+- Every coloured link also shows a short text mark: "GM" for game master links, "Admin" for club admin links. Player links get no mark. The mark is visible and available to screen readers (e.g. `aria-label="Game master only"`).
+- The `NavEntry` gains an `audience` field: one of "player", "gm", "admin". Default "player". It is derived from the entry's registration group: entries registered in the `gm` group (check allows game masters and/or club admins) get "gm"; entries registered in the `admin` group (check allows club admins only) get "admin"; everything else gets "player". Where a check allows both game masters and club admins, the audience is "gm" (owner's rule).
+- A legend partial `templates/components/_nav_key.html` is included at the bottom of the side menu. It shows only the roles the person actually has: a plain player sees no key; a game master sees the GM colour and mark; a club admin sees both GM and Admin; a person with both roles sees both.
+- The legend uses the same design tokens and marks, so it stays consistent with the links.
+- Works on phone width and with the keyboard. Does not change the top bar's collapsing rules (U32).
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -1599,8 +1635,6 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Messages.** Admins can mark a message handled or closed. There are no in-app replies; the admin talks to the player at the next session.
 - **Map visits.** Recorded per character, not per player.
 - **Map shape.** Maps grow without limit. Safe town is at 0,0. Empty tiles are blank. A tile can hold several locations and shows how many. Locations have separate player and GM notes, and encounters belong to locations and are added during play or afterwards. Players see a location and its encounters only once a character they are viewing the map as has found it; visiting the tile is not enough (M2-M6, M16).
-- **Acting as a character.** A player picks one character to act as from the top bar, remembered per club. Pages that act as one character always use it, with no per-page choice. Pages that pick several characters (the map, map requests) start with it, and picking others there does not change the top-bar selection (U22, U25, M8).
-- **Found locations.** A character has found a location if it is credited with discovering or exploring it, or has a found mark from a game master or club admin. A found mark gives no XP and only makes the location visible; players can ask for one like other map credit (M12, M16). On visited tiles, players see an unnamed "?" for each location someone has discovered but their characters have not found, and can ask for credit on it. Undiscovered locations show nothing, and only a game master or club admin records first discovery.
 - **Shop and character pages.** A shop page is a banner in the shop's preset colour with a preset shopkeeper silhouette over a counter-style item table (U34). A character page is a printable character sheet (U35).
 - **Look.** The Bootswatch Journal theme (MIT) for Bootstrap 5 across the whole site, served by the app, with compact tables and forms on dense pages (U21).
 - **Navigation.** Dashboard, Character, Shops, and Quests are plain links; everything else sits in a "More", a "Game master", or a "Club admin" menu, showing only links the person may use. The club name, the person's name, the selected character, approvals, and log out never collapse into the hamburger menu (U27, U32, U121).
@@ -1622,7 +1656,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 ## Database and feature notes
 
 - **Trade/Transfer models removed from database.** The `Trade` and `TradeLine` models were dropped (player_characters migration 0010) and `LedgerEntry.Kind.TRADE`/`TRANSFER` were dropped (ledger migration 0004). `JunkMark` remains. Old ledger notes stay as text.
-- **No trades or transfers between characters.** Players cannot give or send items or coins to another character, including their own. Otherwise a player could make many characters, feed everything to one, and sell it all for unlimited coins. Game masters and club admins can still give and take items by manual adjustment (U14).
+- **No trades or transfers between characters.** Players cannot give or send items or coins to another character, including their own. Otherwise a player could make many characters, feed everything to one, and sell it for unlimited coins. Game masters and club admins can still give and take items by manual adjustment (U14).
 - **Stacked items (U123-U131).** One pool of whole units per character and item. Bundle size lives on the shop line, not on the item, so a shop can sell the same item in several bundle sizes, each with its own stock. Combining is automatic, and every action takes a unit count, so there is no split or combine feature. Sale prices come from the total units sold.
 - **Player shops (U64/U65) remain unchanged** and continue to provide the safe player-to-player economy via fixed-price buying and selling.
 
