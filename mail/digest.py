@@ -4,11 +4,13 @@ This module provides the send_digests() function that runs periodically
 to send digests to game masters about upcoming sessions.
 """
 
+from collections import defaultdict
 from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
 
+from accounts.models import Membership
 from mail.builders_digest import build_digest
 from mail.jobs import register_job
 from mail.models import EmailMessage, EmailPreference, NoticeSent
@@ -90,18 +92,23 @@ def _build_rsvp_groups(session: PlaySession) -> dict[str, list[tuple]]:
     """Build RSVP groups for the digest.
 
     Returns a dict with keys: yes, maybe, no, not_answered.
-    Each value is a list of (character, player_name) tuples.
+    Each value is a list of (membership, active_character_names) tuples.
+    Members with no active characters are included with an empty name list.
     """
-    # Get all characters in the club that are not archived and not dead
+    # Active (non-archived, non-dead) character names per member, as hint text
     characters = Character.objects.filter(
         club=session.club,
         archived_at__isnull=True,
         died_on__isnull=True,
-    ).select_related("owner__user")
+    ).select_related("owner")
 
-    # Get existing RSVPs for this session
+    char_names_by_member: dict[int, list[str]] = defaultdict(list)
+    for character in characters:
+        char_names_by_member[character.owner_id].append(character.name)
+
+    # Existing per-player RSVPs for this session
     rsvps = {
-        rsvp.character_id: rsvp.answer for rsvp in session.rsvps.select_related("character").all()
+        rsvp.member_id: rsvp.answer for rsvp in session.player_rsvps.select_related("member").all()
     }
 
     yes = []
@@ -109,18 +116,22 @@ def _build_rsvp_groups(session: PlaySession) -> dict[str, list[tuple]]:
     no = []
     not_answered = []
 
-    for character in characters:
-        player_name = character.owner.user.display_name or character.owner.user.email
-        answer = rsvps.get(character.id)
+    # Every club member appears in exactly one group
+    memberships = Membership.objects.filter(club=session.club).distinct().select_related("user")
+
+    for membership in memberships:
+        answer = rsvps.get(membership.id)
+        char_names = char_names_by_member.get(membership.id, [])
+        item = (membership, char_names)
 
         if answer == SessionRSVP.Answer.YES:
-            yes.append((character, player_name))
+            yes.append(item)
         elif answer == SessionRSVP.Answer.MAYBE:
-            maybe.append((character, player_name))
+            maybe.append(item)
         elif answer == SessionRSVP.Answer.NO:
-            no.append((character, player_name))
+            no.append(item)
         else:
-            not_answered.append((character, player_name))
+            not_answered.append(item)
 
     return {
         "yes": yes,

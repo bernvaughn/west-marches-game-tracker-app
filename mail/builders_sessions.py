@@ -4,13 +4,14 @@ from mail.builders import render_email
 from play_sessions.core import to_club_local
 
 
-def build_reminder(club, session, days: int) -> tuple[str, str, str]:
+def build_reminder(club, session, days: int, membership=None) -> tuple[str, str, str]:
     """Build the session reminder email content.
 
     Args:
         club: Club instance.
         session: PlaySession instance.
         days: Number of days before the session.
+        membership: Membership the reminder is addressed to (player-level email).
 
     Returns:
         Tuple of (subject, text, html).
@@ -32,6 +33,8 @@ def build_reminder(club, session, days: int) -> tuple[str, str, str]:
         "days": days,
         "gm_name": gm_name,
         "location": session.location or "Not specified",
+        "membership": membership,
+        "user": membership.user if membership is not None else None,
         "subject": f"Reminder: {session.title}",
     }
 

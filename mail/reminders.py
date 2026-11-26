@@ -14,16 +14,15 @@ from mail.builders_sessions import build_reminder
 from mail.jobs import register_job
 from mail.models import ClubMailSettings, EmailMessage, EmailPreference, NoticeSent
 from mail.service import queue_email
-from play_sessions.models import PlaySession, SessionRSVP
-from player_characters.models import Character
+from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
 
 
 def send_reminders() -> None:
     """Send reminders for sessions starting in the configured reminder windows.
 
     Runs every minute via run_mail_jobs. Deduplicates using NoticeSent.
-    Only sends to members with characters who have not answered "no" and
-    have not opted out via EmailPreference.
+    Sends to every member who has not answered "no" (and to not-answered
+    members), whether or not they have a character.
     """
     now = timezone.now()
 
@@ -54,17 +53,13 @@ def _send_reminders_for_days(club, days: int, now) -> None:
 
 def _send_session_reminder(club, session: PlaySession, days: int) -> None:
     """Send reminder for a single session to all eligible members."""
-    # Get all memberships with at least one character in this club
-    memberships = (
-        Membership.objects.filter(club=club)
-        .exclude(characters__isnull=True)
-        .distinct()
-        .select_related("user")
-    )
+    # Every club member is eligible unless they answered "no";
+    # no character is required.
+    memberships = Membership.objects.filter(club=club).distinct().select_related("user")
 
     for membership in memberships:
-        # Skip if every character answered "no"
-        if _all_characters_said_no(membership, session):
+        # Skip if the member answered "no"
+        if _member_said_no(membership, session):
             continue
 
         # Skip if opted out of reminders
@@ -82,8 +77,8 @@ def _send_session_reminder(club, session: PlaySession, days: int) -> None:
         if _is_suppressed(user.email):
             continue
 
-        # Build email
-        subject, text, html = build_reminder(club, session, days)
+        # Build email (per-member context so the one-click token carries the member)
+        subject, text, html = build_reminder(club, session, days, membership=membership)
 
         # Queue the email
         result = queue_email(
@@ -106,19 +101,11 @@ def _send_session_reminder(club, session: PlaySession, days: int) -> None:
                 )
 
 
-def _all_characters_said_no(membership: Membership, session: PlaySession) -> bool:
-    """Return True if all of this member's characters in the club have RSVP'd 'no'."""
-    character_ids = Character.objects.filter(owner=membership).values_list("id", flat=True)
-    if not character_ids:
-        return True
-
-    # Check if any character has NOT answered "no"
-    no_count = SessionRSVP.objects.filter(
-        session=session, character_id__in=character_ids, answer=SessionRSVP.Answer.NO
-    ).count()
-
-    total_chars = len(character_ids)
-    return no_count == total_chars
+def _member_said_no(membership: Membership, session: PlaySession) -> bool:
+    """Return True if this member has answered "no" to the session."""
+    return PlayerRSVP.objects.filter(
+        session=session, member=membership, answer=SessionRSVP.Answer.NO
+    ).exists()
 
 
 def _is_opted_out(membership: Membership, kind: str) -> bool:

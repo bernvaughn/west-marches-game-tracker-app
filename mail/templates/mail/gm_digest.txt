@@ -11,8 +11,8 @@ RSVP Summary:
 
 {% if rsvp_groups.yes %}
 YES ({{ rsvp_groups.yes|length }}):
-{% for character, player_name in rsvp_groups.yes %}
-  {{ character.name }} — {{ player_name }}
+{% for membership, char_names in rsvp_groups.yes %}
+  {{ membership.user.display_name|default:membership.user.email }}{% if char_names %} ({{ char_names|join:", " }}){% endif %}
 {% endfor %}
 {% else %}
 YES: (none)
@@ -20,8 +20,8 @@ YES: (none)
 
 {% if rsvp_groups.maybe %}
 MAYBE ({{ rsvp_groups.maybe|length }}):
-{% for character, player_name in rsvp_groups.maybe %}
-  {{ character.name }} — {{ player_name }}
+{% for membership, char_names in rsvp_groups.maybe %}
+  {{ membership.user.display_name|default:membership.user.email }}{% if char_names %} ({{ char_names|join:", " }}){% endif %}
 {% endfor %}
 {% else %}
 MAYBE: (none)
@@ -29,8 +29,8 @@ MAYBE: (none)
 
 {% if rsvp_groups.no %}
 NO ({{ rsvp_groups.no|length }}):
-{% for character, player_name in rsvp_groups.no %}
-  {{ character.name }} — {{ player_name }}
+{% for membership, char_names in rsvp_groups.no %}
+  {{ membership.user.display_name|default:membership.user.email }}{% if char_names %} ({{ char_names|join:", " }}){% endif %}
 {% endfor %}
 {% else %}
 NO: (none)
@@ -38,8 +38,8 @@ NO: (none)
 
 {% if rsvp_groups.not_answered %}
 NOT ANSWERED ({{ rsvp_groups.not_answered|length }}):
-{% for character, player_name in rsvp_groups.not_answered %}
-  {{ character.name }} — {{ player_name }}
+{% for membership, char_names in rsvp_groups.not_answered %}
+  {{ membership.user.display_name|default:membership.user.email }}{% if char_names %} ({{ char_names|join:", " }}){% endif %}
 {% endfor %}
 {% else %}
 NOT ANSWERED: (none)

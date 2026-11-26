@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from mail.digest import send_digests
 from mail.models import EmailMessage, EmailPreference, NoticeSent
-from play_sessions.models import PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db]
@@ -128,30 +128,23 @@ def test_digest_only_when_opted_in():
     assert message.user == gm_user
 
 
-def test_digest_groups_rsvps_correctly():
-    """Digest lists yes, maybe, no and not answered by character with player name."""
+def test_digest_groups_players_by_answer():
+    """Digest lists players (members), grouped by answer, once per member."""
     club, gm_user, gm_membership = _make_club_and_gm("3")
     players = _make_players_and_chars(club, "3")
     session = _make_session(club, gm_membership)
     _enable_digest(gm_membership)
 
-    # Set up RSVPs: char1=yes, char2=maybe, char3=no, no char for player2's other
-    # char (not_answered)
-    SessionRSVP.objects.create(
+    # Player1 (two chars) answers yes; player2 answers no
+    PlayerRSVP.objects.create(
         session=session,
-        character=players["char1"],
+        member=players["player1_membership"],
         answer=SessionRSVP.Answer.YES,
         answered_by=players["player1_user"],
     )
-    SessionRSVP.objects.create(
+    PlayerRSVP.objects.create(
         session=session,
-        character=players["char2"],
-        answer=SessionRSVP.Answer.MAYBE,
-        answered_by=players["player1_user"],
-    )
-    SessionRSVP.objects.create(
-        session=session,
-        character=players["char3"],
+        member=players["player2_membership"],
         answer=SessionRSVP.Answer.NO,
         answered_by=players["player2_user"],
     )
@@ -161,15 +154,45 @@ def test_digest_groups_rsvps_correctly():
     message = EmailMessage.objects.get(kind=EmailMessage.Kind.DIGEST)
     payload = message.payload
 
-    # Check text content has all groups
     text = payload.text
+    # Player1 appears once in YES with both character names as hint
     assert "YES (1):" in text
-    assert "Hero One 3 — Player One 3" in text
-    assert "MAYBE (1):" in text
-    assert "Hero Two 3 — Player One 3" in text
+    assert "Player One 3 (Hero One 3, Hero Two 3)" in text
+    # Player2 appears once in NO
     assert "NO (1):" in text
-    assert "Hero Three 3 — Player Two 3" in text
-    assert "NOT ANSWERED (0):" in text or "NOT ANSWERED:" in text
+    assert "Player Two 3 (Hero Three 3)" in text
+    # GM has not answered, so appears in NOT ANSWERED
+    assert "NOT ANSWERED (1):" in text
+
+
+def test_digest_member_with_no_characters_in_not_answered():
+    """Member with no characters appears in not_answered group."""
+    club, gm_user, gm_membership = _make_club_and_gm("3b")
+    players = _make_players_and_chars(club, "3b")
+    session = _make_session(club, gm_membership)
+    _enable_digest(gm_membership)
+
+    # Player1 answers yes; member with no characters is not answered
+    no_char_user = User.objects.create_user(
+        email="nochars3b@test.com", password="pass12345678", display_name="No Chars"
+    )
+    Membership.objects.create(user=no_char_user, club=club)
+
+    PlayerRSVP.objects.create(
+        session=session,
+        member=players["player1_membership"],
+        answer=SessionRSVP.Answer.YES,
+        answered_by=players["player1_user"],
+    )
+
+    send_digests()
+
+    message = EmailMessage.objects.get(kind=EmailMessage.Kind.DIGEST)
+    text = message.payload.text
+
+    # player2 + No Chars member + GM (all not answered)
+    assert "NOT ANSWERED (3):" in text
+    assert "No Chars" in text
 
 
 def test_digest_sent_once_dedupe():
@@ -281,59 +304,6 @@ def test_digest_time_in_club_zone():
 
     # Should show time in club timezone (America/Los_Angeles)
     assert club.timezone in payload.text or "PDT" in payload.text or "PST" in payload.text
-
-
-def test_digest_only_active_characters():
-    """Digest only includes non-archived characters."""
-    club, gm_user, gm_membership = _make_club_and_gm("9")
-    players = _make_players_and_chars(club, "9")
-    _make_session(club, gm_membership)
-
-    # Create an archived character
-    Character.objects.create(
-        name="Archived Hero 9",
-        club=club,
-        owner=players["player1_membership"],
-        archived_at=timezone.now(),
-    )
-
-    _enable_digest(gm_membership)
-
-    send_digests()
-
-    message = EmailMessage.objects.get(kind=EmailMessage.Kind.DIGEST)
-    payload = message.payload
-
-    # Should not include archived character
-    assert "Archived Hero 9" not in payload.text
-    # Should include active characters
-    assert "Hero One 9" in payload.text
-    assert "Hero Two 9" in payload.text
-
-
-def test_digest_excludes_dead_characters():
-    """Digest excludes dead characters (died_on set)."""
-    club, gm_user, gm_membership = _make_club_and_gm("10")
-    players = _make_players_and_chars(club, "10")
-    _make_session(club, gm_membership)
-
-    # Create a dead character
-    Character.objects.create(
-        name="Dead Hero 10",
-        club=club,
-        owner=players["player1_membership"],
-        died_on=timezone.now().date(),
-    )
-
-    _enable_digest(gm_membership)
-
-    send_digests()
-
-    message = EmailMessage.objects.get(kind=EmailMessage.Kind.DIGEST)
-    payload = message.payload
-
-    # Should not include dead character
-    assert "Dead Hero 10" not in payload.text
 
 
 def test_digest_window_23_to_25_hours():

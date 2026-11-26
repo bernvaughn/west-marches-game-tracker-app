@@ -16,16 +16,16 @@
 <h3>RSVP Summary</h3>
 
 {% with groups=rsvp_groups %}
-  {% with group_label="YES" group_color="#28a745" characters=groups.yes %}
+  {% with group_label="YES" group_color="#28a745" items=groups.yes %}
     {% include "mail/_digest_group.html" %}
   {% endwith %}
-  {% with group_label="MAYBE" group_color="#ffc107" characters=groups.maybe %}
+  {% with group_label="MAYBE" group_color="#ffc107" items=groups.maybe %}
     {% include "mail/_digest_group.html" %}
   {% endwith %}
-  {% with group_label="NO" group_color="#cb2431" characters=groups.no %}
+  {% with group_label="NO" group_color="#cb2431" items=groups.no %}
     {% include "mail/_digest_group.html" %}
   {% endwith %}
-  {% with group_label="NOT ANSWERED" group_color="#6a737d" characters=groups.not_answered %}
+  {% with group_label="NOT ANSWERED" group_color="#6a737d" items=groups.not_answered %}
     {% include "mail/_digest_group.html" %}
   {% endwith %}
 {% endwith %}
