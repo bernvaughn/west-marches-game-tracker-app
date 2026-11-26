@@ -1504,9 +1504,9 @@ Rules for every story in this round:
 - The game master digest (E7) lists players by name in yes, maybe, no, and not answered, like P14.
 - This changes E5, E6 and E7 where they mention characters.
 
-## Round 26: next sessions on the sessions page (2026-11-26)
+## Round 26: upcoming sessions (2026-11-26)
 
-The sessions page (P3) shows one month at a time. A club that plays about once a month often has an empty month on screen even though a session is only days away, just across the month line.
+The sessions page (P3) shows one month at a time, and the dashboards show only a single "next session". A club that plays about once a month often has an empty month on screen even though a session is only days away, just across the month line.
 
 **P18 See the upcoming sessions.** As a player, game master, or club admin, I want the sessions page and my dashboards to show a short list of upcoming sessions, whatever month the calendar is showing, so I always see when we play next and what is cancelled. *(play_sessions, accounts)*
 - A "Coming up" list sits above the month calendar on the sessions page, on wide screens and on phones. It shows the next 5 sessions in order across any months, and stays the same whichever month the calendar shows.
