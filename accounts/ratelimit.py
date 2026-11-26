@@ -84,12 +84,16 @@ def add_rate_limit_headers(
 
 def rate_limit(
     prefix: str,
-    limit: int,
-    window: int,
+    limit: int | Callable[[], int],
+    window: int | Callable[[], int],
     key_func: Callable[..., str] | None = None,
 ):
     """
     Decorator to apply rate limiting to a view.
+
+    `limit` and `window` may be integers or zero-argument callables. Callables
+    are resolved on every request, which keeps the rate limit responsive to
+    `override_settings` in tests and to runtime changes of the setting.
 
     Args:
         prefix: A prefix for the cache key (e.g., 'login', 'password_change')
@@ -105,20 +109,25 @@ def rate_limit(
     def decorator(view_func):
         @wraps(view_func)
         def wrapped(request: HttpRequest, *args, **kwargs) -> HttpResponse:
+
+            limit_value = limit() if callable(limit) else limit
+            window_value = window() if callable(window) else window
             identifier = key_func(request, *args, **kwargs)
-            cache_key = get_rate_limit_key(prefix, identifier, window)
-            allowed, remaining, retry_after = check_rate_limit(cache_key, limit, window)
+            cache_key = get_rate_limit_key(prefix, identifier, window_value)
+            allowed, remaining, retry_after = check_rate_limit(
+                cache_key, limit_value, window_value
+            )
 
             if not allowed:
                 response = HttpResponse(
                     "Rate limit exceeded. Please try again later.",
                     status=429,
                 )
-                add_rate_limit_headers(response, limit, remaining, retry_after)
+                add_rate_limit_headers(response, limit_value, remaining, retry_after)
                 return response
 
             response = view_func(request, *args, **kwargs)
-            add_rate_limit_headers(response, limit, remaining, retry_after)
+            add_rate_limit_headers(response, limit_value, remaining, retry_after)
             return response
 
         return wrapped

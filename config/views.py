@@ -18,8 +18,8 @@ def favicon(request):
 @csrf_exempt
 @rate_limit(
     prefix="healthz",
-    limit=settings.RATELIMIT_HEALTHZ_ATTEMPTS,
-    window=settings.RATELIMIT_HEALTHZ_WINDOW,
+    limit=lambda: settings.RATELIMIT_HEALTHZ_ATTEMPTS,
+    window=lambda: settings.RATELIMIT_HEALTHZ_WINDOW,
     key_func=get_client_ip,
 )
 def healthz(request):
