@@ -9,10 +9,18 @@
       <ul class="list-unstyled">
         {% for row in rows %}
           <li class="mb-2">
-            <strong>{{ row.character.name }}</strong>
-            {% if row.level %}<span class="text-muted ms-2">Level {{ row.level }}</span>{% endif %}
-            {% if row.char_class %}<span class="text-muted ms-2">{{ row.char_class }}</span>{% endif %}
-            <span class="text-muted ms-2">Player: {{ row.player_name }}</span>
+            <strong>{{ row.player_name }}</strong>
+            {% if row.character_names %}
+              <span class="text-muted ms-2">(
+                {% for char in row.characters %}
+                  {{ char.name }}
+                  {% if can_bring and char.owner_id == membership.id %}
+                    {% include "play_sessions/_bringing_button.html" with session=session character=char hinted_pks=hinted_pks %}
+                  {% endif %}
+                  {% if not forloop.last %}, {% endif %}
+                {% endfor %}
+              )</span>
+            {% endif %}
           </li>
         {% endfor %}
       </ul>
@@ -47,8 +55,8 @@
 
       <form method="post" action="{{ rsvp_for_url }}" class="d-flex flex-wrap gap-2 align-items-center">
         {% csrf_token %}
-        <label for="id_character" class="visually-hidden">Character</label>
-        {{ rsvp_form.character }}
+        <label for="id_member" class="visually-hidden">Member</label>
+        {{ rsvp_form.member }}
         <label for="id_answer" class="visually-hidden">Answer</label>
         {{ rsvp_form.answer }}
         <button type="submit" class="btn btn-outline-secondary btn-sm">Answer for someone</button>

@@ -1,0 +1,23 @@
+{% comment %}Bringing this character hint button.
+Context: session, character, hinted_pks.
+Only rendered when the session has started and attendance is not confirmed.
+{% endcomment %}
+{% if character.pk in hinted_pks %}
+  <span class="badge bg-success" title="This character is being brought to the session">Bringing</span>
+{% else %}
+  <form
+    hx-post="{% url 'play_sessions:bringing' club_slug=club.slug pk=session.pk %}"
+    hx-swap="outerHTML"
+    class="d-inline"
+  >
+    {% csrf_token %}
+    <input type="hidden" name="character" value="{{ character.pk }}">
+    <button
+      type="submit"
+      class="btn btn-outline-secondary btn-sm"
+      title="Mark this character as being brought to the session"
+    >
+      Bring this character
+    </button>
+  </form>
+{% endif %}
