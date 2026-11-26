@@ -41,6 +41,7 @@ ALLOWLIST = {
     "FoundMark",
 }
 
+
 def test_every_first_party_model_is_in_the_admin():
     """All first-party models are registered in the admin or allowlisted."""
     first_party_apps = [
@@ -92,7 +93,6 @@ def test_every_first_party_model_is_in_the_admin():
         # map: not part of admin improvements epic
         "CreditGrant",
         "FoundMark",
-
     }
 
     all_missing = {}
