@@ -34,6 +34,8 @@ class SelectedCharacterAdmin(admin.ModelAdmin):
     list_display = ["membership", "character"]
     list_filter = ["membership__club"]
     search_fields = ["membership__user__email", "membership__user__display_name", "character__name"]
+    date_hierarchy = "membership__created"
+    ordering = ["membership__user__display_name"]
     autocomplete_fields = ["membership", "character"]
 
 
@@ -42,6 +44,7 @@ class JunkMarkAdmin(admin.ModelAdmin):
     list_display = ["character", "item", "quantity"]
     list_filter = ["character__club"]
     search_fields = ["character__name", "item__name"]
+    ordering = ["character__name", "item__name"]
     autocomplete_fields = ["character", "item"]
 
 
@@ -50,6 +53,7 @@ class ItemNoteAdmin(admin.ModelAdmin):
     list_display = ["character", "item", "truncated_text"]
     list_filter = ["character__club"]
     search_fields = ["character__name", "item__name", "text"]
+    ordering = ["character__name", "item__name"]
     autocomplete_fields = ["character", "item"]
     readonly_fields = ["text"]
 
