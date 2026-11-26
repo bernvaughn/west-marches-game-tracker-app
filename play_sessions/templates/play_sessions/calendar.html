@@ -9,6 +9,12 @@
   <span class="sessions-month">{{ month_name }} {{ year }}</span>
   <a class="sessions-nav-link" href="?month={{ grid.next_month }}" aria-label="Next month">&rsaquo;</a>
 </div>
+{% include "play_sessions/_coming_up.html" with coming_up=coming_up first_month=first_month club=club membership=membership can_manage_sessions=can_manage %}
+{% if show_month_link %}
+<p class="coming-up-show-month">
+  <a href="?month={{ month_link }}" class="coming-up-show-month-link">Show that month</a>
+</p>
+{% endif %}
 <div class="mb-3">
   {% include "play_sessions/_month_grid.html" with grid=grid today=today club=club zone_name=zone_name class="d-none d-md-block" %}
   {% include "play_sessions/_upcoming_list.html" with upcoming=upcoming today=today club=club zone_name=zone_name class="d-md-none" %}

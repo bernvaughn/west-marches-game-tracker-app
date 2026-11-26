@@ -15,16 +15,30 @@ from .. import calendar as calendar_helpers
 from .. import core
 from ..feed import build_ics, get_or_create_token, reset_token
 from ..models import SessionSettings
+from ..upcoming import upcoming_sessions
 
 
 @club_member_required
 def calendar_page(request, club_slug):
     """The session calendar page: month grid (wide) or upcoming list (phones)."""
     club = request.club
-    today = core.to_club_local(club, timezone.now()).date()
+    now = timezone.now()
+    today = core.to_club_local(club, now).date()
     year, month = calendar_helpers.parse_month(request.GET.get("month"), today)
     grid = calendar_helpers.month_grid(club, year, month, today)
     upcoming = calendar_helpers.upcoming_list(club, year, month, today)
+
+    # Shared upcoming-sessions query (S0/S1): next 5 sessions across any months.
+    membership = getattr(request, "membership", None)
+    coming_up_data = upcoming_sessions(club, now, membership, 5)
+    coming_up = coming_up_data["sessions"]
+    first_month = coming_up_data["first_month"]
+    show_month_link = False
+    month_link = None
+    if first_month and (first_month[0] != year or first_month[1] != month):
+        show_month_link = True
+        month_link = f"{first_month[0]:04d}-{first_month[1]:02d}"
+
     token = get_or_create_token(club)  # creates the token on first use
     feed_url = request.build_absolute_uri(reverse("play_sessions_public:feed", args=[token]))
     webcal_url = "webcal://" + feed_url.split("://", 1)[1]
@@ -40,6 +54,11 @@ def calendar_page(request, club_slug):
         "feed_url": feed_url,
         "webcal_url": webcal_url,
         "month_name": cal_module.month_name[month],
+        "coming_up": coming_up,
+        "first_month": first_month,
+        "show_month_link": show_month_link,
+        "month_link": month_link,
+        "membership": membership,
     }
     return render(request, "play_sessions/calendar.html", context)
 
