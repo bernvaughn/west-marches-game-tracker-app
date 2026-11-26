@@ -5,13 +5,14 @@
      club             - Club
      membership       - Membership or None
      can_manage_sessions - bool, True when the member may add sessions
+     hide_heading     - optional; true when the host card already shows the heading
    Each session dict: id, title, local_start (aware, club zone), zone_label,
    gm_name, yes_count, my_answer (yes/maybe/no/none, None when cancelled),
    cancelled, detail_url, is_next, when_text.
 {% endcomment %}
 {% load play_sessions_tags %}
 <section class="coming-up" aria-label="Upcoming sessions">
-  <h2 class="coming-up-heading">Upcoming sessions</h2>
+  {% if not hide_heading %}<h2 class="coming-up-heading">Upcoming sessions</h2>{% endif %}
   {% if coming_up %}
   <ul class="coming-up-list">
     {% for session in coming_up %}

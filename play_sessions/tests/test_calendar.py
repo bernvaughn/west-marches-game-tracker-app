@@ -894,3 +894,33 @@ def test_calendar_coming_up_capped_at_five(client, club, game_master):
     # Sessions 6 and 7 do not
     assert "S6" not in coming_up_section
     assert "S7" not in coming_up_section
+
+
+def test_player_dashboard_loads_sessions_css_and_card(client, club, player, character):
+    """The dashboard list needs sessions.css and sits inside a card with a link inside it."""
+    club.timezone = "UTC"
+    club.save()
+    gm = _gm_membership(club)
+    _session(club, "Styled session", timezone.now() + timedelta(days=2), gm=gm)
+    client.force_login(player)
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    html = response.content.decode()
+    assert "css/sessions.css" in html
+    card_start = html.index("coming-up-list")
+    card_open = html.rindex("wm-dashboard-section", 0, card_start)
+    link = html.index("View all sessions", card_start)
+    # No second heading: the card header carries it.
+    assert html.count('class="coming-up-heading"') == 0
+    assert card_open < card_start < link
+
+
+def test_club_home_loads_sessions_css(client, club, game_master):
+    club.timezone = "UTC"
+    club.save()
+    gm = Membership.objects.get(user=game_master, club=club)
+    _session(club, "Desk session", timezone.now() + timedelta(days=2), gm=gm)
+    client.force_login(game_master)
+    response = client.get(reverse("club_home", kwargs={"club_slug": club.slug}))
+    html = response.content.decode()
+    assert "css/sessions.css" in html
+    assert "coming-up-row" in html

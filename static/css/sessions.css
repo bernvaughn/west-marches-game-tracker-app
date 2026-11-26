@@ -38,7 +38,7 @@
 .coming-up-row--next { border-color: var(--wm-accent); background: var(--wm-neutral-bg); border-radius: .375rem; }
 .coming-up-title { font-weight: 600; }
 .coming-up-title:hover { text-decoration: underline; }
-.coming-up-when { color: var(--wm-text-muted); font-size: var(--wm-text-sm); line-height: 1.5; white-space: nowrap; }
+.coming-up-when { color: var(--wm-text-muted); font-size: var(--wm-text-sm); line-height: 1.5; overflow-wrap: anywhere; }
 .coming-up-when-text { color: var(--wm-text-muted); }
 .coming-up-gm, .coming-up-yes, .coming-up-answer { font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
 .coming-up-badge { font-size: var(--wm-text-xs); font-weight: 700; padding: .125rem .375rem; border-radius: .375rem; background: var(--wm-accent); color: #fff; }
