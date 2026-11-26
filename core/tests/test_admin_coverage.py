@@ -39,13 +39,6 @@ ALLOWLIST = {
     # map: not part of admin improvements epic
     "CreditGrant",
     "FoundMark",
-    # downtime: will be registered in task C5
-    "DowntimePointEntry",
-    "DowntimeAction",
-    "DowntimeEntry",
-    "DowntimeEntryItem",
-    "DowntimeResult",
-    "DowntimePointRequest",
 }
 
 
