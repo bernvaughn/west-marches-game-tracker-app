@@ -1,6 +1,7 @@
 {% comment %}_next_session: Next session card for the dashboard and the club home block.
    Context: provider_context {session: {...} | None}. The session dict holds
-   title, local_start (aware, club zone), zone_name, gm_name, yes_count, detail_url.
+   title, local_start (aware, club zone), zone_name, gm_name, yes_count, detail_url,
+   session_id, my_answer.
 {% endcomment %}
 {% load tz %}
 <div class="wm-dashboard-section card wm-card-raised h-100">
@@ -18,6 +19,7 @@
       {% localtime off %}{{ session.local_start|date:"j M Y" }} at {{ session.local_start|time:"g:i A" }} {{ session.zone_name }}{% endlocaltime %}
       {% if session.gm_name %} · GM: {{ session.gm_name }}{% endif %}
       {% if session.yes_count %} · {{ session.yes_count }} yes{% endif %}
+      {% if session.my_answer %} · You: {{ session.my_answer|title }}{% endif %}
     </p>
     <a href="{{ session.detail_url }}" class="btn btn-sm btn-outline-primary">View session</a>
     {% endwith %}
