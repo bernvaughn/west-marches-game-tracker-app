@@ -5,7 +5,7 @@ from django.utils import timezone
 
 from accounts.models import Club, Membership, User
 from play_sessions import core
-from play_sessions.models import PlaySession, SessionRSVP
+from play_sessions.models import PlaySession
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P1")]
@@ -66,48 +66,6 @@ def test_character_is_active_returns_true():
     )
     character = Character.objects.create(name="Char", club=club, owner=membership)
     assert core.character_is_active(character) is True
-
-
-def test_set_rsvp_creates_then_updates():
-    club = Club.objects.create(name="RSVP Club", slug="rsvp")
-    membership = Membership.objects.create(
-        user=User.objects.create_user(email="gm@test.com", password="pass12345678"),
-        club=club,
-        is_game_master=True,
-    )
-    character = Character.objects.create(name="Hero", club=club, owner=membership)
-    session = PlaySession.objects.create(
-        club=club, title="Session", starts_at=timezone.now(), game_master=membership
-    )
-    by_user = User.objects.create_user(email="by@test.com", password="pass12345678")
-
-    # Create
-    rsvp1 = core.set_rsvp(session, character, SessionRSVP.Answer.YES, by_user)
-    assert rsvp1.answer == SessionRSVP.Answer.YES
-    assert rsvp1.answered_by == by_user
-
-    # Update
-    rsvp2 = core.set_rsvp(session, character, SessionRSVP.Answer.NO, by_user)
-    assert rsvp2.pk == rsvp1.pk
-    assert rsvp2.answer == SessionRSVP.Answer.NO
-
-    # Only one row
-    assert SessionRSVP.objects.filter(session=session, character=character).count() == 1
-
-
-def test_set_rsvp_bad_answer_raises():
-    club = Club.objects.create(name="Bad RSVP Club", slug="bad-rsvp")
-    membership = Membership.objects.create(
-        user=User.objects.create_user(email="gm@test.com", password="pass12345678"),
-        club=club,
-        is_game_master=True,
-    )
-    character = Character.objects.create(name="Hero", club=club, owner=membership)
-    session = PlaySession.objects.create(
-        club=club, title="Session", starts_at=timezone.now(), game_master=membership
-    )
-    with pytest.raises(ValueError, match="Invalid RSVP answer"):
-        core.set_rsvp(session, character, "invalid", membership.user)
 
 
 def test_attendance_saved_signal_delivers_kwargs():

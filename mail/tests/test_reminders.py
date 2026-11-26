@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from mail.models import EmailMessage, EmailPreference
 from mail.reminders import send_reminders
-from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db]
@@ -190,7 +190,7 @@ def test_member_who_said_no_is_skipped():
     PlayerRSVP.objects.create(
         session=session,
         member=member2_mem,
-        answer=SessionRSVP.Answer.NO,
+        answer=PlayerRSVP.Answer.NO,
         answered_by=data["member2_user"],
     )
 
@@ -257,7 +257,7 @@ def test_member_who_said_no_with_no_characters_is_skipped():
     PlayerRSVP.objects.create(
         session=session,
         member=member3_membership,
-        answer=SessionRSVP.Answer.NO,
+        answer=PlayerRSVP.Answer.NO,
         answered_by=member3_user,
     )
 
@@ -289,7 +289,7 @@ def test_member_with_some_chars_not_no_gets_reminder():
     PlayerRSVP.objects.create(
         session=session,
         member=member1_mem,
-        answer=SessionRSVP.Answer.MAYBE,
+        answer=PlayerRSVP.Answer.MAYBE,
         answered_by=data["member1_user"],
     )
 
@@ -370,7 +370,7 @@ def test_cancelled_session_sends_cancel_notice():
     PlayerRSVP.objects.create(
         session=session,
         member=member1_mem,
-        answer=SessionRSVP.Answer.YES,
+        answer=PlayerRSVP.Answer.YES,
         answered_by=data["member1_user"],
     )
 
@@ -406,7 +406,7 @@ def test_cancelled_notice_sent_once():
     PlayerRSVP.objects.create(
         session=session,
         member=member1_mem,
-        answer=SessionRSVP.Answer.YES,
+        answer=PlayerRSVP.Answer.YES,
         answered_by=data["member1_user"],
     )
 
@@ -443,7 +443,7 @@ def test_changed_session_sends_change_notice():
     PlayerRSVP.objects.create(
         session=session,
         member=member2_mem,
-        answer=SessionRSVP.Answer.NO,
+        answer=PlayerRSVP.Answer.NO,
         answered_by=data["member2_user"],
     )
 

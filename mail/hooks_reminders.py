@@ -93,7 +93,7 @@ def _send_cancel_notices(session):
     from mail.builders_sessions import build_cancelled
     from mail.models import EmailMessage, NoticeSent
     from mail.service import queue_email
-    from play_sessions.models import PlayerRSVP, SessionRSVP
+    from play_sessions.models import PlayerRSVP
 
     club = session.club
     key_prefix = f"{session.id}:"
@@ -105,7 +105,7 @@ def _send_cancel_notices(session):
 
     # Get users with a "yes" RSVP (per-player answers)
     yes_rsvp_user_ids = (
-        PlayerRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES)
+        PlayerRSVP.objects.filter(session=session, answer=PlayerRSVP.Answer.YES)
         .select_related("member__user")
         .values_list("member__user_id", flat=True)
     )

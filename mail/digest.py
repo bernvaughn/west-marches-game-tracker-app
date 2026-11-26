@@ -15,7 +15,7 @@ from mail.builders_digest import build_digest
 from mail.jobs import register_job
 from mail.models import EmailMessage, EmailPreference, NoticeSent
 from mail.service import queue_email
-from play_sessions.models import PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession
 from player_characters.models import Character
 
 
@@ -124,11 +124,11 @@ def _build_rsvp_groups(session: PlaySession) -> dict[str, list[tuple]]:
         char_names = char_names_by_member.get(membership.id, [])
         item = (membership, char_names)
 
-        if answer == SessionRSVP.Answer.YES:
+        if answer == PlayerRSVP.Answer.YES:
             yes.append(item)
-        elif answer == SessionRSVP.Answer.MAYBE:
+        elif answer == PlayerRSVP.Answer.MAYBE:
             maybe.append(item)
-        elif answer == SessionRSVP.Answer.NO:
+        elif answer == PlayerRSVP.Answer.NO:
             no.append(item)
         else:
             not_answered.append(item)

@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from mail.digest import send_digests
 from mail.models import EmailMessage, EmailPreference, NoticeSent
-from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db]
@@ -139,13 +139,13 @@ def test_digest_groups_players_by_answer():
     PlayerRSVP.objects.create(
         session=session,
         member=players["player1_membership"],
-        answer=SessionRSVP.Answer.YES,
+        answer=PlayerRSVP.Answer.YES,
         answered_by=players["player1_user"],
     )
     PlayerRSVP.objects.create(
         session=session,
         member=players["player2_membership"],
-        answer=SessionRSVP.Answer.NO,
+        answer=PlayerRSVP.Answer.NO,
         answered_by=players["player2_user"],
     )
 
@@ -181,7 +181,7 @@ def test_digest_member_with_no_characters_in_not_answered():
     PlayerRSVP.objects.create(
         session=session,
         member=players["player1_membership"],
-        answer=SessionRSVP.Answer.YES,
+        answer=PlayerRSVP.Answer.YES,
         answered_by=players["player1_user"],
     )
 

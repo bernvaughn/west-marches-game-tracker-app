@@ -6,13 +6,13 @@ from django.utils import timezone
 from accounts.models import Membership
 
 from . import core
-from .models import PlayerRSVP, SessionRSVP
+from .models import PlayerRSVP
 
 
 class RsvpForm(forms.Form):
     """Form for submitting an RSVP answer."""
 
-    answer = forms.ChoiceField(choices=SessionRSVP.Answer.choices)
+    answer = forms.ChoiceField(choices=PlayerRSVP.Answer.choices)
     member = forms.ModelChoiceField(
         queryset=Membership.objects.none(), required=False
     )  # target membership (managers only)

@@ -13,13 +13,12 @@ from .models import (
     PlayerRSVP,
     PlaySession,
     SessionAttendance,
-    SessionRSVP,
 )
 
 ANSWER_STATUS = {
-    SessionRSVP.Answer.YES: "success",
-    SessionRSVP.Answer.MAYBE: "warning",
-    SessionRSVP.Answer.NO: "danger",
+    PlayerRSVP.Answer.YES: "success",
+    PlayerRSVP.Answer.MAYBE: "warning",
+    PlayerRSVP.Answer.NO: "danger",
 }
 
 
@@ -110,9 +109,9 @@ def who_is_coming(session):
     member_rows.sort(key=lambda row: row["player_name"])
 
     answer_order = [
-        (SessionRSVP.Answer.YES, "Yes"),
-        (SessionRSVP.Answer.MAYBE, "Maybe"),
-        (SessionRSVP.Answer.NO, "No"),
+        (PlayerRSVP.Answer.YES, "Yes"),
+        (PlayerRSVP.Answer.MAYBE, "Maybe"),
+        (PlayerRSVP.Answer.NO, "No"),
     ]
     groups = []
     answered_member_ids = set()
@@ -151,7 +150,7 @@ def attendance_rows(session, club):
 
     active_pks = {c.pk for c in active}
     yes_member_ids = set(
-        PlayerRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES).values_list(
+        PlayerRSVP.objects.filter(session=session, answer=PlayerRSVP.Answer.YES).values_list(
             "member_id", flat=True
         )
     )
@@ -248,7 +247,7 @@ def save_attendance(session, selected_ids, by, club):
     selected_ids = {pk for pk in selected_ids if pk in active_pks}
 
     yes_member_ids = set(
-        PlayerRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES).values_list(
+        PlayerRSVP.objects.filter(session=session, answer=PlayerRSVP.Answer.YES).values_list(
             "member_id", flat=True
         )
     )
@@ -330,7 +329,7 @@ def set_player_rsvp(session, member, answer, by):
     Raises:
         ValueError: if answer is not a valid choice.
     """
-    if answer not in SessionRSVP.Answer.values:
+    if answer not in PlayerRSVP.Answer.values:
         raise ValueError(f"Invalid RSVP answer: {answer}")
 
     rsvp, _ = PlayerRSVP.objects.update_or_create(

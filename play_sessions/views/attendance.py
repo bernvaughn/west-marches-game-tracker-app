@@ -15,7 +15,7 @@ from player_characters.models import Character
 
 from .. import core
 from ..attendance_forms import AttendanceForm, RsvpForMemberForm
-from ..models import AttendanceHint, PlayerRSVP, PlaySession, SessionRSVP
+from ..models import AttendanceHint, PlayerRSVP, PlaySession
 from ..services_attendance import (
     attendance_history,
     attendance_rows,
@@ -56,7 +56,7 @@ def attendance(request, club_slug, pk):
                 member is not None
                 and not PlayerRSVP.objects.filter(session=session, member=member).exists()
             ):
-                set_player_rsvp(session, member, SessionRSVP.Answer.YES, request.user)
+                set_player_rsvp(session, member, PlayerRSVP.Answer.YES, request.user)
                 messages.success(request, f"{member.user} added as attending.")
             return redirect("play_sessions:attendance", club_slug=club.slug, pk=session.pk)
 

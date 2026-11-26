@@ -14,7 +14,7 @@ from mail.builders_sessions import build_reminder
 from mail.jobs import register_job
 from mail.models import ClubMailSettings, EmailMessage, EmailPreference, NoticeSent
 from mail.service import queue_email
-from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession
 
 
 def send_reminders() -> None:
@@ -104,7 +104,7 @@ def _send_session_reminder(club, session: PlaySession, days: int) -> None:
 def _member_said_no(membership: Membership, session: PlaySession) -> bool:
     """Return True if this member has answered "no" to the session."""
     return PlayerRSVP.objects.filter(
-        session=session, member=membership, answer=SessionRSVP.Answer.NO
+        session=session, member=membership, answer=PlayerRSVP.Answer.NO
     ).exists()
 
 
