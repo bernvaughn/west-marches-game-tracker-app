@@ -8,7 +8,16 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from django.core.cache import cache
+from django.test import override_settings
 from django.urls import reverse
+
+RATELIMIT_CACHE_SETTINGS = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "healthz-rate-limit-tests",
+    }
+}
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -55,6 +64,50 @@ class TestHealthz:
             response = getattr(client, method)("/healthz")
             assert response.status_code == 405, method
             assert response["Cache-Control"] == "no-store"
+
+    @override_settings(
+        CACHES=RATELIMIT_CACHE_SETTINGS,
+        RATELIMIT_HEALTHZ_ATTEMPTS=3,
+        RATELIMIT_HEALTHZ_WINDOW=60,
+    )
+    def test_healthz_rate_limit_allows_under_limit(self, client):
+        """Requests under the limit succeed with 200."""
+        cache.clear()
+        for _ in range(3):
+            response = client.get("/healthz", REMOTE_ADDR="10.0.0.1")
+            assert response.status_code == 200, response.status_code
+
+    @override_settings(
+        CACHES=RATELIMIT_CACHE_SETTINGS,
+        RATELIMIT_HEALTHZ_ATTEMPTS=3,
+        RATELIMIT_HEALTHZ_WINDOW=60,
+    )
+    def test_healthz_rate_limit_returns_429_over_limit(self, client):
+        """Requests over the limit return 429 with a Retry-After header."""
+        cache.clear()
+        for _ in range(3):
+            client.get("/healthz", REMOTE_ADDR="10.0.0.1")
+        response = client.get("/healthz", REMOTE_ADDR="10.0.0.1")
+
+        assert response.status_code == 429
+        assert response.get("Retry-After")
+
+    @override_settings(
+        CACHES=RATELIMIT_CACHE_SETTINGS,
+        RATELIMIT_HEALTHZ_ATTEMPTS=3,
+        RATELIMIT_HEALTHZ_WINDOW=60,
+    )
+    def test_healthz_rate_limit_is_per_client_ip(self, client):
+        """One IP hitting the limit does not limit another IP."""
+        cache.clear()
+        for _ in range(3):
+            client.get("/healthz", REMOTE_ADDR="10.0.0.1")
+
+        limited = client.get("/healthz", REMOTE_ADDR="10.0.0.1")
+        assert limited.status_code == 429
+
+        other = client.get("/healthz", REMOTE_ADDR="10.0.0.2")
+        assert other.status_code == 200
 
     def test_database_error_returns_503_without_secret_text(self, client):
         """A failing database check returns 503 'database unavailable' only."""

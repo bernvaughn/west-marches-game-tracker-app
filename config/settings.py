@@ -227,6 +227,11 @@ RATELIMIT_OAUTH_TOKEN_ATTEMPTS = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_ATTEM
 RATELIMIT_OAUTH_TOKEN_WINDOW = int(os.environ.get("RATELIMIT_OAUTH_TOKEN_WINDOW", "60"))  # seconds
 RATELIMIT_MCP_ATTEMPTS = int(os.environ.get("RATELIMIT_MCP_ATTEMPTS", "60"))
 RATELIMIT_MCP_WINDOW = int(os.environ.get("RATELIMIT_MCP_WINDOW", "60"))  # seconds
+# Per-client-IP rate limit for the public, unauthenticated healthz endpoint.
+# When exceeded, the view decorator returns 429 before running SELECT 1
+# (fail-closed: no database query is issued).
+RATELIMIT_HEALTHZ_ATTEMPTS = int(os.environ.get("RATELIMIT_HEALTHZ_ATTEMPTS", "30"))
+RATELIMIT_HEALTHZ_WINDOW = int(os.environ.get("RATELIMIT_HEALTHZ_WINDOW", "60"))  # seconds
 # Trust X-Forwarded-For for rate-limit client IPs.
 # X-Forwarded-For is sent by the client and can be spoofed, so keying rate
 # limits on it lets a sender evade per-IP limits. Only enable this behind a
