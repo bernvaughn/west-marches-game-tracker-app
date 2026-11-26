@@ -6,37 +6,6 @@ from accounts.scoping import ClubScopedManager
 from ledger.models import AppendOnlyManager, AppendOnlyModel
 
 
-class SessionSeries(models.Model):
-    """A recurring series of play sessions (weekly or every two weeks)."""
-
-    club_path = "club"
-
-    class Rule(models.TextChoices):
-        WEEKLY = "weekly", "Weekly"
-        EVERY_TWO_WEEKS = "every_two_weeks", "Every two weeks"
-
-    club = models.ForeignKey(
-        "accounts.Club", on_delete=models.CASCADE, related_name="session_series"
-    )
-    created_by = models.ForeignKey(
-        "accounts.Membership",
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="created_session_series",
-    )
-    rule = models.CharField(max_length=20, choices=Rule.choices)
-    created = models.DateTimeField(auto_now_add=True)
-
-    objects = ClubScopedManager()
-
-    class Meta:
-        ordering = ["-created"]
-
-    def __str__(self):
-        return f"{self.get_rule_display()} series for {self.club}"
-
-
 class PlaySession(models.Model):
     """A single scheduled play session."""
 
@@ -60,13 +29,6 @@ class PlaySession(models.Model):
     recap = models.TextField(blank=True)
     gm_notes = models.TextField(blank=True)
     cancelled = models.BooleanField(default=False)
-    series = models.ForeignKey(
-        SessionSeries,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="sessions",
-    )
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

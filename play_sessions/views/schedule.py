@@ -1,7 +1,6 @@
 """Views for creating, editing, and cancelling play sessions."""
 
 from django.contrib import messages
-from django.http import Http404
 from django.shortcuts import redirect, render
 from django.urls import NoReverseMatch, reverse
 from django.views.decorators.http import require_POST
@@ -11,33 +10,27 @@ from accounts.scoping import club_get_object_or_404
 
 from ..forms import SessionForm
 from ..models import PlaySession
-from ..services import (
-    cancel_rest,
-    cancel_session,
-    create_sessions,
-    rest_of_series,
-    update_session,
-)
+from ..services import cancel_session, create_sessions, update_session
 
 
 @admin_or_gm_required
 def session_create(request, club_slug):
-    """Create one or more play sessions."""
+    """Create a single play session."""
     club = request.club
     membership = request.membership
 
     if request.method == "POST":
-        form = SessionForm(club, membership, with_repeat=True, data=request.POST)
+        form = SessionForm(club, membership, data=request.POST)
         if form.is_valid():
             sessions = create_sessions(club, membership, form.cleaned_data)
-            messages.success(request, f"Scheduled {len(sessions)} sessions.")
+            messages.success(request, f"Scheduled {len(sessions)} session.")
             return redirect(
                 "play_sessions:session_detail",
                 club_slug=club.slug,
                 pk=sessions[0].pk,
             )
     else:
-        form = SessionForm(club, membership, with_repeat=True)
+        form = SessionForm(club, membership)
 
     try:
         back_url = reverse("play_sessions:calendar")
@@ -65,13 +58,7 @@ def session_edit(request, club_slug, pk):
     session = club_get_object_or_404(request, PlaySession, pk=pk)
 
     if request.method == "POST":
-        form = SessionForm(
-            club,
-            membership,
-            instance=session,
-            with_repeat=False,
-            data=request.POST,
-        )
+        form = SessionForm(club, membership, instance=session, data=request.POST)
         if form.is_valid():
             update_session(session, form.cleaned_data)
             messages.success(request, "Session updated.")
@@ -81,7 +68,7 @@ def session_edit(request, club_slug, pk):
                 pk=session.pk,
             )
     else:
-        form = SessionForm(club, membership, instance=session, with_repeat=False)
+        form = SessionForm(club, membership, instance=session)
 
     return render(
         request,
@@ -108,36 +95,4 @@ def session_cancel(request, club_slug, pk):
         "play_sessions:session_detail",
         club_slug=club.slug,
         pk=session.pk,
-    )
-
-
-@admin_or_gm_required
-def series_cancel(request, club_slug, pk):
-    """Cancel this and all later sessions in a series."""
-    club = request.club
-    session = club_get_object_or_404(request, PlaySession, pk=pk)
-
-    if not session.series_id:
-        raise Http404("This session is not part of a series.")
-
-    if request.method == "POST":
-        count = cancel_rest(session)
-        messages.success(request, f"Cancelled {count} session(s).")
-        return redirect(
-            "play_sessions:session_detail",
-            club_slug=club.slug,
-            pk=session.pk,
-        )
-
-    affected = list(rest_of_series(session))
-
-    return render(
-        request,
-        "play_sessions/series_cancel.html",
-        {
-            "session": session,
-            "club": club,
-            "affected_sessions": affected,
-            "count": len(affected),
-        },
     )
