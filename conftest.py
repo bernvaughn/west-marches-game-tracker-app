@@ -1,4 +1,6 @@
 import json
+import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -11,6 +13,13 @@ from items.models import Item
 from items.tests.factories import make_container as _make_container
 from items.tests.factories import make_diplomats_pack
 from player_characters.models import Character
+
+# Configure shared browser environment for all browser tests
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from browser_env import use_shared_browser  # noqa: E402
+
+use_shared_browser()
 
 
 @pytest.fixture(autouse=True)

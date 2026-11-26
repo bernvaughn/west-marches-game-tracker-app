@@ -26,7 +26,13 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Configure shared browser environment before importing Playwright
 sys.path.insert(0, str(ROOT))
+from scripts.browser_env import check_browser, use_shared_browser  # noqa: E402
+
+use_shared_browser()
+
 from scripts.screenshots import (  # noqa: E402
     AUDIT_WIDTHS,
     HEIGHTS,
@@ -186,6 +192,7 @@ def sweep(pages_glob="*", width=1280, widths=None) -> list[str]:
             from playwright.sync_api import sync_playwright
 
             with sync_playwright() as pw:
+                check_browser(pw)
                 browser = pw.chromium.launch()
                 for w in widths or (width,):
                     contexts = {}
