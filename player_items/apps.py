@@ -76,4 +76,5 @@ class PlayerItemsConfig(AppConfig):
             "player_items:review",
             is_admin,
             45,
+            icon="eye",
         )

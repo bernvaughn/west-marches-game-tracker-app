@@ -96,7 +96,7 @@ def test_player_menu_groups(login, club, player):
     club_group = section(body, "club")
     for name in ("accounts:index", "items:index", "accounts:message_new"):
         assert reverse(name, args=[club.slug]) in club_group
-    assert ">Message the admins<" in club_group
+    assert "Message the admins" in club_group
 
 
 def test_admin_does_not_get_people_or_items_in_club_group(login, club, club_admin):
@@ -134,10 +134,13 @@ def test_club_home_follows_menu_groups(login, club, game_master):
     # Only GMs/admins see the menu groups on club_home
     body = home(login, game_master, club)
     main = body[body.index("<main") :]
-    for _, heading in navigation.MENU_GROUPS:
-        if heading != "Account":
-            assert re.search(rf">\s*{heading}\s*<", main), heading
+    # A GM sees Character, Town, Map, Club, Game Master (not Club Admin)
+    for _, heading, _ in navigation.MENU_GROUPS:
+        if heading in ("Account", "Club Admin"):
+            continue
+        assert re.search(rf">\s*{heading}\s*<", main), heading
     assert "Account" not in re.sub(r"<[^>]+>", " ", main)
+    assert "Club Admin" not in re.sub(r"<[^>]+>", " ", main)
 
 
 def test_registry_icon_adds_shortcut(registry_empty, rf, club, player):
@@ -249,7 +252,9 @@ def test_no_club_user_gets_panel_and_logout(login, player):
     body = login(player).get(reverse("home")).content.decode()
     assert 'aria-label="Open menu"' in bar(body)
     assert "Log out" not in bar(body)
-    assert reverse("logout") in panel(body) and "wm-menu-group-account" in panel(body)
+    # User without club gets account section in panel
+    assert "wm-menu-group-account" in panel(body)
+    assert reverse("logout") in panel(body)
 
 
 def test_site_admin_without_club_sees_site_links(login, site_admin):

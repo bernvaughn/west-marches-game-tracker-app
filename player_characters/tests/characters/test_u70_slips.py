@@ -104,9 +104,9 @@ def test_menu_entry(login, club, player, game_master, character):
     link = f'href="{picker(club)}"'
     for u in (player, game_master):
         body = login(u).get(detail).content.decode()
-        assert re.search(
-            r'<a class="wm-menu-link[^"]*" ' + re.escape(link) + r"[^>]*>Character slips</a>", body
-        )
+        # Link now includes an icon, so check for href and label
+        assert link in body
+        assert "Character slips" in body
 
 
 def test_no_selection(login, club, player, character):

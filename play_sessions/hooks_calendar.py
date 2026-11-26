@@ -23,6 +23,7 @@ def register():
         is_member,
         55,
         icon="calendar-date",
+        shortcut_order=55,
     )
 
     class NextSessionDashboardProvider(BaseDashboardProvider):

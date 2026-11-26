@@ -26,7 +26,7 @@ class MapConfig(AppConfig):
             shortcut_order=50,
             shortcut_label="Map",
         )
-        reg("map", "XP table", "map:xp", None, 120)
-        reg("map", "Map requests", "map:requests", not_gm_or_admin, 70)
-        reg("gm", "Map requests", "map:requests", is_gm_or_admin, 10)
-        reg("gm", "New map", "map:map_create", is_gm_or_admin, 20)
+        reg("map", "XP table", "map:xp", None, 120, icon="table")
+        reg("map", "Map requests", "map:requests", not_gm_or_admin, 70, icon="pin-map")
+        reg("gm", "Map requests", "map:requests", is_gm_or_admin, 10, icon="pin-map")
+        reg("gm", "New map", "map:map_create", is_gm_or_admin, 20, icon="map-plus")

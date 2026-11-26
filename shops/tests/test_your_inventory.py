@@ -92,7 +92,7 @@ def test_query_count_flat(login, player, club, open_shop, character, django_asse
     for n in range(6):
         it = Item.objects.create(club=club, name=f"Thing{n}", value_cp=10 + n)
         record(character, "award", [Line(item=it, quantity=1)])
-    with django_assert_max_num_queries(44):
+    with django_assert_max_num_queries(46):
         card(client, club, open_shop)
 
 

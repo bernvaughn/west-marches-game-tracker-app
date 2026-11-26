@@ -85,10 +85,10 @@ def nav_entries(context):
 
 @register.filter
 def menu_sections(nav):
-    """Non-empty Menu groups as (key, heading, links), in display order (U60)."""
+    """Non-empty Menu groups as (key, heading, icon, links), in display order (U60)."""
     from .. import navigation
 
-    return [(k, h, nav[k]) for k, h in navigation.MENU_GROUPS if nav.get(k)]
+    return [(k, h, i, nav[k]) for k, h, i in navigation.MENU_GROUPS if nav.get(k)]
 
 
 @register.filter

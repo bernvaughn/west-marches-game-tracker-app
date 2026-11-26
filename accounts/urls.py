@@ -2,6 +2,7 @@ from django.urls import path
 
 from .views import (
     club_settings,
+    core,
     dashboard,
     dashboard_consumables,
     dashboard_downtime,
@@ -101,4 +102,5 @@ urlpatterns = [
         name="message_detail",
     ),
     path("settings/", club_settings.club_settings, name="club_settings"),
+    path("donate/", core.donate, name="donate"),
 ]

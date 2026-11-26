@@ -14,6 +14,7 @@ def register():
         "play_sessions:settings",
         is_admin_check,
         60,
+        icon="gear-wide",
     )
 
     # Connect attendance_saved signal receiver
