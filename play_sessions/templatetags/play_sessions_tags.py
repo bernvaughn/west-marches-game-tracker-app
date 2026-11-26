@@ -4,6 +4,7 @@ from django import template
 from django.utils import timezone
 
 from ..calendar import next_session
+from ..models import PlayerRSVP
 
 register = template.Library()
 
@@ -19,9 +20,16 @@ def next_session_block(context):
     club = getattr(request, "club", None)
     if club is None:
         return {"provider_context": {"session": None}}
-    return {"provider_context": _next_session_ctx(club)}
+    membership = getattr(request, "membership", None)
+    return {"provider_context": _next_session_ctx(club, membership)}
 
 
-def _next_session_ctx(club):
+def _next_session_ctx(club, membership=None):
     session = next_session(club, timezone.now())
+    if session is not None and membership is not None:
+        my_rsvp = PlayerRSVP.objects.filter(
+            session_id=session["session_id"], member=membership
+        ).first()
+        if my_rsvp:
+            session["my_answer"] = my_rsvp.answer
     return {"session": session, "club": club}

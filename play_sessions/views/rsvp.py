@@ -1,20 +1,19 @@
-"""Views for RSVP (P4)."""
+"""Views for RSVP (P13: per player)."""
 
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseBadRequest
 from django.shortcuts import redirect
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 
 from accounts.htmx import is_htmx
 from accounts.permissions import club_member_required
 from accounts.scoping import club_get_object_or_404
-from player_characters.models import Character
 
-from .. import core
-from ..models import PlaySession
-from ..rsvp_forms import RsvpForm, default_character, rsvp_refusal
+from ..models import PlayerRSVP, PlaySession
+from ..rsvp_forms import RsvpForm, rsvp_refusal
 
 
 @club_member_required
@@ -24,7 +23,7 @@ def rsvp_set(request, club_slug, pk):
 
     POST parameters:
         answer: "yes", "maybe", or "no"
-        character: (optional) character pk; defaults to selected character
+        member: (optional) membership pk; managers can answer for any member
         next: (optional) redirect URL after success
 
     Returns:
@@ -33,31 +32,30 @@ def rsvp_set(request, club_slug, pk):
     """
     session = club_get_object_or_404(request, PlaySession, pk=pk)
 
-    # Determine character from POST or default
-    character = None
-    char_pk = request.POST.get("character")
-    if char_pk:
-        character = club_get_object_or_404(request, Character, pk=char_pk)
-    else:
-        character = default_character(request)
-
-    if character is None:
-        return HttpResponseBadRequest("No active character available for RSVP.")
+    membership = getattr(request, "membership", None)
+    # Superusers may not have a membership in the club but can still manage RSVPs
+    if membership is None and not request.user.is_superuser:
+        return HttpResponseBadRequest("No membership found for this club.")
 
     # Validate form
-    form = RsvpForm(request.POST)
+    form = RsvpForm(request.POST, club=session.club)
     if not form.is_valid():
         return HttpResponseBadRequest("Invalid RSVP answer.")
 
     answer = form.cleaned_data["answer"]
+    target_member = form.cleaned_data.get("member") or membership
 
     # Check refusal rules
-    refusal = rsvp_refusal(request, session, character)
+    refusal = rsvp_refusal(request, session, target_member)
     if refusal:
         raise PermissionDenied(refusal)
 
     # Save RSVP
-    core.set_rsvp(session, character, answer, request.user)
+    PlayerRSVP.objects.update_or_create(
+        session=session,
+        member=target_member,
+        defaults={"answer": answer, "answered_by": request.user, "answered_at": timezone.now()},
+    )
 
     # Success handling
     next_url = form.cleaned_data.get("next")
@@ -68,14 +66,13 @@ def rsvp_set(request, club_slug, pk):
 
     if is_htmx(request) and not next_url:
         # Re-render the RSVP section fragment
+        from django.http import HttpResponse
+        from django.template.loader import render_to_string
+
         from ..hooks_rsvp import _rsvp_section_context
 
         context = _rsvp_section_context(request, session)
-        from django.template.loader import render_to_string
-
         html = render_to_string("play_sessions/_rsvp_section.html", context, request=request)
-        from django.http import HttpResponse
-
         return HttpResponse(html)
 
     messages.success(request, "Your RSVP has been saved.")

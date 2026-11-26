@@ -34,7 +34,7 @@ def register():
         template = "play_sessions/_next_session.html"
 
         def get_context(self, request, club, character, membership):
-            return _next_session_ctx(club)
+            return _next_session_ctx(club, membership)
 
         def should_show(self, request, club, character, membership):
             # Always show so the HTMX partial endpoint never 404s.
@@ -43,7 +43,15 @@ def register():
     register_provider(NextSessionDashboardProvider())
 
 
-def _next_session_ctx(club):
+def _next_session_ctx(club, membership=None):
     """Wrap ``next_session`` so the empty state is ``{"session": None}``."""
     session = next_session(club, timezone.now())
+    if session is not None and membership is not None:
+        from .models import PlayerRSVP
+
+        my_rsvp = PlayerRSVP.objects.filter(
+            session_id=session["session_id"], member=membership
+        ).first()
+        if my_rsvp:
+            session["my_answer"] = my_rsvp.answer
     return {"session": session, "club": club}

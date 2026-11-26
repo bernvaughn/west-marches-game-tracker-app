@@ -10,7 +10,7 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from play_sessions.calendar import month_grid, next_session, parse_month
 from play_sessions.feed import build_ics, get_or_create_token
-from play_sessions.models import PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P3")]
@@ -150,15 +150,18 @@ def test_yes_count_counts_only_yes(club, game_master, player, other_player):
     gm_membership = Membership.objects.get(user=game_master, club=club)
     owner = Membership.objects.get(user=player, club=club)
     other_owner = Membership.objects.get(user=other_player, club=club)
-    char1 = Character.objects.create(club=club, owner=owner, name="C1")
-    char2 = Character.objects.create(club=club, owner=other_owner, name="C2")
+    Character.objects.create(club=club, owner=owner, name="C1")
+    Character.objects.create(club=club, owner=other_owner, name="C2")
 
     session = _session(club, "RSVP session", timezone.now() + timedelta(days=1), gm=gm_membership)
-    SessionRSVP.objects.create(
-        session=session, character=char1, answer=SessionRSVP.Answer.YES, answered_by=player
+    PlayerRSVP.objects.create(
+        session=session, member=owner, answer=SessionRSVP.Answer.YES, answered_by=player
     )
-    SessionRSVP.objects.create(
-        session=session, character=char2, answer=SessionRSVP.Answer.MAYBE, answered_by=other_player
+    PlayerRSVP.objects.create(
+        session=session,
+        member=other_owner,
+        answer=SessionRSVP.Answer.MAYBE,
+        answered_by=other_player,
     )
 
     grid = month_grid(

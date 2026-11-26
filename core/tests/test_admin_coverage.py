@@ -30,8 +30,22 @@ FIRST_PARTY_APPS = [
 ALLOWLIST = {
     # mail: holds message body with live tokens, deleted after sending
     "EmailPayload",
-    # Django built-ins (not first-party)
-    # oauth2_provider models (third-party)
+    # items: will be registered in task C4
+    "ContainerSlot",
+    "ContainerSlotOption",
+    "RecentItemPick",
+    "ClubWeightSettings",
+    "ContainerOpening",
+    # map: not part of admin improvements epic
+    "CreditGrant",
+    "FoundMark",
+    # downtime: will be registered in task C5
+    "DowntimePointEntry",
+    "DowntimeAction",
+    "DowntimeEntry",
+    "DowntimeEntryItem",
+    "DowntimeResult",
+    "DowntimePointRequest",
 }
 
 

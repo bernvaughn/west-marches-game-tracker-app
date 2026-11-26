@@ -9,32 +9,60 @@
   {% endif %}
 
   {% if locked %}
+  {% if not can_manage %}
   <div class="alert alert-info mb-3" role="alert">
     {% include "components/icon.html" with name="clock" label="Locked" %}
-    Answers are closed. {% if can_manage %}A game master can still change them.{% else %}A game master can still change them.{% endif %}
+    Answers are closed. A game master can still change them.
   </div>
+  {% endif %}
+  {% endif %}
 
   <h5>Current answers</h5>
+
+  {% if can_manage %}
+  {# Manager view: all members grouped by answer #}
   <ul class="list-group mb-3">
-    {% for character in characters %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      {{ character.name }}
-      <span>
-        {% with answer=answers|get_item:character.pk %}
-          {% if answer %}
-            {% include "components/badge.html" with text=answer|title status="success" %}
-          {% else %}
-            <span class="text-muted">Not answered</span>
+    {% for answer_label, answer_value in answer_groups %}
+    {% with members=all_answers|get_item:answer_value %}
+    {% if members %}
+    <li class="list-group-item">
+      <strong>{% if answer_value %}{{ answer_label }}{% else %}Not answered{% endif %}</strong>
+      <ul class="list-unstyled mb-0 mt-1">
+        {% for member in members %}
+        <li class="d-flex align-items-center gap-2">
+          {{ member.user.display_name|default:member.user.email }}
+          {% with active_chars=member.characters.active %}
+          {% if active_chars %}
+          <small class="text-muted">({% for c in active_chars %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %})</small>
           {% endif %}
-        {% endwith %}
-      </span>
+          {% endwith %}
+        </li>
+        {% endfor %}
+      </ul>
     </li>
-    {% empty %}
-    <li class="list-group-item text-muted">No active characters to RSVP.</li>
+    {% endif %}
+    {% endwith %}
     {% endfor %}
   </ul>
-
   {% else %}
+  {# Player view: just their own answer #}
+  <ul class="list-group mb-3">
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      You
+      <span>
+        {% if my_answer %}
+          {% include "components/badge.html" with text=my_answer|title status="success" %}
+        {% else %}
+          <span class="text-muted">Not answered</span>
+        {% endif %}
+      </span>
+    </li>
+  </ul>
+  {% endif %}
+
+  {# Answer form #}
+  {% if can_manage %}
+  {# Manager form: always shown #}
   <form
     method="post"
     action="{% url 'play_sessions:rsvp_set' club.slug session.pk %}"
@@ -47,33 +75,23 @@
     <input type="hidden" name="next" value="{{ request.path }}">
 
     <div class="mb-3">
-      <label for="id_character" class="form-label">Character</label>
-      {% if characters|length > 1 %}
-      <select name="character" id="id_character" class="form-select" {% if locked %}disabled{% endif %}>
-        {% for character in characters %}
-        <option value="{{ character.pk }}" {% if character.pk == default_character_id %}selected{% endif %}>
-          {{ character.name }}
-        </option>
+      <label for="id_member" class="form-label">Member</label>
+      <select name="member" id="id_member" class="form-select">
+        <option value="">-- Select member --</option>
+        {% for member in members %}
+        <option value="{{ member.pk }}">{{ member.user.display_name|default:member.user.email }}</option>
         {% endfor %}
       </select>
-      {% else %}
-      <div class="form-control-plaintext">
-        {% for character in characters %}
-          {{ character.name }}
-          <input type="hidden" name="character" value="{{ character.pk }}">
-        {% endfor %}
-      </div>
-      {% endif %}
     </div>
 
     <div class="d-flex flex-wrap gap-2">
-      <button type="submit" name="answer" value="yes" class="btn btn-success" {% if locked %}disabled{% endif %}>
+      <button type="submit" name="answer" value="yes" class="btn btn-success">
         {% include "components/icon.html" with name="check-lg" label="Yes" %} Yes
       </button>
-      <button type="submit" name="answer" value="maybe" class="btn btn-warning" {% if locked %}disabled{% endif %}>
+      <button type="submit" name="answer" value="maybe" class="btn btn-warning">
         {% include "components/icon.html" with name="question-lg" label="Maybe" %} Maybe
       </button>
-      <button type="submit" name="answer" value="no" class="btn btn-danger" {% if locked %}disabled{% endif %}>
+      <button type="submit" name="answer" value="no" class="btn btn-danger">
         {% include "components/icon.html" with name="x-lg" label="No" %} No
       </button>
     </div>
@@ -82,26 +100,34 @@
       <div class="mt-2"><button type="submit" class="btn btn-secondary">Save</button></div>
     </noscript>
   </form>
+  {% elif not locked and not cancelled %}
+  {# Player form: only if not locked and not cancelled #}
+  <form
+    method="post"
+    action="{% url 'play_sessions:rsvp_set' club.slug session.pk %}"
+    hx-post="{% url 'play_sessions:rsvp_set' club.slug session.pk %}"
+    hx-target="#rsvp-section"
+    hx-swap="outerHTML"
+    class="mb-3"
+  >
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.path }}">
 
-  <h5>Current answers</h5>
-  <ul class="list-group">
-    {% for character in characters %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-      {{ character.name }}
-      <span>
-        {% with answer=answers|get_item:character.pk %}
-          {% if answer %}
-            {% include "components/badge.html" with text=answer|title status="success" %}
-          {% else %}
-            <span class="text-muted">Not answered</span>
-          {% endif %}
-        {% endwith %}
-      </span>
-    </li>
-    {% empty %}
-    <li class="list-group-item text-muted">No active characters to RSVP.</li>
-    {% endfor %}
-  </ul>
+    <div class="d-flex flex-wrap gap-2">
+      <button type="submit" name="answer" value="yes" class="btn btn-success">
+        {% include "components/icon.html" with name="check-lg" label="Yes" %} Yes
+      </button>
+      <button type="submit" name="answer" value="maybe" class="btn btn-warning">
+        {% include "components/icon.html" with name="question-lg" label="Maybe" %} Maybe
+      </button>
+      <button type="submit" name="answer" value="no" class="btn btn-danger">
+        {% include "components/icon.html" with name="x-lg" label="No" %} No
+      </button>
+    </div>
 
+    <noscript>
+      <div class="mt-2"><button type="submit" class="btn btn-secondary">Save</button></div>
+    </noscript>
+  </form>
   {% endif %}
 </div>
