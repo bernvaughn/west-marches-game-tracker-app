@@ -83,7 +83,12 @@
   --wm-stall-deep: #0b6b66;
   --wm-stall-soft: #dcf0ee;
 
-  /* Radii and shadows */
+  /* Role colours for menu links (U168). Player links have no role-colour token. */
+  --wm-role-gm: #1d628c;
+  --wm-role-admin: #8c2d2d;
+  --wm-role-mark: currentColor;
+
+/* Radii and shadows */
   --wm-radius-sm: 4px;
   --wm-radius-md: 8px;
   --wm-radius-lg: 12px;

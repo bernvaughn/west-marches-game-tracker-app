@@ -1,0 +1,46 @@
+/* Role colours, text marks, and key for the side menu (U168).
+   Colours live in tokens.css; this file only binds them to menu links and the key.
+   Player links are uncoloured with no mark. */
+
+.wm-nav-link--gm { color: var(--wm-role-gm); }
+.wm-nav-link--admin { color: var(--wm-role-admin); }
+.wm-nav-link--player { color: var(--wm-text); }
+
+.wm-nav-mark {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--wm-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.45rem;
+  margin-left: var(--wm-space-1);
+  border: 1px solid var(--wm-role-mark);   /* currentColor: inherits the link's role colour */
+  border-radius: var(--wm-radius-sm);
+  color: var(--wm-role-mark);               /* currentColor: inherits the link's role colour */
+  white-space: nowrap;
+}
+.wm-nav-mark--gm { color: var(--wm-role-gm); border-color: var(--wm-role-gm); }
+.wm-nav-mark--admin { color: var(--wm-role-admin); border-color: var(--wm-role-admin); }
+
+.wm-nav-key {
+  border-top: 1px solid var(--wm-border);
+  margin-top: var(--wm-space-4);
+  padding-top: var(--wm-space-3);
+}
+.wm-nav-key-row {
+  display: flex;
+  align-items: center;
+  gap: var(--wm-space-1);
+  font-size: var(--wm-text-sm);
+  margin: 0 0 var(--wm-space-1);
+}
+.wm-nav-key-swatch {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border: 1px solid var(--wm-border);
+  border-radius: var(--wm-radius-sm);
+}
+.wm-nav-key-swatch--gm { background: var(--wm-role-gm); }
+.wm-nav-key-swatch--admin { background: var(--wm-role-admin); }
