@@ -1491,6 +1491,13 @@ Rules for every story in this round:
 - The change runs once, in one step, and is safe to run twice. A short report says how many answers were merged and how many players had mixed answers.
 - Attendance records are not touched.
 
+**P17 Show time zones as EST / EDT.** As a player, I want session times to end with a short zone name such as "7:00 PM EDT", and not "America/New_York", so I can read them at a glance. *(play_sessions, accounts, mail)*
+- Every place that shows a session time shows the zone's short name for that date: "EST" in winter and "EDT" in summer for the same club. This covers the session page, the calendar and upcoming list, the dashboard and "next session" cards, the attendance and report pages, and the reminder, cancel, and change emails (E5).
+- The club's time zone setting (P11) shows friendly names in its list, such as "Eastern Time (New York)", "Central Time (Chicago)" and "Pacific Time (Los Angeles)", with the current short name beside each, for example "Eastern Time (New York), now EST". The stored value stays the standard zone name.
+- A zone with no short name in common use, such as some zones outside North America and Europe, shows its offset instead, for example "UTC+5:30".
+- The calendar feed (P3) is unchanged. Phones show times in the viewer's own zone.
+- This changes how times are shown only. No stored time changes.
+
 **E12 Reminder emails for players, not characters.** As a player, I want the session reminder, the one-click answer, and the game master digest to talk about me and not my characters, so they match the new RSVP. *(play_sessions, mail)*
 - The reminder (E5) goes to every member who has not said "no" to the session, and to members who have not answered. It no longer depends on having a character.
 - The one-click answer (E6) has three buttons, "Yes / Maybe / No", one set per person. A link answers that one session for that one person. Everything else about it stays: a confirm page before anything changes, expiry at the session start, and no answer by a plain page load.
