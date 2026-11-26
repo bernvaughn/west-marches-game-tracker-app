@@ -1,141 +1,70 @@
-# Implementation Plan: S2 - Menu Icons and Categories (U167)
+# Implementation Plan: T3 - List pages for items extra models
 
 ## Overview
-Add icons to every hamburger-menu link and category heading, and regroup links by the approved Round 24 categories. The entry set, URLs, order within categories, and permission checks remain unchanged.
+Enhance Django admin list pages for ContainerSlot, ContainerSlotOption, and ClubWeightSettings with proper date_hierarchy, ordering, and verify all list_display, list_filter, search_fields, autocomplete_fields/raw_id_fields work correctly.
 
 ## Files to Modify
+1. `items/admin.py` - Add date_hierarchy and update ordering for three admin classes
+2. `items/tests/test_admin.py` - Add comprehensive tests for list page features
 
-### 1. accounts/navigation.py
-- **MENU_GROUPS**: Replace with new 7 categories, each with (key, heading, icon):
-  - `("character", "Character", "person")`
-  - `("town", "Town", "shop")`
-  - `("map", "Map", "map")`
-  - `("club", "Club", "people")`
-  - `("account", "Account", "gear")`
-  - `("gm", "Game Master", "person-gear")`
-  - `("admin", "Club Admin", "gear-fill")`
-- Keep `GROUPS` unchanged for backward compatibility (includes "gm", "admin")
-- Update `menu_sections` filter (in accounts_tags.py) to return category icon
+## Changes to items/admin.py
 
-### 2. accounts/templatetags/accounts_tags.py
-- Update `menu_sections` filter to return `(key, heading, icon, links)` tuples
+### ContainerSlotAdmin
+- Add: `date_hierarchy = "container__club__created"` (Item has no created field, use club's)
+- Change: `ordering = ["container", "position"]` (was `["position"]`)
 
-### 3. App registrations (apps.py files) - Add icons and move entries to new categories
+### ContainerSlotOptionAdmin
+- Add: `date_hierarchy = "slot__container__club__created"` (ContainerSlot/Item have no created field)
+- Change: `ordering = ["slot", "id"]` (was default Meta ordering)
 
-| App | Changes |
-|-----|---------|
-| **accounts/apps.py** | Add icons to club/admin entries; register footer links (Your clubs, Change password, Donate) in "account" group with icons |
-| **player_characters/apps.py** | Add icons to all character/gm entries; "The Fallen" already has flower1 |
-| **shops/apps.py** | Add icons to admin entries (Manage shops, Rotations) |
-| **quests/apps.py** | Add icon to Manage quests |
-| **map/apps.py** | Add icons to gm entries (Map requests, New map); XP table needs icon |
-| **downtime/apps.py** | Add icons to gm/admin entries |
-| **ledger/apps.py** | Add icons to Ledger (character) and Club ledger (gm) |
-| **agent_access/apps.py** | Add icons to all gm entries |
-| **starting_equipment/apps.py** | Add icon to Starting Equipment Templates |
-| **character_options/apps.py** | Add icon to Character options |
-| **items/apps.py** | Add icons to Items (club) and Item catalogue (admin) |
-| **player_items/apps.py** | Add icon to Review player items |
-| **play_sessions/hooks_calendar.py** | Sessions already has calendar-date icon |
-| **play_sessions/hooks_schedule.py** | Add icon to New session (gm) |
-| **play_sessions/hooks_settings.py** | Add icon to Session settings (admin) |
-| **play_sessions/hooks_report.py** | Add icon to Attendance report (admin) |
+### ClubWeightSettingsAdmin
+- Add: `date_hierarchy = "club__created"`
+- Add: `ordering = ["club__name"]`
 
-### 4. templates/partials/side_menu.html
-- Render category heading with icon from menu_sections
-- Render each link with its icon (from NavEntry.icon)
-- Keep Account section but use category icon from menu_sections
-- Remove special-case gm/admin sections (now handled via menu_sections)
+## New Tests to Add (items/tests/test_admin.py)
 
-### 5. templates/club_home.html
-- Use category icon from menu_sections for section headings
-- Pass icon to _area_card.html
+For each model, add tests verifying:
+1. **list_display fields appear in changelist** - GET changelist, assert field values in response content
+2. **list_filter shows club via related paths** - Check filter sidebar presence in changelist
+3. **search works on specified fields** - POST search query, assert filtered results
+4. **autocomplete_fields work for FKs** - Verify autocomplete URL patterns resolve
+5. **raw_id_fields for ClubWeightSettings.club** - Verify raw_id widget renders
 
-### 6. accounts/templates/accounts/_area_card.html
-- Accept and render link icon
+### Specific test functions:
+- `test_containerslot_admin_list_display_content`
+- `test_containerslot_admin_list_filter_club`
+- `test_containerslot_admin_search`
+- `test_containerslot_admin_autocomplete_container`
+- `test_containerslot_admin_date_hierarchy`
+- `test_containerslot_admin_ordering`
 
-### 7. Tests (accounts/tests/test_navigation_menus.py)
-- Add test: every registered entry is in exactly one MENU_GROUPS category
-- Add test: each role sees exactly the same set of links as before regrouping
-- Add test: every link and heading has an icon
-- Add test: link order inside categories is stable (order, then label)
+- `test_containerslotoption_admin_list_display_content`
+- `test_containerslotoption_admin_list_filter_club`
+- `test_containerslotoption_admin_search`
+- `test_containerslotoption_admin_autocomplete_slot`
+- `test_containerslotoption_admin_autocomplete_item`
+- `test_containerslotoption_admin_date_hierarchy`
+- `test_containerslotoption_admin_ordering`
 
-## Icon Assignments (Bootstrap Icons 1.11.3)
-
-### Character category (person)
-- Dashboard: `speedometer2` (existing)
-- My character: `person` (existing)
-- Character directory: `people`
-- New character: `person-plus`
-- Character slips: `file-earmark-text`
-- Archived characters: `archive`
-- Ledger: `journal-text`
-
-### Town category (shop)
-- Shops: `shop` (existing)
-- Quests: `journal-text` (existing)
-- Downtime: `hourglass-split` (existing)
-
-### Map category (map)
-- All maps: `map` (existing)
-- XP table: `table`
-- Map requests: `pin-map`
-
-### Club category (people)
-- People: `people` (existing)
-- Message the admins: `chat-left-text`
-- Request stock: `box-arrow-up`
-- Sessions: `calendar-date` (existing)
-- The Fallen: `flower1` (existing)
-- Items: `box-seam`
-
-### Account category (gear)
-- Your clubs: `houses`
-- Change password: `key`
-- Donate: `heart`
-
-### Game Master category (person-gear)
-- All characters: `people`
-- Award Loot to Party: `cash-stack`
-- Map requests: `pin-map`
-- New map: `map-plus` (or `plus-circle`)
-- Downtime points: `coin`
-- Agent access: `person-gear`
-- Agent connections: `link-45deg`
-- Agent batches: `boxes`
-- Proposed items: `box-seam`
-- Downtime point requests: `hourglass-split`
-- New session: `calendar-plus`
-- Club ledger: `journal-text`
-
-### Club Admin category (gear-fill)
-- Members: `people`
-- Whitelist: `person-check`
-- Inbox: `inbox`
-- Club settings: `gear`
-- Manage shops: `shop`
-- Rotations: `arrow-repeat`
-- Manage quests: `journal-text`
-- Item catalogue: `box-seam`
-- Starting Equipment Templates: `box`
-- Agenda: `calendar-event`
-- Downtime actions: `list-task`
-- Attendance report: `clipboard-data`
-- Session settings: `gear-wide`
-- Character options: `sliders`
-- Review player items: `eye`
+- `test_clubweightsettings_admin_list_display_content`
+- `test_clubweightsettings_admin_search`
+- `test_clubweightsettings_admin_raw_id_club`
+- `test_clubweightsettings_admin_date_hierarchy`
+- `test_clubweightsettings_admin_ordering`
 
 ## Acceptance Criteria Mapping
 
-| Criterion | Proof Stage |
-|-----------|-------------|
-| MENU_GROUPS carries category icon per group; every entry in exactly one category | code |
-| Moving links between categories doesn't change URL/permission | code (test) |
-| Every link and heading renders Bootstrap Icons icon | code (visual) |
-| Each role sees same links as before (regression test) | code (test) |
-| Link order inside categories stable | code (test) |
-| apps.py registrations updated for icons and group moves | code |
-| menu_sections returns category icon; club_home.html uses it | code |
-| Every entry without icon gets sensible Bootstrap Icons id | code (validated) |
-| pytest, ruff check, ruff format pass | verify |
-| Screenshots for player, GM, club admin at 1280px and 390px | verify |
+| Spec Requirement | Proof Stage |
+|------------------|-------------|
+| ContainerSlotAdmin: date_hierarchy, ordering | code (admin.py changes) |
+| ContainerSlotOptionAdmin: date_hierarchy, ordering | code (admin.py changes) |
+| ClubWeightSettingsAdmin: date_hierarchy, ordering | code (admin.py changes) |
+| list_display fields appear in changelist | verify (tests) |
+| list_filter shows club via related paths | verify (tests) |
+| search works on specified fields | verify (tests) |
+| autocomplete_fields work for FKs | verify (tests) |
+| raw_id_fields for ClubWeightSettings.club | verify (tests) |
+
+## Dependencies
+- C4 (Register missing items models) - COMPLETED
+- No other dependencies

@@ -146,7 +146,8 @@ class ContainerSlotAdmin(admin.ModelAdmin):
     list_filter = ["container__club"]
     search_fields = ["container__name"]
     autocomplete_fields = ["container"]
-    ordering = ["position"]
+    date_hierarchy = "container__club__created"
+    ordering = ["container", "position"]
 
 
 @admin.register(ContainerSlotOption)
@@ -155,6 +156,8 @@ class ContainerSlotOptionAdmin(admin.ModelAdmin):
     list_filter = ["slot__container__club"]
     search_fields = ["item__name"]
     autocomplete_fields = ["slot", "item"]
+    date_hierarchy = "slot__container__club__created"
+    ordering = ["slot", "id"]
 
 
 @admin.register(RecentItemPick)
@@ -171,6 +174,8 @@ class ClubWeightSettingsAdmin(admin.ModelAdmin):
     list_display = ["club", "count_coin_weight"]
     search_fields = ["club__name"]
     raw_id_fields = ["club"]
+    date_hierarchy = "club__created"
+    ordering = ["club__name"]
 
 
 @admin.register(ContainerOpening)
