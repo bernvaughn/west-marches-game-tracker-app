@@ -5,12 +5,15 @@ from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
+from django.db import models as django_models
 from django.utils import timezone
 
 from accounts.models import Club
 from play_sessions import core
 from play_sessions.models import (
     AttendanceChange,
+    AttendanceHint,
+    PlayerRSVP,
     PlaySession,
     SessionAttendance,
     SessionAward,
@@ -30,7 +33,9 @@ def test_all_models_have_club_path_and_manager():
     for model in [
         PlaySession,
         SessionRSVP,
+        PlayerRSVP,
         SessionAttendance,
+        AttendanceHint,
         AttendanceChange,
         SessionAward,
         SessionSettings,
@@ -196,3 +201,66 @@ def test_feed_token_blank_allowed_in_multiple_clubs():
     SessionSettings.objects.filter(club=club1).update(feed_token="abc123")
     with pytest.raises(IntegrityError):
         SessionSettings.objects.filter(club=club2).update(feed_token="abc123")
+
+
+def _rsvp_merge_setup():
+    """Club, two memberships, two characters (both owned by one membership), and a session."""
+    from accounts.models import Membership, User
+    from player_characters.models import Character
+
+    club = Club.objects.create(name="Merge Club", slug="merge-club")
+    owner_user = User.objects.create_user(email="owner@test.com", password="pass12345678")
+    owner = Membership.objects.create(user=owner_user, club=club, is_game_master=True)
+    other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
+    other = Membership.objects.create(user=other_user, club=club)
+    char1 = Character.objects.create(name="Hero One", club=club, owner=owner)
+    char2 = Character.objects.create(name="Hero Two", club=club, owner=owner)
+    session = PlaySession.objects.create(
+        club=club, title="Merge Session", starts_at=timezone.now(), game_master=owner
+    )
+    return club, owner, other, char1, char2, session
+
+
+def test_player_rsvp_model_fields():
+    club, owner, _other, char1, char2, session = _rsvp_merge_setup()
+    from play_sessions.models import PlayerRSVP
+
+    assert PlayerRSVP.club_path == "session__club"
+    assert hasattr(PlayerRSVP.objects, "for_club")
+    field_names = {f.name for f in PlayerRSVP._meta.get_fields()}
+    assert {"session", "member", "answer", "answered_by", "answered_at"} <= field_names
+    unique = [
+        c for c in PlayerRSVP._meta.constraints if isinstance(c, django_models.UniqueConstraint)
+    ]
+    assert any(set(c.fields) == {"session", "member"} for c in unique)
+
+
+def test_player_rsvp_unique_per_session_member():
+    club, owner, _other, _char1, _char2, session = _rsvp_merge_setup()
+    from play_sessions.models import PlayerRSVP
+
+    PlayerRSVP.objects.create(session=session, member=owner, answer="yes")
+    with pytest.raises(IntegrityError), transaction.atomic():
+        PlayerRSVP.objects.create(session=session, member=owner, answer="no")
+
+
+def test_player_rsvp_club_scoped():
+    club, owner, _other, _char1, _char2, session = _rsvp_merge_setup()
+    other_club = Club.objects.create(name="Other Club", slug="other-club")
+    from play_sessions.models import PlayerRSVP
+
+    PlayerRSVP.objects.create(session=session, member=owner, answer="yes")
+    assert PlayerRSVP.objects.for_club(club).count() == 1
+    assert PlayerRSVP.objects.for_club(other_club).count() == 0
+
+
+def test_attendance_hint_model_fields():
+    club, _owner, _other, char1, _char2, session = _rsvp_merge_setup()
+    from play_sessions.models import AttendanceHint
+
+    assert AttendanceHint.club_path == "session__club"
+    assert hasattr(AttendanceHint.objects, "for_club")
+    field_names = {f.name for f in AttendanceHint._meta.get_fields()}
+    assert {"session", "character", "created"} <= field_names
+    hint = AttendanceHint.objects.create(session=session, character=char1)
+    assert hint.created is not None
