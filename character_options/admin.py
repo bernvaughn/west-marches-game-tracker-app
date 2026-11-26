@@ -15,6 +15,7 @@ class SpeciesAdmin(admin.ModelAdmin):
     ordering = ["sort_order", "name"]
     autocomplete_fields = ["club"]
     list_select_related = ["club"]
+    date_hierarchy = "created"
 
 
 @admin.register(CharacterClass)
@@ -27,6 +28,7 @@ class CharacterClassAdmin(admin.ModelAdmin):
     ordering = ["sort_order", "name"]
     autocomplete_fields = ["club"]
     list_select_related = ["club"]
+    date_hierarchy = "created"
 
 
 @admin.register(Background)
@@ -39,3 +41,4 @@ class BackgroundAdmin(admin.ModelAdmin):
     ordering = ["sort_order", "name"]
     autocomplete_fields = ["club"]
     list_select_related = ["club"]
+    date_hierarchy = "created"

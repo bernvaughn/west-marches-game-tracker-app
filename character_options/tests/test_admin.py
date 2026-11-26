@@ -107,6 +107,144 @@ def test_background_admin_list_display(site_admin, login, club):
     assert "3" in content  # sort_order
 
 
+@pytest.mark.django_db
+def test_species_admin_date_hierarchy(site_admin, login, club):
+    """Species admin changelist has date_hierarchy on created."""
+    Species.objects.create(club=club, name="Elf", is_active=True, sort_order=1)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_species_changelist")
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.context["cl"].date_hierarchy == "created"
+
+
+@pytest.mark.django_db
+def test_species_admin_list_filter_club_and_is_active(site_admin, login, club):
+    """Species admin changelist filters by club and is_active."""
+    from accounts.models import Club
+
+    club_b = Club.objects.create(name="Club B", slug="club-b")
+    Species.objects.create(club=club, name="Elf", is_active=True, sort_order=1)
+    Species.objects.create(club=club_b, name="Orc", is_active=False, sort_order=2)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_species_changelist")
+    response = client.get(url)
+    assert response.status_code == 200
+    field_paths = [spec.field_path for spec in response.context["cl"].filter_specs]
+    assert "club" in field_paths
+    assert "is_active" in field_paths
+
+
+@pytest.mark.django_db
+def test_species_admin_search_name(site_admin, login, club):
+    """Species admin changelist search filters on name."""
+    Species.objects.create(club=club, name="Alpha Elf", is_active=True, sort_order=1)
+    Species.objects.create(club=club, name="Beta Human", is_active=True, sort_order=2)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_species_changelist")
+    response = client.get(url, {"q": "Alpha"})
+    assert response.status_code == 200
+    assert response.context["cl"].result_count == 1
+    content = response.content.decode()
+    assert "Alpha Elf" in content
+    assert "Beta Human" not in content
+
+
+@pytest.mark.django_db
+def test_characterclass_admin_date_hierarchy(site_admin, login, club):
+    """CharacterClass admin changelist has date_hierarchy on created."""
+    CharacterClass.objects.create(club=club, name="Fighter", is_active=True, sort_order=1)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_characterclass_changelist")
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.context["cl"].date_hierarchy == "created"
+
+
+@pytest.mark.django_db
+def test_characterclass_admin_list_filter_club_and_is_active(site_admin, login, club):
+    """CharacterClass admin changelist filters by club and is_active."""
+    from accounts.models import Club
+
+    club_b = Club.objects.create(name="Club B", slug="club-b")
+    CharacterClass.objects.create(club=club, name="Fighter", is_active=True, sort_order=1)
+    CharacterClass.objects.create(club=club_b, name="Rogue", is_active=False, sort_order=2)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_characterclass_changelist")
+    response = client.get(url)
+    assert response.status_code == 200
+    field_paths = [spec.field_path for spec in response.context["cl"].filter_specs]
+    assert "club" in field_paths
+    assert "is_active" in field_paths
+
+
+@pytest.mark.django_db
+def test_characterclass_admin_search_name(site_admin, login, club):
+    """CharacterClass admin changelist search filters on name."""
+    CharacterClass.objects.create(club=club, name="Alpha Fighter", is_active=True, sort_order=1)
+    CharacterClass.objects.create(club=club, name="Beta Wizard", is_active=True, sort_order=2)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_characterclass_changelist")
+    response = client.get(url, {"q": "Alpha"})
+    assert response.status_code == 200
+    assert response.context["cl"].result_count == 1
+    content = response.content.decode()
+    assert "Alpha Fighter" in content
+    assert "Beta Wizard" not in content
+
+
+@pytest.mark.django_db
+def test_background_admin_date_hierarchy(site_admin, login, club):
+    """Background admin changelist has date_hierarchy on created."""
+    Background.objects.create(club=club, name="Soldier", is_active=True, sort_order=1)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_background_changelist")
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.context["cl"].date_hierarchy == "created"
+
+
+@pytest.mark.django_db
+def test_background_admin_list_filter_club_and_is_active(site_admin, login, club):
+    """Background admin changelist filters by club and is_active."""
+    from accounts.models import Club
+
+    club_b = Club.objects.create(name="Club B", slug="club-b")
+    Background.objects.create(club=club, name="Soldier", is_active=True, sort_order=1)
+    Background.objects.create(club=club_b, name="Sage", is_active=False, sort_order=2)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_background_changelist")
+    response = client.get(url)
+    assert response.status_code == 200
+    field_paths = [spec.field_path for spec in response.context["cl"].filter_specs]
+    assert "club" in field_paths
+    assert "is_active" in field_paths
+
+
+@pytest.mark.django_db
+def test_background_admin_search_name(site_admin, login, club):
+    """Background admin changelist search filters on name."""
+    Background.objects.create(club=club, name="Alpha Noble", is_active=True, sort_order=1)
+    Background.objects.create(club=club, name="Beta Acolyte", is_active=True, sort_order=2)
+    client = login(site_admin)
+
+    url = reverse("admin:character_options_background_changelist")
+    response = client.get(url, {"q": "Alpha"})
+    assert response.status_code == 200
+    assert response.context["cl"].result_count == 1
+    content = response.content.decode()
+    assert "Alpha Noble" in content
+    assert "Beta Acolyte" not in content
+
+
 def test_every_character_options_model_is_in_the_admin():
     """New character_options models must be registered, or named here with a reason."""
     from django.apps import apps
