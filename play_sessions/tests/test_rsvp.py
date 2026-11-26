@@ -1,4 +1,4 @@
-"""Tests for RSVP (P4)."""
+"""Tests for RSVP (P13: per player)."""
 
 from datetime import timedelta
 
@@ -7,11 +7,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Club, Membership, User
-from play_sessions import core
-from play_sessions.models import PlaySession, SessionRSVP
-from player_characters.models import Character, SelectedCharacter
+from play_sessions.models import PlayerRSVP, PlaySession
+from player_characters.models import Character
 
-pytestmark = [pytest.mark.django_db, pytest.mark.story("P4")]
+pytestmark = [pytest.mark.django_db, pytest.mark.story("P13")]
 
 
 @pytest.fixture
@@ -47,58 +46,60 @@ def rsvp_setup():
     }
 
 
-def test_player_answers_for_own_character(client, rsvp_setup):
-    """Player can RSVP for their own character; one row created, answered_by set."""
+def test_player_answers_for_own_membership(client, rsvp_setup):
+    """Player can RSVP for their own membership; one row created, answered_by set."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
     client.force_login(player_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
+    response = client.post(url, {"answer": "yes"})
 
     assert response.status_code in (200, 302)
-    rsvp = SessionRSVP.objects.get(session=session, character=char1)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
     assert rsvp.answer == "yes"
     assert rsvp.answered_by == player_user
 
 
-def test_another_players_character_refused(client, rsvp_setup):
-    """Another player's character gives 403 and writes no row."""
+def test_player_can_answer_for_themselves_only(client, rsvp_setup):
+    """A player can only answer for their own membership (no member field in form for players)."""
     club = rsvp_setup["club"]
-    char1 = rsvp_setup["char1"]
+    rsvp_setup["player_user"]
+    rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
 
+    # Create another player
     other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
     other_membership = Membership.objects.create(user=other_user, club=club)
-    Character.objects.create(name="Other Hero", club=club, owner=other_membership)
 
+    # other_user logs in and answers for themselves - should succeed
     client.force_login(other_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
+    response = client.post(url, {"answer": "yes"})
+    assert response.status_code in (200, 302)
+    rsvp = PlayerRSVP.objects.get(session=session, member=other_membership)
+    assert rsvp.answer == "yes"
 
-    assert response.status_code == 403
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
+    # other_user cannot answer for player_membership by passing member
+    # field (form ignores it for non-managers). The view uses
+    # request.membership for non-managers, enforced by refusal logic.
 
 
-def test_no_character_posted_uses_selected(client, rsvp_setup):
-    """No character posted uses the selected character."""
+def test_no_membership_posted_uses_request_membership(client, rsvp_setup):
+    """No membership posted uses request.membership."""
     player_user = rsvp_setup["player_user"]
-    char2 = rsvp_setup["char2"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
-    player_membership = rsvp_setup["player_membership"]
-
-    # Select char2
-    SelectedCharacter.objects.create(membership=player_membership, character=char2)
 
     client.force_login(player_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "maybe"})  # No character in POST
+    response = client.post(url, {"answer": "maybe"})  # No membership in POST
 
     assert response.status_code in (200, 302)
-    rsvp = SessionRSVP.objects.get(session=session, character=char2)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
     assert rsvp.answer == "maybe"
 
 
@@ -106,8 +107,9 @@ def test_after_start_player_refused_gm_allowed(client, rsvp_setup):
     """After the start, a player gets 403; GM answers for anyone; admin answers after start."""
     club = rsvp_setup["club"]
     gm_user = rsvp_setup["gm_user"]
+    rsvp_setup["gm_membership"]
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
 
     # Move session to the past
@@ -117,65 +119,50 @@ def test_after_start_player_refused_gm_allowed(client, rsvp_setup):
     # Player tries to answer after start -> 403
     client.force_login(player_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
+    response = client.post(url, {"answer": "yes"})
     assert response.status_code == 403
 
-    # GM can answer for anyone after start
+    # GM can answer for anyone after start (must specify member)
     client.force_login(gm_user)
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
+    response = client.post(url, {"answer": "yes", "member": player_membership.pk})
     assert response.status_code in (200, 302)
-    rsvp = SessionRSVP.objects.get(session=session, character=char1)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
     assert rsvp.answer == "yes"
     assert rsvp.answered_by == gm_user
 
-    # Admin (superuser) can also answer
+    # Admin (superuser) can also answer for anyone
     admin_user = User.objects.create_superuser(email="admin@test.com", password="pass12345678")
     client.force_login(admin_user)
-    response = client.post(url, {"answer": "no", "character": char1.pk})
+    response = client.post(url, {"answer": "no", "member": player_membership.pk})
     assert response.status_code in (200, 302)
     rsvp.refresh_from_db()
     assert rsvp.answer == "no"
     assert rsvp.answered_by == admin_user
 
 
-def test_inactive_character_refused_for_everyone(client, rsvp_setup, monkeypatch):
-    """Patch character_is_active to false: absent from detail HTML options,
-    POST refused (also for GM)."""
+def test_no_active_character_still_can_answer(client, rsvp_setup, monkeypatch):
+    """Player with no active characters can still answer (no character check)."""
     club = rsvp_setup["club"]
-    gm_user = rsvp_setup["gm_user"]
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
 
-    # Patch character_is_active to return False for char1
-    monkeypatch.setattr(core, "character_is_active", lambda c: c.pk != char1.pk)
+    # Delete all characters
+    player_membership.characters.all().delete()
 
-    # Detail page should not show char1 in RSVP section options
     client.force_login(player_user)
-    detail_url = reverse(
-        "play_sessions:session_detail",
-        kwargs={"club_slug": club.slug, "pk": session.pk},
-    )
-    response = client.get(detail_url)
-    # Check the RSVP section specifically - char1 should not be in the form select
-    assert b'<option value="' + str(char1.pk).encode() + b'">' not in response.content
-    assert b"Hero Two" in response.content  # char2 should still be there
-
-    # POST for inactive character refused for player
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
-    assert response.status_code == 403
+    response = client.post(url, {"answer": "yes"})
 
-    # POST for inactive character refused for GM too
-    client.force_login(gm_user)
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
-    assert response.status_code == 403
+    assert response.status_code in (200, 302)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
+    assert rsvp.answer == "yes"
 
 
 def test_changing_answer_keeps_one_row(client, rsvp_setup):
-    """Changing an answer keeps one row per session and character."""
+    """Changing an answer keeps one row per session and membership."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
@@ -183,13 +170,13 @@ def test_changing_answer_keeps_one_row(client, rsvp_setup):
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
 
     # First answer: yes
-    client.post(url, {"answer": "yes", "character": char1.pk})
+    client.post(url, {"answer": "yes"})
     # Second answer: maybe
-    client.post(url, {"answer": "maybe", "character": char1.pk})
+    client.post(url, {"answer": "maybe"})
     # Third answer: no
-    client.post(url, {"answer": "no", "character": char1.pk})
+    client.post(url, {"answer": "no"})
 
-    rsvps = SessionRSVP.objects.filter(session=session, character=char1)
+    rsvps = PlayerRSVP.objects.filter(session=session, member=player_membership)
     assert rsvps.count() == 1
     rsvp = rsvps.first()
     assert rsvp.answer == "no"
@@ -200,8 +187,9 @@ def test_cancelled_session_refuses_player(client, rsvp_setup):
     """Cancelled session refuses a player's answer; GM and admin may still answer."""
     club = rsvp_setup["club"]
     gm_user = rsvp_setup["gm_user"]
+    rsvp_setup["gm_membership"]
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
 
     session.cancelled = True
@@ -210,14 +198,14 @@ def test_cancelled_session_refuses_player(client, rsvp_setup):
     # Player refused
     client.force_login(player_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
+    response = client.post(url, {"answer": "yes"})
     assert response.status_code == 403
 
-    # GM allowed
+    # GM allowed (must specify member)
     client.force_login(gm_user)
-    response = client.post(url, {"answer": "yes", "character": char1.pk})
+    response = client.post(url, {"answer": "yes", "member": player_membership.pk})
     assert response.status_code in (200, 302)
-    rsvp = SessionRSVP.objects.get(session=session, character=char1)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
     assert rsvp.answer == "yes"
 
 
@@ -237,20 +225,20 @@ def test_another_club_session_404(client, rsvp_setup):
 def test_invalid_answer_400(client, rsvp_setup):
     """Invalid answer gives 400."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
     client.force_login(player_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "invalid", "character": char1.pk})
+    response = client.post(url, {"answer": "invalid"})
     assert response.status_code == 400
 
 
 def test_next_redirect_safe(client, rsvp_setup):
     """next redirect is safe; external URL is ignored."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
@@ -258,14 +246,12 @@ def test_next_redirect_safe(client, rsvp_setup):
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
 
     # Safe next (relative path)
-    response = client.post(url, {"answer": "yes", "character": char1.pk, "next": "/some/path"})
+    response = client.post(url, {"answer": "yes", "next": "/some/path"})
     assert response.status_code == 302
     assert response.url == "/some/path"
 
     # External URL ignored
-    response = client.post(
-        url, {"answer": "maybe", "character": char1.pk, "next": "http://evil.com"}
-    )
+    response = client.post(url, {"answer": "maybe", "next": "http://evil.com"})
     assert response.status_code == 302
     # Should redirect to session detail (relative URL)
     assert response.url.startswith("/c/")
@@ -275,13 +261,13 @@ def test_next_redirect_safe(client, rsvp_setup):
 def test_htmx_post_returns_section_fragment(client, rsvp_setup):
     """HTMX POST returns the section fragment."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
     client.force_login(player_user)
     url = reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"answer": "yes", "character": char1.pk}, HTTP_HX_REQUEST="true")
+    response = client.post(url, {"answer": "yes"}, HTTP_HX_REQUEST="true")
 
     assert response.status_code == 200
     assert b"rsvp-section" in response.content
@@ -289,20 +275,16 @@ def test_htmx_post_returns_section_fragment(client, rsvp_setup):
 
 
 def test_dashboard_card_shows_answer(client, rsvp_setup):
-    """Dashboard card shows the answer for the selected character."""
+    """Dashboard card shows the answer for the membership."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
-    player_membership = rsvp_setup["player_membership"]
 
-    # Set RSVP for char1
-    SessionRSVP.objects.create(
-        session=session, character=char1, answer="yes", answered_by=player_user
+    # Set RSVP for membership
+    PlayerRSVP.objects.create(
+        session=session, member=player_membership, answer="yes", answered_by=player_user
     )
-
-    # Select char1
-    SelectedCharacter.objects.create(membership=player_membership, character=char1)
 
     client.force_login(player_user)
     dashboard_url = reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug})
@@ -314,16 +296,19 @@ def test_dashboard_card_shows_answer(client, rsvp_setup):
     assert "Yes" in content  # The badge for Yes
 
 
-def test_sheet_page_shows_section_for_owner(client, rsvp_setup):
-    """Sheet page shows the section for the owner."""
+def test_sheet_page_no_rsvp_section(client, rsvp_setup):
+    """Sheet page should not have RSVP section (file deleted)."""
     player_user = rsvp_setup["player_user"]
     char1 = rsvp_setup["char1"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
     # Set RSVP
-    SessionRSVP.objects.create(
-        session=session, character=char1, answer="yes", answered_by=player_user
+    PlayerRSVP.objects.create(
+        session=session,
+        member=rsvp_setup["player_membership"],
+        answer="yes",
+        answered_by=player_user,
     )
 
     client.force_login(player_user)
@@ -332,25 +317,89 @@ def test_sheet_page_shows_section_for_owner(client, rsvp_setup):
 
     assert response.status_code == 200
     content = response.content.decode()
-    assert "Session RSVPs" in content
+    # The section should not be rendered (file deleted)
+    assert "Session RSVPs" not in content
+
+
+def test_session_detail_shows_my_answer(client, rsvp_setup):
+    """Session detail page shows player's answer."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+
+    # Set RSVP
+    PlayerRSVP.objects.create(
+        session=session,
+        member=player_membership,
+        answer="yes",
+        answered_by=player_user,
+    )
+
+    client.force_login(player_user)
+    detail_url = reverse(
+        "play_sessions:session_detail",
+        kwargs={"club_slug": club.slug, "pk": session.pk},
+    )
+    response = client.get(detail_url)
+
+    assert response.status_code == 200
+    content = response.content.decode()
     assert "Test Session" in content
     assert "Yes" in content
 
 
-def test_sheet_section_absent_for_inactive_character(client, rsvp_setup, monkeypatch):
-    """Sheet section is absent for an inactive character."""
+def test_session_detail_manager_sees_all_answers(client, rsvp_setup):
+    """Manager sees all members' answers grouped by answer."""
+    gm_user = rsvp_setup["gm_user"]
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
-    # Patch character_is_active to return False for char1
-    monkeypatch.setattr(core, "character_is_active", lambda c: c.pk != char1.pk)
+    # Create another player
+    other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
+    other_membership = Membership.objects.create(user=other_user, club=club)
 
-    client.force_login(player_user)
-    sheet_url = reverse("characters:detail", kwargs={"club_slug": club.slug, "pk": char1.pk})
-    response = client.get(sheet_url)
+    # Set RSVPs
+    PlayerRSVP.objects.create(
+        session=session, member=player_membership, answer="yes", answered_by=player_user
+    )
+    PlayerRSVP.objects.create(
+        session=session, member=other_membership, answer="no", answered_by=other_user
+    )
+
+    client.force_login(gm_user)
+    detail_url = reverse(
+        "play_sessions:session_detail",
+        kwargs={"club_slug": club.slug, "pk": session.pk},
+    )
+    response = client.get(detail_url)
 
     assert response.status_code == 200
     content = response.content.decode()
-    # The section should not be rendered for inactive character
-    assert "Session RSVPs" not in content
+    assert "Yes" in content
+    assert "No" in content
+    assert "Not answered" in content
+
+
+def test_next_session_card_shows_my_answer(client, rsvp_setup):
+    """Next session card shows player's answer."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+
+    # Set RSVP
+    PlayerRSVP.objects.create(
+        session=session, member=player_membership, answer="maybe", answered_by=player_user
+    )
+
+    client.force_login(player_user)
+    dashboard_url = reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug})
+    response = client.get(dashboard_url)
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Test Session" in content
+    assert "Maybe" in content

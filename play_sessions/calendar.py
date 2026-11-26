@@ -60,7 +60,7 @@ def month_grid(club, year, month, today):
         PlaySession.objects.for_club(club)
         .filter(starts_at__gte=start_utc, starts_at__lte=end_utc)
         .select_related("game_master__user")
-        .annotate(yes_count=Count("rsvps", filter=Q(rsvps__answer="yes")))
+        .annotate(yes_count=Count("player_rsvps", filter=Q(player_rsvps__answer="yes")))
         .order_by("starts_at")
     )
     by_date = {}
@@ -97,7 +97,7 @@ def upcoming_list(club, year, month, today):
         PlaySession.objects.for_club(club)
         .filter(starts_at__gte=start_utc, starts_at__lte=end_utc)
         .select_related("game_master__user")
-        .annotate(yes_count=Count("rsvps", filter=Q(rsvps__answer="yes")))
+        .annotate(yes_count=Count("player_rsvps", filter=Q(player_rsvps__answer="yes")))
         .order_by("starts_at")
     )
     if (year, month) == (today.year, today.month):
@@ -122,7 +122,7 @@ def next_session(club, now):
         .filter(cancelled=False)
         .filter(Q(starts_at__gte=now) | Q(ends_at__gte=now))
         .select_related("game_master__user")
-        .annotate(yes_count=Count("rsvps", filter=Q(rsvps__answer="yes")))
+        .annotate(yes_count=Count("player_rsvps", filter=Q(player_rsvps__answer="yes")))
         .order_by("starts_at")
     )
     session = qs.first()
@@ -138,4 +138,5 @@ def next_session(club, now):
         "gm_name": gm_name,
         "yes_count": session.yes_count,
         "detail_url": reverse("play_sessions:session_detail", args=[club.slug, session.pk]),
+        "session_id": session.pk,
     }
