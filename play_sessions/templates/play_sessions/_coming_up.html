@@ -1,0 +1,46 @@
+{% comment %}_coming_up: shared upcoming-sessions list (P18).
+   Context:
+     coming_up        - list of session dicts from play_sessions.upcoming.upcoming_sessions
+     first_month      - (year, month) of the first upcoming session, or None
+     club             - Club
+     membership       - Membership or None
+     can_manage_sessions - bool, True when the member may add sessions
+   Each session dict: id, title, local_start (aware, club zone), zone_label,
+   gm_name, yes_count, my_answer (yes/maybe/no/none, None when cancelled),
+   cancelled, detail_url, is_next, when_text.
+{% endcomment %}
+{% load play_sessions_tags %}
+<section class="coming-up" aria-label="Upcoming sessions">
+  <h2 class="coming-up-heading">Upcoming sessions</h2>
+  {% if coming_up %}
+  <ul class="coming-up-list">
+    {% for session in coming_up %}
+    <li class="coming-up-row{% if session.cancelled %} coming-up-row--cancelled{% endif %}{% if session.is_next %} coming-up-row--next{% endif %}">
+      <a class="coming-up-title" href="{{ session.detail_url }}">{{ session.title }}</a>
+      <time class="coming-up-when" datetime="{{ session.local_start|date:"c" }}">
+        {{ session.local_start|date:"l, j M Y" }} at {{ session.local_start|session_time:club }}
+        {% if session.is_next %}
+          <span class="coming-up-badge coming-up-badge--next">Next</span>
+          <span class="coming-up-when-text">{{ session.when_text }}</span>
+        {% endif %}
+      </time>
+      {% if session.gm_name %}
+      <span class="coming-up-gm">GM: {{ session.gm_name }}</span>
+      {% endif %}
+      <span class="coming-up-yes">{{ session.yes_count }} yes</span>
+      {% if not session.cancelled and session.my_answer %}
+      <span class="coming-up-answer">You: {{ session.my_answer|title }}</span>
+      {% endif %}
+      {% if session.cancelled %}
+      {% include "components/badge.html" with status="danger" text="Cancelled" %}
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="text-muted small">No sessions are scheduled yet.</p>
+  {% if can_manage_sessions %}
+  <a href="{% url 'play_sessions:session_create' club.slug %}" class="btn btn-sm btn-outline-primary">Add a session</a>
+  {% endif %}
+  {% endif %}
+</section>
