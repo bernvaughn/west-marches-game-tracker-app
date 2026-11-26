@@ -1504,6 +1504,23 @@ Rules for every story in this round:
 - The game master digest (E7) lists players by name in yes, maybe, no, and not answered, like P14.
 - This changes E5, E6 and E7 where they mention characters.
 
+## Round 26: upcoming sessions (2026-11-26)
+
+The sessions page (P3) shows one month at a time, and the dashboards show only a single "next session". A club that plays about once a month often has an empty month on screen even though a session is only days away, just across the month line.
+
+**P18 See the upcoming sessions.** As a player, game master, or club admin, I want the sessions page and my dashboards to show a short list of upcoming sessions, whatever month the calendar is showing, so I always see when we play next and what is cancelled. *(play_sessions, accounts)*
+- A "Coming up" list sits above the month calendar on the sessions page, on wide screens and on phones. It shows the next 5 sessions in order across any months, and stays the same whichever month the calendar shows.
+- Each row shows the weekday and date, the time with the zone's short name (P17), the title, the game master, and how many players said yes (P13).
+- Each row shows my own answer as a small badge ("Yes", "Maybe", "No", or "Not answered"), with a link to the session page where I can change it (P13).
+- Cancelled sessions stay in the list, clearly marked "Cancelled" and shown muted, so people see at a glance that a night is off. They do not carry my answer badge.
+- The first session in the list that is not cancelled is marked "Next" and says how far away it is, for example "tomorrow", "in 3 days", or "in 5 weeks". It never marks a cancelled session.
+- A session counts as upcoming until the whole day it falls on has passed, in the club's time zone (P11). A session at 7 PM today still shows all day today and drops off the list at midnight. A session that runs past midnight counts through the day it ends.
+- When the first upcoming session is not in the month the calendar is showing, the list has a "Show that month" link that moves the calendar to it.
+- When there are no upcoming sessions, the list says "No sessions are scheduled yet." Game masters and club admins also see an "Add a session" link there (P1).
+- The same "Upcoming sessions" list, with at least 3 sessions, replaces the single "next session" card on the player dashboard and the club home page, and on the game master and club admin desk (U118). A dashboard card with fewer sessions than 3 shows all that exist, then the empty message. The card links to the sessions page.
+- The dashboard cards and the sessions page agree on which sessions are upcoming and in what order.
+- The lists work without JavaScript and do not print.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
