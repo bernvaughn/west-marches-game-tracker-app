@@ -146,6 +146,21 @@ def _play_session(club):
             "notes": "Bring torches. We meet at the gate.",
         },
     )
+    # Later nights fill the upcoming-sessions list; one is cancelled to show the muted row.
+    for days, title, cancelled in (
+        (10, "Moot at the Standing Stones", True),
+        (14, "The Sunken Bell", False),
+    ):
+        PlaySession.objects.get_or_create(
+            club=club,
+            title=title,
+            defaults={
+                "starts_at": timezone.now() + timedelta(days=days),
+                "ends_at": timezone.now() + timedelta(days=days, hours=3),
+                "game_master": gm,
+                "cancelled": cancelled,
+            },
+        )
 
 
 def extra_fixtures():

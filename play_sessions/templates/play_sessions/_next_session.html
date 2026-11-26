@@ -1,12 +1,22 @@
-{% comment %}_next_session: Upcoming sessions list for the dashboard and the club home block.
+{% comment %}_next_session: Upcoming sessions card for the dashboard and the club home block.
    Context: provider_context {coming_up: [...], club, membership, can_manage_sessions}.
    Each session dict: id, title, local_start, zone_label, gm_name, yes_count,
    my_answer, cancelled, detail_url, is_next, when_text.
 {% endcomment %}
 {% load play_sessions_tags %}
-{% include "play_sessions/_coming_up.html" with coming_up=provider_context.coming_up club=provider_context.club membership=provider_context.membership can_manage_sessions=provider_context.can_manage_sessions %}
-{% if provider_context.coming_up %}
-<p class="text-center mt-2">
-  <a href="{% url 'play_sessions:calendar' provider_context.club.slug %}" class="btn btn-sm btn-outline-primary">View all sessions</a>
-</p>
-{% endif %}
+<div class="wm-dashboard-section card wm-card-raised h-100">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="calendar" label="Upcoming sessions" %}
+      Upcoming sessions
+    </h3>
+  </div>
+  <div class="card-body">
+    {% include "play_sessions/_coming_up.html" with coming_up=provider_context.coming_up club=provider_context.club membership=provider_context.membership can_manage_sessions=provider_context.can_manage_sessions hide_heading=True %}
+    {% if provider_context.coming_up %}
+    <p class="text-center mb-0 mt-2">
+      <a href="{% url 'play_sessions:calendar' provider_context.club.slug %}" class="btn btn-sm btn-outline-primary">View all sessions</a>
+    </p>
+    {% endif %}
+  </div>
+</div>
