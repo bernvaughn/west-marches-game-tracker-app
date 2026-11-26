@@ -27,3 +27,20 @@
 .sessions-list-row--cancelled { opacity: .6; }
 .sessions-list-row--cancelled .sessions-title { text-decoration: line-through; }
 .sessions-title { font-weight: 600; }
+
+/* Coming up list (P18): shared upcoming-sessions partial. Colours come from tokens only. */
+.coming-up { margin-bottom: 1rem; }
+.coming-up-heading { font-size: 1rem; font-weight: 600; margin: 0 0 .5rem; }
+.coming-up-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .5rem; }
+.coming-up-row { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; padding: .625rem 0; border-bottom: 1px solid var(--wm-border); text-decoration: none; color: var(--wm-text); }
+.coming-up-row--cancelled { opacity: .6; }
+.coming-up-row--cancelled .coming-up-title { text-decoration: line-through; }
+.coming-up-row--next { border-color: var(--wm-accent); background: var(--wm-neutral-bg); border-radius: .375rem; }
+.coming-up-title { font-weight: 600; }
+.coming-up-title:hover { text-decoration: underline; }
+.coming-up-when { color: var(--wm-text-muted); font-size: var(--wm-text-sm); line-height: 1.5; white-space: nowrap; }
+.coming-up-when-text { color: var(--wm-text-muted); }
+.coming-up-gm, .coming-up-yes, .coming-up-answer { font-size: var(--wm-text-sm); color: var(--wm-text-muted); }
+.coming-up-badge { font-size: var(--wm-text-xs); font-weight: 700; padding: .125rem .375rem; border-radius: .375rem; background: var(--wm-accent); color: #fff; }
+.coming-up-badge--next { background: var(--wm-accent); color: #fff; }
+@media print { .coming-up { display: none !important; } }
