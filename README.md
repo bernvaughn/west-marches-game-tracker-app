@@ -133,33 +133,64 @@ uv run pytest --collect-only -q | grep "story(" | head -20
 ### Browser (Playwright) tests
 Browser tests require Chromium and are marked with `@pytest.mark.browser`.
 
-**One-time setup:**
+On the CodeHerder agent machine, a shared Chromium installation is used automatically:
+- **Shared browser path:** `/opt/playwright-browsers` (Chromium 1254, tied to the Playwright version in `uv.lock`)
+- **Shared libraries:** `/opt/chrome-libs/root/usr/lib/x86_64-linux-gnu`
+
+The helper `scripts/browser_env.py` detects these folders and sets `PLAYWRIGHT_BROWSERS_PATH` and
+`LD_LIBRARY_PATH` automatically. You do not need to set any environment variables on the agent.
+
+**One-time setup (for local development):**
 ```bash
 # Install Chromium to a writable directory
 mkdir -p pw-browsers
 PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run playwright install chromium
 ```
 
-**Run browser tests:**
+**Run browser tests (agent machine - no setup needed):**
 ```bash
 # Run all browser tests
-PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser -v
+uv run pytest -m browser -v
 
 # Run specific browser test file
-PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser shops/tests/test_favorites_browser.py -v
+uv run pytest -m browser shops/tests/test_favorites_browser.py -v
 
 # Run specific browser test
-PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser shops/tests/test_favorites_browser.py::test_my_shops_filter_buy_flow -v
+uv run pytest -m browser shops/tests/test_favorites_browser.py::test_my_shops_filter_buy_flow -v
 
 # Run console sweep (checks all pages for JS errors)
+uv run python scripts/console_sweep.py
+
+# Run screenshot audit
+uv run python scripts/screenshots.py --audit --out /tmp/shots
+```
+
+**Run browser tests (local development - with your own browser):**
+```bash
+PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser -v
 PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run python scripts/console_sweep.py
 ```
 
 **Mobile viewport testing:**
 The browser tests include mobile viewport checks (390px). To run only mobile-related tests:
 ```bash
-PLAYWRIGHT_BROWSERS_PATH=./pw-browsers uv run pytest -m browser -k "mobile or 390" -v
+uv run pytest -m browser -k "mobile or 390" -v
 ```
+
+**Refreshing the shared browser (owner only):**
+When the Playwright dependency changes (see `uv.lock`), the owner must refresh the shared copy:
+```bash
+# Install to a temporary location
+PLAYWRIGHT_BROWSERS_PATH=/tmp/pw-browsers uv run playwright install chromium
+# Copy to the shared folders (requires write access to /opt)
+cp -r /tmp/pw-browsers/chromium-* /opt/playwright-browsers/
+# The chrome-libs folder is updated separately if needed
+```
+The shared copy is tied to the Playwright version in `uv.lock` (currently Chromium 1254).
+
+**Manual override:**
+Setting `PLAYWRIGHT_BROWSERS_PATH` or `LD_LIBRARY_PATH` yourself always takes precedence over
+the automatic detection.
 
 ### Agent access
 

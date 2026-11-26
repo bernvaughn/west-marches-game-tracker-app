@@ -37,6 +37,12 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# Configure shared browser environment before importing Playwright
+sys.path.insert(0, str(ROOT))
+from scripts.browser_env import check_browser, use_shared_browser  # noqa: E402
+
+use_shared_browser()
 HEIGHTS = {1920: 1080, 1280: 800, 992: 800, 768: 1024, 390: 844, 320: 640}
 DEFAULT_WIDTHS = (1280, 992, 768, 390, 320)
 AUDIT_WIDTHS = (1920, 1280, 768, 390)
@@ -213,14 +219,8 @@ def main() -> int:
         from playwright.sync_api import sync_playwright
 
         with sync_playwright() as pw:
-            try:
-                browser = pw.chromium.launch()
-            except Exception as exc:
-                print(
-                    f"Chromium did not start: {exc}\n"
-                    "See the wiki page testing/browser-checks-without-root."
-                )
-                return 3
+            check_browser(pw)
+            browser = pw.chromium.launch()
             for width in widths:
                 if timeout_sec and time.time() - start_time > timeout_sec:
                     raise RuntimeError(f"Overall timeout of {timeout_sec}s exceeded")
