@@ -1504,6 +1504,21 @@ Rules for every story in this round:
 - The game master digest (E7) lists players by name in yes, maybe, no, and not answered, like P14.
 - This changes E5, E6 and E7 where they mention characters.
 
+## Round 26: next sessions on the sessions page (2026-11-26)
+
+The sessions page (P3) shows one month at a time. A club that plays about once a month often has an empty month on screen even though a session is only days away, just across the month line.
+
+**P18 See the next sessions.** As a player, game master, or club admin, I want the sessions page to show the next few upcoming sessions at the top, whatever month the calendar is showing, so I always see when we play next. *(play_sessions)*
+- A "Coming up" list sits above the month calendar, on wide screens and on phones. It shows the next 5 sessions from now, in order, across any months. It is the same list whichever month the calendar shows.
+- Each row shows the weekday and date, the time with the zone's short name (P17), the title, the game master, and how many players said yes (P13).
+- Each row shows my own answer to that session as a small badge ("Yes", "Maybe", "No", or "Not answered"), and a link to the session page where I can change it (P13).
+- The first row is marked "Next session" and says how far away it is, for example "in 3 days", "tomorrow", or "in 5 weeks". A session that has started today still counts as upcoming until it ends. If it has no end time, it counts for 4 hours after it starts.
+- Cancelled sessions are left out of the list, because the calendar already marks them.
+- When the next session is not in the month the calendar is showing, the list has a "Show that month" link that moves the calendar to it.
+- When there are no upcoming sessions, the list says "No sessions are scheduled yet." Game masters and club admins also see an "Add a session" link there (P1).
+- The club home page's "next session" card (P3) and this list agree on what the next session is.
+- The list works without JavaScript and does not print.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
