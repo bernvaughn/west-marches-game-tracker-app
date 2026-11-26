@@ -426,6 +426,19 @@ main:focus { outline: none; }
 .wm-command-item-label { flex: 1 1 auto; font-size: var(--wm-text-md); color: var(--wm-text); }
 .wm-command-item-group { color: var(--wm-text-muted); font-size: var(--wm-text-xs); text-transform: uppercase; letter-spacing: .05em; flex: none; }
 .wm-command-empty { display: flex; align-items: center; justify-content: center; padding: var(--wm-space-5); color: var(--wm-text-muted); font-size: var(--wm-text-sm); }
+/* Command palette visibility is toggled with a class (x-bind:class), not with
+   x-show, because Alpine's x-show injects style="display: none" which CSP
+   style-src 'self' blocks. */
+.wm-command-palette { display: none; }
+.wm-command-palette-open { display: block; }
+.wm-command-empty { display: none; }
+.wm-command-empty-show { display: flex; }
+/* htmx indicator styles. htmx is configured (via the htmx-config meta tag in
+   base.html) not to inject these as an inline <style> block, which CSP
+   style-src 'self' would block. They live here instead, served as a stylesheet. */
+.htmx-indicator { opacity: 0; }
+.htmx-request .htmx-indicator { opacity: 1; transition: opacity 200ms ease-in; }
+.htmx-request.htmx-indicator { opacity: 1; transition: opacity 200ms ease-in; }
 .wm-command-footer { display: flex; align-items: center; justify-content: flex-end; gap: var(--wm-space-3); padding: var(--wm-space-3) var(--wm-space-4); border-top: 1px solid var(--wm-border); background: var(--wm-surface-sunken); border-radius: 0 0 var(--wm-radius-lg) var(--wm-radius-lg); }
 .wm-command-footer kbd { font-family: var(--wm-font-mono, monospace); font-size: var(--wm-text-xs); color: var(--wm-text-muted); background: var(--wm-surface); border: 1px solid var(--wm-border); border-radius: var(--wm-radius-sm); padding: .125rem .375rem; }
 
