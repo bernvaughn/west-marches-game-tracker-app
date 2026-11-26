@@ -48,7 +48,7 @@ class DowntimeEntryAdmin(admin.ModelAdmin):
     list_filter = ["action__club"]
     search_fields = ["label"]
     autocomplete_fields = ["action"]
-    ordering = ["order"]
+    ordering = ["action", "order"]
 
 
 @admin.register(DowntimeEntryItem)
@@ -57,6 +57,7 @@ class DowntimeEntryItemAdmin(admin.ModelAdmin):
     list_filter = ["entry__action__club"]
     search_fields = ["item__name"]
     autocomplete_fields = ["entry", "item"]
+    ordering = ["entry", "id"]
 
 
 @admin.register(DowntimeResult)
