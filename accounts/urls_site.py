@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import clubs, core, design, feedback, passwords, public, site_settings
+from .views.core import donate
 
 urlpatterns = [
     path("about/", public.about, name="about"),
@@ -18,4 +19,5 @@ urlpatterns = [
     ),
     path("site/settings/", site_settings.site_settings, name="site_settings"),
     path("site/design/", design.design_reference, name="site_design"),
+    path("donate/", donate, name="donate"),
 ]

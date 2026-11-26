@@ -85,6 +85,7 @@ def home(request):
 def donate(request):
     """Redirect to the configured donate URL."""
     from ..models import SiteSettings
+
     donate_url = SiteSettings.load().donate_url
     if donate_url:
         return redirect(donate_url)

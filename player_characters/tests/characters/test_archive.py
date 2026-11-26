@@ -269,10 +269,7 @@ def test_sheet_shows_archive_for_owner_gm_admin(
     content = resp.content.decode()
     # The Archive action button has data-app-modal and points to archive URL
     # The navbar link "Archived characters" is a different thing
-    assert (
-        'href="/c/club-a/characters/archived/"' in content
-        and "Archived characters" in content
-    )
+    assert 'href="/c/club-a/characters/archived/"' in content and "Archived characters" in content
     # The action button would have data-app-modal and href to archive endpoint
     assert (
         "data-app-modal" not in content or 'href="/c/club-a/characters/1/archive/"' not in content
@@ -290,10 +287,7 @@ def test_sheet_shows_unarchive_when_archived(club, login, character):
     assert "Unarchive" in content
     # "Archive" appears in "Archived characters" nav link; check action button absence
     # Unarchive action button has data-app-modal and href to unarchive endpoint
-    assert (
-        'href="/c/club-a/characters/archived/"' in content
-        and "Archived characters" in content
-    )
+    assert 'href="/c/club-a/characters/archived/"' in content and "Archived characters" in content
     # The Archive action button should not appear when character is archived
     assert (
         'href="/c/club-a/characters/1/archive/"' not in content or "data-app-modal" not in content

@@ -9,5 +9,19 @@ class LedgerConfig(AppConfig):
         from accounts import navigation
 
         reg = navigation.register
-        reg("character", "Ledger", "ledger:index", accounts_apps.not_gm_or_admin, 60, icon="journal-text")
-        reg("gm", "Club ledger", "ledger:index", accounts_apps.is_gm_or_admin, 5, icon="journal-text")
+        reg(
+            "character",
+            "Ledger",
+            "ledger:index",
+            accounts_apps.not_gm_or_admin,
+            60,
+            icon="journal-text",
+        )
+        reg(
+            "gm",
+            "Club ledger",
+            "ledger:index",
+            accounts_apps.is_gm_or_admin,
+            5,
+            icon="journal-text",
+        )

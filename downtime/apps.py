@@ -20,5 +20,19 @@ class DowntimeConfig(AppConfig):
         )
         reg("admin", "Agenda", "downtime:agenda", is_admin, 54, icon="calendar-event")
         reg("admin", "Downtime actions", "downtime:actions", is_admin, 70, icon="list-task")
-        reg("character", "Request downtime points", "downtime:requests", not_gm_or_admin, 80, icon="hourglass-split")
-        reg("gm", "Downtime point requests", "downtime:requests", is_gm_or_admin, 80, icon="hourglass-split")
+        reg(
+            "character",
+            "Request downtime points",
+            "downtime:requests",
+            not_gm_or_admin,
+            80,
+            icon="hourglass-split",
+        )
+        reg(
+            "gm",
+            "Downtime point requests",
+            "downtime:requests",
+            is_gm_or_admin,
+            80,
+            icon="hourglass-split",
+        )

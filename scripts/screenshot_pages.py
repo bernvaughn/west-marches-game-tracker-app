@@ -236,6 +236,8 @@ EXCLUDED = {
     "favicon": "An icon file, not a page.",
     "healthz": "A health check endpoint returning plain text, not a page.",
     "logout": "POST only.",
+    "accounts:donate": "Redirect to external URL; not a page to screenshot.",
+    "donate": "Redirect to external URL; not a page to screenshot.",
     "starting_equipment:templates": "Placeholder view for starting equipment (implemented in SE3).",
     "starting_equipment:template_create": "Stub view, Template CRUD child task.",
     "starting_equipment:template_detail": "Stub view, Template CRUD child task.",

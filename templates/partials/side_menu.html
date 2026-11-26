@@ -1,4 +1,5 @@
-{% load accounts_tags %}{% if club %}{% nav_entries as nav %}{% endif %}
+{% load accounts_tags %}
+{% if club %}{% nav_entries as nav %}{% endif %}
 <div class="offcanvas offcanvas-start wm-side-menu no-print" id="site-menu" tabindex="-1" aria-labelledby="site-menu-title">
   <div class="offcanvas-header">
     <h2 class="offcanvas-title wm-wordmark" id="site-menu-title">{{ APP_NAME }}</h2>
@@ -49,7 +50,7 @@
       {% endif %}
     </section>
     {% endif %}
-    {% if not club %}
+    {% if not club and request %}
     {% nav_entries as nav %}
     {% for key, heading, icon, links in nav|menu_sections %}
     {% if key == "account" %}
@@ -65,6 +66,11 @@
     </section>
     {% endif %}
     {% endfor %}
+    {% endif %}
+    {% if donate_url %}
+    <section class="wm-menu-group wm-menu-group-account">
+      <a class="wm-menu-link" href="{{ donate_url }}" target="_blank" rel="noopener"><i class="bi bi-heart me-2" aria-hidden="true"></i>Donate</a>
+    </section>
     {% endif %}
   </div>
   <div class="wm-side-menu-footer">

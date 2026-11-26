@@ -30,6 +30,7 @@ def not_gm_or_admin(r):
 
 def has_donate_url(r):
     from .models import SiteSettings
+
     return bool(SiteSettings.load().donate_url)
 
 
@@ -68,8 +69,22 @@ class AccountsConfig(AppConfig):
             also_current=("club_home",),
         )
         reg("club", "People", "accounts:index", not_admin, 100, icon="people")
-        reg("club", "Message the admins", "accounts:message_new", is_member, 60, icon="chat-left-text")
-        reg("club", "Request stock", "accounts:stock_request_new", is_member, 65, icon="box-arrow-up")
+        reg(
+            "club",
+            "Message the admins",
+            "accounts:message_new",
+            is_member,
+            60,
+            icon="chat-left-text",
+        )
+        reg(
+            "club",
+            "Request stock",
+            "accounts:stock_request_new",
+            is_member,
+            65,
+            icon="box-arrow-up",
+        )
         reg("admin", "Members", "accounts:index", is_admin, 10, icon="people")
         reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20, icon="person-check")
         reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30, icon="inbox")
@@ -77,7 +92,15 @@ class AccountsConfig(AppConfig):
 
         # Account links (visible to all authenticated users, not club-specific)
         reg("account", "Your clubs", "home", lambda r: True, 10, icon="houses", club_required=False)
-        reg("account", "Change password", "password_change", lambda r: True, 20, icon="key", club_required=False)
+        reg(
+            "account",
+            "Change password",
+            "password_change",
+            lambda r: True,
+            20,
+            icon="key",
+            club_required=False,
+        )
         reg("account", "Donate", "donate", has_donate_url, 30, icon="heart", club_required=False)
 
         # Register built-in dashboard providers

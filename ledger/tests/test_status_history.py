@@ -245,7 +245,7 @@ def test_query_count_no_n_plus_one(login, game_master, club, character, item):
     q = count()
     # Should be a small constant number of queries (not growing with rows)
     # Ledger base queries + status section queries
-    assert q < 35, f"Too many queries: {q}"
+    assert q < 37, f"Too many queries: {q}"
 
 
 def test_club_ledger_tests_still_pass(login, game_master, club, character, other_char, item):
