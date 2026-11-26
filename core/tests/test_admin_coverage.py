@@ -7,6 +7,40 @@ or be listed in the allowlist below with a reason.
 from django.apps import apps
 from django.contrib import admin as django_admin
 
+# All first-party app labels in this project
+FIRST_PARTY_APPS = [
+    "accounts",
+    "character_options",
+    "player_characters",
+    "items",
+    "shops",
+    "ledger",
+    "map",
+    "quests",
+    "downtime",
+    "agent_access",
+    "starting_equipment",
+    "mail",
+    "play_sessions",
+    "player_items",
+]
+
+
+# Models intentionally not registered in the admin, with reasons
+ALLOWLIST = {
+    # mail: holds message body with live tokens, deleted after sending
+    "EmailPayload",
+    # items: will be registered in task C4
+    "ContainerSlot",
+    "ContainerSlotOption",
+    "RecentItemPick",
+    "ClubWeightSettings",
+    "ContainerOpening",
+    # map: not part of admin improvements epic
+    "CreditGrant",
+    "FoundMark",
+}
+
 
 def test_every_first_party_model_is_in_the_admin():
     """All first-party models are registered in the admin or allowlisted."""
@@ -59,13 +93,6 @@ def test_every_first_party_model_is_in_the_admin():
         # map: not part of admin improvements epic
         "CreditGrant",
         "FoundMark",
-        # downtime: will be registered in task C5
-        "DowntimePointEntry",
-        "DowntimeAction",
-        "DowntimeEntry",
-        "DowntimeEntryItem",
-        "DowntimeResult",
-        "DowntimePointRequest",
     }
 
     all_missing = {}
