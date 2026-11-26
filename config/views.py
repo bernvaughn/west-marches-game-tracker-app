@@ -1,9 +1,12 @@
 import logging
 
+from django.conf import settings
 from django.db import connections
 from django.http import HttpResponse, HttpResponseNotAllowed, HttpResponseRedirect
 from django.templatetags.static import static
 from django.views.decorators.csrf import csrf_exempt
+
+from accounts.ratelimit import get_client_ip, rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +16,12 @@ def favicon(request):
 
 
 @csrf_exempt
+@rate_limit(
+    prefix="healthz",
+    limit=lambda: settings.RATELIMIT_HEALTHZ_ATTEMPTS,
+    window=lambda: settings.RATELIMIT_HEALTHZ_WINDOW,
+    key_func=get_client_ip,
+)
 def healthz(request):
     """Health check: reports whether the default database is reachable.
 
