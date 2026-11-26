@@ -114,9 +114,7 @@ def rate_limit(
             window_value = window() if callable(window) else window
             identifier = key_func(request, *args, **kwargs)
             cache_key = get_rate_limit_key(prefix, identifier, window_value)
-            allowed, remaining, retry_after = check_rate_limit(
-                cache_key, limit_value, window_value
-            )
+            allowed, remaining, retry_after = check_rate_limit(cache_key, limit_value, window_value)
 
             if not allowed:
                 response = HttpResponse(
