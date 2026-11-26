@@ -1,27 +1,15 @@
 """Forms for club settings."""
 
-from zoneinfo import available_timezones
-
 from django import forms
 
 from items.models import ClubWeightSettings
+from play_sessions.timefmt import timezone_choices as ps_timezone_choices
 
 from ..models import Club
 
 
-def timezone_choices(current=None):
-    """Sorted (name, name) choices from zoneinfo.available_timezones().
-
-    If `current` is set and not in the list, add it so an odd stored zone still shows.
-    """
-    choices = [(name, name) for name in sorted(available_timezones())]
-    if current and current not in {name for name, _ in choices}:
-        choices.insert(0, (current, current))
-    return choices
-
-
 class TimezoneChoiceField(forms.ChoiceField):
-    """A time zone select built from the IANA database."""
+    """A time zone select built from the IANA database with friendly labels."""
 
     def __init__(self, **kwargs):
         kwargs.setdefault("label", "Time zone")
@@ -46,7 +34,8 @@ class ClubSettingsForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["timezone"].choices = timezone_choices(self.instance.timezone)
+        # timezone_choices returns (iana, friendly_label) pairs; stored value stays IANA
+        self.fields["timezone"].choices = ps_timezone_choices()
         self.fields["timezone"].initial = self.instance.timezone
 
 

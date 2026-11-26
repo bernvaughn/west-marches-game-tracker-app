@@ -5,8 +5,19 @@ from django.utils import timezone
 
 from ..calendar import next_session
 from ..models import PlayerRSVP
+from ..timefmt import format_session_time
 
 register = template.Library()
+
+
+@register.filter
+def session_time(moment, club):
+    """Template filter: format a datetime with the club's zone short name.
+
+    Usage: {{ moment|session_time:club }}
+    Returns string like "7:00 PM EDT" or "7:00 PM EST".
+    """
+    return format_session_time(moment, club)
 
 
 @register.inclusion_tag("play_sessions/_next_session.html", takes_context=True)

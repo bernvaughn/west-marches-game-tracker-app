@@ -3,7 +3,7 @@
    Each day holds date, in_month, is_today, sessions. Each session has local_start
    (aware, club zone), title, game_master, yes_count, cancelled, pk.
 {% endcomment %}
-{% load tz %}
+{% load play_sessions_tags %}
 <div class="sessions-grid {{ class|default:'' }}">
   <div class="sessions-week sessions-week--head">
     <div class="sessions-cell sessions-cell--head">Sun</div>
@@ -24,7 +24,7 @@
       <div class="sessions-session{% if s.cancelled %} sessions-session--cancelled{% endif %}">
         <a class="sessions-title" href="{% url 'play_sessions:session_detail' club.slug s.pk %}">{{ s.title }}</a>
         <span class="sessions-time">
-          {% localtime off %}{{ s.local_start|time:"g:i A" }}{% endlocaltime %} {{ zone_name }}
+          {{ s.local_start|session_time:club }}
         </span>
         <span class="sessions-gm">
           {% if s.game_master %}{{ s.game_master.user.display_name|default:s.game_master.user.email }}{% endif %}
