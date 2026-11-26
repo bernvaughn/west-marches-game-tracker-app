@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from csp.constants import NONCE
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -291,7 +293,7 @@ CONTENT_SECURITY_POLICY = {
     "DIRECTIVES": {
         "default-src": ("'self'",),
         "script-src": ("'self'",),
-        "style-src": ("'self'", "'unsafe-inline'"),
+        "style-src": ("'self'", NONCE),
         "img-src": ("'self'", "data:"),
         "font-src": ("'self'",),
         "connect-src": ("'self'",),

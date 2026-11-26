@@ -14,7 +14,7 @@ Context: xp_progress (from sheet.xp_progress), can_edit, character, club.{% endc
     aria-valuemax="100"
     aria-valuenow="{{ xp_progress.percent }}"
   >
-    <div class="wm-xp-fill" style="width: {{ xp_progress.percent }}%"></div>
+    <div class="wm-xp-fill" style="width: {{ xp_progress.percent }}%" nonce="{{ request.csp_nonce }}"></div>
   </div>
   {% endif %}
   <p class="wm-xp-text">{{ xp_progress.xp_label }}</p>

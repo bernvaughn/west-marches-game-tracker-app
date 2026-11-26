@@ -42,7 +42,7 @@
     {% if starting_equipment_reasons %}
     <section class="wm-sheet-box wm-sheet-full wm-sheet-notice no-print" aria-labelledby="sheet-notice-starting-equipment-reasons" role="status">
       <h2 class="wm-sheet-box-title" id="sheet-notice-starting-equipment-reasons">Starting equipment notes</h2>
-      <ul class="wm-sheet-notice-text" style="margin: 0 0 0 1.25rem; padding: 0;">
+      <ul class="wm-sheet-notice-text wm-sheet-notice-text--indented">
         {% for reason in starting_equipment_reasons %}
         <li>{{ reason.message }}</li>
         {% endfor %}

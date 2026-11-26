@@ -14,7 +14,7 @@
   {% if reasons %}
   <section class="wm-sheet-box wm-sheet-full wm-sheet-notice no-print" aria-labelledby="choices-reasons" role="status">
     <h2 class="wm-sheet-box-title" id="choices-reasons">Starting equipment notes</h2>
-    <ul class="wm-sheet-notice-text" style="margin: 0 0 0 1.25rem; padding: 0;">
+    <ul class="wm-sheet-notice-text wm-sheet-notice-text--indented">
       {% for reason in reasons %}
       <li>{{ reason.message }}</li>
       {% endfor %}
@@ -30,7 +30,7 @@
         {% for gf in group_fields %}
         <div class="wm-sheet-box wm-sheet-full mb-3">
           <fieldset class="border p-3 mb-0">
-            <legend class="wm-sheet-box-title wm-sheet-full wm-sheet-notice" style="font-size: 1rem;">{{ gf.group.label }}</legend>
+            <legend class="wm-sheet-box-title wm-sheet-full wm-sheet-notice wm-sheet-box-title--inline-size">{{ gf.group.label }}</legend>
             <div class="wm-sheet-choices mt-2">
               {% for row in gf.rows %}
               <label class="form-check d-block mb-2">
