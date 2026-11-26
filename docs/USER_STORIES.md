@@ -1036,7 +1036,7 @@ Two new epics. The first adds play sessions to the club. The second lets a chara
 Rules for every story in this round:
 
 - Everything belongs to one club (U12). Nothing here sends email.
-- Attendance and death are recorded per character, not per player, like map visits (see Decisions).
+- Attendance and death are recorded per character, like map visits. RSVPs are per player (round 25).
 - Nothing is deleted. Dying and archiving never remove a character's items, coins, ledger lines, or map credit.
 
 ### Play sessions
@@ -1049,7 +1049,7 @@ A **play session** is one scheduled game night run by a game master. The club ke
 - A session in the past can still be edited, to fix its record.
 - Dates and times are entered and shown in the club's time zone (P11).
 
-**P2 Repeat sessions.** As a game master or club admin, I want to make a session repeat weekly or every two weeks, so I do not add every Friday by hand. *(sessions)*
+**P2 Repeat sessions.** As a game master or club admin, I want to make a session repeat weekly or every two weeks, so I do not add every Friday by hand. *(sessions)* *(Removed by P12, round 25.)*
 - Repeating makes a set of ordinary sessions. Changing or cancelling one does not change the others, and I can cancel the rest of a set in one step.
 
 **P3 The session calendar.** As a player, game master, or club admin, I want a calendar page showing the club's sessions by month, with an upcoming list on phones, so I can see when we play next. *(sessions)*
@@ -1058,17 +1058,17 @@ A **play session** is one scheduled game night run by a game master. The club ke
 - The page offers a link that adds the club's sessions to a phone or desktop calendar app, read-only, that works without signing in to this site. Anyone holding the link can read the schedule, so an admin can reset it.
 - This calendar is separate from the availability agenda (U70), which plans shops, quests, and downtime actions. The agenda may later show sessions too.
 
-**P4 Say I'm coming.** As a player, I want to say yes, maybe, or no to a session with one of my characters, so my game master knows who to plan for. *(sessions, player_characters)*
+**P4 Say I'm coming.** As a player, I want to say yes, maybe, or no to a session with one of my characters, so my game master knows who to plan for. *(sessions, player_characters)* *(Replaced by P13, round 25: answers are per player.)*
 - I answer for a character, because attendance is per character. If I do not pick one, the selected character is used (U25).
 - I can change my answer until the session starts. After that only a game master or club admin can.
 - Sessions have no seat cap. Every "yes" counts.
 - I see my own answers on my dashboard and my sheet.
 
-**P5 Who is coming.** As a game master, I want to see each session's answers, with the players who have not answered, so I know the table before we start. *(sessions)*
+**P5 Who is coming.** As a game master, I want to see each session's answers, with the players who have not answered, so I know the table before we start. *(sessions)* *(Changed by P14, round 25: the list shows players.)*
 - The list shows each character's name, level and class, with the player's name.
 - A GM or club admin can answer for someone, so a player who tells me at the table counts.
 
-**P6 Take attendance.** As a game master, I want to record who actually played, character by character, so the club has a true record. *(sessions, player_characters)*
+**P6 Take attendance.** As a game master, I want to record who actually played, character by character, so the club has a true record. *(sessions, player_characters)* *(Changed by P15, round 25: the game master picks characters at the table.)*
 - The attendance page starts from the "yes" answers and I can tick or untick anyone, including characters who never answered.
 - A character is either "played" or not. Only characters that played count in P7 and P8.
 - Attendance can be corrected afterwards. Each correction is recorded with who changed it and when.
@@ -1206,21 +1206,21 @@ Rules for every story in this round:
 
 These stories need play sessions (P1-P4, round 19).
 
-**E5 Session reminder.** As a player, I want an email a few days before a play session, with the date, time, and place, so I do not forget. *(play_sessions, core)*
+**E5 Session reminder.** As a player, I want an email a few days before a play session, with the date, time, and place, so I do not forget. *(play_sessions, core)* *(Changed by E12, round 25.)*
 - A club admin chooses when reminders go, from a short list: for example 7 days and 2 days before. The default is one reminder, 3 days before.
 - The email says the session's title, date, and time in the club's time zone (P11), the game master, and the location. It goes to every member who has a character that has not said "no" to the session.
 - A cancelled session sends a short "cancelled" email to people who were sent a reminder or said "yes". A changed date or time sends one "changed" email.
 - Reminders go out once, even if the job runs twice. A session that is already past never sends one.
 - The server runs the job on a schedule. A site admin can see when it last ran.
 
-**E6 Answer from the email.** As a player, I want to say "yes", "maybe", or "no" from the reminder email with one click, so I do not have to sign in to RSVP. *(play_sessions)*
+**E6 Answer from the email.** As a player, I want to say "yes", "maybe", or "no" from the reminder email with one click, so I do not have to sign in to RSVP. *(play_sessions)* *(Changed by E12, round 25: one set of buttons per person.)*
 - The email has three buttons per character the person owns, for example "Aria: Yes / Maybe / No". Each link answers that one session for that one character (P4).
 - A link opens a small page that shows the answer and asks the person to press "Confirm". Nothing changes on a plain page load, so mail scanners that open links cannot answer for people.
 - Links expire when the session starts. They work only for that person and that character, and a signed-in person who follows a link for someone else gets nothing.
 - The page shows the current answer and lets the person change it.
 - A player can answer more than once; the latest answer wins and is recorded like any RSVP.
 
-**E7 A digest for the game master.** As a game master, I want one email the day before a session, listing who said yes, maybe, no, and who has not answered, so I know the table. *(play_sessions)*
+**E7 A digest for the game master.** As a game master, I want one email the day before a session, listing who said yes, maybe, no, and who has not answered, so I know the table. *(play_sessions)* *(Changed by E12, round 25: players, not characters.)*
 - It goes to the session's game master only, and only if they opt in (E8).
 - It lists characters with the player's name, like the "Who is coming" page (P5).
 
@@ -1449,6 +1449,61 @@ The hamburger menu has grown with every epic: Character, Town, Map, Club, Accoun
 - The legend uses the same design tokens and marks, so it stays consistent with the links.
 - Works on phone width and with the keyboard. Does not change the top bar's collapsing rules (U32).
 
+## Round 25: RSVP by player, and no repeating sessions (2026-11-26)
+
+Two changes to the play sessions work (round 19) and its emails (round 20). Players answer for themselves, not for a character, so nobody has to pick a character until they actually play. And sessions no longer repeat.
+
+Attendance stays per character. That is the record of who played, and it is what history, the report, and downtime points use.
+
+Rules for every story in this round:
+
+- An answer belongs to one player (a club membership) and one session. A player has at most one answer per session.
+- Nothing here changes who can see which sessions, or the club time zone (P11).
+- Existing data is kept. Nobody loses a session, an answer, or an attendance record.
+
+**P12 Remove repeating sessions.** As a club admin, I want to schedule sessions one at a time, with no repeat option, so scheduling stays simple. *(play_sessions)*
+- The schedule form no longer offers "repeat weekly" or "every two weeks". The "cancel the rest of a series" step is gone, along with the series pages.
+- Sessions that were made by repeating earlier stay as ordinary sessions, with the same dates, answers, attendance and recaps. Nothing is deleted or cancelled.
+- This replaces P2.
+
+**P13 Say I'm coming, as me.** As a player, I want to say yes, maybe, or no to a session once, for myself, so I do not have to choose a character before the night. *(play_sessions)*
+- There is one answer per player and session. The session page, the dashboard card and the "next session" card show my answer, and no character is shown or asked for.
+- I can change my answer until the session starts. After that only a game master or club admin can, for anyone.
+- A game master or club admin can answer for any player in the club, so a player who tells me at the table counts.
+- A player with no active character can still answer. A game master or club admin does not need a character to answer either.
+- The character sheet no longer shows session answers. It still shows the sessions the character played (P7).
+- This replaces P4 and the per-character answers.
+
+**P14 Who is coming, by player.** As a game master, I want the "Who is coming" list to show players, not characters, so I can plan the table. *(play_sessions)*
+- The list groups players into yes, maybe, no, and not answered, and shows each player's name. Players who have a character may also show the names of their active characters as a hint. It is a hint only and never counts as a choice.
+- This replaces P5 where it listed characters.
+
+**P15 Pick characters when we play.** As a game master, I want to choose which character each player brought when I take attendance, so the record is true even though nobody picked one ahead of time. *(play_sessions, player_characters)*
+- The attendance page starts from the players who said "yes". Each row shows the player and a tick box for each of their active characters, and none is ticked at first.
+- I tick the characters that played. A player may bring more than one. A player with no tick is not marked as having played, so a "yes" who did not turn up does not count.
+- I can also add a player who never answered, and tick their characters, as before.
+- A player may use a "Bringing this character" button on the session page once it has started, and until I confirm attendance. It only pre-ticks that character for me, and I can untick it. It locks nothing and records nothing by itself.
+- Everything else about attendance (P6) stays: corrections are recorded with who and when, dead and archived characters are never offered, and only characters that played count in P7 and P8.
+- Downtime points for attending (P9) are awarded per character that played, as now.
+
+**P16 Keep existing answers.** As a club admin, I want answers that players already gave for characters to carry over, so nobody has to answer again. *(play_sessions)*
+- Each player's per-character answers for a session become one answer for that player. If all the player's character answers agree, that answer is kept. If they disagree, the most recent answer wins.
+- The change runs once, in one step, and is safe to run twice. A short report says how many answers were merged and how many players had mixed answers.
+- Attendance records are not touched.
+
+**P17 Show time zones as EST / EDT.** As a player, I want session times to end with a short zone name such as "7:00 PM EDT", and not "America/New_York", so I can read them at a glance. *(play_sessions, accounts, mail)*
+- Every place that shows a session time shows the zone's short name for that date: "EST" in winter and "EDT" in summer for the same club. This covers the session page, the calendar and upcoming list, the dashboard and "next session" cards, the attendance and report pages, and the reminder, cancel, and change emails (E5).
+- The club's time zone setting (P11) shows friendly names in its list, such as "Eastern Time (New York)", "Central Time (Chicago)" and "Pacific Time (Los Angeles)", with the current short name beside each, for example "Eastern Time (New York), now EST". The stored value stays the standard zone name.
+- A zone with no short name in common use, such as some zones outside North America and Europe, shows its offset instead, for example "UTC+5:30".
+- The calendar feed (P3) is unchanged. Phones show times in the viewer's own zone.
+- This changes how times are shown only. No stored time changes.
+
+**E12 Reminder emails for players, not characters.** As a player, I want the session reminder, the one-click answer, and the game master digest to talk about me and not my characters, so they match the new RSVP. *(play_sessions, mail)*
+- The reminder (E5) goes to every member who has not said "no" to the session, and to members who have not answered. It no longer depends on having a character.
+- The one-click answer (E6) has three buttons, "Yes / Maybe / No", one set per person. A link answers that one session for that one person. Everything else about it stays: a confirm page before anything changes, expiry at the session start, and no answer by a plain page load.
+- The game master digest (E7) lists players by name in yes, maybe, no, and not answered, like P14.
+- This changes E5, E6 and E7 where they mention characters.
+
 ## Quests
 
 **Q1 Item quests.** As a club admin, I want to make quests where players can turn in items to get rewards, so we can inspire players to collect interesting items. *(quests, items, player_characters)*
@@ -1646,7 +1701,7 @@ Not included: players' agents, spending a player's coins, and anything outside t
 - **Footer and item details.** Every page has a small footer with copyright and credits, never printed (U94). Item details open from an "i" icon beside the name; items have a GM-only details field that players never see (U95, U96).
 - **Containers.** Any item can be a container (`is_container`). Slots have chance, weighted options, quantity ranges, and unknown flags. Opening writes an `opened` ledger entry and a `ContainerOpening`. Previews go through `loot_preview()`; unknowns are masked to `???` for players and agents. Nesting allowed (max depth 3, no cycles). Existing packs migrated by idempotent `seed_pack_containers` command. Agent `search_items` returns `is_container` and masked `loot`. Residual: an unknown slot's content item is a normal catalogue item; its name may appear elsewhere without revealing it is in a box.
 - **Death and archive (U138-U147).** Dead and archived are separate states on a character. Players can mark their own characters dead. Dead characters cannot buy, spend, or turn in, but can sell junk and keep a stall, which shows a memorial. Coins from the stall keep going to the dead character and just collect there, unusable for now; a way to use them may come later. A replacement character may claim starting equipment as usual. Archived characters are hidden everywhere and cannot act until unarchived. Neither removes any data.
-- **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs and attendance are per character. Attendance can optionally award downtime points once (P9).
+- **Play sessions (P1-P11).** Sessions are club-scoped calendar entries in the club's time zone, with no seat cap. RSVPs are per player, and attendance is per character (round 25). Sessions do not repeat (round 25). Attendance can optionally award downtime points once (P9).
 - **Email (E1-E11).** Email goes through Resend's HTTPS API only. It never replaces a flow that works without it: admins can still hand out temporary passwords and reset passwords. Emails carry one-time links, never passwords. Required emails are the welcome link and password resets; session reminders and notices are optional per person and club. Round 20 supersedes the earlier "no email for now" decision.
 - **Item names (U148-U153).** A variant item is named "Variant (Kind)", for example "Drum (Musical Instrument)". Renames keep the same item record, so nothing a player owns changes. The store sells "Map Case" and "Scroll Case" separately, and the Diplomat's Pack rolls each of its two cases between them. Existing clubs catch up with a dry-run-by-default command.
 - **Weight (U154-U156).** Weight is information only and never blocks anything. Default capacity is 15 times Strength, with a per-character override.
