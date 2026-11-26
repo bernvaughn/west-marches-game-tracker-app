@@ -32,6 +32,7 @@ def register():
         "play_sessions:session_create",
         is_gm_or_admin,
         25,
+        icon="calendar-plus",
     )
 
     core.register_session_section(

@@ -41,4 +41,5 @@ def register():
         "play_sessions:report",
         is_admin,
         40,
+        icon="clipboard-data",
     )

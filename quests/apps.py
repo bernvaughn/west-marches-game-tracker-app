@@ -10,4 +10,4 @@ class QuestsConfig(AppConfig):
 
         reg = navigation.register
         reg("town", "Quests", "quests:index", None, 30, icon="journal-text", shortcut_order=30)
-        reg("admin", "Manage quests", "quests:manage", is_admin, 60)
+        reg("admin", "Manage quests", "quests:manage", is_admin, 60, icon="journal-text")

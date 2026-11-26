@@ -16,4 +16,5 @@ class CharacterOptionsConfig(AppConfig):
             "character_options:index",
             is_admin,
             46,
+            icon="sliders",
         )

@@ -10,5 +10,5 @@ class ShopsConfig(AppConfig):
 
         reg = navigation.register
         reg("town", "Shops", "shops:index", None, 20, icon="shop", shortcut_order=20)
-        reg("admin", "Manage shops", "shops:manage_list", is_admin, 50)
-        reg("admin", "Rotations", "shops:rotation_list", is_admin, 55)
+        reg("admin", "Manage shops", "shops:manage_list", is_admin, 50, icon="shop")
+        reg("admin", "Rotations", "shops:rotation_list", is_admin, 55, icon="arrow-repeat")

@@ -20,17 +20,18 @@ class PlayerCharactersConfig(AppConfig):
             shortcut_order=10,
             shortcut_label="Character",
         )
-        reg("character", "Character directory", "characters:directory", None, 15)
-        reg("gm", "All characters", "characters:index", is_gm_or_admin, 60)
-        reg("gm", "Award Loot to Party", "characters:bulk_award", is_gm_or_admin, 65)
-        reg("character", "New character", "characters:create", None, 50)
-        reg("character", "Character slips", "characters:slips", None, 57)
+        reg("character", "Character directory", "characters:directory", None, 15, icon="people")
+        reg("gm", "All characters", "characters:index", is_gm_or_admin, 60, icon="people")
+        reg("gm", "Award Loot to Party", "characters:bulk_award", is_gm_or_admin, 65, icon="cash-stack")
+        reg("character", "New character", "characters:create", None, 50, icon="person-plus")
+        reg("character", "Character slips", "characters:slips", None, 57, icon="file-earmark-text")
         reg(
             "character",
             "Archived characters",
             "characters:archived",
             lambda r: _membership(r.user, r.club) is not None,
             58,
+            icon="archive",
         )
         reg(
             "club",
@@ -39,4 +40,5 @@ class PlayerCharactersConfig(AppConfig):
             lambda r: _membership(r.user, r.club) is not None,
             59,
             icon="flower1",
+            shortcut_order=59,
         )

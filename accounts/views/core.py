@@ -43,7 +43,7 @@ def home(request):
             .order_by("user__display_name")
         )
         for m in gm_qs:
-            gms.setdefault(m.club_id, []).append(m.user.display_name or "Unnamed game master")
+            gms.setdefault(m.club.id, []).append(m.user.display_name or "Unnamed game master")
         counts = (
             Membership.objects.filter(club_id__in=ids, is_game_master=False, is_club_admin=False)
             .values("club_id")
@@ -79,6 +79,16 @@ def home(request):
         )
     ctx["cards"] = cards
     return render(request, "home.html", ctx)
+
+
+@login_required
+def donate(request):
+    """Redirect to the configured donate URL."""
+    from ..models import SiteSettings
+    donate_url = SiteSettings.load().donate_url
+    if donate_url:
+        return redirect(donate_url)
+    return redirect("home")
 
 
 @club_member_required
