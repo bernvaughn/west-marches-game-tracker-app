@@ -1,7 +1,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import Club, Membership, Message, SiteFeedback, SiteSettings, User, WhitelistEntry
+from .models import (
+    Club,
+    Membership,
+    Message,
+    PasswordHistory,
+    SiteFeedback,
+    SiteSettings,
+    User,
+    WhitelistEntry,
+)
 
 
 @admin.register(User)
@@ -77,3 +86,24 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ["donate_url"]
     search_fields = ["donate_url"]
     ordering = ["-pk"]
+
+
+class ReadOnlyAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PasswordHistory)
+class PasswordHistoryAdmin(ReadOnlyAdmin):
+    list_display = ["user", "created"]
+    list_filter = ["user"]
+    search_fields = ["user__email", "user__display_name"]
+    date_hierarchy = "created"
+    ordering = ["-created"]
+    autocomplete_fields = ["user"]
