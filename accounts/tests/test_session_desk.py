@@ -1,10 +1,12 @@
 """Tests for the session desk on club home."""
 
 import datetime
+from datetime import timedelta
 
 import pytest
 from django.core.management import call_command
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts import approvals
 from accounts.models import Membership, Message, User
@@ -13,6 +15,8 @@ from agent_access.models import ProposedBatch, ProposedItem
 from agent_access.tokens import create_token
 from downtime.models import DowntimePointRequest
 from map.models import MapRequest
+from play_sessions.models import PlaySession
+from play_sessions.upcoming import upcoming_sessions
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("U35")]
@@ -73,6 +77,29 @@ def test_build_session_desk_returns_dict_for_club_admin(rf, club, club_admin):
     request = _req(rf, club_admin, club)
     desk = build_session_desk(request)
     assert desk is not None
+
+
+def test_desk_coming_up_uses_shared_query_limited_to_three(rf, club, game_master):
+    """Desk coming_up is the shared upcoming query, limited to 3, ordered by starts_at."""
+    gm = Membership.objects.get(user=game_master, club=club)
+    today = timezone.now()
+    sessions = [
+        PlaySession.objects.create(
+            club=club, title=f"S{i}", starts_at=today + timedelta(days=i), game_master=gm
+        )
+        for i in (1, 2, 3, 4)
+    ]
+    request = _req(rf, game_master, club)
+    desk = build_session_desk(request)
+    ids = [s["id"] for s in desk["coming_up"]]
+    assert len(ids) == 3
+    assert ids == [sessions[0].pk, sessions[1].pk, sessions[2].pk]
+    # Matches the shared query directly (same order, same rows).
+    data = upcoming_sessions(club, today, request.membership, 3)
+    assert ids == [row["id"] for row in data["sessions"]]
+    assert desk["club"] == club
+    assert desk["membership"] == request.membership
+    assert desk["can_manage_sessions"] is True
 
 
 def test_waiting_uses_pending_approvals(rf, club, game_master):

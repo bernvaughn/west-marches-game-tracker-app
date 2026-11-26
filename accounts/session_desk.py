@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts import approvals
 from accounts.permissions import is_club_admin, is_game_master
@@ -21,11 +22,16 @@ def build_session_desk(request):
     - "waiting": list of Approval items (same as pending_approvals)
     - "after": list of (label, url) tuples for post-session actions
     - "dashboard_url": str or None (player dashboard URL if user owns a character)
+    - "coming_up": up to 3 upcoming session dicts
+    - "club": Club
+    - "membership": Membership
+    - "can_manage_sessions": bool
     """
     if not _is_gm_or_admin(request):
         return None
 
     club = request.club
+    membership = request.membership
     waiting = approvals.pending_approvals(request)
 
     after = [
@@ -39,8 +45,17 @@ def build_session_desk(request):
     if own_characters(request).exists():
         dashboard_url = reverse("accounts:player_dashboard", args=[club.slug])
 
+    from play_sessions.core import can_manage_sessions
+    from play_sessions.upcoming import upcoming_sessions
+
+    coming_up = upcoming_sessions(club, timezone.now(), membership, 3)["sessions"]
+
     return {
         "waiting": waiting,
         "after": after,
         "dashboard_url": dashboard_url,
+        "coming_up": coming_up,
+        "club": club,
+        "membership": membership,
+        "can_manage_sessions": can_manage_sessions(request.user, club),
     }

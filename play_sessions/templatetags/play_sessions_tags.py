@@ -3,9 +3,9 @@
 from django import template
 from django.utils import timezone
 
-from ..calendar import next_session
-from ..models import PlayerRSVP
+from ..core import can_manage_sessions
 from ..timefmt import format_session_time
+from ..upcoming import upcoming_sessions
 
 register = template.Library()
 
@@ -22,7 +22,7 @@ def session_time(moment, club):
 
 @register.inclusion_tag("play_sessions/_next_session.html", takes_context=True)
 def next_session_block(context):
-    """Render the Next session block for club home (GM / admin).
+    """Render the upcoming-sessions block for club home (GM / admin).
 
     Fetches its own data from ``request.club`` because club_home.html is
     rendered by accounts, which this app does not own.
@@ -30,17 +30,23 @@ def next_session_block(context):
     request = context["request"]
     club = getattr(request, "club", None)
     if club is None:
-        return {"provider_context": {"session": None}}
+        return {
+            "provider_context": {
+                "coming_up": [],
+                "club": None,
+                "membership": None,
+                "can_manage_sessions": False,
+            }
+        }
     membership = getattr(request, "membership", None)
-    return {"provider_context": _next_session_ctx(club, membership)}
+    return {"provider_context": _next_session_ctx(club, membership, request.user)}
 
 
-def _next_session_ctx(club, membership=None):
-    session = next_session(club, timezone.now())
-    if session is not None and membership is not None:
-        my_rsvp = PlayerRSVP.objects.filter(
-            session_id=session["session_id"], member=membership
-        ).first()
-        if my_rsvp:
-            session["my_answer"] = my_rsvp.answer
-    return {"session": session, "club": club}
+def _next_session_ctx(club, membership, user):
+    data = upcoming_sessions(club, timezone.now(), membership, 3)
+    return {
+        "coming_up": data["sessions"],
+        "club": club,
+        "membership": membership,
+        "can_manage_sessions": can_manage_sessions(user, club),
+    }

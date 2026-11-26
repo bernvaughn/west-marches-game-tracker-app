@@ -1,31 +1,12 @@
-{% comment %}_next_session: Next session card for the dashboard and the club home block.
-   Context: provider_context {session: {...} | None}. The session dict holds
-   title, local_start (aware, club zone), zone_name, gm_name, yes_count, detail_url,
-   session_id, my_answer.
+{% comment %}_next_session: Upcoming sessions list for the dashboard and the club home block.
+   Context: provider_context {coming_up: [...], club, membership, can_manage_sessions}.
+   Each session dict: id, title, local_start, zone_label, gm_name, yes_count,
+   my_answer, cancelled, detail_url, is_next, when_text.
 {% endcomment %}
 {% load play_sessions_tags %}
-<div class="wm-dashboard-section card wm-card-raised h-100">
-  <div class="card-header d-flex align-items-center justify-content-between py-2">
-    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
-      {% include "components/icon.html" with name="calendar" label="Next session" %}
-      Next session
-    </h3>
-  </div>
-  <div class="card-body">
-    {% if provider_context.session %}
-    {% with session=provider_context.session club=provider_context.club %}
-    <p class="card-text mb-1">{{ session.title }}</p>
-    <p class="card-text small text-muted mb-3">
-      {{ session.local_start|date:"j M Y" }} at {{ session.local_start|session_time:club }}
-      {% if session.gm_name %} · GM: {{ session.gm_name }}{% endif %}
-      {% if session.yes_count %} · {{ session.yes_count }} yes{% endif %}
-      {% if session.my_answer %} · You: {{ session.my_answer|title }}{% endif %}
-    </p>
-    <a href="{{ session.detail_url }}" class="btn btn-sm btn-outline-primary">View session</a>
-    {% endwith %}
-    {% else %}
-    <p class="card-text text-muted">No sessions scheduled.</p>
-    <a href="{% url 'play_sessions:calendar' provider_context.club.slug %}" class="btn btn-sm btn-outline-primary">View calendar</a>
-    {% endif %}
-  </div>
-</div>
+{% include "play_sessions/_coming_up.html" with coming_up=provider_context.coming_up club=provider_context.club membership=provider_context.membership can_manage_sessions=provider_context.can_manage_sessions %}
+{% if provider_context.coming_up %}
+<p class="text-center mt-2">
+  <a href="{% url 'play_sessions:calendar' provider_context.club.slug %}" class="btn btn-sm btn-outline-primary">View all sessions</a>
+</p>
+{% endif %}

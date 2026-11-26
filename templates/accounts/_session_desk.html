@@ -1,8 +1,18 @@
 {% comment %}Session desk: GM/admin action center on club home.
-   Context: session_desk (dict with keys: waiting, after, dashboard_url)
+   Context: session_desk (dict with keys: waiting, after, dashboard_url,
+   coming_up, club, membership, can_manage_sessions)
    Pair with: accounts/session_desk.py::build_session_desk
 {% endcomment %}
+{% load play_sessions_tags %}
 <div class="wm-session-desk wm-card" id="session-desk">
+  <section class="wm-session-desk__coming-up">
+    {% include "play_sessions/_coming_up.html" with coming_up=session_desk.coming_up club=session_desk.club membership=session_desk.membership can_manage_sessions=session_desk.can_manage_sessions %}
+    {% if session_desk.coming_up %}
+    <p class="text-center mt-2">
+      <a href="{% url 'play_sessions:calendar' session_desk.club.slug %}" class="btn btn-sm btn-outline-primary">View all sessions</a>
+    </p>
+    {% endif %}
+  </section>
   {% if session_desk.waiting %}
   <section class="wm-session-desk__waiting">
     <h3>Waiting for you</h3>
