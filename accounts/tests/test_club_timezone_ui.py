@@ -30,10 +30,14 @@ def test_club_admin_get_settings(club_admin, login, club):
     # Warning text present
     assert "Changing the time zone keeps the moment of every session" in body
     assert "19:00 can become 16:00" in body
-    # Sorted option list (first few from zoneinfo)
+    # Sorted option list (first few from zoneinfo) - IANA values still in option values
     assert "America/New_York" in body
     assert "Europe/London" in body
     assert "UTC" in body
+    # Friendly labels present in option text
+    assert "Eastern Time (New York)" in body
+    assert "Greenwich Mean Time (London)" in body
+    assert "Coordinated Universal Time (UTC)" in body
 
 
 def test_settings_page_renders_card_hierarchy_markers(club_admin, login, club):
@@ -188,8 +192,9 @@ def test_new_club_form_initial_zone(site_admin, login):
     r = c.get(url)
     assert r.status_code == 200
     body = r.content.decode()
-    # Check initial value equals settings.TIME_ZONE
-    expected = f"selected>{settings.TIME_ZONE}</option"
+    # Check initial value equals settings.TIME_ZONE with friendly label
+    # Default is UTC, friendly label is "Coordinated Universal Time (UTC), now UTC"
+    expected = "selected>Coordinated Universal Time (UTC), now UTC</option"
     assert expected in body
 
 

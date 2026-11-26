@@ -174,15 +174,14 @@ def test_detail_time_shows_in_club_zone_across_dst(client):
     )
     response_before = client.get(url_before)
     content_before = response_before.content.decode()
-    assert "7:00 PM" in content_before or "19:00" in content_before
-    assert "EDT" not in content_before  # Should be EST or just the zone abbreviation
+    assert "7:00 PM EST" in content_before
 
     url_after = reverse(
         "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session_after.pk}
     )
     response_after = client.get(url_after)
     content_after = response_after.content.decode()
-    assert "7:00 PM" in content_after or "19:00" in content_after
+    assert "7:00 PM EDT" in content_after
 
 
 def test_detail_cancelled_badge_shows(client, club_and_session):

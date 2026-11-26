@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load accounts_tags tz %}
+{% load accounts_tags play_sessions_tags %}
 
 {% block content %}
 {% url 'play_sessions:calendar' as calendar_url %}
@@ -10,10 +10,8 @@
     <dl class="row mb-0">
       <dt class="col-sm-2">Date</dt>
       <dd class="col-sm-10">
-        {% localtime off %}
-        {{ starts_local|date:"l, F j, Y" }} at {{ starts_local|time:"g:i A" }} {{ zone_name }}
-        {% if ends_local %}–{{ ends_local|time:"g:i A" }} {{ zone_name }}{% endif %}
-        {% endlocaltime %}
+        {{ starts_local|date:"l, F j, Y" }} at {{ starts_local|session_time:club }}
+        {% if ends_local %}–{{ ends_local|session_time:club }}{% endif %}
       </dd>
 
       {% if session.location %}

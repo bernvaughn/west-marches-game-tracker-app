@@ -1,7 +1,9 @@
 from django import forms
 from django.utils.text import slugify
 
-from ..forms.club_settings import TimezoneChoiceField, timezone_choices
+from play_sessions.timefmt import timezone_choices
+
+from ..forms.club_settings import TimezoneChoiceField
 from ..models import Club, default_timezone
 
 
@@ -17,7 +19,7 @@ class ClubCreateForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["timezone"].choices = timezone_choices(default_timezone())
+        self.fields["timezone"].choices = timezone_choices()
 
     def clean_admin_email(self):
         return self.cleaned_data["admin_email"].strip().lower()

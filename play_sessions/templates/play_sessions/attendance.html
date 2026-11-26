@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load accounts_tags tz %}
+{% load accounts_tags play_sessions_tags %}
 
 {% block content %}
 {% url 'play_sessions:session_detail' club_slug=club.slug pk=session.pk as detail_url %}
@@ -125,7 +125,7 @@
               {% endif %}
             </td>
             <td>{{ change.changed_by.display_name|default:change.changed_by.email }}</td>
-            <td>{% localtime off %}{{ item.when|date:"M j, Y H:i" }}{% endlocaltime %}</td>
+            <td>{{ item.when|session_time:club }}</td>
           </tr>
         {% endwith %}{% endfor %}
       </tbody>

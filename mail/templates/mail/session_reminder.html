@@ -1,12 +1,12 @@
 {% extends "mail/base.html" %}
+{% load play_sessions_tags %}
 
 {% block content %}
 <h2>Reminder: {{ session.title }}</h2>
 
 <p>
-  <strong>Date:</strong> {{ local_start|date:"l, F j, Y" }} at {{ local_start|time:"g:i A" }}
-  {% if local_end %} - {{ local_end|time:"g:i A" }}{% endif %}
-  ({{ club.timezone }})<br>
+  <strong>Date:</strong> {{ local_start|date:"l, F j, Y" }} at {{ local_start|session_time:club }}
+  {% if local_end %} - {{ local_end|session_time:club }}{% endif %}<br>
   <strong>Game Master:</strong> {{ gm_name }}<br>
   <strong>Location:</strong> {{ location }}
 </p>
