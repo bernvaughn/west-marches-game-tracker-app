@@ -9,4 +9,11 @@ class StartingEquipmentConfig(AppConfig):
         from accounts.apps import is_admin
 
         reg = navigation.register
-        reg("admin", "Starting Equipment Templates", "starting_equipment:templates", is_admin, 45, icon="box")
+        reg(
+            "admin",
+            "Starting Equipment Templates",
+            "starting_equipment:templates",
+            is_admin,
+            45,
+            icon="box",
+        )

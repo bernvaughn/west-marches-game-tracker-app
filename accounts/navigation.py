@@ -117,7 +117,11 @@ def entries_for(request):
             entry.icon,
         )
         result[entry.group].append(link)
-        if entry.icon and entry.shortcut_order is not None and entry.group not in ("primary", "account", "gm", "admin"):
+        if (
+            entry.icon
+            and entry.shortcut_order is not None
+            and entry.group not in ("primary", "account", "gm", "admin")
+        ):
             key = entry.shortcut_order
             shortcuts.append((key, link._replace(label=entry.shortcut_label or link.label)))
     result["primary"].extend(link for _, link in sorted(shortcuts, key=lambda t: t[0]))

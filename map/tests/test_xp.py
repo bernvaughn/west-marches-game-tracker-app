@@ -106,7 +106,11 @@ def test_tile_shows_xp(login, club, hex_map, tile_location, game_master):
 @m11
 def test_empty_band_shows_nothing(login, club, hex_map, tile_location, game_master):
     Location.objects.filter(pk=tile_location.pk).update(target_band="")
-    assert " XP" not in login(game_master).get(tile_url(hex_map, club)).content.decode()
+    content = login(game_master).get(tile_url(hex_map, club)).content.decode()
+    # Check main content area only, not side menu which has "XP table"
+    main_start = content.index("<main")
+    main_content = content[main_start:]
+    assert " XP" not in main_content
 
 
 @m11

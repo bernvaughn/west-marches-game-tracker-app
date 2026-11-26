@@ -19,4 +19,11 @@ class AgentAccessConfig(AppConfig):
         reg("gm", "Agent access", "agent_access:index", is_gm_or_admin, 90, icon="person-gear")
         reg("gm", "Agent connections", "agent_access:connections", is_gm, 50, icon="link-45deg")
         reg("gm", "Agent batches", "agent_access:batches", is_gm, 40, icon="boxes")
-        reg("gm", "Proposed items", "agent_access:proposed_items", is_gm_or_admin, 30, icon="box-seam")
+        reg(
+            "gm",
+            "Proposed items",
+            "agent_access:proposed_items",
+            is_gm_or_admin,
+            30,
+            icon="box-seam",
+        )
