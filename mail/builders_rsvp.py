@@ -2,6 +2,10 @@
 
 This module provides the build_rsvp_extra function that is registered
 as an email extra for the 'reminder' kind.
+
+The one-click token now carries the member (not a character). Each
+reminder email contains one set of three buttons (Yes / Maybe / No)
+for the member it is addressed to.
 """
 
 from datetime import timedelta
@@ -9,82 +13,61 @@ from datetime import timedelta
 from django.utils import timezone
 
 from mail.tokens import issue
-from play_sessions import core
 
 
 def build_rsvp_extra(context: dict) -> tuple[str, str]:
     """Build RSVP links for the session reminder email.
 
-    Context contains: user, club, session, characters (owned by user).
-    For each active character, generates three links: Yes, Maybe, No.
+    Context contains: user, club, session, membership.
+    Generates one token per answer; each token's extra carries
+    session_id, member_id, and the answer.
     """
-    user = context.get("user")
+    membership = context.get("membership")
     club = context.get("club")
     session = context.get("session")
-    characters = context.get("characters", [])
 
-    if not all([user, club, session]):
+    if not all([membership, club, session]):
         return "", ""
+
+    user = membership.user
+    member_name = membership.user.display_name or membership.user.email
 
     text_parts = []
     html_parts = []
 
-    for character in characters:
-        # Only include active characters (not dead, not archived)
-        if not core.character_is_active(character):
-            continue
-
-        # Generate tokens for each answer
-        yes_token = issue(
+    for answer in ("yes", "maybe", "no"):
+        token = issue(
             purpose="rsvp",
             user=user,
             club=club,
             ttl=_ttl_until_session_start(session),
-            extra={"session_id": session.pk, "character_id": character.pk, "answer": "yes"},
-        )
-        maybe_token = issue(
-            purpose="rsvp",
-            user=user,
-            club=club,
-            ttl=_ttl_until_session_start(session),
-            extra={"session_id": session.pk, "character_id": character.pk, "answer": "maybe"},
-        )
-        no_token = issue(
-            purpose="rsvp",
-            user=user,
-            club=club,
-            ttl=_ttl_until_session_start(session),
-            extra={"session_id": session.pk, "character_id": character.pk, "answer": "no"},
+            extra={"session_id": session.pk, "member_id": membership.pk, "answer": answer},
         )
 
-        # Build URLs
         site_url = context.get("site_url", "")
         base_url = f"{site_url}/mail/rsvp/"
+        url = f"{base_url}{token}/"
 
-        yes_url = f"{base_url}{yes_token}/"
-        maybe_url = f"{base_url}{maybe_token}/"
-        no_url = f"{base_url}{no_token}/"
+        label = answer.capitalize()
 
         # Text version
-        text_parts.append(f"\n{character.name}:")
-        text_parts.append(f"  Yes: {yes_url}")
-        text_parts.append(f"  Maybe: {maybe_url}")
-        text_parts.append(f"  No: {no_url}")
+        text_parts.append(f"\n{member_name}:")
+        text_parts.append(f"  {label}: {url}")
 
         # HTML version
         card_style = "margin: 16px 0; padding: 16px; border: 1px solid #e1e4e8; border-radius: 6px;"
+        button_styles = {
+            "yes": "background: #28a745;",
+            "maybe": "background: #ffc107; color: #24292e;",
+            "no": "background: #cb2431;",
+        }
         html_parts.append(f'<div style="{card_style}">')
-        html_parts.append(f'<strong style="font-size: 16px;">{character.name}</strong>')
+        html_parts.append(f'<strong style="font-size: 16px;">{member_name}</strong>')
         flex_style = "margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;"
         html_parts.append(f'<div style="{flex_style}">')
         html_parts.append(
-            f'<a href="{yes_url}" class="button" style="background: #28a745;">Yes</a>'
+            f'<a href="{url}" class="button" style="{button_styles[answer]}">{label}</a>'
         )
-        html_parts.append(
-            f'<a href="{maybe_url}" class="button"'
-            f' style="background: #ffc107; color: #24292e;">Maybe</a>'
-        )
-        html_parts.append(f'<a href="{no_url}" class="button" style="background: #cb2431;">No</a>')
         html_parts.append("</div></div>")
 
     return "\n".join(text_parts), "\n".join(html_parts)

@@ -93,7 +93,7 @@ def _send_cancel_notices(session):
     from mail.builders_sessions import build_cancelled
     from mail.models import EmailMessage, NoticeSent
     from mail.service import queue_email
-    from play_sessions.models import SessionRSVP
+    from play_sessions.models import PlayerRSVP, SessionRSVP
 
     club = session.club
     key_prefix = f"{session.id}:"
@@ -103,11 +103,11 @@ def _send_cancel_notices(session):
         kind=NoticeSent.Kind.REMINDER, key__startswith=key_prefix
     ).values_list("user_id", flat=True)
 
-    # Get users with a "yes" RSVP
+    # Get users with a "yes" RSVP (per-player answers)
     yes_rsvp_user_ids = (
-        SessionRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES)
-        .select_related("character__owner__user")
-        .values_list("character__owner__user_id", flat=True)
+        PlayerRSVP.objects.filter(session=session, answer=SessionRSVP.Answer.YES)
+        .select_related("member__user")
+        .values_list("member__user_id", flat=True)
     )
 
     # Combine and deduplicate
@@ -159,24 +159,19 @@ def _send_change_notices(session, old_start, new_start):
     from accounts.models import Membership
     from mail.builders_sessions import build_changed
     from mail.models import EmailMessage, EmailPreference, NoticeSent
-    from mail.reminders import _all_characters_said_no, _is_opted_out, _is_suppressed
+    from mail.reminders import _is_opted_out, _is_suppressed, _member_said_no
     from mail.service import queue_email
 
     club = session.club
 
-    # Get memberships with characters (same eligibility as reminders)
-    memberships = (
-        Membership.objects.filter(club=club)
-        .exclude(characters__isnull=True)
-        .distinct()
-        .select_related("user")
-    )
+    # Same eligibility as reminders: every member unless they answered "no"
+    memberships = Membership.objects.filter(club=club).distinct().select_related("user")
 
     subject, text, html = build_changed(club, session, old_start, new_start)
 
     for membership in memberships:
-        # Skip if all characters said no
-        if _all_characters_said_no(membership, session):
+        # Skip if the member said no
+        if _member_said_no(membership, session):
             continue
 
         # Skip if opted out of notices

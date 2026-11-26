@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from mail.models import EmailMessage, EmailPreference
 from mail.reminders import send_reminders
-from play_sessions.models import PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db]
@@ -145,7 +145,8 @@ def test_default_reminder_3_days_before():
     send_reminders()
 
     messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    assert messages.count() == 2
+    # admin + member1 + member2 (all members, none opted out or said no)
+    assert messages.count() == 3
 
     # Check subject
     for msg in messages:
@@ -169,26 +170,26 @@ def test_run_twice_sends_once():
     send_reminders()
 
     messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    assert messages.count() == 1
+    # admin + member1 (member2 opted out); dedupe keeps one each
+    assert messages.count() == 2
 
 
 def test_member_who_said_no_is_skipped():
-    """Member whose character answered 'no' is skipped."""
+    """Member who answered 'no' via PlayerRSVP is skipped."""
     data = _make_club_and_members("3")
     club = data["club"]
     gm = data["admin_membership"]
     member1_mem = data["member1_membership"]
     member2_mem = data["member2_membership"]
-    char3 = data["char3"]
 
     session = _make_session(club, gm, days_from_now=3)
     _enable_reminder(member1_mem)
     _enable_reminder(member2_mem)
 
-    # member2's character says no
-    SessionRSVP.objects.create(
+    # member2 answers no (per-player RSVP)
+    PlayerRSVP.objects.create(
         session=session,
-        character=char3,
+        member=member2_mem,
         answer=SessionRSVP.Answer.NO,
         answered_by=data["member2_user"],
     )
@@ -196,34 +197,98 @@ def test_member_who_said_no_is_skipped():
     send_reminders()
 
     messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    assert messages.count() == 1
-    assert messages.first().user == data["member1_user"]
+    # admin + member1 (member2 said no); dedupe keeps one each
+    assert messages.count() == 2
+    user_emails = {msg.user.email for msg in messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
+    assert data["member2_user"].email not in user_emails
+
+
+def test_member_with_no_characters_gets_reminder():
+    """Member with no characters gets a reminder if they have not answered 'no'."""
+    data = _make_club_and_members("13")
+    club = data["club"]
+    gm = data["admin_membership"]
+
+    # Create a member with no characters
+    member3_user = User.objects.create_user(
+        email="member3@test.com", password="pass12345678", display_name="Member Three"
+    )
+    member3_membership = Membership.objects.create(user=member3_user, club=club)
+    _enable_reminder(member3_membership)
+
+    # Existing members
+    member1_mem = data["member1_membership"]
+    member2_mem = data["member2_membership"]
+    _enable_reminder(member1_mem)
+    _disable_reminder(member2_mem)  # Disable for member2 to isolate test
+
+    _make_session(club, gm, days_from_now=3)
+
+    send_reminders()
+
+    messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
+    # admin + member1 + member3 (no characters, not answered no) get reminders
+    assert messages.count() == 3
+    user_emails = {msg.user.email for msg in messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
+    assert member3_user.email in user_emails
+
+
+def test_member_who_said_no_with_no_characters_is_skipped():
+    """Member with no characters who answered 'no' is skipped."""
+    data = _make_club_and_members("13b")
+    club = data["club"]
+    gm = data["admin_membership"]
+
+    # Member with no characters who answered no
+    member3_user = User.objects.create_user(
+        email="member3b@test.com", password="pass12345678", display_name="Member Three B"
+    )
+    member3_membership = Membership.objects.create(user=member3_user, club=club)
+    _enable_reminder(member3_membership)
+
+    member1_mem = data["member1_membership"]
+    _enable_reminder(member1_mem)
+
+    session = _make_session(club, gm, days_from_now=3)
+    PlayerRSVP.objects.create(
+        session=session,
+        member=member3_membership,
+        answer=SessionRSVP.Answer.NO,
+        answered_by=member3_user,
+    )
+
+    send_reminders()
+
+    messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
+    # admin + member1 + member2 (member2 defaults to on; member3 said no)
+    assert messages.count() == 3
+    user_emails = {msg.user.email for msg in messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
+    assert data["member2_user"].email in user_emails
+    assert member3_user.email not in user_emails
 
 
 def test_member_with_some_chars_not_no_gets_reminder():
-    """Member with multiple chars where not all said 'no' gets reminder."""
+    """Member who answered 'maybe' (not 'no') gets a reminder regardless of characters."""
     data = _make_club_and_members("3b")
     club = data["club"]
     gm = data["admin_membership"]
     member1_mem = data["member1_membership"]
     member2_mem = data["member2_membership"]
-    char1 = data["char1"]
-    char2 = data["char2"]
 
     session = _make_session(club, gm, days_from_now=3)
     _enable_reminder(member1_mem)
     _disable_reminder(member2_mem)  # Disable for member2 to isolate test
 
-    # char1 says no, char2 says maybe
-    SessionRSVP.objects.create(
+    # member1 answers maybe
+    PlayerRSVP.objects.create(
         session=session,
-        character=char1,
-        answer=SessionRSVP.Answer.NO,
-        answered_by=data["member1_user"],
-    )
-    SessionRSVP.objects.create(
-        session=session,
-        character=char2,
+        member=member1_mem,
         answer=SessionRSVP.Answer.MAYBE,
         answered_by=data["member1_user"],
     )
@@ -231,8 +296,11 @@ def test_member_with_some_chars_not_no_gets_reminder():
     send_reminders()
 
     messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    assert messages.count() == 1
-    assert messages.first().user == data["member1_user"]
+    # admin + member1 (member2 opted out)
+    assert messages.count() == 2
+    user_emails = {msg.user.email for msg in messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
 
 
 def test_opted_out_skipped():
@@ -250,8 +318,12 @@ def test_opted_out_skipped():
     send_reminders()
 
     messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    assert messages.count() == 1
-    assert messages.first().user == data["member1_user"]
+    # admin + member1 (member2 opted out)
+    assert messages.count() == 2
+    user_emails = {msg.user.email for msg in messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
+    assert data["member2_user"].email not in user_emails
 
 
 def test_no_preference_defaults_to_on():
@@ -268,9 +340,10 @@ def test_no_preference_defaults_to_on():
     send_reminders()
 
     messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    # Both members should get reminders (default on)
-    assert messages.count() == 2
+    # admin + both members (all default on)
+    assert messages.count() == 3
     user_emails = {msg.user.email for msg in messages}
+    assert data["admin_user"].email in user_emails
     assert data["member1_user"].email in user_emails
     assert data["member2_user"].email in user_emails
 
@@ -282,8 +355,6 @@ def test_cancelled_session_sends_cancel_notice():
     gm = data["admin_membership"]
     member1_mem = data["member1_membership"]
     member2_mem = data["member2_membership"]
-    char1 = data["char1"]
-    data["char3"]
 
     session = _make_session(club, gm, days_from_now=3)
     _enable_reminder(member1_mem)
@@ -293,12 +364,12 @@ def test_cancelled_session_sends_cancel_notice():
 
     # Send reminders first (creates NoticeSent)
     send_reminders()
-    assert EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER).count() == 2
+    assert EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER).count() == 3
 
-    # member1 says yes
-    SessionRSVP.objects.create(
+    # member1 says yes (PlayerRSVP)
+    PlayerRSVP.objects.create(
         session=session,
-        character=char1,
+        member=member1_mem,
         answer=SessionRSVP.Answer.YES,
         answered_by=data["member1_user"],
     )
@@ -307,9 +378,9 @@ def test_cancelled_session_sends_cancel_notice():
     session.cancelled = True
     session.save()
 
-    # Should send cancel to member1 (reminder + yes) and member2 (reminder only)
+    # Should send cancel to admin + member1 (reminder + yes) + member2 (reminder only)
     cancel_messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.CANCEL)
-    assert cancel_messages.count() == 2
+    assert cancel_messages.count() == 3
 
     # Check subject
     for msg in cancel_messages:
@@ -323,7 +394,6 @@ def test_cancelled_notice_sent_once():
     gm = data["admin_membership"]
     member1_mem = data["member1_membership"]
     member2_mem = data["member2_membership"]
-    char1 = data["char1"]
 
     session = _make_session(club, gm, days_from_now=3)
     _enable_reminder(member1_mem)
@@ -333,9 +403,9 @@ def test_cancelled_notice_sent_once():
 
     send_reminders()
 
-    SessionRSVP.objects.create(
+    PlayerRSVP.objects.create(
         session=session,
-        character=char1,
+        member=member1_mem,
         answer=SessionRSVP.Answer.YES,
         answered_by=data["member1_user"],
     )
@@ -346,7 +416,11 @@ def test_cancelled_notice_sent_once():
     session.save()  # Second save, should not send again
 
     cancel_messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.CANCEL)
-    assert cancel_messages.count() == 1
+    # admin + member1 (member2 opted out); dedupe one per user
+    assert cancel_messages.count() == 2
+    user_emails = {msg.user.email for msg in cancel_messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
 
 
 def test_changed_session_sends_change_notice():
@@ -356,7 +430,6 @@ def test_changed_session_sends_change_notice():
     gm = data["admin_membership"]
     member1_mem = data["member1_membership"]
     member2_mem = data["member2_membership"]
-    char3 = data["char3"]
 
     session = _make_session(club, gm, days_from_now=3)
     _enable_reminder(member1_mem)
@@ -367,9 +440,9 @@ def test_changed_session_sends_change_notice():
     send_reminders()
 
     # member2 says no
-    SessionRSVP.objects.create(
+    PlayerRSVP.objects.create(
         session=session,
-        character=char3,
+        member=member2_mem,
         answer=SessionRSVP.Answer.NO,
         answered_by=data["member2_user"],
     )
@@ -385,11 +458,13 @@ def test_changed_session_sends_change_notice():
     session.ends_at = new_start + timedelta(hours=3)
     session.save()
 
-    # Should send change to member1 only (member2 said no)
+    # Should send change to admin + member1 (member2 said no)
     change_messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.CHANGE)
-    assert change_messages.count() == 1
-    assert change_messages.first().user == data["member1_user"]
-    assert "Session changed: Test Session" in change_messages.first().subject
+    assert change_messages.count() == 2
+    user_emails = {msg.user.email for msg in change_messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
+    assert any("Session changed: Test Session" in msg.subject for msg in change_messages)
 
 
 def test_change_notice_dedupe_includes_new_start():
@@ -426,7 +501,8 @@ def test_change_notice_dedupe_includes_new_start():
     session.save()
 
     change_messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.CHANGE)
-    assert change_messages.count() == 2
+    # admin + member1, each changed twice (dedupe key includes new start)
+    assert change_messages.count() == 4
 
 
 def test_past_session_sends_nothing():
@@ -478,40 +554,12 @@ def test_time_shown_in_club_zone_across_dst():
 
     send_reminders()
 
-    message = EmailMessage.objects.get(kind=EmailMessage.Kind.REMINDER)
+    message = EmailMessage.objects.get(kind=EmailMessage.Kind.REMINDER, user=data["member1_user"])
     payload = message.payload
 
     # Should show time in club timezone (America/Los_Angeles)
     text = payload.text
     assert "PDT" in text or "PST" in text or club.timezone in text
-
-
-def test_member_with_no_characters_gets_nothing():
-    """Member with no characters gets no reminders."""
-    data = _make_club_and_members("13")
-    club = data["club"]
-    gm = data["admin_membership"]
-
-    # Create a member with no characters
-    member3_user = User.objects.create_user(
-        email="member3@test.com", password="pass12345678", display_name="Member Three"
-    )
-    member3_membership = Membership.objects.create(user=member3_user, club=club)
-    _enable_reminder(member3_membership)
-
-    # Existing members have characters
-    member1_mem = data["member1_membership"]
-    member2_mem = data["member2_membership"]
-    _enable_reminder(member1_mem)
-    _disable_reminder(member2_mem)  # Disable for member2 to isolate test
-
-    _make_session(club, gm, days_from_now=3)
-
-    send_reminders()
-
-    messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.REMINDER)
-    assert messages.count() == 1
-    assert messages.first().user == data["member1_user"]
 
 
 # --- Settings page tests ---
@@ -605,8 +653,11 @@ def test_cancel_notice_no_email_preference_opt_out():
     session.save()
 
     cancel_messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.CANCEL)
-    assert cancel_messages.count() == 1
-    assert cancel_messages.first().user == data["member1_user"]
+    # admin + member1 (cancel has no notice-preference opt-out)
+    assert cancel_messages.count() == 2
+    user_emails = {msg.user.email for msg in cancel_messages}
+    assert data["admin_user"].email in user_emails
+    assert data["member1_user"].email in user_emails
 
 
 def test_change_notice_uses_notice_preference():
@@ -636,7 +687,9 @@ def test_change_notice_uses_notice_preference():
     session.save()
 
     change_messages = EmailMessage.objects.filter(kind=EmailMessage.Kind.CHANGE)
-    assert change_messages.count() == 0
+    # admin gets the change notice (member1 opted out of notices, member2 opted out of reminders)
+    assert change_messages.count() == 1
+    assert change_messages.first().user == data["admin_user"]
 
 
 def test_reminder_email_contains_session_details():
@@ -653,7 +706,7 @@ def test_reminder_email_contains_session_details():
 
     send_reminders()
 
-    message = EmailMessage.objects.get(kind=EmailMessage.Kind.REMINDER)
+    message = EmailMessage.objects.get(kind=EmailMessage.Kind.REMINDER, user=data["member1_user"])
     payload = message.payload
 
     text = payload.text
@@ -681,7 +734,7 @@ def test_cancel_email_contains_session_details():
     session.cancelled = True
     session.save()
 
-    message = EmailMessage.objects.get(kind=EmailMessage.Kind.CANCEL)
+    message = EmailMessage.objects.get(kind=EmailMessage.Kind.CANCEL, user=data["member1_user"])
     payload = message.payload
 
     text = payload.text
@@ -716,7 +769,7 @@ def test_change_email_contains_old_and_new_times():
     session.ends_at = new_start + timedelta(hours=3)
     session.save()
 
-    message = EmailMessage.objects.get(kind=EmailMessage.Kind.CHANGE)
+    message = EmailMessage.objects.get(kind=EmailMessage.Kind.CHANGE, user=data["member1_user"])
     payload = message.payload
 
     text = payload.text

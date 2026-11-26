@@ -7,9 +7,10 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Club, Membership, User
+from mail.builders_rsvp import build_rsvp_extra
 from mail.models import OneTimeToken
 from mail.tokens import issue
-from play_sessions.models import PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db]
@@ -48,8 +49,20 @@ def rsvp_setup():
     }
 
 
-def _make_token(user, club, session, character, answer):
-    """Helper to create an RSVP token."""
+def _make_member_token(user, club, session, membership, answer):
+    """Helper to create a member-carrying RSVP token."""
+    ttl = session.starts_at - timezone.now()
+    return issue(
+        purpose="rsvp",
+        user=user,
+        club=club,
+        ttl=ttl,
+        extra={"session_id": session.pk, "member_id": membership.pk, "answer": answer},
+    )
+
+
+def _make_character_token(user, club, session, character, answer):
+    """Helper to create a legacy character-carrying RSVP token."""
     ttl = session.starts_at - timezone.now()
     return issue(
         purpose="rsvp",
@@ -63,21 +76,21 @@ def _make_token(user, club, session, character, answer):
 def test_get_changes_nothing(client, rsvp_setup):
     """GET shows the page but creates/updates no RSVP."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
-    token = _make_token(player_user, club, session, char1, "yes")
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
     # No RSVP exists yet
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
+    assert not PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
 
     response = client.get(url)
     assert response.status_code == 200
 
     # Still no RSVP after GET
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
+    assert not PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
 
     # Page shows the selected answer
     content = response.content.decode()
@@ -85,20 +98,20 @@ def test_get_changes_nothing(client, rsvp_setup):
     assert "Confirm" in content
 
 
-def test_post_records_rsvp_with_answered_by(client, rsvp_setup):
-    """POST records the RSVP through play_sessions.core.set_rsvp with answered_by."""
+def test_post_records_player_rsvp(client, rsvp_setup):
+    """POST records a PlayerRSVP for the member."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
-    token = _make_token(player_user, club, session, char1, "maybe")
+    token = _make_member_token(player_user, club, session, player_membership, "maybe")
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
     response = client.post(url)
     assert response.status_code == 200
 
-    rsvp = SessionRSVP.objects.get(session=session, character=char1)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
     assert rsvp.answer == "maybe"
     assert rsvp.answered_by == player_user
     assert rsvp.answered_at is not None
@@ -111,7 +124,7 @@ def test_post_records_rsvp_with_answered_by(client, rsvp_setup):
 def test_token_expires_at_session_start(client, rsvp_setup):
     """Token expires at session start (expired token rejected)."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
@@ -119,7 +132,7 @@ def test_token_expires_at_session_start(client, rsvp_setup):
     session.starts_at = timezone.now() - timedelta(hours=1)
     session.save()
 
-    token = _make_token(player_user, club, session, char1, "yes")
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
     # GET should show expired
@@ -135,13 +148,13 @@ def test_token_expires_at_session_start(client, rsvp_setup):
     assert "expired" in content.lower() or "invalid" in content.lower()
 
     # No RSVP created
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
+    assert not PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
 
 
 def test_wrong_signed_in_user_gets_nothing(client, rsvp_setup):
     """Wrong signed-in person gets 'not for you' page and nothing changes."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
@@ -149,7 +162,7 @@ def test_wrong_signed_in_user_gets_nothing(client, rsvp_setup):
     other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
     Membership.objects.create(user=other_user, club=club)
 
-    token = _make_token(player_user, club, session, char1, "yes")
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
     # Sign in as the other user
@@ -167,53 +180,26 @@ def test_wrong_signed_in_user_gets_nothing(client, rsvp_setup):
     content = response.content.decode()
     assert "not for you" in content.lower()
 
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
-
-
-def test_wrong_character_fails(client, rsvp_setup):
-    """Wrong character (not owned by token user) fails."""
-    player_user = rsvp_setup["player_user"]
-    char2 = rsvp_setup["char2"]
-    session = rsvp_setup["session"]
-    club = rsvp_setup["club"]
-
-    # Create another user who owns char2
-    other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
-    other_membership = Membership.objects.create(user=other_user, club=club)
-    # Reassign char2 to other_user
-    char2.owner = other_membership
-    char2.save()
-
-    # Token for player_user but with char2 (owned by other_user)
-    token = _make_token(player_user, club, session, char2, "yes")
-    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
-
-    response = client.post(url)
-    assert response.status_code == 200
-    content = response.content.decode()
-    assert "invalid character" in content.lower() or "wrong character" in content.lower()
-
-    # No RSVP created
-    assert not SessionRSVP.objects.filter(session=session, character=char2).exists()
+    assert not PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
 
 
 def test_latest_answer_wins(client, rsvp_setup):
     """Latest answer wins (update_or_create behavior)."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
     # First RSVP: yes
-    token1 = _make_token(player_user, club, session, char1, "yes")
+    token1 = _make_member_token(player_user, club, session, player_membership, "yes")
     url1 = reverse("mail_public:email_rsvp", kwargs={"token": token1})
     client.post(url1)
 
-    rsvp = SessionRSVP.objects.get(session=session, character=char1)
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
     assert rsvp.answer == "yes"
 
     # Second RSVP: maybe (new token)
-    token2 = _make_token(player_user, club, session, char1, "maybe")
+    token2 = _make_member_token(player_user, club, session, player_membership, "maybe")
     url2 = reverse("mail_public:email_rsvp", kwargs={"token": token2})
     client.post(url2)
 
@@ -221,7 +207,7 @@ def test_latest_answer_wins(client, rsvp_setup):
     assert rsvp.answer == "maybe"
 
     # Third RSVP: no (new token)
-    token3 = _make_token(player_user, club, session, char1, "no")
+    token3 = _make_member_token(player_user, club, session, player_membership, "no")
     url3 = reverse("mail_public:email_rsvp", kwargs={"token": token3})
     client.post(url3)
 
@@ -229,93 +215,112 @@ def test_latest_answer_wins(client, rsvp_setup):
     assert rsvp.answer == "no"
 
     # Only one RSVP row exists
-    assert SessionRSVP.objects.filter(session=session, character=char1).count() == 1
+    assert PlayerRSVP.objects.filter(session=session, member=player_membership).count() == 1
 
 
-def test_extra_adds_buttons_per_owned_character(client, rsvp_setup, monkeypatch):
-    """The email extra adds buttons per owned character and none for dead/archived ones."""
-    from mail.builders_rsvp import build_rsvp_extra
-    from play_sessions import core
-
+def test_legacy_character_token_resolves_to_owner(client, rsvp_setup):
+    """Old character-carrying token resolves to the character's owner membership."""
     player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
     char1 = rsvp_setup["char1"]
-    char2 = rsvp_setup["char2"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
-    # Create a dead character
-    dead_char = Character.objects.create(
-        name="Dead Hero",
-        club=club,
-        owner=rsvp_setup["player_membership"],
-        died_on=timezone.now().date(),
-    )
+    token = _make_character_token(player_user, club, session, char1, "yes")
+    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
-    # Create an archived character
-    archived_char = Character.objects.create(
-        name="Archived Hero",
-        club=club,
-        owner=rsvp_setup["player_membership"],
-        archived_at=timezone.now(),
-    )
+    response = client.post(url)
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "RSVP Confirmed" in content
 
-    # Patch character_is_active to return False for dead and archived
-    original_is_active = core.character_is_active
+    # A PlayerRSVP exists for the owner membership, not per-character
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
+    assert rsvp.answer == "yes"
+    assert rsvp.answered_by == player_user
 
-    def patched_is_active(character):
-        if character in [dead_char, archived_char]:
-            return False
-        return original_is_active(character)
 
-    monkeypatch.setattr(core, "character_is_active", patched_is_active)
+def test_legacy_character_token_expires_at_start(client, rsvp_setup):
+    """Legacy character token also expires at session start."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    char1 = rsvp_setup["char1"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
 
-    context = {
-        "user": player_user,
-        "club": club,
-        "session": session,
-        "characters": [char1, char2, dead_char, archived_char],
-        "site_url": "http://testserver",
-    }
+    # Move session to the past
+    session.starts_at = timezone.now() - timedelta(hours=1)
+    session.save()
 
-    text, html = build_rsvp_extra(context)
+    token = _make_character_token(player_user, club, session, char1, "yes")
+    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
-    # Should have buttons for char1 and char2
-    assert "Hero One" in text
-    assert "Hero Two" in text
-    assert "Hero One" in html
-    assert "Hero Two" in html
+    response = client.post(url)
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "expired" in content.lower() or "invalid" in content.lower()
 
-    # Should NOT have buttons for dead or archived characters
-    assert "Dead Hero" not in text
-    assert "Archived Hero" not in text
-    assert "Dead Hero" not in html
-    assert "Archived Hero" not in html
+    assert not PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
 
-    # Each active character should have three links (Yes, Maybe, No)
-    assert text.count("Yes:") == 2
-    assert text.count("Maybe:") == 2
-    assert text.count("No:") == 2
 
-    # HTML should have three buttons per character
-    assert html.count(">Yes<") == 2
-    assert html.count(">Maybe<") == 2
-    assert html.count(">No<") == 2
+def test_cancelled_session_refused(client, rsvp_setup):
+    """Cancelled session refuses RSVP."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+
+    session.cancelled = True
+    session.save()
+
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
+    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
+
+    response = client.post(url)
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "cancelled" in content.lower()
+
+    assert not PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
+
+
+def test_works_without_sign_in(client, rsvp_setup):
+    """The page works without sign-in."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
+    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
+
+    # Not logged in
+    response = client.get(url)
+    assert response.status_code == 200
+    assert "Confirm" in response.content.decode()
+
+    response = client.post(url)
+    assert response.status_code == 200
+    assert "RSVP Confirmed" in response.content.decode()
+
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
+    assert rsvp.answered_by == player_user
 
 
 def test_token_single_use_consumed_on_post(client, rsvp_setup):
     """Token is consumed on POST and cannot be reused."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
-    token = _make_token(player_user, club, session, char1, "yes")
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
     # First POST succeeds
     response = client.post(url)
     assert response.status_code == 200
-    assert SessionRSVP.objects.filter(session=session, character=char1).exists()
+    assert PlayerRSVP.objects.filter(session=session, member=player_membership).exists()
 
     # Second POST with same token fails (token consumed)
     response = client.post(url)
@@ -327,11 +332,11 @@ def test_token_single_use_consumed_on_post(client, rsvp_setup):
 def test_get_does_not_consume_token(client, rsvp_setup):
     """GET does not consume the token (peek, not consume)."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
 
-    token = _make_token(player_user, club, session, char1, "yes")
+    token = _make_member_token(player_user, club, session, player_membership, "yes")
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
     # Multiple GETs should all work
@@ -350,156 +355,49 @@ def test_get_does_not_consume_token(client, rsvp_setup):
     assert "RSVP Confirmed" in response.content.decode()
 
 
-def test_cancelled_session_refused(client, rsvp_setup):
-    """Cancelled session refuses RSVP."""
+def test_extra_adds_three_buttons_per_member(rsvp_setup):
+    """The email extra adds one set of Yes/Maybe/No buttons for the member."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
+    player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
-
-    session.cancelled = True
-    session.save()
-
-    token = _make_token(player_user, club, session, char1, "yes")
-    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
-
-    response = client.post(url)
-    assert response.status_code == 200
-    content = response.content.decode()
-    assert "cancelled" in content.lower()
-
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
-
-
-def test_session_not_started_required(client, rsvp_setup):
-    """Session must not have started."""
-    player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
-    session = rsvp_setup["session"]
-    club = rsvp_setup["club"]
-
-    # Create token FIRST while session is in the future
-    token = _make_token(player_user, club, session, char1, "yes")
-    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
-
-    # NOW move session start to 1 hour ago
-    session.starts_at = timezone.now() - timedelta(hours=1)
-    session.save()
-
-    response = client.post(url)
-    assert response.status_code == 200
-    content = response.content.decode()
-    assert "started" in content.lower()
-
-    assert not SessionRSVP.objects.filter(session=session, character=char1).exists()
-
-
-def test_works_without_sign_in(client, rsvp_setup):
-    """The page works without sign-in."""
-    player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
-    session = rsvp_setup["session"]
-    club = rsvp_setup["club"]
-
-    token = _make_token(player_user, club, session, char1, "yes")
-    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
-
-    # Not logged in
-    response = client.get(url)
-    assert response.status_code == 200
-    assert "Confirm" in response.content.decode()
-
-    response = client.post(url)
-    assert response.status_code == 200
-    assert "RSVP Confirmed" in response.content.decode()
-
-    rsvp = SessionRSVP.objects.get(session=session, character=char1)
-    assert rsvp.answered_by == player_user
-
-
-def test_character_is_active_patched_dead_and_archived(rsvp_setup, monkeypatch):
-    """Test that dead and archived characters get no buttons when character_is_active is patched."""
-    from mail.builders_rsvp import build_rsvp_extra
-    from play_sessions import core
-
-    player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
-    char2 = rsvp_setup["char2"]
-    session = rsvp_setup["session"]
-    club = rsvp_setup["club"]
-
-    # Create a dead character
-    dead_char = Character.objects.create(
-        name="Dead Hero",
-        club=club,
-        owner=rsvp_setup["player_membership"],
-        died_on=timezone.now().date(),
-    )
-
-    # Create an archived character
-    archived_char = Character.objects.create(
-        name="Archived Hero",
-        club=club,
-        owner=rsvp_setup["player_membership"],
-        archived_at=timezone.now(),
-    )
-
-    # Patch character_is_active to return False for dead and archived
-    original_is_active = core.character_is_active
-
-    def patched_is_active(character):
-        if character in [dead_char, archived_char]:
-            return False
-        return original_is_active(character)
-
-    monkeypatch.setattr(core, "character_is_active", patched_is_active)
 
     context = {
         "user": player_user,
         "club": club,
         "session": session,
-        "characters": [char1, char2, dead_char, archived_char],
+        "membership": player_membership,
         "site_url": "http://testserver",
     }
 
     text, html = build_rsvp_extra(context)
 
-    # Should have buttons for char1 and char2 only
-    assert "Hero One" in text
-    assert "Hero Two" in text
-    assert "Dead Hero" not in text
-    assert "Archived Hero" not in text
+    # Member name appears
+    assert player_user.display_name in text or player_user.email in text
+    assert player_user.display_name in html or player_user.email in html
+
+    # One set of three links/buttons per member (not per character)
+    assert text.count("Yes:") == 1
+    assert text.count("Maybe:") == 1
+    assert text.count("No:") == 1
+
+    assert html.count(">Yes<") == 1
+    assert html.count(">Maybe<") == 1
+    assert html.count(">No<") == 1
 
 
-def test_token_with_nonexistent_session_or_character(client, rsvp_setup):
-    """Token with invalid session_id or character_id shows error."""
+def test_token_with_nonexistent_session(client, rsvp_setup):
+    """Token with invalid session_id shows error."""
     player_user = rsvp_setup["player_user"]
-    char1 = rsvp_setup["char1"]
-    session = rsvp_setup["session"]
+    player_membership = rsvp_setup["player_membership"]
     club = rsvp_setup["club"]
 
-    # Token with non-existent session
     token = issue(
         purpose="rsvp",
         user=player_user,
         club=club,
         ttl=timedelta(hours=1),
-        extra={"session_id": 99999, "character_id": char1.pk, "answer": "yes"},
-    )
-    url = reverse("mail_public:email_rsvp", kwargs={"token": token})
-
-    response = client.get(url)
-    assert response.status_code == 200
-    content = response.content.decode()
-    assert "invalid" in content.lower()
-
-    # Token with non-existent character
-    token = issue(
-        purpose="rsvp",
-        user=player_user,
-        club=club,
-        ttl=timedelta(hours=1),
-        extra={"session_id": session.pk, "character_id": 99999, "answer": "yes"},
+        extra={"session_id": 99999, "member_id": player_membership.pk, "answer": "yes"},
     )
     url = reverse("mail_public:email_rsvp", kwargs={"token": token})
 
