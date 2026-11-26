@@ -51,8 +51,13 @@ class PlaySession(models.Model):
         return f"{self.title} ({self.starts_at:%Y-%m-%d %H:%M})"
 
 
-class SessionRSVP(models.Model):
-    """A character's RSVP to a session."""
+class PlayerRSVP(models.Model):
+    """A player's RSVP to a session, one per (session, membership).
+
+    Answers are per player, not per character. Existing per-character
+    ``SessionRSVP`` rows were merged into this model by the
+    ``0004_merge_rsvps_to_player`` data migration.
+    """
 
     club_path = "session__club"
 
@@ -61,51 +66,13 @@ class SessionRSVP(models.Model):
         MAYBE = "maybe", "Maybe"
         NO = "no", "No"
 
-    session = models.ForeignKey(PlaySession, on_delete=models.CASCADE, related_name="rsvps")
-    character = models.ForeignKey(
-        "player_characters.Character", on_delete=models.CASCADE, related_name="session_rsvps"
-    )
-    answer = models.CharField(max_length=5, choices=Answer.choices)
-    answered_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="answered_rsvps",
-    )
-    answered_at = models.DateTimeField(auto_now_add=True)
-
-    objects = ClubScopedManager()
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["session", "character"], name="unique_session_character_rsvp"
-            ),
-        ]
-
-    def __str__(self):
-        return f"{self.character} -> {self.session}: {self.get_answer_display()}"
-
-
-class PlayerRSVP(models.Model):
-    """A player's RSVP to a session, one per (session, membership).
-
-    Answers are per player, not per character. Existing per-character
-    ``SessionRSVP`` rows are merged into this model by the
-    ``0004_merge_rsvps_to_player`` data migration, which keeps ``SessionRSVP``
-    untouched so the merge can run before code is switched over.
-    """
-
-    club_path = "session__club"
-
     session = models.ForeignKey(PlaySession, on_delete=models.CASCADE, related_name="player_rsvps")
     member = models.ForeignKey(
         "accounts.Membership",
         on_delete=models.CASCADE,
         related_name="player_rsvps",
     )
-    answer = models.CharField(max_length=5, choices=SessionRSVP.Answer.choices)
+    answer = models.CharField(max_length=5, choices=Answer.choices)
     answered_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -265,68 +232,3 @@ class SessionSettings(models.Model):
 
     def __str__(self):
         return f"Session settings for {self.club}"
-
-
-def merge_rsvps_to_player():
-    """Merge per-character SessionRSVP rows into per-player PlayerRSVP rows.
-
-    For each (session, owning membership) group of SessionRSVP rows:
-      * all answers agree -> that answer is used
-      * answers disagree -> the most recent by answered_at (ties broken by id)
-    answered_by and answered_at are copied from the chosen old row.
-
-    Idempotent: uses get_or_create keyed on (session, member), so re-running
-    creates no duplicates and changes no existing PlayerRSVP rows.
-
-    SessionAttendance rows are never touched.
-
-    Returns:
-        (merged_count, mixed_answer_player_count)
-    """
-    from django.db import transaction
-
-    merged = 0
-    mixed = 0
-
-    rsvps = SessionRSVP.objects.select_related("character__owner").order_by(
-        "session_id", "character__owner_id", "-answered_at", "-id"
-    )
-
-    current_key = None
-    group = []
-
-    def flush():
-        nonlocal merged, mixed
-        if current_key is None:
-            return
-        session_id, member_id = current_key
-        answers = {row.answer for row in group}
-        chosen = group[0]  # most recent by answered_at, then id
-        if len(answers) != 1:
-            mixed += 1
-        _, created = PlayerRSVP.objects.get_or_create(
-            session_id=session_id,
-            member_id=member_id,
-            defaults={
-                "answer": chosen.answer,
-                "answered_by_id": chosen.answered_by_id,
-                "answered_at": chosen.answered_at,
-            },
-        )
-        if created:
-            merged += 1
-
-    with transaction.atomic():
-        for row in rsvps:
-            member_id = row.character.owner_id
-            if member_id is None:
-                continue
-            key = (row.session_id, member_id)
-            if key != current_key:
-                flush()
-                current_key = key
-                group = []
-            group.append(row)
-        flush()
-
-    return merged, mixed

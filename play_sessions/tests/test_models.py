@@ -17,7 +17,6 @@ from play_sessions.models import (
     PlaySession,
     SessionAttendance,
     SessionAward,
-    SessionRSVP,
     SessionSettings,
 )
 
@@ -32,7 +31,6 @@ def test_app_label_and_installed():
 def test_all_models_have_club_path_and_manager():
     for model in [
         PlaySession,
-        SessionRSVP,
         PlayerRSVP,
         SessionAttendance,
         AttendanceHint,
@@ -62,12 +60,10 @@ def test_unique_constraints():
         game_master=membership,
     )
 
-    # Unique session + character for RSVP
-    SessionRSVP.objects.create(session=session, character=character, answer=SessionRSVP.Answer.YES)
+    # Unique session + member for PlayerRSVP
+    PlayerRSVP.objects.create(session=session, member=membership, answer=PlayerRSVP.Answer.YES)
     with pytest.raises(IntegrityError), transaction.atomic():
-        SessionRSVP.objects.create(
-            session=session, character=character, answer=SessionRSVP.Answer.NO
-        )
+        PlayerRSVP.objects.create(session=session, member=membership, answer=PlayerRSVP.Answer.NO)
 
     # Unique session + character for Attendance
     SessionAttendance.objects.create(session=session, character=character, played=True)

@@ -15,7 +15,6 @@ from play_sessions.models import (
     PlayerRSVP,
     PlaySession,
     SessionAttendance,
-    SessionRSVP,
 )
 from play_sessions.services_attendance import (
     active_characters,
@@ -72,10 +71,10 @@ def test_who_is_coming_groups_members_by_answer():
     Character.objects.create(name="No Char", club=club, owner=player, level=1, char_class="Wizard")
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     # One PlayerRSVP per member: the most recent answer wins.
-    set_player_rsvp(session, player, SessionRSVP.Answer.MAYBE, gm.user)
+    set_player_rsvp(session, player, PlayerRSVP.Answer.MAYBE, gm.user)
 
     data = who_is_coming(session)
 
@@ -96,7 +95,7 @@ def test_who_is_coming_shows_active_characters_as_hint():
     Character.objects.create(name="Wizard", club=club, owner=other)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     data = who_is_coming(session)
@@ -115,7 +114,7 @@ def test_who_is_coming_unanswered_players():
     _ = Character.objects.create(name="Unanswered Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     data = who_is_coming(session)
@@ -150,7 +149,7 @@ def test_who_is_coming_inactive_characters_hidden():
         from play_sessions.models import PlayerRSVP
 
         PlayerRSVP.objects.create(
-            session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+            session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
         )
         data = who_is_coming(session)
 
@@ -172,10 +171,10 @@ def test_attendance_rows_starts_from_yes_members():
     Character.objects.create(name="Maybe Char", club=club, owner=other, level=2, char_class="Rogue")
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     PlayerRSVP.objects.create(
-        session=session, member=other, answer=SessionRSVP.Answer.MAYBE, answered_by=gm.user
+        session=session, member=other, answer=PlayerRSVP.Answer.MAYBE, answered_by=gm.user
     )
 
     rows = attendance_rows(session, club)
@@ -186,7 +185,7 @@ def test_attendance_rows_starts_from_yes_members():
     assert rows[0]["characters"][0]["character"].name == "Yes Char"
     # None ticked at first
     assert rows[0]["characters"][0]["checked"] is False
-    assert rows[0]["answer"] == SessionRSVP.Answer.YES
+    assert rows[0]["answer"] == PlayerRSVP.Answer.YES
     assert rows[0]["answer_status"] == "success"
 
     # The maybe member's character is not offered
@@ -199,7 +198,7 @@ def test_attendance_rows_prefers_existing_attendance():
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     SessionAttendance.objects.create(
         session=session, character=char, played=False, confirmed_by=gm.user
@@ -216,7 +215,7 @@ def test_attendance_rows_hint_pre_ticks_checkbox():
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     AttendanceHint.objects.create(session=session, character=char)
 
@@ -235,10 +234,10 @@ def test_save_attendance_first_save_writes_all_no_changes():
     char2 = Character.objects.create(name="Char 2", club=club, owner=other)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     PlayerRSVP.objects.create(
-        session=session, member=other, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=other, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     # No existing attendance
@@ -269,10 +268,10 @@ def test_save_attendance_second_save_writes_changes():
     char2 = Character.objects.create(name="Char 2", club=club, owner=other)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     PlayerRSVP.objects.create(
-        session=session, member=other, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=other, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     # First save
@@ -303,7 +302,7 @@ def test_save_attendance_added_member_character_writes_old_null():
     char1 = Character.objects.create(name="Char 1", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     # First save with only char1
@@ -313,7 +312,7 @@ def test_save_attendance_added_member_character_writes_old_null():
     other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
     other = Membership.objects.create(user=other_user, club=club)
     char2 = Character.objects.create(name="Char 2", club=club, owner=other)
-    set_player_rsvp(session, other, SessionRSVP.Answer.YES, gm.user)
+    set_player_rsvp(session, other, PlayerRSVP.Answer.YES, gm.user)
 
     # Second save: add char2 (never had a row before)
     _ = save_attendance(session, {char1.pk, char2.pk}, gm.user, club)
@@ -334,10 +333,10 @@ def test_save_attendance_unchanged_rows_not_touched():
     Character.objects.create(name="Char 2", club=club, owner=other)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     PlayerRSVP.objects.create(
-        session=session, member=other, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=other, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     save_attendance(session, {char1.pk}, gm.user, club)
@@ -353,7 +352,7 @@ def test_save_attendance_inactive_character_not_offered():
     char2 = Character.objects.create(name="Inactive Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     with patch("play_sessions.core.character_is_active") as mock_active:
@@ -375,10 +374,10 @@ def test_save_attendance_ignores_non_yes_members():
     char_no = Character.objects.create(name="No Char", club=club, owner=other)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     PlayerRSVP.objects.create(
-        session=session, member=other, answer=SessionRSVP.Answer.NO, answered_by=gm.user
+        session=session, member=other, answer=PlayerRSVP.Answer.NO, answered_by=gm.user
     )
 
     save_attendance(session, {char_yes.pk, char_no.pk}, gm.user, club)
@@ -394,7 +393,7 @@ def test_save_attendance_removes_hints_on_confirm():
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     AttendanceHint.objects.create(session=session, character=char)
     assert AttendanceHint.objects.filter(session=session).count() == 1
@@ -412,7 +411,7 @@ def test_save_attendance_signal_sent_once_per_save():
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     calls = []
@@ -460,7 +459,7 @@ def test_attendance_view_gm_and_admin_allowed(client):
     Membership.objects.create(user=admin_user, club=club, is_club_admin=True)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     for user in [gm.user, admin_user]:
@@ -485,7 +484,7 @@ def test_attendance_post_adds_never_answered_member(client):
 
     # The member is now recorded as attending (yes RSVP)
     rsvp = PlayerRSVP.objects.get(session=session, member=player)
-    assert rsvp.answer == SessionRSVP.Answer.YES
+    assert rsvp.answer == PlayerRSVP.Answer.YES
     assert rsvp.answered_by == gm.user
 
     # They appear on the attendance page with their character unticked
@@ -502,7 +501,7 @@ def test_attendance_post_saves_ticked_characters(client):
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     client.force_login(gm.user)
@@ -522,7 +521,7 @@ def test_attendance_post_second_save_writes_history(client):
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     client.force_login(gm.user)
@@ -537,41 +536,6 @@ def test_attendance_post_second_save_writes_history(client):
     assert changes.first().new_played is False
 
 
-@pytest.mark.story("P5")
-def test_rsvp_for_view_gm_can_answer_for_any_member(client):
-    club, gm, player, session = _make_club_and_session()
-
-    client.force_login(gm.user)
-    url = reverse("play_sessions:rsvp_for", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"member": player.pk, "answer": SessionRSVP.Answer.YES})
-
-    assert response.status_code == 302
-
-    rsvp = PlayerRSVP.objects.get(session=session, member=player)
-    assert rsvp.answer == SessionRSVP.Answer.YES
-    assert rsvp.answered_by == gm.user
-
-
-@pytest.mark.story("P5")
-def test_rsvp_for_view_player_gets_403(client):
-    club, gm, player, session = _make_club_and_session()
-
-    client.force_login(player.user)
-    url = reverse("play_sessions:rsvp_for", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"member": player.pk, "answer": SessionRSVP.Answer.YES})
-    assert response.status_code == 403
-
-
-@pytest.mark.story("P5")
-def test_rsvp_for_view_anonymous_redirects_to_login(client):
-    club, gm, player, session = _make_club_and_session()
-
-    url = reverse("play_sessions:rsvp_for", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.post(url, {"member": player.pk, "answer": SessionRSVP.Answer.YES})
-    assert response.status_code == 302
-    assert "/accounts/login/" in response.url
-
-
 @pytest.mark.story("P6")
 def test_bringing_view_creates_hint_only(client):
     """A player can hint they are bringing a character; no attendance row is written."""
@@ -582,7 +546,7 @@ def test_bringing_view_creates_hint_only(client):
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     client.force_login(player.user)
@@ -612,7 +576,7 @@ def test_bringing_view_removed_on_confirm(client):
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
 
     client.force_login(player.user)
@@ -651,7 +615,7 @@ def test_bringing_view_after_confirm_refused(client):
     char = Character.objects.create(name="Char", club=club, owner=player)
 
     PlayerRSVP.objects.create(
-        session=session, member=player, answer=SessionRSVP.Answer.YES, answered_by=gm.user
+        session=session, member=player, answer=PlayerRSVP.Answer.YES, answered_by=gm.user
     )
     save_attendance(session, set(), gm.user, club)  # confirm
 

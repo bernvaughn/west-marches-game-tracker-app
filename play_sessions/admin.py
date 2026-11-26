@@ -7,7 +7,6 @@ from .models import (
     PlaySession,
     SessionAttendance,
     SessionAward,
-    SessionRSVP,
     SessionSettings,
 )
 
@@ -18,14 +17,6 @@ class PlaySessionAdmin(admin.ModelAdmin):
     list_filter = ["cancelled", "club"]
     search_fields = ["title", "club__name", "location"]
     readonly_fields = ["created", "updated"]
-
-
-@admin.register(SessionRSVP)
-class SessionRSVPAdmin(admin.ModelAdmin):
-    list_display = ["id", "session", "character", "answer", "answered_by", "answered_at"]
-    list_filter = ["answer", "session__club"]
-    search_fields = ["session__title", "character__name"]
-    readonly_fields = ["answered_at"]
 
 
 @admin.register(PlayerRSVP)

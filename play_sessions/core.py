@@ -10,7 +10,6 @@ from datetime import UTC
 
 from django.conf import settings
 from django.dispatch import Signal
-from django.utils import timezone as dj_timezone
 
 try:
     from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -73,37 +72,6 @@ def character_is_active(character):
     Placeholder: the death/archive epic will replace the body.
     """
     return True
-
-
-# --- RSVP helper -------------------------------------------------------------
-
-
-def set_rsvp(session, character, answer, by):
-    """Create or update an RSVP for a character on a session.
-
-    Args:
-        session: PlaySession instance.
-        character: Character instance.
-        answer: One of "yes", "maybe", "no".
-        by: User who is answering (may be different from character owner).
-
-    Returns:
-        The created/updated SessionRSVP instance.
-
-    Raises:
-        ValueError: if answer is not a valid choice.
-    """
-    from .models import SessionRSVP
-
-    if answer not in SessionRSVP.Answer.values:
-        raise ValueError(f"Invalid RSVP answer: {answer}")
-
-    rsvp, _ = SessionRSVP.objects.update_or_create(
-        session=session,
-        character=character,
-        defaults={"answer": answer, "answered_by": by, "answered_at": dj_timezone.now()},
-    )
-    return rsvp
 
 
 # --- Signal ------------------------------------------------------------------

@@ -10,7 +10,7 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from play_sessions.calendar import month_grid, next_session, parse_month
 from play_sessions.feed import build_ics, get_or_create_token
-from play_sessions.models import PlayerRSVP, PlaySession, SessionRSVP
+from play_sessions.models import PlayerRSVP, PlaySession
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P3")]
@@ -155,12 +155,12 @@ def test_yes_count_counts_only_yes(club, game_master, player, other_player):
 
     session = _session(club, "RSVP session", timezone.now() + timedelta(days=1), gm=gm_membership)
     PlayerRSVP.objects.create(
-        session=session, member=owner, answer=SessionRSVP.Answer.YES, answered_by=player
+        session=session, member=owner, answer=PlayerRSVP.Answer.YES, answered_by=player
     )
     PlayerRSVP.objects.create(
         session=session,
         member=other_owner,
-        answer=SessionRSVP.Answer.MAYBE,
+        answer=PlayerRSVP.Answer.MAYBE,
         answered_by=other_player,
     )
 

@@ -5,7 +5,7 @@ from django import forms
 from accounts.models import Membership
 from player_characters.models import Character
 
-from .models import PlayerRSVP, SessionRSVP
+from .models import PlayerRSVP
 from .services_attendance import attendance_rows
 
 
@@ -55,7 +55,7 @@ class RsvpForMemberForm(forms.Form):
         required=True,
     )
     answer = forms.ChoiceField(
-        choices=SessionRSVP.Answer.choices,
+        choices=PlayerRSVP.Answer.choices,
         required=True,
     )
 
