@@ -261,9 +261,9 @@ def test_gm_links_carry_gm_colour_and_mark(login, club, game_master):
     nav = nav_html(
         login(game_master).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
-    assert "wm-nav-link--gm" in nav and "wm-nav-mark--gm" in nav
-    assert '<span class="wm-nav-mark wm-nav-mark--gm">GM</span>' in nav
-    assert "wm-nav-link--admin" not in nav
+    assert "wm-nav-link-gm" in nav and "wm-nav-mark-gm" in nav
+    assert '<span class="wm-nav-mark wm-nav-mark-gm">GM</span>' in nav
+    assert "wm-nav-link-admin" not in nav
 
 
 @pytest.mark.story("U168")
@@ -271,8 +271,8 @@ def test_admin_links_carry_admin_colour_and_mark(login, club, club_admin):
     nav = nav_html(
         login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
-    assert "wm-nav-link--admin" in nav and "wm-nav-mark--admin" in nav
-    assert '<span class="wm-nav-mark wm-nav-mark--admin">Admin</span>' in nav
+    assert "wm-nav-link-admin" in nav and "wm-nav-mark-admin" in nav
+    assert '<span class="wm-nav-mark wm-nav-mark-admin">Admin</span>' in nav
 
 
 @pytest.mark.story("U168")
@@ -280,7 +280,7 @@ def test_player_sees_no_colour_mark_or_key(login, club, player):
     nav = nav_html(
         login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
-    assert "wm-nav-link--gm" not in nav and "wm-nav-link--admin" not in nav
+    assert "wm-nav-link-gm" not in nav and "wm-nav-link-admin" not in nav
     assert "wm-nav-mark" not in nav
     assert "wm-menu-group-key" not in nav
 
@@ -293,13 +293,13 @@ def test_key_shows_only_roles_the_person_has(
         login(game_master).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
     assert "wm-menu-group-key" in gm_nav
-    assert "wm-nav-key-swatch--gm" in gm_nav
-    assert "wm-nav-key-swatch--admin" not in gm_nav
+    assert "wm-nav-key-swatch-gm" in gm_nav
+    assert "wm-nav-key-swatch-admin" not in gm_nav
 
     admin_nav = nav_html(
         login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
-    assert "wm-nav-key-swatch--admin" in admin_nav
+    assert "wm-nav-key-swatch-admin" in admin_nav
 
     player_nav = nav_html(
         login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
@@ -309,7 +309,7 @@ def test_key_shows_only_roles_the_person_has(
     super_nav = nav_html(
         login(site_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
-    assert "wm-nav-key-swatch--gm" in super_nav and "wm-nav-key-swatch--admin" in super_nav
+    assert "wm-nav-key-swatch-gm" in super_nav and "wm-nav-key-swatch-admin" in super_nav
 
 
 @pytest.mark.story("U168")
@@ -318,4 +318,4 @@ def test_gm_or_admin_links_show_as_gm_for_club_admin_too(login, club, club_admin
     nav = nav_html(
         login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
-    assert "wm-nav-link--gm" in nav and "wm-nav-mark--gm" in nav
+    assert "wm-nav-link-gm" in nav and "wm-nav-mark-gm" in nav

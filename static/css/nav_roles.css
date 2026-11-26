@@ -2,9 +2,9 @@
    Colours live in tokens.css; this file only binds them to menu links and the key.
    Player links are uncoloured with no mark. */
 
-.wm-nav-link--gm { color: var(--wm-role-gm); }
-.wm-nav-link--admin { color: var(--wm-role-admin); }
-.wm-nav-link--player { color: var(--wm-text); }
+.wm-nav-link-gm { color: var(--wm-role-gm); }
+.wm-nav-link-admin { color: var(--wm-role-admin); }
+.wm-nav-link-player { color: var(--wm-text); }
 
 .wm-nav-mark {
   display: inline-flex;
@@ -20,8 +20,8 @@
   color: var(--wm-role-mark);               /* currentColor: inherits the link's role colour */
   white-space: nowrap;
 }
-.wm-nav-mark--gm { color: var(--wm-role-gm); border-color: var(--wm-role-gm); }
-.wm-nav-mark--admin { color: var(--wm-role-admin); border-color: var(--wm-role-admin); }
+.wm-nav-mark-gm { color: var(--wm-role-gm); border-color: var(--wm-role-gm); }
+.wm-nav-mark-admin { color: var(--wm-role-admin); border-color: var(--wm-role-admin); }
 
 .wm-nav-key {
   border-top: 1px solid var(--wm-border);
@@ -42,5 +42,5 @@
   border: 1px solid var(--wm-border);
   border-radius: var(--wm-radius-sm);
 }
-.wm-nav-key-swatch--gm { background: var(--wm-role-gm); }
-.wm-nav-key-swatch--admin { background: var(--wm-role-admin); }
+.wm-nav-key-swatch-gm { background: var(--wm-role-gm); }
+.wm-nav-key-swatch-admin { background: var(--wm-role-admin); }

@@ -13,9 +13,9 @@
         {% if icon %}<i class="bi bi-{{ icon }} me-2" aria-hidden="true"></i>{% endif %}
         {{ heading }}
       </h3>
-      {% for l in links %}<a class="wm-menu-link{% if l.active %} active{% endif %} wm-nav-link--{{ l.audience }}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>
+      {% for l in links %}<a class="wm-menu-link{% if l.active %} active{% endif %} wm-nav-link-{{ l.audience }}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>
         {% if l.icon %}<i class="bi bi-{{ l.icon }} me-2" aria-hidden="true"></i>{% endif %}
-        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark--gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark--admin">Admin</span>{% endif %}
+        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark-gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark-admin">Admin</span>{% endif %}
       </a>{% endfor %}
     </section>
     {% endfor %}
@@ -26,9 +26,9 @@
         <i class="bi bi-person-gear me-2" aria-hidden="true"></i>
         Game master
       </h3>
-      {% for l in nav.gm %}<a class="wm-menu-link{% if l.active %} active{% endif %} wm-nav-link--{{ l.audience }}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>
+      {% for l in nav.gm %}<a class="wm-menu-link{% if l.active %} active{% endif %} wm-nav-link-{{ l.audience }}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>
         {% if l.icon %}<i class="bi bi-{{ l.icon }} me-2" aria-hidden="true"></i>{% endif %}
-        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark--gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark--admin">Admin</span>{% endif %}
+        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark-gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark-admin">Admin</span>{% endif %}
       </a>{% endfor %}
     </section>
     {% endif %}
@@ -38,15 +38,15 @@
         <i class="bi bi-gear-fill me-2" aria-hidden="true"></i>
         {% if club %}Club admin{% else %}Site admin{% endif %}
       </h3>
-      {% if club %}{% for l in nav.admin %}<a class="wm-menu-link{% if l.active %} active{% endif %} wm-nav-link--{{ l.audience }}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>
+      {% if club %}{% for l in nav.admin %}<a class="wm-menu-link{% if l.active %} active{% endif %} wm-nav-link-{{ l.audience }}" href="{{ l.url }}"{% if l.active %} aria-current="page"{% endif %}>
         {% if l.icon %}<i class="bi bi-{{ l.icon }} me-2" aria-hidden="true"></i>{% endif %}
-        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark--gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark--admin">Admin</span>{% endif %}
+        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark-gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark-admin">Admin</span>{% endif %}
       </a>{% endfor %}{% endif %}
       {% if user.is_superuser %}
-      <a class="wm-menu-link wm-nav-link--admin" href="{% url 'site_clubs' %}"><i class="bi bi-buildings me-2" aria-hidden="true"></i>Clubs<span class="wm-nav-mark wm-nav-mark--admin">Admin</span></a>
-      <a class="wm-menu-link wm-nav-link--admin" href="{% url 'site_settings' %}"><i class="bi bi-gear me-2" aria-hidden="true"></i>Site settings<span class="wm-nav-mark wm-nav-mark--admin">Admin</span></a>
-      <a class="wm-menu-link wm-nav-link--admin" href="{% url 'site_design' %}"><i class="bi bi-palette me-2" aria-hidden="true"></i>Design system<span class="wm-nav-mark wm-nav-mark--admin">Admin</span></a>
-      <a class="wm-menu-link wm-nav-link--admin" href="{% url 'site_feedback' %}"><i class="bi bi-chat-left-text me-2" aria-hidden="true"></i>Feedback<span class="wm-nav-mark wm-nav-mark--admin">Admin</span></a>
+      <a class="wm-menu-link wm-nav-link-admin" href="{% url 'site_clubs' %}"><i class="bi bi-buildings me-2" aria-hidden="true"></i>Clubs<span class="wm-nav-mark wm-nav-mark-admin">Admin</span></a>
+      <a class="wm-menu-link wm-nav-link-admin" href="{% url 'site_settings' %}"><i class="bi bi-gear me-2" aria-hidden="true"></i>Site settings<span class="wm-nav-mark wm-nav-mark-admin">Admin</span></a>
+      <a class="wm-menu-link wm-nav-link-admin" href="{% url 'site_design' %}"><i class="bi bi-palette me-2" aria-hidden="true"></i>Design system<span class="wm-nav-mark wm-nav-mark-admin">Admin</span></a>
+      <a class="wm-menu-link wm-nav-link-admin" href="{% url 'site_feedback' %}"><i class="bi bi-chat-left-text me-2" aria-hidden="true"></i>Feedback<span class="wm-nav-mark wm-nav-mark-admin">Admin</span></a>
       {% endif %}
     </section>
     {% endif %}
@@ -60,9 +60,9 @@
         {% if icon %}<i class="bi bi-{{ icon }} me-2" aria-hidden="true"></i>{% endif %}
         {{ heading }}
       </h3>
-      {% for l in links %}<a class="wm-menu-link wm-nav-link--{{ l.audience }}" href="{{ l.url }}">
+      {% for l in links %}<a class="wm-menu-link wm-nav-link-{{ l.audience }}" href="{{ l.url }}">
         {% if l.icon %}<i class="bi bi-{{ l.icon }} me-2" aria-hidden="true"></i>{% endif %}
-        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark--gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark--admin">Admin</span>{% endif %}
+        {{ l.label }}{% if l.audience == "gm" %}<span class="wm-nav-mark wm-nav-mark-gm">GM</span>{% elif l.audience == "admin" %}<span class="wm-nav-mark wm-nav-mark-admin">Admin</span>{% endif %}
       </a>{% endfor %}
     </section>
     {% endif %}
