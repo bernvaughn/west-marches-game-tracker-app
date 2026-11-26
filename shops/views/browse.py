@@ -220,8 +220,10 @@ def _inventory_context(character, shop):
         return {"inventory_character": None}
     from player_characters.inventory import coin_summary, inventory_rows
     from player_characters.junk import junk_rows, junk_value, junk_value_at
+    from player_characters.sheet import inventory_values
 
     rows = inventory_rows(character)
+    row_values = inventory_values(rows)
     overrides = dict(
         ShopStock.objects.filter(
             shop=shop, item__in=[r.item for r in rows], buy_percent__isnull=False
@@ -233,8 +235,11 @@ def _inventory_context(character, shop):
             "owned": r.owned,
             "available": r.available,
             "price": percent_price(r.item.value_cp, overrides.get(r.item.pk, shop.buy_percent)),
+            "weight_text": v["weight_text"],
+            "weight_hundredths": v["weight_hundredths"],
+            "weight_per_unit_text": v["weight_per_unit_text"],
         }
-        for r in rows
+        for r, v in zip(rows, row_values, strict=False)
     ]
     junk = junk_rows(character)
     return {
