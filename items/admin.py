@@ -6,7 +6,14 @@ from django.template.response import TemplateResponse
 from django.urls import path, reverse
 from django.utils.html import format_html
 
-from .models import Item
+from .models import (
+    ClubWeightSettings,
+    ContainerOpening,
+    ContainerSlot,
+    ContainerSlotOption,
+    Item,
+    RecentItemPick,
+)
 from .services import (
     StackedConversionError,
     can_toggle_stacked,
@@ -59,6 +66,17 @@ class ItemAdminForm(forms.ModelForm):
 class ConvertAdminForm(forms.Form):
     unit_name = forms.CharField(max_length=40, label="Unit name")
     factor = forms.IntegerField(min_value=1, initial=1, label="Factor")
+
+
+class ReadOnlyAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(Item)
@@ -120,3 +138,45 @@ class ItemAdmin(admin.ModelAdmin):
             return None
         item = queryset.first()
         return HttpResponseRedirect(reverse("admin:items_item_convert", args=[item.pk]))
+
+
+@admin.register(ContainerSlot)
+class ContainerSlotAdmin(admin.ModelAdmin):
+    list_display = ["container", "position", "chance_pct", "unknown"]
+    list_filter = ["container__club"]
+    search_fields = ["container__name"]
+    autocomplete_fields = ["container"]
+    ordering = ["position"]
+
+
+@admin.register(ContainerSlotOption)
+class ContainerSlotOptionAdmin(admin.ModelAdmin):
+    list_display = ["slot", "item", "qty_min", "qty_max", "weight"]
+    list_filter = ["slot__container__club"]
+    search_fields = ["item__name"]
+    autocomplete_fields = ["slot", "item"]
+
+
+@admin.register(RecentItemPick)
+class RecentItemPickAdmin(ReadOnlyAdmin):
+    list_display = ["membership", "item", "used_at"]
+    list_filter = ["membership__club"]
+    search_fields = ["membership__user__email", "item__name"]
+    date_hierarchy = "used_at"
+    ordering = ["-used_at"]
+
+
+@admin.register(ClubWeightSettings)
+class ClubWeightSettingsAdmin(admin.ModelAdmin):
+    list_display = ["club", "count_coin_weight"]
+    search_fields = ["club__name"]
+    raw_id_fields = ["club"]
+
+
+@admin.register(ContainerOpening)
+class ContainerOpeningAdmin(ReadOnlyAdmin):
+    list_display = ["container", "character", "created"]
+    list_filter = ["character__club"]
+    search_fields = ["container__name", "character__name"]
+    date_hierarchy = "created"
+    ordering = ["-created"]
