@@ -52,10 +52,6 @@ def test_every_first_party_model_is_in_the_admin():
         "Species",
         "CharacterClass",
         "Background",
-        # player_characters: will be registered in task C3
-        "SelectedCharacter",
-        "JunkMark",
-        "ItemNote",
         # items: will be registered in task C4
         "ContainerSlot",
         "ContainerSlotOption",
