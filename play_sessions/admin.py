@@ -2,6 +2,8 @@ from django.contrib import admin
 
 from .models import (
     AttendanceChange,
+    AttendanceHint,
+    PlayerRSVP,
     PlaySession,
     SessionAttendance,
     SessionAward,
@@ -24,6 +26,22 @@ class SessionRSVPAdmin(admin.ModelAdmin):
     list_filter = ["answer", "session__club"]
     search_fields = ["session__title", "character__name"]
     readonly_fields = ["answered_at"]
+
+
+@admin.register(PlayerRSVP)
+class PlayerRSVPAdmin(admin.ModelAdmin):
+    list_display = ["id", "session", "member", "answer", "answered_by", "answered_at"]
+    list_filter = ["answer", "session__club"]
+    search_fields = ["session__title", "member__user__email"]
+    readonly_fields = ["answered_at"]
+
+
+@admin.register(AttendanceHint)
+class AttendanceHintAdmin(admin.ModelAdmin):
+    list_display = ["id", "session", "character", "created"]
+    list_filter = ["session__club"]
+    search_fields = ["session__title", "character__name"]
+    readonly_fields = ["created"]
 
 
 @admin.register(SessionAttendance)
