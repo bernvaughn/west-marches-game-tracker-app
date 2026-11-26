@@ -9,6 +9,8 @@ from typing import NamedTuple
 
 from django.urls import reverse
 
+from .apps import is_admin, is_gm, is_gm_or_admin
+
 GROUPS = ("primary", "character", "town", "map", "club", "account", "gm", "admin")
 
 # Menu groups in display order: (key, heading, icon). Read by the top bar and club home (U60).
@@ -36,6 +38,7 @@ class NavEntry(NamedTuple):
     shortcut_label: object = None
     also_current: tuple = ()
     club_required: bool = True
+    audience: str = "player"
 
 
 class NavLink(NamedTuple):
@@ -44,9 +47,29 @@ class NavLink(NamedTuple):
     url_name: str
     active: bool
     icon: object = None
+    audience: str = "player"
 
 
 _entries = []
+
+
+def _derive_audience(group: str, check: object) -> str:
+    """Audience for a nav entry: "player", "gm" or "admin" (default "player").
+
+    is_admin means club-admin only -> "admin". is_gm or is_gm_or_admin -> "gm"
+    (owner's rule: a link open to both GMs and club admins shows as GM use).
+    Otherwise fall back to the registration group: "gm" / "admin" keep it,
+    anything else is "player", so existing apps.py registrations keep working.
+    """
+    if check is is_admin:
+        return "admin"
+    if check is is_gm or check is is_gm_or_admin:
+        return "gm"
+    if group == "admin":
+        return "admin"
+    if group == "gm":
+        return "gm"
+    return "player"
 
 
 def register(
@@ -77,6 +100,7 @@ def register(
         shortcut_label,
         also_current,
         club_required,
+        _derive_audience(group, check),
     )
     _entries.append(entry)
     return entry
@@ -115,6 +139,7 @@ def entries_for(request):
             entry.url_name,
             active,
             entry.icon,
+            entry.audience,
         )
         result[entry.group].append(link)
         if (

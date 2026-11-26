@@ -3,9 +3,11 @@ import re
 from html.parser import HTMLParser
 
 import pytest
+from django.test import RequestFactory
 from django.urls import reverse
 
 from accounts import navigation
+from accounts.apps import is_admin, is_gm, is_gm_or_admin, is_member
 
 pytestmark = pytest.mark.django_db
 
@@ -213,3 +215,107 @@ def test_no_nav_partials_remain():
     skip = {".venv", "node_modules", ".git"}
     found = [p for p in ROOT.rglob("_nav.html") if not skip & set(p.parts)]
     assert found == []
+
+
+@pytest.mark.story("U168")
+def test_nav_entry_and_link_audience_default_to_player():
+    assert navigation.NavEntry("club", "People", "accounts:index", None, 100).audience == "player"
+    assert navigation.NavLink("People", "/club/", "accounts:index", False).audience == "player"
+
+
+@pytest.mark.story("U168")
+@pytest.mark.parametrize(
+    "group,check,expected",
+    [
+        ("admin", is_admin, "admin"),
+        ("gm", is_gm_or_admin, "gm"),  # owner's rule: open to both -> gm
+        ("gm", is_gm, "gm"),
+        ("club", is_member, "player"),
+        ("account", lambda r: True, "player"),
+        ("gm", lambda r: True, "gm"),  # group fallback
+        ("admin", lambda r: True, "admin"),
+    ],
+)
+def test_derive_audience(group, check, expected):
+    assert navigation._derive_audience(group, check) == expected
+
+
+@pytest.mark.story("U168")
+def test_registered_entries_keep_their_audience(club, game_master, club_admin):
+    from accounts.models import Membership
+
+    factory = RequestFactory()
+    for user in (game_master, club_admin):
+        request = factory.get(reverse("club_home", args=[club.slug]))
+        request.user = user
+        request.club = club
+        request.membership = Membership.objects.get(user=user, club=club)
+        nav = navigation.entries_for(request)
+        for group, links in nav.items():
+            expected = "gm" if group == "gm" else ("admin" if group == "admin" else "player")
+            assert all(link.audience == expected for link in links)
+
+
+@pytest.mark.story("U168")
+def test_gm_links_carry_gm_colour_and_mark(login, club, game_master):
+    nav = nav_html(
+        login(game_master).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-nav-link-gm" in nav and "wm-nav-mark-gm" in nav
+    assert '<span class="wm-nav-mark wm-nav-mark-gm">GM</span>' in nav
+    assert "wm-nav-link-admin" not in nav
+
+
+@pytest.mark.story("U168")
+def test_admin_links_carry_admin_colour_and_mark(login, club, club_admin):
+    nav = nav_html(
+        login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-nav-link-admin" in nav and "wm-nav-mark-admin" in nav
+    assert '<span class="wm-nav-mark wm-nav-mark-admin">Admin</span>' in nav
+
+
+@pytest.mark.story("U168")
+def test_player_sees_no_colour_mark_or_key(login, club, player):
+    nav = nav_html(
+        login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-nav-link-gm" not in nav and "wm-nav-link-admin" not in nav
+    assert "wm-nav-mark" not in nav
+    assert "wm-menu-group-key" not in nav
+
+
+@pytest.mark.story("U168")
+def test_key_shows_only_roles_the_person_has(
+    login, club, player, game_master, club_admin, site_admin
+):
+    gm_nav = nav_html(
+        login(game_master).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-menu-group-key" in gm_nav
+    assert "wm-nav-key-swatch-gm" in gm_nav
+    assert "wm-nav-key-swatch-admin" not in gm_nav
+
+    admin_nav = nav_html(
+        login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-nav-key-swatch-admin" in admin_nav
+
+    player_nav = nav_html(
+        login(player).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-menu-group-key" not in player_nav
+
+    super_nav = nav_html(
+        login(site_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-nav-key-swatch-gm" in super_nav and "wm-nav-key-swatch-admin" in super_nav
+
+
+@pytest.mark.story("U168")
+def test_gm_or_admin_links_show_as_gm_for_club_admin_too(login, club, club_admin):
+    # Owner's rule: a link open to both GMs and club admins shows as GM use.
+    nav = nav_html(
+        login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
+    )
+    assert "wm-nav-link-gm" in nav and "wm-nav-mark-gm" in nav
