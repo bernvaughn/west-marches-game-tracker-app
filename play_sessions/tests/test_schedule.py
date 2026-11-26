@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from accounts.models import Club, Membership, User
 from play_sessions import core
-from play_sessions.models import PlaySession, SessionSeries
+from play_sessions.models import PlaySession
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P1")]
 
@@ -67,7 +67,6 @@ def test_player_403_on_all_urls(client):
     get_urls = [
         ("play_sessions:session_create", {"club_slug": club.slug}),
         ("play_sessions:session_edit", {"club_slug": club.slug, "pk": session.pk}),
-        ("play_sessions:series_cancel", {"club_slug": club.slug, "pk": session.pk}),
     ]
     for name, kwargs in get_urls:
         url = reverse(name, kwargs=kwargs)
@@ -117,7 +116,6 @@ def test_create_stores_utc_and_shows_club_zone(client):
             "game_master": gm_membership.pk,
             "location": "The Tavern",
             "notes": "Bring dice",
-            "repeat": "none",
         },
     )
     assert response.status_code == 302
@@ -151,14 +149,13 @@ def test_create_default_game_master_is_me(client):
             "date": "2026-03-01",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "none",
         },
     )
     session = PlaySession.objects.get(title="Session")
     assert session.game_master == gm_membership
 
 
-def test_create_repeat_none_makes_one_session_no_series(client):
+def test_create_makes_one_session_no_series(client):
     club = make_club()
     gm = make_user("gm@test.com")
     gm_membership = make_membership(gm, club, is_gm=True)
@@ -172,13 +169,25 @@ def test_create_repeat_none_makes_one_session_no_series(client):
             "date": "2026-03-01",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "none",
-            "count": "99",
         },
     )
-    session = PlaySession.objects.get(title="One-off")
-    assert session.series is None
+    PlaySession.objects.get(title="One-off")
     assert PlaySession.objects.filter(title="One-off").count() == 1
+
+
+def test_form_has_no_repeat_fields(client):
+    """Schedule form should not have repeat or count fields."""
+    club = make_club()
+    gm = make_user("gm@test.com")
+    make_membership(gm, club, is_gm=True)
+    login_client(client, gm)
+
+    url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
+    response = client.get(url)
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "repeat" not in content.lower() or "Repeat" not in content
+    assert "count" not in content.lower() or "Count" not in content
 
 
 # ---------------------------------------------------------------------------
@@ -186,142 +195,78 @@ def test_create_repeat_none_makes_one_session_no_series(client):
 # ---------------------------------------------------------------------------
 
 
-def test_weekly_dst_spring_forward(client):
-    """Weekly sessions from March 1 across DST start March 8, 2026 (NY).
-
-    All sessions at 19:00 local, UTC hour differs after spring forward.
-    """
+def test_single_session_dst_spring_forward(client):
+    """Single session across DST start March 8, 2026 (NY)."""
     club = make_club(timezone="America/New_York")
     gm = make_user("gm@test.com")
     gm_membership = make_membership(gm, club, is_gm=True)
     login_client(client, gm)
 
     url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
+    # Before DST
     client.post(
         url,
         {
-            "title": "Weekly DST",
+            "title": "Before DST",
             "date": "2026-03-01",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "4",
         },
     )
-    sessions = PlaySession.objects.filter(title="Weekly DST").order_by("starts_at")
-    assert sessions.count() == 4
-    series_id = sessions.first().series_id
-    assert series_id is not None
-    assert SessionSeries.objects.filter(pk=series_id).exists()
+    session1 = PlaySession.objects.get(title="Before DST")
+    local1 = core.to_club_local(club, session1.starts_at)
+    assert local1.hour == 19
 
-    # All at 19:00 local
-    for s in sessions:
-        local = core.to_club_local(club, s.starts_at)
-        assert local.hour == 19
+    # After DST
+    client.post(
+        url,
+        {
+            "title": "After DST",
+            "date": "2026-03-15",
+            "start_time": "19:00",
+            "game_master": gm_membership.pk,
+        },
+    )
+    session2 = PlaySession.objects.get(title="After DST")
+    local2 = core.to_club_local(club, session2.starts_at)
+    assert local2.hour == 19
 
-    # Session 1 (March 1, EST UTC-5): 19:00 local = 00:00 UTC next day
-    # Session 2 (March 8, EDT UTC-4): 19:00 local = 23:00 UTC same day
-    utc_hours = {s.starts_at.hour for s in sessions}
-    assert len(utc_hours) > 1, "UTC hour should differ across DST change"
 
-
-def test_every_two_weeks_dst_fall_back(client):
-    """Every-two-weeks sessions across November DST end, 2026 (NY)."""
+def test_single_session_dst_fall_back(client):
+    """Single session across November DST end, 2026 (NY)."""
     club = make_club(timezone="America/New_York")
     gm = make_user("gm@test.com")
     gm_membership = make_membership(gm, club, is_gm=True)
     login_client(client, gm)
 
     url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
+    # Before DST end
     client.post(
         url,
         {
-            "title": "Biweekly DST",
-            "date": "2026-10-11",
+            "title": "Before fall back",
+            "date": "2026-10-25",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "every_two_weeks",
-            "count": "4",
         },
     )
-    sessions = PlaySession.objects.filter(title="Biweekly DST").order_by("starts_at")
-    assert sessions.count() == 4
-    series_id = sessions.first().series_id
-    assert series_id is not None
+    session1 = PlaySession.objects.get(title="Before fall back")
+    local1 = core.to_club_local(club, session1.starts_at)
+    assert local1.hour == 19
 
-    # All at 19:00 local
-    for s in sessions:
-        local = core.to_club_local(club, s.starts_at)
-        assert local.hour == 19
-
-    # UTC hour should differ after fall-back (Nov 1)
-    utc_hours = {s.starts_at.hour for s in sessions}
-    assert len(utc_hours) > 1
-
-
-# ---------------------------------------------------------------------------
-# Count validation tests
-# ---------------------------------------------------------------------------
-
-
-def test_count_refused_outside_2_to_26(client):
-    club = make_club()
-    gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
-    login_client(client, gm)
-
-    url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
-
-    # count = 1 refused
-    response = client.post(
-        url,
-        {
-            "title": "Count 1",
-            "date": "2026-03-01",
-            "start_time": "19:00",
-            "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "1",
-        },
-    )
-    assert response.status_code == 200  # form re-rendered with error
-    assert PlaySession.objects.filter(title="Count 1").count() == 0
-
-    # count = 27 refused
-    response = client.post(
-        url,
-        {
-            "title": "Count 27",
-            "date": "2026-03-01",
-            "start_time": "19:00",
-            "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "27",
-        },
-    )
-    assert response.status_code == 200
-    assert PlaySession.objects.filter(title="Count 27").count() == 0
-
-
-def test_count_default_is_4(client):
-    club = make_club()
-    gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
-    login_client(client, gm)
-
-    url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
+    # After DST end
     client.post(
         url,
         {
-            "title": "Default count",
-            "date": "2026-03-01",
+            "title": "After fall back",
+            "date": "2026-11-08",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "weekly",
         },
     )
-    sessions = PlaySession.objects.filter(title="Default count")
-    assert sessions.count() == 4
+    session2 = PlaySession.objects.get(title="After fall back")
+    local2 = core.to_club_local(club, session2.starts_at)
+    assert local2.hour == 19
 
 
 # ---------------------------------------------------------------------------
@@ -353,7 +298,6 @@ def test_edit_past_session(client):
             "date": "2020-01-01",
             "start_time": "20:00",
             "game_master": gm_membership.pk,
-            "repeat": "none",
         },
     )
     assert response.status_code == 302
@@ -361,26 +305,36 @@ def test_edit_past_session(client):
     assert session.title == "Updated past session"
 
 
-def test_edit_one_series_member_leaves_others(client):
+def test_edit_session_leaves_others(client):
     club = make_club(timezone="America/New_York")
     gm = make_user("gm@test.com")
     gm_membership = make_membership(gm, club, is_gm=True)
     login_client(client, gm)
 
+    # Create two separate sessions
     url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
     client.post(
         url,
         {
-            "title": "Series member",
+            "title": "Session 1",
             "date": "2026-03-01",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "4",
         },
     )
-    sessions = PlaySession.objects.filter(title="Series member").order_by("starts_at")
-    assert sessions.count() == 4
+    client.post(
+        url,
+        {
+            "title": "Session 2",
+            "date": "2026-03-08",
+            "start_time": "19:00",
+            "game_master": gm_membership.pk,
+        },
+    )
+    sessions = PlaySession.objects.filter(title__in=["Session 1", "Session 2"]).order_by(
+        "starts_at"
+    )
+    assert sessions.count() == 2
 
     # Edit the second session
     session2 = sessions[1]
@@ -394,18 +348,18 @@ def test_edit_one_series_member_leaves_others(client):
             "date": "2026-03-08",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "none",
         },
     )
     session2.refresh_from_db()
     assert session2.title == "Edited session 2"
 
-    # Others unchanged
-    others = PlaySession.objects.filter(title="Series member")
-    assert others.count() == 3
+    # First session unchanged
+    session1 = sessions[0]
+    session1.refresh_from_db()
+    assert session1.title == "Session 1"
 
 
-def test_cancel_one_series_member_leaves_others(client):
+def test_cancel_one_session_leaves_others(client):
     club = make_club(timezone="America/New_York")
     gm = make_user("gm@test.com")
     gm_membership = make_membership(gm, club, is_gm=True)
@@ -415,16 +369,25 @@ def test_cancel_one_series_member_leaves_others(client):
     client.post(
         url,
         {
-            "title": "Series to cancel",
+            "title": "Session to cancel",
             "date": "2026-03-01",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "4",
         },
     )
-    sessions = PlaySession.objects.filter(title="Series to cancel").order_by("starts_at")
-    assert sessions.count() == 4
+    client.post(
+        url,
+        {
+            "title": "Other session",
+            "date": "2026-03-08",
+            "start_time": "19:00",
+            "game_master": gm_membership.pk,
+        },
+    )
+    sessions = PlaySession.objects.filter(
+        title__in=["Session to cancel", "Other session"]
+    ).order_by("starts_at")
+    assert sessions.count() == 2
 
     # Cancel the first session
     session1 = sessions[0]
@@ -437,9 +400,10 @@ def test_cancel_one_series_member_leaves_others(client):
     session1.refresh_from_db()
     assert session1.cancelled is True
 
-    # Others unchanged
-    others = PlaySession.objects.filter(title="Series to cancel", cancelled=False)
-    assert others.count() == 3
+    # Other session unchanged
+    session2 = sessions[1]
+    session2.refresh_from_db()
+    assert session2.cancelled is False
 
 
 # ---------------------------------------------------------------------------
@@ -484,145 +448,6 @@ def test_cancel_keeps_row_and_marks_cancelled(client):
 
 
 # ---------------------------------------------------------------------------
-# Cancel the rest tests
-# ---------------------------------------------------------------------------
-
-
-def test_cancel_rest_touches_only_this_and_later(client):
-    club = make_club(timezone="America/New_York")
-    gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
-    login_client(client, gm)
-
-    url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
-    client.post(
-        url,
-        {
-            "title": "Rest series",
-            "date": "2026-03-01",
-            "start_time": "19:00",
-            "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "4",
-        },
-    )
-    sessions = PlaySession.objects.filter(title="Rest series").order_by("starts_at")
-    assert sessions.count() == 4
-
-    # Cancel the rest from session 3 (index 2)
-    session3 = sessions[2]
-    series_cancel_url = reverse(
-        "play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session3.pk}
-    )
-
-    # GET shows confirm page
-    response = client.get(series_cancel_url)
-    assert response.status_code == 200
-    assert b"3" in response.content or b"two" in response.content.lower()  # count
-
-    # Nothing changed on GET
-    assert PlaySession.objects.filter(title="Rest series", cancelled=False).count() == 4
-
-    # POST cancels 3 and 4
-    response = client.post(series_cancel_url)
-    assert response.status_code == 302
-
-    session3.refresh_from_db()
-    sessions[3].refresh_from_db()
-    assert session3.cancelled is True
-    assert sessions[3].cancelled is True
-    sessions[0].refresh_from_db()
-    sessions[1].refresh_from_db()
-    assert sessions[0].cancelled is False
-    assert sessions[1].cancelled is False
-
-
-def test_cancel_rest_skips_already_cancelled(client):
-    club = make_club(timezone="America/New_York")
-    gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
-    login_client(client, gm)
-
-    url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
-    client.post(
-        url,
-        {
-            "title": "Skip cancelled",
-            "date": "2026-03-01",
-            "start_time": "19:00",
-            "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "4",
-        },
-    )
-    sessions = PlaySession.objects.filter(title="Skip cancelled").order_by("starts_at")
-
-    # Pre-cancel session 4
-    sessions[3].cancelled = True
-    sessions[3].save()
-
-    # Cancel the rest from session 2 - should only cancel session 2 and 3 (not 4)
-    session2 = sessions[1]
-    series_cancel_url = reverse(
-        "play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session2.pk}
-    )
-    response = client.post(series_cancel_url)
-    assert response.status_code == 302
-
-    session2.refresh_from_db()
-    sessions[2].refresh_from_db()
-    sessions[3].refresh_from_db()
-    assert session2.cancelled is True
-    assert sessions[2].cancelled is True
-    assert sessions[3].cancelled is True  # was already cancelled, stays cancelled
-    sessions[0].refresh_from_db()
-    assert sessions[0].cancelled is False
-
-
-def test_series_cancel_404_without_series(client):
-    club = make_club()
-    gm = make_user("gm@test.com")
-    gm_membership = make_membership(gm, club, is_gm=True)
-    login_client(client, gm)
-
-    session = PlaySession.objects.create(
-        club=club,
-        title="No series",
-        starts_at=timezone.now(),
-        game_master=gm_membership,
-    )
-    url = reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.get(url)
-    assert response.status_code == 404
-
-
-def test_series_cancel_404_for_another_club(client):
-    club = make_club()
-    other_club = make_club(slug="other-club")
-    gm = make_user("gm@test.com")
-    make_membership(gm, club, is_gm=True)
-    other_gm = make_user("other@test.com")
-    other_gm_membership = make_membership(other_gm, other_club, is_gm=True)
-
-    # Create a series session in the other club
-    series = SessionSeries.objects.create(
-        club=other_club, created_by=other_gm_membership, rule="weekly"
-    )
-    session = PlaySession.objects.create(
-        club=other_club,
-        title="Other club session",
-        starts_at=timezone.now(),
-        game_master=other_gm_membership,
-        series=series,
-    )
-
-    login_client(client, gm)
-    url = reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
-    response = client.get(url)
-    assert response.status_code == 404
-
-
-# ---------------------------------------------------------------------------
 # Form validation tests
 # ---------------------------------------------------------------------------
 
@@ -642,7 +467,6 @@ def test_end_time_before_start_time_refused(client):
             "start_time": "21:00",
             "end_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "none",
         },
     )
     assert response.status_code == 200  # form re-rendered
@@ -701,49 +525,55 @@ def test_manage_section_shows_for_gm_not_player(client):
     assert b"Edit session" not in response.content
 
 
-def test_manage_section_series_link_only_for_series_member(client):
+def test_manage_section_no_series_link(client):
     club = make_club(timezone="America/New_York")
     gm = make_user("gm@test.com")
     gm_membership = make_membership(gm, club, is_gm=True)
     login_client(client, gm)
 
-    # Create a series
+    # Create a single session
     url = reverse("play_sessions:session_create", kwargs={"club_slug": club.slug})
     client.post(
         url,
         {
-            "title": "Series link test",
+            "title": "Solo session",
             "date": "2026-03-01",
             "start_time": "19:00",
             "game_master": gm_membership.pk,
-            "repeat": "weekly",
-            "count": "4",
         },
     )
-    sessions = PlaySession.objects.filter(title="Series link test")
-    series_session = sessions.first()
+    sessions = PlaySession.objects.filter(title="Solo session")
+    solo = sessions.first()
 
-    # Series member shows series_cancel link
-    detail_url = reverse(
-        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": series_session.pk}
-    )
-    response = client.get(detail_url)
-    assert response.status_code == 200
-    assert b"Cancel this and later" in response.content
-
-    # Non-series session does not show series link
-    solo = PlaySession.objects.create(
-        club=club,
-        title="Solo session",
-        starts_at=timezone.now(),
-        game_master=gm_membership,
-    )
+    # No series_cancel link should exist
     detail_url = reverse(
         "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": solo.pk}
     )
     response = client.get(detail_url)
     assert response.status_code == 200
     assert b"Cancel this and later" not in response.content
+
+
+def test_manage_section_keeps_edit_link_on_cancelled_session(client):
+    club = make_club()
+    gm = make_user("gm@test.com")
+    gm_membership = make_membership(gm, club, is_gm=True)
+    login_client(client, gm)
+
+    session = PlaySession.objects.create(
+        club=club,
+        title="Editlink",
+        starts_at=timezone.now(),
+        game_master=gm_membership,
+    )
+    session.cancelled = True
+    session.save()
+    detail = reverse(
+        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk}
+    )
+    html = client.get(detail).content.decode()
+    assert "Edit session" in html
+    assert "Cancel session" not in html
 
 
 # ---------------------------------------------------------------------------
@@ -780,90 +610,30 @@ def test_new_session_nav_entry_for_gm_not_player(client):
 
 
 # ---------------------------------------------------------------------------
-# Confirm page preview matches the action
+# Series cancel URL returns 404
 # ---------------------------------------------------------------------------
 
 
-def _make_series(client, title, count=3):
-    club = make_club(slug=f"club-{title.lower()}")
-    gm = make_user(f"gm-{title.lower()}@test.com")
-    make_membership(gm, club, is_gm=True)
+def test_series_cancel_url_404(client):
+    """The old series_cancel URL should 404."""
+    club = make_club()
+    gm = make_user("gm@test.com")
+    gm_membership = make_membership(gm, club, is_gm=True)
     login_client(client, gm)
-    client.post(
-        reverse("play_sessions:session_create", kwargs={"club_slug": club.slug}),
-        {
-            "title": title,
-            "date": "2026-03-01",
-            "start_time": "19:00",
-            "repeat": "weekly",
-            "count": str(count),
-        },
+
+    session = PlaySession.objects.create(
+        club=club,
+        title="No series",
+        starts_at=timezone.now(),
+        game_master=gm_membership,
     )
-    return club, list(PlaySession.objects.filter(title=title).order_by("starts_at"))
+    reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+    # series_cancel URL pattern no longer exists, but test that we can't access it
+    # This test verifies the URL name is gone
+    from django.urls import NoReverseMatch
 
-
-def _confirm_url(club, session):
-    return reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
-
-
-def test_series_cancel_page_lists_each_session_once_in_date_order(client):
-    club, sessions = _make_series(client, "Preview")
-
-    # First session: all three, in date order
-    response = client.get(_confirm_url(club, sessions[0]))
-    assert response.context["count"] == 3
-    assert response.context["affected_sessions"] == sessions
-    assert response.content.decode().count("<li>Preview") == 3
-
-    # Last session: lists exactly itself, once, with a date
-    response = client.get(_confirm_url(club, sessions[2]))
-    html = response.content.decode()
-    assert response.context["count"] == 1
-    assert html.count("<li>Preview") == 1
-    assert "<li>Preview &ndash;" in html
-
-
-def test_series_cancel_page_count_matches_action_when_current_cancelled(client):
-    club, sessions = _make_series(client, "Mixed")
-    sessions[1].cancelled = True
-    sessions[1].save()
-
-    response = client.get(_confirm_url(club, sessions[1]))
-    assert response.context["count"] == 1
-    assert response.context["affected_sessions"] == [sessions[2]]
-
-    response = client.post(_confirm_url(club, sessions[1]))
-    assert response.status_code == 302
-    sessions[2].refresh_from_db()
-    assert sessions[2].cancelled is True
-    sessions[0].refresh_from_db()
-    assert sessions[0].cancelled is False
-
-
-def test_rest_of_series_includes_ties():
-    from play_sessions.services import cancel_rest, rest_of_series
-
-    club = make_club(slug="ties")
-    gm = make_membership(make_user("ties@test.com"), club, is_gm=True)
-    series = SessionSeries.objects.create(club=club, created_by=gm, rule="weekly")
-    when = datetime(2026, 5, 1, 23, 0, tzinfo=UTC)
-    a = PlaySession.objects.create(
-        club=club, title="A", starts_at=when, game_master=gm, series=series
-    )
-    b = PlaySession.objects.create(
-        club=club, title="B", starts_at=when, game_master=gm, series=series
-    )
-    assert set(rest_of_series(a)) == {a, b}
-    assert cancel_rest(a) == 2
-
-
-def test_manage_section_keeps_edit_link_on_cancelled_session(client):
-    club, sessions = _make_series(client, "Editlink")
-    sessions[0].cancelled = True
-    sessions[0].save()
-    detail = reverse(
-        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": sessions[0].pk}
-    )
-    html = client.get(detail).content.decode()
-    assert "Edit session" in html
-    assert "Cancel session" not in html
+    try:
+        reverse("play_sessions:series_cancel", kwargs={"club_slug": club.slug, "pk": session.pk})
+        raise AssertionError("series_cancel URL should not exist")
+    except NoReverseMatch:
+        pass  # Expected

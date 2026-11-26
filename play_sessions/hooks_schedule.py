@@ -6,7 +6,6 @@ from accounts import navigation
 from accounts.apps import is_gm_or_admin
 
 from . import core
-from .services import rest_of_series
 
 
 def _manage_context(request, session):
@@ -15,16 +14,10 @@ def _manage_context(request, session):
     if not core.can_manage_sessions(request.user, club):
         return {}
 
-    ctx = {
+    return {
         "edit_url": reverse("play_sessions:session_edit", args=[club.slug, session.pk]),
         "cancel_url": reverse("play_sessions:session_cancel", args=[club.slug, session.pk]),
     }
-    if session.series_id:
-        if rest_of_series(session).exclude(pk=session.pk).exists():
-            ctx["series_cancel_url"] = reverse(
-                "play_sessions:series_cancel", args=[club.slug, session.pk]
-            )
-    return ctx
 
 
 def _manage_visible(request, session):

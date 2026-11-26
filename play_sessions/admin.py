@@ -6,17 +6,8 @@ from .models import (
     SessionAttendance,
     SessionAward,
     SessionRSVP,
-    SessionSeries,
     SessionSettings,
 )
-
-
-@admin.register(SessionSeries)
-class SessionSeriesAdmin(admin.ModelAdmin):
-    list_display = ["id", "club", "rule", "created_by", "created"]
-    list_filter = ["rule", "club"]
-    search_fields = ["club__name"]
-    readonly_fields = ["created"]
 
 
 @admin.register(PlaySession)

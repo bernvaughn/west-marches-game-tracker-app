@@ -15,7 +15,6 @@ from play_sessions.models import (
     SessionAttendance,
     SessionAward,
     SessionRSVP,
-    SessionSeries,
     SessionSettings,
 )
 
@@ -29,7 +28,6 @@ def test_app_label_and_installed():
 
 def test_all_models_have_club_path_and_manager():
     for model in [
-        SessionSeries,
         PlaySession,
         SessionRSVP,
         SessionAttendance,
@@ -52,15 +50,11 @@ def test_unique_constraints():
     membership = Membership.objects.create(user=user, club=club, is_game_master=True)
     character = Character.objects.create(name="Hero", club=club, owner=membership)
 
-    series = SessionSeries.objects.create(
-        club=club, rule=SessionSeries.Rule.WEEKLY, created_by=membership
-    )
     session = PlaySession.objects.create(
         club=club,
         title="Session 1",
         starts_at=timezone.now(),
         game_master=membership,
-        series=series,
     )
 
     # Unique session + character for RSVP
