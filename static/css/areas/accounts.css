@@ -53,7 +53,7 @@
 }
 
 /* People and whitelist */
-.wm-people-table td { vertical_align: middle; }
+.wm-people-table td { vertical-align: middle; }
 .wm-email-cell { overflow-wrap: anywhere; min-width: 10rem; }
 .wm-whitelist-form .form-check {
   padding-left: 0;
@@ -79,7 +79,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align_items: center;
+  align-items: center;
   gap: var(--wm-space-2);
   max-width: var(--wm-size-wide, 80rem);
   margin: 0 auto;
