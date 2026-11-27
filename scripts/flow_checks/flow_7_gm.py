@@ -622,8 +622,13 @@ def fill_coins(g: Tab, gp: str):
 def fill_item(g: Tab, query: str):
     """Search the picker for ``query`` and pick a result. The search must narrow the list to
     ``query``; when it does not, pick the first result so the flow carries on."""
-    g.page.locator("#app-modal input[type=search]").first.fill(query)
+    box = g.page.locator("#app-modal input[type=search]").first
     results = "#app-modal .wm-item-picker-result"
+    box.click()
+    box.fill(query)
+    if not g.wait(f"document.querySelectorAll({json.dumps(results)}).length > 0", timeout=4):
+        box.fill("")  # the first input event can land before htmx binds; type it again
+        box.press_sequentially(query, delay=40)
     g.need(results, "item picker results")
     exact = f"{results}[data-item-name='{query}']"
     found = g.wait(f"document.querySelectorAll({json.dumps(exact)}).length > 0", timeout=4)
@@ -796,9 +801,12 @@ def gm_ledger(g: Tab):
     g.page.select_option("form.wm-ledger-filter select[name=character]", label="Aria Windrunner")
     g.page.locator("form.wm-ledger-filter button[type=submit]").click()
     g.page.wait_for_load_state("networkidle")
-    t = g.text()
-    only_aria = "Borin Stonefist" not in t.split("Downtime points")[0] and "Aria Windrunner" in t
-    g.check("filter by character", "only Aria rows, 2xx", g.page.url.split("?")[-1][:60], only_aria)
+    owners = g.page.evaluate(
+        "Array.from(document.querySelectorAll('main table')[0].querySelectorAll('tbody tr'))"
+        ".map(r => r.cells[1] ? r.cells[1].textContent : '')"
+    )
+    only_aria = len(owners) > 0 and all("Aria Windrunner" in o for o in owners)
+    g.check("filter by character", "only Aria rows", f"{len(owners)} rows", only_aria)
     g.page.select_option("form.wm-ledger-filter select[name=kind]", label="Purchase")
     g.page.locator("form.wm-ledger-filter button[type=submit]").click()
     g.page.wait_for_load_state("networkidle")
@@ -959,7 +967,7 @@ def inventory_qty(p: Tab, name: str) -> int | None:
           const row = Array.from(document.querySelectorAll('tr'))
             .find(r => r.cells[0] && r.cells[0].textContent.includes(name));
           if (!row) return null;
-          const m = row.cells[0].textContent.match(/\u00d7\s*(\d+)/);
+          const m = row.cells[0].textContent.match(/\\u00d7\\s*(\\d+)/);
           return m ? parseInt(m[1], 10) : null;
         }""",
         name,
