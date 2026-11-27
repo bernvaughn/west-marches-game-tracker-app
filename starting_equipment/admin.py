@@ -83,6 +83,8 @@ class StartingEquipmentTemplateAdmin(admin.ModelAdmin):
     list_display = ["name", "club", "is_active", "created"]
     list_filter = ["club", "is_active"]
     search_fields = ["name", "description"]
+    autocomplete_fields = ["club"]
+    list_select_related = ["club"]
     inlines = [
         StartingEquipmentClassEntryInline,
         StartingEquipmentBackgroundEntryInline,
@@ -96,6 +98,8 @@ class StartingEquipmentClassEntryAdmin(admin.ModelAdmin):
     list_display = ["template", "class_option", "min_level", "max_level", "coins_cp"]
     list_filter = ["template__club", "template"]
     search_fields = ["class_option__name"]
+    autocomplete_fields = ["template", "class_option"]
+    list_select_related = ["template", "class_option"]
     inlines = [StartingEquipmentClassLineInline]
 
 
@@ -103,7 +107,8 @@ class StartingEquipmentClassEntryAdmin(admin.ModelAdmin):
 class StartingEquipmentClassLineAdmin(admin.ModelAdmin):
     list_display = ["class_entry", "item", "quantity", "is_choice", "choice_group"]
     list_filter = ["class_entry__template__club", "class_entry__template"]
-    autocomplete_fields = ["item"]
+    autocomplete_fields = ["class_entry", "item"]
+    list_select_related = ["class_entry__template", "class_entry__class_option", "item"]
     search_fields = ["item__name"]
 
 
@@ -112,6 +117,8 @@ class StartingEquipmentBackgroundEntryAdmin(admin.ModelAdmin):
     list_display = ["template", "background_option", "coins_cp"]
     list_filter = ["template__club", "template"]
     search_fields = ["background_option__name"]
+    autocomplete_fields = ["template", "background_option"]
+    list_select_related = ["template", "background_option"]
     inlines = [StartingEquipmentBackgroundLineInline]
 
 
@@ -119,7 +126,12 @@ class StartingEquipmentBackgroundEntryAdmin(admin.ModelAdmin):
 class StartingEquipmentBackgroundLineAdmin(admin.ModelAdmin):
     list_display = ["background_entry", "item", "quantity", "is_choice", "choice_group"]
     list_filter = ["background_entry__template__club", "background_entry__template"]
-    autocomplete_fields = ["item"]
+    autocomplete_fields = ["background_entry", "item"]
+    list_select_related = [
+        "background_entry__template",
+        "background_entry__background_option",
+        "item",
+    ]
     search_fields = ["item__name"]
 
 
@@ -128,13 +140,16 @@ class StartingEquipmentLevelCoinsAdmin(admin.ModelAdmin):
     list_display = ["template", "level", "coins_cp"]
     list_filter = ["template__club", "template"]
     search_fields = ["level"]
+    autocomplete_fields = ["template"]
+    list_select_related = ["template"]
 
 
 @admin.register(MagicItemStartingOption)
 class MagicItemStartingOptionAdmin(admin.ModelAdmin):
     list_display = ["template", "item", "max_per_character"]
     list_filter = ["template__club", "template"]
-    autocomplete_fields = ["item"]
+    autocomplete_fields = ["template", "item"]
+    list_select_related = ["template", "item"]
     search_fields = ["item__name"]
 
 
@@ -143,7 +158,9 @@ class StartingEquipmentRequestAdmin(admin.ModelAdmin):
     list_display = ["character", "item", "quantity", "status", "created", "decided_by"]
     list_filter = ["club", "status"]
     search_fields = ["character__name", "item__name", "note"]
-    autocomplete_fields = ["character", "item"]
+    autocomplete_fields = ["club", "character", "item"]
+    raw_id_fields = ["message"]
+    list_select_related = ["character", "item", "decided_by"]
     readonly_fields = ["created", "decided_by", "decided_at"]
     actions = ["approve_requests", "decline_requests"]
 
