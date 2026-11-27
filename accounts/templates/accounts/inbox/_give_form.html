@@ -13,8 +13,7 @@
 {% endif %}
 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
 {% if batch %}
-<button type="submit" name="action" value="review" class="btn btn-outline-info">Review Batch</button>
-<button type="submit" name="action" value="edit" class="btn btn-outline-secondary">Back</button>
+<button type="submit" name="action" value="review" class="btn btn-outline-info" formnovalidate>Review Batch</button>
 {% else %}
 <button type="submit" name="action" value="review" class="btn btn-outline-secondary">Review</button>
 {% endif %}
