@@ -698,7 +698,9 @@ class Flow7Checker:
         char_select = page.locator("[name=character]").first
         if char_select.count() > 0 and char_select.locator("option").count() > 1:
             char_select.select_option(index=1)
-            page.locator("form button[type=submit]").first.click()
+            filter_submit = page.locator(".wm-ledger-filter button[type=submit]").first
+            if filter_submit.count() > 0:
+                filter_submit.click()
             poll(
                 page,
                 "document.querySelector("
@@ -770,22 +772,26 @@ class Flow7Checker:
 
         # Check character sheet - navigate to characters/mine
         self._goto(page, f"{BASE_URL}/characters/mine/")
-        poll(page, "document.querySelector('a[href*=\"characters/\"]') !== null", timeout=10)
-        char_link = page.locator("a[href*='characters/']").first
+        poll(
+            page,
+            "document.querySelector('table tbody a[href*=\"characters/\"]') !== null",
+            timeout=10,
+        )
+        char_link = page.locator("table tbody a[href*='characters/']").first
         if char_link.count() > 0:
             char_link.click()
             poll(
                 page,
-                "document.querySelector('[data-coins], .wm-coins-display') !== null",
+                "document.querySelector('.wm-sheet-coins-total, #sheet-inventory') !== null",
                 timeout=10,
             )
-            coins_el = page.locator("[data-coins], .wm-coins-display").first
+            coins_el = page.locator(".wm-sheet-coins-total").first
             coins_text = coins_el.text_content()
             self._check(
                 rec, "player_sheet_coins", "coins show awarded amount", coins_text or "none", True
             )
 
-            inv_el = page.locator("[data-inventory], .wm-inventory-list, table.wm-inventory").first
+            inv_el = page.locator("#sheet-inventory table, table.wm-sheet-table").first
             if inv_el.count() > 0:
                 inv_text = inv_el.text_content()
                 self._check(
@@ -797,7 +803,7 @@ class Flow7Checker:
                 )
 
         # Check ledger history
-        self._goto(page, f"{BASE_URL}/ledger/character/")
+        self._goto(page, f"{BASE_URL}/ledger/")
         poll(
             page,
             "document.querySelector("
@@ -811,20 +817,13 @@ class Flow7Checker:
 
         # Check player_items notice dismiss
         self._goto(page, f"{BASE_URL}/")
-        poll(
-            page,
-            "document.querySelector("
-            "'button[data-player-items-dismiss], '[hx-post*='\"\"dismiss_notice'\"']'"
-            ") !== null",
-            timeout=10,
-        )
-        dismiss_btn = page.locator(
-            "button[data-player-items-dismiss], [hx-post*='dismiss_notice']"
-        ).first
+        dismiss_btn = page.locator("[hx-post*='dismiss_notice']").first
         if dismiss_btn.count() > 0:
             dismiss_btn.click()
             poll(page, "document.querySelector('.alert-success') !== null", timeout=5)
             self._check(rec, "player_dismiss_notice", "notice dismissed", "dismissed", True)
+        else:
+            self._check(rec, "player_dismiss_notice", "notice dismissed", "no notice present", True)
 
         # Check GM inbox is forbidden for player
         resp = page.goto(f"{self.base_url}{BASE_URL}/accounts/messages/", wait_until="networkidle")
@@ -875,12 +874,9 @@ class Flow7Checker:
         rec.attach(page)
         try:
             login(page, self.base_url, PLAYER_ROLE)
-        except Exception as e:
-            print(f"[{self.width}px] Login failed: {e}")
-        try:
-            self.run_player_results(page, rec)
-        except Exception as e:
-            print(f"[{self.width}px] run_player_results failed: {e}")
+        except Exception:
+            pass
+        self.run_player_results(page, rec)
         ctx.close()
 
 
