@@ -26,6 +26,7 @@ from ..forms_adjust import (
     BulkAwardForm,
     ConsumeForm,
     bulk_item_line_formset,
+    prefill_from_session,
 )
 from ..forms_consume import consume_line_formset
 from ..models import Character
@@ -127,7 +128,7 @@ def _is_int(value):
         return False
 
 
-def _render_bulk_award(request, form, club, items, status=200):
+def _render_bulk_award(request, form, club, items, prefill_pks=None, prefill_session=None, status=200):
     """Re-render the bulk-award form, keeping checkboxes and posted values."""
     character_data = []
     post = request.POST
@@ -158,10 +159,16 @@ def _render_bulk_award(request, form, club, items, status=200):
                 }
             )
 
+        # Determine checked state: POST data takes precedence, else prefill
+        if post:
+            checked = str(character.pk) in post.getlist("characters")
+        else:
+            checked = prefill_pks is not None and character.pk in prefill_pks
+
         character_data.append(
             {
                 "character": character,
-                "checked": str(character.pk) in post.getlist("characters"),
+                "checked": checked,
                 "item_rows": item_rows,
             }
         )
@@ -179,6 +186,7 @@ def _render_bulk_award(request, form, club, items, status=200):
             "items": items,
             "club": club,
             "loot_previews": loot_previews,
+            "prefill_session": prefill_session,
         },
         status=status,
     )
@@ -191,7 +199,16 @@ def bulk_award(request, club_slug):
     items = Item.objects.for_club(club).filter(retired=False)
     post = request.method == "POST"
 
-    form = BulkAwardForm(request.POST if post else None, club=club)
+    # Handle prefill from session on GET only
+    prefill_session = None
+    prefill_pks = set()
+    initial = {}
+    if not post:
+        session_param = request.GET.get("session")
+        if session_param:
+            prefill_session, initial, prefill_pks = prefill_from_session(club, session_param)
+
+    form = BulkAwardForm(request.POST if post else None, club=club, initial=initial)
 
     if post and form.is_valid():
         characters = form.cleaned_data["characters"]
@@ -298,4 +315,4 @@ def bulk_award(request, club_slug):
         filter_qs += f"&date_to={shared_date}&kind=award"
         return redirect(f"{ledger_url}{filter_qs}")
 
-    return _render_bulk_award(request, form, club, items)
+    return _render_bulk_award(request, form, club, items, prefill_pks, prefill_session)

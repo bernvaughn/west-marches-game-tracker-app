@@ -3,6 +3,11 @@
 {% block title %}Award Loot to Party{% endblock %}
 {% block content %}
 {% include "components/page_header.html" with title="Award Loot to Party" %}
+{% if prefill_session %}
+  <div class="alert alert-info mb-3" role="alert">
+    Prefilled from {{ prefill_session.title }}: characters who played are ticked.
+  </div>
+{% endif %}
 <form method="post" class="wm-form">
   {% csrf_token %}
   {{ form.non_field_errors }}

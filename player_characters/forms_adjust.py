@@ -196,3 +196,47 @@ class PlayerConsumeForm(forms.Form):
 
     def clean_note(self):
         return self.cleaned_data["note"].strip() or "Consumed"
+
+
+def prefill_from_session(club, raw_id):
+    """Return prefill data for bulk award from a session.
+
+    Args:
+        club: The club the session belongs to.
+        raw_id: The session ID from the query string (may be invalid).
+
+    Returns:
+        A tuple of (session, initial_dict, played_pks) or (None, None, set()) if
+        the ID is invalid or the session belongs to another club.
+        - session: The PlaySession object or None.
+        - initial_dict: Dict with 'note' and 'date' for the form initial data.
+        - played_pks: Set of character PKs that have played=True attendance.
+    """
+    from play_sessions.models import PlaySession, SessionAttendance
+
+    try:
+        session_id = int(raw_id)
+    except (TypeError, ValueError):
+        return None, None, set()
+
+    session = PlaySession.objects.for_club(club).filter(pk=session_id).first()
+    if not session:
+        return None, None, set()
+
+    # Get characters who played
+    played_pks = set(
+        SessionAttendance.objects.filter(session=session, played=True).values_list(
+            "character_id", flat=True
+        )
+    )
+
+    # Build initial data
+    from play_sessions.core import to_club_local
+
+    date_local = to_club_local(club, session.starts_at).date()
+    initial = {
+        "note": session.title,
+        "date": date_local,
+    }
+
+    return session, initial, played_pks

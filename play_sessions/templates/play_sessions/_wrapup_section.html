@@ -1,0 +1,49 @@
+{% load accounts_tags %}
+
+{% include "components/section_open.html" with title="Wrap up" id="section-wrapup" %}
+{% include "components/card_open.html" %}
+
+<div class="wm-wrapup">
+  <div class="wm-wrapup__row">
+    <div class="wm-wrapup__label">Attendance confirmed</div>
+    <div class="wm-wrapup__status">
+      {% if attendance_done %}
+        {% include "components/badge.html" with status="success" text="Done" %}
+        <a href="{{ attendance_url }}" class="wm-wrapup__link ms-2">Review attendance</a>
+      {% else %}
+        {% include "components/badge.html" with status="neutral" text="Not done" %}
+        <a href="{{ attendance_url }}" class="wm-wrapup__link ms-2">Take attendance</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="wm-wrapup__row">
+    <div class="wm-wrapup__label">Recap written</div>
+    <div class="wm-wrapup__status">
+      {% if recap_done %}
+        {% include "components/badge.html" with status="success" text="Done" %}
+        <a href="{{ recap_edit_url }}" class="wm-wrapup__link ms-2">Edit recap</a>
+      {% else %}
+        {% include "components/badge.html" with status="neutral" text="Not done" %}
+        <a href="{{ recap_edit_url }}" class="wm-wrapup__link ms-2">Write recap</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="wm-wrapup__row">
+    <div class="wm-wrapup__label">Award loot</div>
+    <div class="wm-wrapup__status">
+      <a href="{{ bulk_award_url }}" class="wm-wrapup__link">Award loot</a>
+    </div>
+  </div>
+
+  <div class="wm-wrapup__row">
+    <div class="wm-wrapup__label">Downtime points</div>
+    <div class="wm-wrapup__status">
+      <a href="{{ downtime_url }}" class="wm-wrapup__link">Award downtime points</a>
+    </div>
+  </div>
+</div>
+
+{% include "components/card_close.html" %}
+{% include "components/section_close.html" %}
