@@ -6,6 +6,18 @@
 .wm-wheel-pointer { fill: var(--wm-text, #222); stroke: #fff; stroke-width: 1; }
 .wm-wheel-legend li { display: flex; gap: .4rem; align-items: center; }
 .wm-wheel-swatch { width: .9rem; height: .9rem; border-radius: 2px; flex: none; }
+/* Wheel swatch colours (one class per palette index, matches COLOURS in
+   downtime/wheel.py). A class keeps the swatch colour out of a style
+   attribute, which CSP style-src 'self' would block. */
+.wm-wheel-swatch--0 { background: var(--wm-shop-ocean-deep); }
+.wm-wheel-swatch--1 { background: var(--wm-shop-forest-deep); }
+.wm-wheel-swatch--2 { background: var(--wm-shop-ember-deep); }
+.wm-wheel-swatch--3 { background: var(--wm-shop-violet-deep); }
+.wm-wheel-swatch--4 { background: var(--wm-shop-parchment-deep); }
+.wm-wheel-swatch--5 { background: var(--wm-accent); }
+.wm-wheel-swatch--6 { background: var(--wm-info); }
+.wm-wheel-swatch--7 { background: var(--wm-success); }
+.wm-wheel-swatch--8 { background: var(--wm-warning); }
 .wm-wheel-result[hidden] { display: none; }
 /* Particle canvas overlay sitting on top of the wheel svg. */
 .wm-wheel-particles { position: absolute; top: 0; left: 0; width: 100%; aspect-ratio: 1; pointer-events: none; z-index: 1; display: block; }

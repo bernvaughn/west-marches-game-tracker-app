@@ -89,11 +89,11 @@ class ItemForm(forms.ModelForm):
             '"Units the value covers" (1 for a normal item).</span>',
             format_html(
                 '<span class="wm-rarity-hint" data-rarity-hint>Suggested value:{}'
-                '<span data-rarity-item="special" style="display:block">'
+                '<span data-rarity-item="special" class="wm-rarity-item">'
                 "No suggested range.</span></span>",
                 format_html_join(
                     "",
-                    '<span data-rarity-item="{}" style="display:block">{} {}{}</span>',
+                    '<span data-rarity-item="{}" class="wm-rarity-item">{} {}{}</span>',
                     (
                         (key, name, text, f" — e.g. {ex}" if ex else "")
                         for key, name, text, ex in rarity.ranges()

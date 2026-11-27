@@ -6,16 +6,15 @@ Context: xp_progress (from sheet.xp_progress), can_edit, character, club.{% endc
 {% else %}
 <div class="wm-xp">
   {% if xp_progress.next_threshold %}
-  <div
-    class="wm-xp-bar"
-    role="progressbar"
-    aria-label="XP progress toward level {{ xp_progress.next_level }}"
-    aria-valuemin="0"
-    aria-valuemax="100"
-    aria-valuenow="{{ xp_progress.percent }}"
-  >
-    <div class="wm-xp-fill" style="width: {{ xp_progress.percent }}%" nonce="{{ request.csp_nonce }}"></div>
-  </div>
+<progress
+  class="wm-xp-bar"
+  role="progressbar"
+  aria-label="XP progress toward level {{ xp_progress.next_level }}"
+  aria-valuemin="0"
+  aria-valuemax="100"
+  value="{{ xp_progress.percent }}"
+  max="100"
+></progress>
   {% endif %}
   <p class="wm-xp-text">{{ xp_progress.xp_label }}</p>
   {% if xp_progress.level_up_ready and can_edit %}

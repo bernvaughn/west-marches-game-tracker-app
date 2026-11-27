@@ -57,7 +57,7 @@
         <span class="error text-danger d-block" role="alert">{{ form.is_stacked.errors|join:" " }}</span>
         {% endif %}
       </p>
-      <p id="merge-unit-name-field" style="display: none;">
+      <p id="merge-unit-name-field" hidden>
         <label class="form-label" for="{{ form.unit_name.id_for_label }}">{{ form.unit_name.label }}</label>
         {{ form.unit_name }}
         {% if form.unit_name.errors %}
@@ -67,7 +67,7 @@
       </p>
     </div>
 
-    <div id="match-mode-fields" data-mode="match" style="display: none;">
+    <div id="match-mode-fields" data-mode="match" hidden>
       <p>
         <label class="form-label" for="{{ form.item.id_for_label }}">{{ form.item.label }}</label>
         {% include "components/item_picker.html" with widget=form.item %}

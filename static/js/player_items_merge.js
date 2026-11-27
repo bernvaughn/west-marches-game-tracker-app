@@ -16,19 +16,19 @@
       const mode = form.querySelector('input[name="mode"]:checked');
       if (!mode) return;
       if (mode.value === 'merge') {
-        mergeFields.style.display = '';
-        matchFields.style.display = 'none';
+        mergeFields.hidden = false;
+        matchFields.hidden = true;
       } else {
-        mergeFields.style.display = 'none';
-        matchFields.style.display = '';
+        mergeFields.hidden = true;
+        matchFields.hidden = false;
       }
     }
 
     function updateUnitNameVisibility() {
       if (isStackedCheckbox && isStackedCheckbox.checked) {
-        unitNameField.style.display = '';
+        unitNameField.hidden = false;
       } else {
-        unitNameField.style.display = 'none';
+        unitNameField.hidden = true;
       }
     }
 

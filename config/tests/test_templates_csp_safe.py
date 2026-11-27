@@ -220,6 +220,66 @@ _JS_ALLOW_LIST = frozenset(
 #: coordinating with the command palette task.
 _ALPINE_EVAL_SKIP_TEMPLATES = frozenset({"templates/components/command_palette.html"})
 
+#: Inline style attributes are blocked by ``style-src 'self'`` (a nonce does
+#: not cover style attributes). These templates keep them deliberately: the
+#: values are dynamic design tokens, covered by a per-view
+#: ``style-src-attr 'unsafe-inline'`` exception instead.
+_STYLE_ALLOW_LIST = frozenset({"accounts/templates/accounts/design/reference.html"})
+
+#: style="..." attribute (quoted).
+_STYLE_ATTR_RE = re.compile(r'\bstyle\s*=\s*"')
+
+
+def _style_attr_lines(source):
+    """Return line numbers of ``style="`` attributes (comments/verbatim stripped)."""
+    source = _strip_template_marks(source)
+    return [i + 1 for i, line in enumerate(source.splitlines()) if _STYLE_ATTR_RE.search(line)]
+
+
+def test_scanner_flags_inline_style_attribute():
+    """Self-test: the scanner must flag a style attribute and not flag one
+    inside a stripped comment or verbatim block."""
+    source = (
+        '{# <span style="color:red">hidden</span> #}\n'
+        '{% verbatim %}<span style="color:red">hidden</span>{% endverbatim %}\n'
+        '<span style="color:red">blocked</span>\n'
+        '<span class="ok">plain</span>\n'
+    )
+    problems = _style_attr_lines(source)
+    assert problems == [3]
+
+
+def test_templates_have_no_inline_style_attributes():
+    """No project template (except mail/ and the design reference view) may
+    carry an inline style attribute while the CSP is style-src 'self'."""
+    problems = []
+    for path in _iter_template_files():
+        rel = path.relative_to(settings.BASE_DIR)
+        if rel.parts[0] == "mail":
+            continue  # email clients are not served under the site CSP
+        rel_str = str(rel)
+        for lineno in _style_attr_lines(path.read_text(encoding="utf-8")):
+            if rel_str in _STYLE_ALLOW_LIST:
+                continue
+            problems.append(f"{rel_str}:{lineno}: inline style attribute")
+    base = Path(settings.BASE_DIR)
+    for path in sorted((base / "static" / "js").glob("*.js")):
+        for lineno in _style_attr_lines(path.read_text(encoding="utf-8")):
+            problems.append(f"static/js/{path.name}:{lineno}: inline style attribute")
+    for child in sorted(base.iterdir()):
+        if child.is_dir() and (child / "forms.py").is_file():
+            path = child / "forms.py"
+            for lineno in _style_attr_lines(path.read_text(encoding="utf-8")):
+                problems.append(f"{path.relative_to(base)}:{lineno}: inline style attribute")
+    if problems:
+        problems.sort()
+        pytest.fail(
+            "CSP (style-src 'self') blocks inline style attributes. Found in:\n"
+            + "\n".join(problems)
+            + "\nUse a class (fixed set) or the simplest working option for dynamic "
+            "values; add style-src-attr 'unsafe-inline' only per-view, never site-wide."
+        )
+
 
 def test_scanner_flags_inline_script_and_event_attribute():
     """Self-test: the scanner must flag both an inline script and an onclick,

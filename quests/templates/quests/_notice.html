@@ -21,9 +21,16 @@
     <li>
       <span class="wm-notice-have">{{ row.have }} of {{ row.need }}{% if row.unit_name %} {{ row.unit_name }}{% endif %}</span>
       <span class="wm-notice-req">{% include "items/_item_name.html" with item=row.item %}</span>
-      <span class="wm-notice-bar" role="progressbar" aria-valuemin="0" aria-valuemax="{{ row.need }}" aria-valuenow="{{ row.have }}" aria-label="{{ row.item.name }}: {{ row.have }} of {{ row.need }}">
-        <span class="wm-notice-fill" style="width: {{ row.percent }}%"></span>
-      </span>
+<progress
+  class="wm-notice-bar"
+  role="progressbar"
+  aria-valuemin="0"
+  aria-valuemax="{{ row.need }}"
+  aria-valuenow="{{ row.have }}"
+  aria-label="{{ row.item.name }}: {{ row.have }} of {{ row.need }}"
+  value="{{ row.have }}"
+  max="{{ row.need }}"
+></progress>
     </li>
     {% endfor %}
   </ul>

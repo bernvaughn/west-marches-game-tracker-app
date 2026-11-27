@@ -63,7 +63,7 @@ def test_lot_links_shows_name_symbol_building(login, player, club):
     body = login(player).get(street_url(club)).content.decode()
     assert reverse("shops:detail", args=[club.slug, shop.id]) in body
     assert "🏮" in body and "Lantern" in body
-    assert "shops/buildings/smithy.svg" in body
+    assert "wm-building--smithy" in body
     assert "wm-shop-card--ember" in body
 
 
@@ -98,7 +98,7 @@ def test_picker_and_save(login, club_admin, club, shop):
     url = reverse("shops:manage_edit", kwargs={"club_slug": club.slug, "shop_id": shop.pk})
     body = client.get(url).content.decode()
     for key in KEYS:
-        assert f"shops/buildings/{key}.svg" in body
+        assert f"wm-building--{key}" in body, key
     assert 'name="street_position"' in body
     data = {"name": "Lantern", "color": "parchment", "silhouette": "hooded_trader",
             "building": "tower", "street_position": "7", "symbol": "",

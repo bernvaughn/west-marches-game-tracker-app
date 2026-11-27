@@ -71,7 +71,7 @@ def test_get_shows_shop_stall_and_filler(admin_client, club, street_shops, stall
     assert f"{stall.name}'s stall" in html
     filler = [lot for lot in lots if not lot["shop"] and not lot["stall"]]
     assert len(filler) > 0
-    assert html.count('class="wm-building"') == len(lots)
+    assert html.count('class="wm-building') == len(lots)
 
 
 # --- POST -------------------------------------------------------------------

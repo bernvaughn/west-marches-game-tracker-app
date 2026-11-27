@@ -25,7 +25,7 @@
         <th class="wm-col-optional">Rarity</th>
         <th class="wm-col-optional">Magic type</th>
         <th class="num">Value</th>
-        <th class="num" style="width: 100px;">Quantity</th>
+        <th class="num wm-col-w-100px">Quantity</th>
       </tr>
     </thead>
     <tbody>
@@ -36,7 +36,7 @@
         <td class="wm-col-optional">{{ i.get_magic_type_display|default:"—" }}</td>
         <td class="num">{{ i.value_cp|coins }}</td>
         <td class="num">
-          <input type="number" name="qty_{{ i.pk }}" value="0" min="0" class="form-control form-control-sm wm-qty-input" style="width: 80px;">
+          <input type="number" name="qty_{{ i.pk }}" value="0" min="0" class="form-control form-control-sm wm-qty-input wm-col-w-80px">
         </td>
       </tr>
     {% empty %}

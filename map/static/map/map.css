@@ -2,8 +2,10 @@
 .map-frame .wm-card-body { padding: var(--wm-space-3); }
 .hexmap svg { width: 100%; height: auto; display: block; }
 .hexmap a { text-decoration: none; }
-.hex { stroke: var(--wm-text-muted); stroke-width: 1; fill: none; }
+.hex { stroke: var(--wm-text-muted); stroke-width: 1; }
 .hex-empty { fill: none; }
+/* Legend: a hex that shows its location colour (fill set by SVG attribute). */
+.hex--info { fill: var(--wm-info-bg); }
 .hex-visited { fill: var(--wm-success-bg); }
 .hex-safe { stroke: var(--wm-text); stroke-width: 2.5; }
 .hex-symbol { font-size: var(--wm-text-lg); pointer-events: none; }

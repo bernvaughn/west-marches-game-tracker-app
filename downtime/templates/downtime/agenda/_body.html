@@ -14,8 +14,10 @@
           {% if d.in_month %}<a class="agenda-plus" href="{% url 'downtime:agenda_add' club.slug %}?date={{ d.date|date:'Y-m-d' }}" hx-get="{% url 'downtime:agenda_add' club.slug %}?date={{ d.date|date:'Y-m-d' }}" hx-target="#app-modal .modal-content" data-app-modal aria-label="Add on {{ d.date|date:'j F' }}">+</a>{% endif %}
         </div>{% endfor %}
       </div>
-      <div class="agenda-bars" style="--lanes: {{ week.lane_count }}">
-        {% for b in week.bars %}<a class="agenda-bar agenda-bar--{{ b.kind }}{% if b.continues_left %} agenda-bar--left{% endif %}{% if b.continues_right %} agenda-bar--right{% endif %}" style="grid-column: {{ b.col_start }} / span {{ b.span }}; grid-row: {{ b.lane|add:1 }}" href="{{ b.edit_url }}" hx-get="{{ b.edit_url }}" hx-target="#app-modal .modal-content" data-app-modal title="{{ b.label }}: {{ b.range_text }}">{{ b.label }}</a>{% endfor %}
+      <div class="agenda-bars">
+        {% for lane in week.lanes %}<div class="agenda-lane">
+          {% for b in lane %}<a class="agenda-bar agenda-bar--{{ b.kind }} agenda-bar--c{{ b.col_start }} agenda-bar--s{{ b.span }}{% if b.continues_left %} agenda-bar--left{% endif %}{% if b.continues_right %} agenda-bar--right{% endif %}" href="{{ b.edit_url }}" hx-get="{{ b.edit_url }}" hx-target="#app-modal .modal-content" data-app-modal title="{{ b.label }}: {{ b.range_text }}">{{ b.label }}</a>{% endfor %}
+        </div>{% endfor %}
       </div>
     </div>
     {% endfor %}

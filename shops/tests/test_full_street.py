@@ -99,6 +99,23 @@ def test_css_columns():
     assert "repeat(4, minmax(0, 1fr))" in css and "repeat(8, minmax(0, 1fr))" in css
 
 
+def test_street_uses_building_classes_not_inline_style(login, player, club):
+    open_shop(club, "Lantern", building="smithy")
+    body = login(player).get(reverse("shops:index", args=[club.slug])).content.decode()
+    start = body.index('<ul class="wm-street"')
+    street = body[start : body.index("</ul>", start)]
+    assert "wm-building--smithy" in street
+    # Each building span draws its picture from a CSS class; no inline style.
+    for span in re.findall(r'<span class="wm-building[^"]*"[^>]*>', street):
+        assert "style=" not in span
+
+
+def test_every_building_svg_has_a_css_rule():
+    css = CSS.read_text()
+    for key in [v for v, _ in Shop.Building.choices] + ["player_stall"]:
+        assert f".wm-building--{key} {{" in css, key
+
+
 def test_signs_fit_narrow_lots():
     css = CSS.read_text()
     assert "overflow-wrap: anywhere" not in css

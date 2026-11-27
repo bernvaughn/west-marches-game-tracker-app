@@ -85,9 +85,9 @@ def test_month_weeks_overlap_uses_lanes():
             bar(date(2030, 3, 9), date(2030, 3, 9), "c"),
         ],
     )
-    bars = {b.label: b.lane for b in weeks[1]["bars"]}
-    assert bars["a"] != bars["b"]
-    assert bars["c"] == 0 and weeks[1]["lane_count"] == 2
+    labels = {b.label: i for i, lane in enumerate(weeks[1]["lanes"]) for b in lane}
+    assert labels["a"] != labels["b"]
+    assert labels["c"] == 0 and len(weeks[1]["lanes"]) == 2
 
 
 def test_month_weeks_open_ended():
