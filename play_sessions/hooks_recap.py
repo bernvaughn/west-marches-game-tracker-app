@@ -1,8 +1,13 @@
-"""Hooks for the recap feature: registers the session detail section."""
+"""Hooks for the recap feature: registers the session detail section and the
+last-session dashboard provider.
+"""
 
 from django.urls import reverse
+from django.utils import timezone
 
-from . import core
+from accounts.dashboard_providers import BaseDashboardProvider, register_provider
+
+from . import core, last_session
 
 
 def _context_fn(request, session):
@@ -27,8 +32,31 @@ def _visible_fn(request, session):
     return bool(session.recap.strip())
 
 
+class LastSessionProvider(BaseDashboardProvider):
+    """Dashboard provider for the 'Last session' card.
+
+    Key: last_session
+    Order: 10 (after quick_actions at 1, before notices at 2)
+    """
+
+    key = "last_session"
+    order = 10
+    template = "play_sessions/_dashboard_last_session.html"
+
+    def get_context(self, request, club, character, membership):
+        now = timezone.now()
+        context = last_session.build(club, membership, character, now)
+        if context is None:
+            return {}
+        return {"last_session": context}
+
+    def should_show(self, request, club, character, membership):
+        now = timezone.now()
+        return last_session.latest_ended_session(club, now) is not None
+
+
 def register():
-    """Register the recap section for session detail."""
+    """Register the recap section for session detail and the last-session provider."""
     core.register_session_section(
         key="recap",
         order=80,
@@ -36,3 +64,4 @@ def register():
         context_fn=_context_fn,
         visible_fn=_visible_fn,
     )
+    register_provider(LastSessionProvider())

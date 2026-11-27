@@ -1,0 +1,67 @@
+{% comment %}_dashboard_last_session: Last session card for the player dashboard.
+   Context: provider_context.last_session {session: {title, local_start, detail_url, recap},
+                         played_as, tally, milestones, next_milestone}{% endcomment %}
+{% load accounts_tags %}
+{% load play_sessions_tags %}
+<div
+  class="wm-dashboard-section card wm-card-raised h-100"
+  id="dashboard-card-last_session"
+  data-refresh-url="{% url 'accounts:dashboard_partial' club.slug 'last_session' %}"
+>
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <h3 class="h6 mb-0 d-flex align-items-center gap-2">
+      {% include "components/icon.html" with name="clock-history" label="Last session" %}
+      Last session
+    </h3>
+  </div>
+  <div class="card-body last-session">
+    <div class="last-session-header mb-2">
+      <a href="{{ provider_context.last_session.session.detail_url }}" class="text-decoration-none">
+        <h4 class="last-session-title mb-1">{{ provider_context.last_session.session.title }}</h4>
+      </a>
+      <div class="last-session-date text-muted small">
+        {{ provider_context.last_session.session.local_start|date:"l, F j, Y" }}
+      </div>
+    </div>
+
+    <div class="last-session-recap wm-prose mb-3">
+      {% if provider_context.last_session.session.recap %}
+        {{ provider_context.last_session.session.recap|linebreaks }}
+      {% else %}
+        <p class="text-muted mb-0">No recap yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="last-session-played mb-2">
+      {% if provider_context.last_session.played_as %}
+        <p class="mb-0">You played as <strong>{{ provider_context.last_session.played_as }}</strong>.</p>
+      {% else %}
+        <p class="mb-0">You did not play.</p>
+      {% endif %}
+    </div>
+
+    <div class="last-session-tally mb-2">
+      <p class="mb-0">{{ provider_context.last_session.tally }} session{{ provider_context.last_session.tally|pluralize }} played.</p>
+    </div>
+
+    {% if provider_context.last_session.milestones %}
+    <ul class="last-session-milestones list-unstyled d-flex flex-wrap gap-2 mb-0">
+      {% for ms in provider_context.last_session.milestones %}
+        <li class="last-session-milestone {% if ms.earned %}earned{% else %}locked{% endif %} {% if ms.is_new %}is-new{% endif %}">
+          <span class="last-session-milestone-badge">{{ ms.count }}</span>
+          <span class="last-session-milestone-label">{{ ms.label }}</span>
+          {% if ms.earned and ms.is_new %}
+            <span class="last-session-new-badge" aria-label="New milestone">New</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if provider_context.last_session.next_milestone %}
+    <p class="last-session-next-milestone text-muted small mb-0 mt-2">
+      {{ provider_context.last_session.next_milestone.remaining }} more to reach {{ provider_context.last_session.next_milestone.label }}.
+    </p>
+    {% endif %}
+  </div>
+</div>
