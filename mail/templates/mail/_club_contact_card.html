@@ -6,7 +6,7 @@
 {% endif %}
 {% if saved %}
   {% if settings.contact_email %}
-    {% include "components/alert.html" with level="success" title="Contact email saved." text="The contact email is now {{ settings.contact_email }}." %}
+    {% include "components/alert.html" with level="success" title="Contact email saved." text="The contact email is now "|add:settings.contact_email|add:"." %}
   {% else %}
     {% include "components/alert.html" with level="success" title="Contact email cleared." text="The contact email has been cleared." %}
   {% endif %}
