@@ -192,6 +192,7 @@ def test_features_content():
         "rsvp",
         "attendance",
         "report",
+        "wrapup",
         "recap",
         "settings",
     )

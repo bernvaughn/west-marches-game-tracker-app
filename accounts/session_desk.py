@@ -26,6 +26,7 @@ def build_session_desk(request):
     - "club": Club
     - "membership": Membership
     - "can_manage_sessions": bool
+    - "wrapup_session": PlaySession or None (the session the wrap-up panel covers)
     """
     if not _is_gm_or_admin(request):
         return None
@@ -34,8 +35,16 @@ def build_session_desk(request):
     membership = request.membership
     waiting = approvals.pending_approvals(request)
 
+    # Find the wrap-up session to prefill the Award Loot link
+    from play_sessions.hooks_wrapup import wrapup_session
+
+    wrapup = wrapup_session(club, timezone.now())
+    bulk_award_url = reverse("characters:bulk_award", args=[club.slug])
+    if wrapup:
+        bulk_award_url = f"{bulk_award_url}?session={wrapup.pk}"
+
     after = [
-        ("Award Loot to Party", reverse("characters:bulk_award", args=[club.slug])),
+        ("Award Loot to Party", bulk_award_url),
         ("Downtime points", reverse("downtime:points_award", args=[club.slug])),
         ("Map", reverse("map:index", args=[club.slug])),
         ("Character slips", reverse("characters:slips", args=[club.slug])),
@@ -58,4 +67,5 @@ def build_session_desk(request):
         "club": club,
         "membership": membership,
         "can_manage_sessions": can_manage_sessions(request.user, club),
+        "wrapup_session": wrapup,
     }

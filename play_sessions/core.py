@@ -16,7 +16,7 @@ try:
 except ImportError:  # pragma: no cover - Python < 3.9
     from backports.zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-FEATURES = ("schedule", "calendar", "rsvp", "attendance", "report", "recap", "settings")
+FEATURES = ("schedule", "calendar", "rsvp", "attendance", "report", "wrapup", "recap", "settings")
 
 # --- Timezone helpers --------------------------------------------------------
 
