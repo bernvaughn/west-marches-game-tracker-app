@@ -71,6 +71,7 @@ MSG_PLAYER = "Flow 7 message: the goblin chief dropped a jade charm"
 STOCK_SEEDED = "super cool armor"
 STOCK_PLAYER = "Flow 7 stock request: please stock a mithral shirt"
 STARTING = "Moonstone amulet"
+MAP_LOCATION = "The Marches \u2013 (0, -2) \u2013 Wolf Den"
 
 COIN_RE = re.compile(r"COINS\s*([\d,]+) gp", re.I)
 
@@ -78,8 +79,9 @@ COIN_RE = re.compile(r"COINS\s*([\d,]+) gp", re.I)
 class Tab:
     """A page, its recorder and a check helper that folds in the recorder state."""
 
-    def __init__(self, ctx, base_url: str, label: str, width: int):
+    def __init__(self, ctx, base_url: str, label: str, width: int, shared: dict):
         self.base = base_url
+        self.shared = shared
         self.label = label
         self.width = width
         self.page = ctx.new_page()
@@ -210,10 +212,11 @@ def row_badge(tab: Tab, needle: str) -> str | None:
     return tab.page.evaluate(
         """(needle) => {
           const row = Array.from(document.querySelectorAll('#inbox-list tbody tr'))
-            .find(r => r.querySelector('input[name=message_ids]') && r.textContent.includes(needle));
+            .find(r => r.querySelector('input[name=message_ids]')
+                       && r.textContent.includes(needle));
           if (!row) return null;
-          const b = Array.from(row.querySelectorAll('.wm-badge'))
-            .find(e => e.offsetParent !== null && /^(Open|Handled|Closed)$/.test(e.textContent.trim()));
+          const b = Array.from(row.querySelectorAll('.wm-badge')).find(
+            e => e.offsetParent !== null && /^(Open|Handled|Closed)$/.test(e.textContent.trim()));
           return b ? b.textContent.trim() : '(no visible badge)';
         }""",
         needle,
@@ -231,11 +234,12 @@ def row_gone(g: Tab, needle: str) -> bool:
     return g.wait(f"!{ROWS_JS}.some(r => r.textContent.includes({json.dumps(needle)}))")
 
 
-def granted_has(g: Tab, text: str) -> bool:
+def granted_has(g: Tab, text: str, timeout: float = 8) -> bool:
     """Wait until a row's Granted list holds ``text``."""
     return g.wait(
         "Array.from(document.querySelectorAll('#inbox-list .wm-granted'))"
-        f".some(e => e.textContent.includes({json.dumps(text)}))"
+        f".some(e => e.textContent.includes({json.dumps(text)}))",
+        timeout,
     )
 
 
@@ -244,7 +248,8 @@ def badges_are(g: Tab, needles, badge: str) -> bool:
     keys = json.dumps(list(needles))
     return g.wait(
         f"{keys}.every(k => {ROWS_JS}.some(r => r.textContent.includes(k) && "
-        f"Array.from(r.querySelectorAll('.wm-badge')).some(b => b.textContent.trim() === {json.dumps(badge)})))"
+        "Array.from(r.querySelectorAll('.wm-badge'))"
+        f".some(b => b.textContent.trim() === {json.dumps(badge)})))"
     )
 
 
@@ -384,7 +389,10 @@ def player_before(p: Tab) -> dict:
     p.go(f"{CLUB}/characters/1/", "open Aria's sheet (before)")
     coins = money(p.text())
     p.check("sheet shows coins", "a coin total", coins, coins is not None)
-    return {"coins": coins}
+    p.go(f"{CLUB}/characters/mine/", "open my character's inventory (before)")
+    pelts = inventory_qty(p, "Wolf pelt")
+    p.check("inventory shows Wolf pelts", "3 Wolf pelts", pelts, pelts == 3)
+    return {"coins": coins, "pelts": pelts or 0}
 
 
 # --------------------------------------------------------------------------- GM inbox
@@ -608,27 +616,57 @@ def footer(g: Tab, selector: str):
 
 def fill_coins(g: Tab, gp: str):
     g.page.fill("#app-modal input[name=coins_gp]", gp)
+    return ["Aria Windrunner", f"{gp} gp"], f"Aria Windrunner: {gp} gp"
 
 
-def fill_item(g: Tab, name: str):
-    g.page.locator("#app-modal input[type=search]").first.fill(name)
-    g.need(f"#app-modal .wm-item-picker-result[data-item-name='{name}']", f"item result {name}").click()
+def fill_item(g: Tab, query: str):
+    """Search the picker for ``query`` and pick a result. The search must narrow the list to
+    ``query``; when it does not, pick the first result so the flow carries on."""
+    g.page.locator("#app-modal input[type=search]").first.fill(query)
+    results = "#app-modal .wm-item-picker-result"
+    g.need(results, "item picker results")
+    exact = f"{results}[data-item-name='{query}']"
+    found = g.wait(f"document.querySelectorAll({json.dumps(exact)}).length > 0", timeout=4)
+    names = g.page.locator(results).evaluate_all("els => els.map(e => e.dataset.itemName)")
+    g.check(
+        f"item picker search '{query}'",
+        f"results narrow to '{query}'",
+        f"{len(names)} results, first {names[:3]}",
+        found and len(names) < 10,
+    )
+    pick = g.page.locator(exact if found else results).first
+    name = pick.get_attribute("data-item-name")
+    pick.click()
     picked = g.page.locator("#app-modal input[name=items-0-item][type=hidden]").first.input_value()
     g.check(f"item picker selects {name}", "hidden item id set", picked, picked != "")
+    fields = g.page.locator("#app-modal [name='items-0-item']").count()
+    g.check(
+        "item picker submits one items-0-item field",
+        "1 field (a second, empty one overrides the pick)",
+        f"{fields} fields in the modal",
+        fields == 1,
+    )
     g.page.fill("#app-modal input[name=items-0-quantity]", "1")
+    g.shared["item"] = name
+    return [name], f"Aria Windrunner: {name}"
+
+
+def pick_map_kind(g: Tab):
+    g.page.locator("#app-modal label[for$='map_kind_1']").first.click()
 
 
 def fill_map(g: Tab, location: str):
-    g.page.locator("#app-modal label[for$='map_kind_1']").first.click()
+    pick_map_kind(g)
     g.page.locator("#app-modal select[name=location]").select_option(label=location)
+    return ["Wolf Den"], "Wolf Den"
 
 
-def give(g: Tab, needle: str, label: str, fill, summary_has: list[str], granted: str):
+def give(g: Tab, needle: str, label: str, fill, after_add=None):
     """Review, then Give. The Review summary must show what is given. If it does not, the
     single-grant path is broken: use the batch path (Add, Review Batch, Give) so the rest
     of the flow still runs."""
     open_give(g, needle, label)
-    fill()
+    summary_has, granted = fill()
     footer(g, "button[value=review]")
     shown = g.modal_has("Give this from") and all(t in g.modal_text() for t in summary_has)
     g.check(
@@ -646,11 +684,16 @@ def give(g: Tab, needle: str, label: str, fill, summary_has: list[str], granted:
         fill()
         footer(g, "button[value=add]")
         g.wait(batch_text(1))
+        if after_add:
+            after_add()  # the blank form needs its required choice before Review Batch submits
         footer(g, "button[value=review]")
         g.modal_has("Batch Grant Summary")
         footer(g, "button[name=confirmed]")
     closed = g.modal_closed()
-    ok = granted_has(g, granted)
+    if not closed:
+        g.page.locator("#app-modal .btn-close").click()
+        g.modal_closed()
+    ok = granted_has(g, granted, timeout=2 if not closed else 8)
     g.check(
         f"{label}: Give",
         f"modal closes, '{granted}' under Granted",
@@ -673,14 +716,7 @@ def gm_inbox_give(g: Tab):
     none_granted = "Granted" not in "".join(inbox_rows(g))
     g.check("Give coins: Cancel", "modal closed, nothing granted", closed, closed and none_granted)
     # Single coin grant: 5 gp.
-    give(
-        g,
-        MSG_SEEDED,
-        "Give coins",
-        lambda: fill_coins(g, "5"),
-        ["Aria Windrunner", "5 gp"],
-        "Aria Windrunner: 5 gp",
-    )
+    give(g, MSG_SEEDED, "Give coins", lambda: fill_coins(g, "5"))
     badge = row_badge(g, MSG_SEEDED)
     g.check("Give coins marks the message handled", "badge Handled", badge, badge == "Handled")
     # Batch on the player's message: two grants of 1 gp make one 2 gp award.
@@ -704,22 +740,16 @@ def gm_inbox_give(g: Tab):
     footer(g, "button[name=confirmed]")
     closed = g.modal_closed()
     ok = granted_has(g, "Aria Windrunner: 2 gp")
-    g.check("Give coins: confirm the batch", "'Aria Windrunner: 2 gp' under Granted", ok, closed and ok)
-    give(
-        g,
-        MSG_SEEDED,
-        "Give items",
-        lambda: fill_item(g, "Longsword"),
-        ["Longsword"],
-        "Aria Windrunner: Longsword",
+    g.check(
+        "Give coins: confirm the batch", "'Aria Windrunner: 2 gp' under Granted", ok, closed and ok
     )
+    give(g, MSG_SEEDED, "Give items", lambda: fill_item(g, "Longsword"))
     give(
         g,
         MSG_SEEDED,
         "Give map credit",
-        lambda: fill_map(g, "The Marches \u2013 (0, -2) \u2013 Wolf Den"),
-        ["Wolf Den"],
-        "Wolf Den",
+        lambda: fill_map(g, MAP_LOCATION),
+        after_add=lambda: pick_map_kind(g),
     )
 
 
@@ -728,20 +758,25 @@ def gm_layout_390(g: Tab):
     goto_inbox(g, "all", "all", "open inbox for layout")
     g.no_hscroll("inbox has no horizontal scroll")
     shown = g.page.evaluate(
-        "Array.from(document.querySelectorAll('#inbox-list .d-sm-none')).some(e => e.offsetParent !== null)"
+        "Array.from(document.querySelectorAll('#inbox-list .d-sm-none'))"
+        ".some(e => e.offsetParent !== null)"
     )
     g.check("phone summary block is visible", "d-sm-none visible", shown, shown)
     hidden_cols = g.page.evaluate(
-        "Array.from(document.querySelectorAll('#inbox-list td.d-sm-table-cell')).every(e => e.offsetParent === null)"
+        "Array.from(document.querySelectorAll('#inbox-list td.d-sm-table-cell'))"
+        ".every(e => e.offsetParent === null)"
     )
     g.check("desktop columns are hidden", "d-sm-table-cell hidden", hidden_cols, hidden_cols)
     fits = g.page.evaluate(
-        "(() => { const r = document.querySelector('#inbox-bulk-bar').getBoundingClientRect(); return r.left >= 0 && r.right <= window.innerWidth + 1; })()"
+        "(() => { const r = document.querySelector('#inbox-bulk-bar').getBoundingClientRect();"
+        " return r.left >= 0 && r.right <= window.innerWidth + 1; })()"
     )
     g.check("bulk bar fits the screen", "right edge <= width", fits, fits)
     small = g.page.evaluate(
-        "Array.from(document.querySelectorAll('#inbox-list .wm-row-actions .btn')).filter(b => b.offsetParent !== null)"
-        ".map(b => { const r = b.getBoundingClientRect(); return Math.min(r.width, r.height); }).filter(s => s < 24).length"
+        "Array.from(document.querySelectorAll('#inbox-list .wm-row-actions .btn'))"
+        ".filter(b => b.offsetParent !== null)"
+        ".map(b => { const r = b.getBoundingClientRect(); return Math.min(r.width, r.height); })"
+        ".filter(s => s < 24).length"
     )
     g.check(
         "row action buttons are tappable", "every button >= 24px", f"{small} smaller", small == 0
@@ -751,8 +786,13 @@ def gm_layout_390(g: Tab):
 def gm_ledger(g: Tab):
     g.go(f"{CLUB}/ledger/", "open club ledger")
     t = g.text()
-    ok = "From message #1" in t and "5 gp" in t and "Longsword" in t
-    g.check("ledger lists the new awards", "5 gp and Longsword award rows", ok, ok)
+    item = g.shared.get("item", "(no item was given)")
+    for label, text in {
+        "5 gp award": "5 gp",
+        "given item": item,
+        "agent batch": "Batch #1",
+    }.items():
+        g.check(f"club ledger lists the {label}", f"'{text}'", text in t, text in t)
     g.page.select_option("form.wm-ledger-filter select[name=character]", label="Aria Windrunner")
     g.page.locator("form.wm-ledger-filter button[type=submit]").click()
     g.page.wait_for_load_state("networkidle")
@@ -906,66 +946,68 @@ def gm_agent(g: Tab):
 
 
 # --------------------------------------------------------------------------- player results
+ROW_JS = (
+    "Array.from(document.querySelectorAll('table tbody tr'))"
+    ".map(r => r.cells[0].textContent.trim() + ' | ' + r.cells[1].textContent.trim().slice(0, 40))"
+)
+
+
+def inventory_qty(p: Tab, name: str) -> int | None:
+    """Quantity of ``name`` on /characters/mine/ (the name cell holds '× n' at any width)."""
+    return p.page.evaluate(
+        """(name) => {
+          const row = Array.from(document.querySelectorAll('tr'))
+            .find(r => r.cells[0] && r.cells[0].textContent.includes(name));
+          if (!row) return null;
+          const m = row.cells[0].textContent.match(/\u00d7\s*(\d+)/);
+          return m ? parseInt(m[1], 10) : null;
+        }""",
+        name,
+    )
+
+
 def player_results(p: Tab, before: dict):
+    item = p.shared.get("item", "(no item was given)")
     p.go(f"{CLUB}/characters/1/", "reload Aria's sheet (after)")
-    t = p.text()
-    after = money(t)
+    after = money(p.text())
     want = before["coins"] + 7
     p.check("sheet coins = before + 5 gp + 2 gp", f"{want} gp", f"{after} gp", after == want)
+    p.go(f"{CLUB}/characters/mine/", "open my character's inventory")
+    pelts, given = inventory_qty(p, "Wolf pelt"), inventory_qty(p, item)
     p.check(
-        "sheet inventory shows the Longsword",
-        "'Longsword' on the sheet",
-        "Longsword" in t,
-        "Longsword" in t,
+        "inventory: agent batch added 2 Wolf pelts",
+        f"Wolf pelt {before['pelts'] + 2}",
+        f"Wolf pelt {pelts}",
+        pelts == before["pelts"] + 2,
     )
-    p.go(f"{CLUB}/characters/mine/", "open my characters")
-    inv_ok = "Longsword" in p.text() or "Longsword" in t
-    p.check("player inventory lists Longsword", "'Longsword'", inv_ok, inv_ok)
+    p.check("inventory: given item is listed", f"{item} 1", f"{item} {given}", given == 1)
     p.go(f"{CLUB}/ledger/character/1/", "open Aria's ledger history")
     t = p.text()
-    ok = (
-        "From message #1" in t
-        and "+5 gp" in t
-        and "+2 gp" in t
-        and "Longsword" in t
-        and "+2" in t
-        and "Wolf pelt" in t
-    )
-    p.check(
-        "ledger history lists the awards", "+5 gp, +2 gp, Longsword, agent Wolf pelt x2", ok, ok
-    )
+    wants = {
+        "5 gp coin award": "+5 gp",
+        "2 gp batch award": "+2 gp",
+        "agent batch Wolf pelt award": "+2 \U0001f43a Wolf pelt",
+        "given item award": item,
+        "message note": "From message #1",
+    }
+    for label, text in wants.items():
+        p.check(f"ledger history lists the {label}", f"'{text}'", text in t, text in t)
     p.go(f"{CLUB}/accounts/messages/new/", "reload message list")
-    t = p.text()
-    sent_ok = MSG_PLAYER in t and MSG_SEEDED in t
-    statuses = p.page.evaluate(
-        "Array.from(document.querySelectorAll('table tbody tr')).map(r => r.cells[0].textContent.trim() + ' | ' + r.cells[1].textContent.trim().slice(0, 30))"
-    )
-    handled = all(
-        any(s.startswith("Handled") and needle in s for s in statuses)
+    rows = p.page.evaluate(ROW_JS)
+    both = all(
+        any(r.startswith("Handled") and needle in r for r in rows)
         for needle in ("the goblin chief", "silver ring")
     )
-    p.check(
-        "message list shows both messages Handled",
-        "Handled for both",
-        statuses,
-        sent_ok and handled,
-    )
+    p.check("message list shows both messages Handled", "Handled for both", rows, both)
     p.go(f"{CLUB}/accounts/messages/stock/new/", "reload stock requests")
-    statuses = p.page.evaluate(
-        "Array.from(document.querySelectorAll('table tbody tr')).map(r => r.cells[0].textContent.trim() + ' | ' + r.cells[1].textContent.trim().slice(0, 30))"
+    rows = p.page.evaluate(ROW_JS)
+    ok = any(r.startswith("Handled") and "please stock" in r for r in rows) and any(
+        r.startswith("Open") and "buy some super" in r for r in rows
     )
-    ok = any(s.startswith("Handled") and "mithral shirt" in s for s in statuses) and any(
-        s.startswith("Open") and "super cool armor" in s for s in statuses
-    )
-    p.check("stock list shows approved request Handled, other Open", "Handled + Open", statuses, ok)
+    p.check("stock list: approved Handled, other Open", "Handled + Open", rows, ok)
     p.go(f"{CLUB}/accounts/messages/", "player opens the GM inbox", expect_status=403)
-    forbidden = p.page.locator("body").inner_text().strip() != ""
-    p.check(
-        "GM inbox is not shown to a player",
-        "403 with a message, not a blank page",
-        forbidden,
-        forbidden,
-    )
+    shown = p.page.locator("body").inner_text().strip()
+    p.check("a player gets a 403 page, not the inbox", "403 with text", shown[:60], bool(shown))
 
 
 # --------------------------------------------------------------------------- runner
@@ -985,8 +1027,9 @@ def run_width(browser, width: int, height: int) -> tuple[list[Recorder], list[st
             player_ctx = browser.new_context(viewport={"width": width, "height": height})
             gm_ctx = browser.new_context(viewport={"width": width, "height": height})
             try:
-                player = Tab(player_ctx, server.base_url, "player", width)
-                gm = Tab(gm_ctx, server.base_url, "gm", width)
+                shared: dict = {}
+                player = Tab(player_ctx, server.base_url, "player", width, shared)
+                gm = Tab(gm_ctx, server.base_url, "gm", width, shared)
                 recs += [player.rec, gm.rec]
                 login(player.page, server.base_url, "player")
                 login(gm.page, server.base_url, "gm")
@@ -1009,7 +1052,7 @@ def run_width(browser, width: int, height: int) -> tuple[list[Recorder], list[st
                 try:
                     state = player_before(player)
                 except Exception as exc:
-                    state = {"coins": 0}
+                    state = {"coins": 0, "pelts": 0}
                     player.check("section 'player before'", "completes", str(exc)[:160], False)
                 section(gm, "inbox filters", gm_inbox_filters, gm)
                 section(gm, "inbox row status", gm_inbox_row_status, gm)
