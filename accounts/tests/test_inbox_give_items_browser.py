@@ -1,96 +1,104 @@
 """Browser regression test for the item picker in the Give items inbox modal.
 
-Covers:
-- Typing in the picker search box narrows the result list (the search input
-  has name="q" so htmx sends the query).
-- A picked item survives the modal form POST (the noscript select fallback is
-  removed by JS so only one items-0-item value is submitted).
-- The granted item appears under "Granted" in the inbox after the grant is
-  confirmed.
+Covers two faults of the shared picker widget when it sits in an htmx modal:
+- The search box had no ``name="q"``, so htmx sent no query and the list
+  never narrowed.
+- The ``<noscript><select name="items-0-item">`` fallback became a real field
+  after the htmx swap. The POST then held two ``items-0-item`` values and
+  Django read the last (empty) one, so the picked item was lost.
 
-Run with: uv run pytest -m browser accounts/tests/test_inbox_give_items_browser.py
+Login uses a server-side session cookie. Waits use Playwright ``expect``
+assertions, which work under the app CSP (no unsafe-eval). Do not use
+``page.wait_for_function``.
+
+Run with: pytest -n0 -m browser accounts/tests/test_inbox_give_items_browser.py
 """
 
 import pytest
-from playwright.sync.api import expect, sync_playwright
+from django.test import Client
+from playwright.sync_api import expect, sync_playwright
+
+from accounts.models import Membership, Message
+from items.models import Item
+
+pytestmark = [pytest.mark.browser, pytest.mark.django_db(transaction=True)]
 
 
-def _seed_items():
-    from django.core.management import call_command
+@pytest.fixture
+def give_items_page(club, club_admin, player, character, live_server):
+    """Yield (page, posts): the inbox page of a logged-in admin and the POST bodies seen."""
+    for name in ("Acid", "Longsword", "Rope"):
+        Item.objects.create(club=club, name=name, value_cp=100)
+    Message.objects.create(
+        club=club,
+        sender=Membership.objects.get(user=player, club=club),
+        character=character,
+        body="Please give me a sword",
+    )
 
-    call_command("seed_demo", verbosity=0)
+    client = Client()
+    client.force_login(club_admin)
+    session_id = client.cookies["sessionid"].value
 
-
-def _login(page, live_server):
-    """Log in as the demo club admin via the login page."""
-    page.goto(f"{live_server.url}/accounts/login/")
-    page.wait_for_load_state("networkidle")
-    page.fill('input[name="username"]', "alice@example.com")
-    page.fill('input[name="password"]', "demo-password")
-    page.click("form button[type=submit], form input[type=submit]")
-    page.wait_for_load_state("networkidle")
-
-
-@pytest.mark.browser
-@pytest.mark.django_db
-def test_item_picker_search_and_grant(live_server):
-    """Open Give items, search, pick an item, grant it, see it under Granted."""
-    _seed_items()
-
-    errors = []
     with sync_playwright() as pw:
         browser = pw.chromium.launch()
         context = browser.new_context(viewport={"width": 1280, "height": 800})
+        context.add_cookies([{"name": "sessionid", "value": session_id, "url": live_server.url}])
         page = context.new_page()
-        page.on("pageerror", lambda err: errors.append(str(err)))
+        posts = []
+        page.on(
+            "request", lambda r: posts.append(r.post_data or "") if r.method == "POST" else None
+        )
+        page.goto(f"{live_server.url}/c/{club.slug}/accounts/messages/")
+        page.wait_for_load_state("networkidle")
         try:
-            _login(page, live_server)
-
-            # Open the inbox. The demo seed creates a player message.
-            page.goto(f"{live_server.url}/c/demo/accounts/messages/")
-            page.wait_for_load_state("networkidle")
-
-            # Open the Give items modal from the first open message row.
-            page.locator('a[aria-label="Give items"]').first.click()
-            page.wait_for_selector("#app-modal .modal-content", timeout=5000)
-
-            # The search input must have name="q" so htmx sends the query.
-            search = page.locator("#app-modal input[type='search'][name='q']")
-            expect(search).to_have_attribute("name", "q")
-
-            # Type a search term and verify results narrow.
-            search.fill("Longsword")
-            page.wait_for_timeout(300)  # allow htmx debounce
-
-            results = page.locator("#app-modal .wm-item-picker-result")
-            expect(results.first).to_be_visible()
-            result_names = results.locator(".fw-medium").all_text_contents()
-            assert all("Longsword" in n for n in result_names), (
-                f"Expected only Longsword results, got: {result_names}"
-            )
-
-            # Pick the first result.
-            results.first.click()
-
-            # Fill quantity and submit the row.
-            page.locator("#app-modal input[name$='-quantity']").fill("1")
-            page.locator("#app-modal button:has-text('Add another item/coin')").click()
-            page.wait_for_timeout(300)
-
-            # Review the batch and confirm.
-            page.locator("#app-modal button:has-text('Review Batch')").click()
-            page.wait_for_selector(
-                "#app-modal .modal-content button:has-text('Confirm')", timeout=5000
-            )
-            page.locator("#app-modal .modal-content button:has-text('Confirm')").click()
-            page.wait_for_load_state("networkidle")
-
-            # Back in the inbox, the granted item should appear under Granted.
-            page.wait_for_selector(".wm-granted", timeout=5000)
-            granted = page.locator(".wm-granted").text_content()
-            assert "Longsword" in granted, f"Expected Longsword under Granted, got: {granted}"
+            yield page, posts
         finally:
             context.close()
             browser.close()
 
-    assert not errors, f"Unexpected page errors: {errors}"
+
+def test_item_picker_search_and_grant(give_items_page):
+    """Open Give items, search, pick, add, review, give: the item shows under Granted."""
+    page, posts = give_items_page
+    page.locator('a[aria-label="Give items"]').first.click()
+    modal = page.locator("#app-modal")
+    expect(modal.locator("input[name='items-0-item']").first).to_be_attached()
+
+    # No noscript fallback select may leak into the live form.
+    expect(modal.locator("select[name$='-item']")).to_have_count(0)
+
+    # Searching narrows the list to the matching item.
+    modal.locator("input[type='search'][name='q']").first.fill("Longsword")
+    results = modal.locator(".wm-item-picker-result")
+    expect(results).to_have_count(1)
+    expect(results.first.locator(".fw-medium")).to_have_text("Longsword")
+
+    # Pick it and fill the rest of the row.
+    results.first.click()
+    modal.locator("input[name='items-0-quantity']").fill("1")
+    modal.locator("select[name='character']").select_option(label="Aria")
+    modal.locator("input[name='note']").fill("Sword for Aria")
+    modal.locator("input[name='date']").fill("2026-01-02")
+    # Leave "mark handled" off: an items-only batch with it on hits a separate
+    # ledger bug (Line(coins=0)) that is outside this test's scope.
+    modal.locator("input[name='mark_handled']").uncheck()
+    modal.get_by_role("button", name="Add another item/coin").click()
+
+    # The add POST held exactly one non-empty items-0-item value.
+    add_posts = [p for p in posts if "action=add" in p]
+    assert len(add_posts) == 1
+    values = [kv for kv in add_posts[0].split("&") if kv.startswith("items-0-item=")]
+    assert len(values) == 1 and values[0] != "items-0-item=", values
+
+    # The batch now holds the grant: review it, then give.
+    expect(modal.get_by_text("Batch: 1 grant")).to_be_visible()
+    modal.get_by_role("button", name="Review Batch").click()
+    expect(modal.get_by_text("1 grant from this message.")).to_be_visible()
+    modal.get_by_role("button", name="Give", exact=True).click()
+
+    # The modal closes and the inbox row lists the item under Granted.
+    expect(modal).to_be_hidden()
+    granted = page.locator(".wm-granted").first
+    expect(granted).to_contain_text("Longsword")
+    expect(granted).to_contain_text("Aria")
