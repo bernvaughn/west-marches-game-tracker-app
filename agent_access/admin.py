@@ -10,6 +10,9 @@ class TokenAuditLogAdmin(admin.ModelAdmin):
     search_fields = ["user__email", "user__display_name", "connection__label"]
     date_hierarchy = "timestamp"
     ordering = ["-timestamp"]
+    autocomplete_fields = ["user", "club", "connection"]
+    readonly_fields = ["timestamp"]
+    list_select_related = ["user", "club", "connection"]
 
 
 @admin.register(AgentConnection)
@@ -19,6 +22,17 @@ class AgentConnectionAdmin(admin.ModelAdmin):
     search_fields = ["label", "user__email"]
     date_hierarchy = "created"
     ordering = ["-created"]
+    autocomplete_fields = ["user", "club", "oauth_application"]
+    readonly_fields = ["created", "token_prefix", "last_used_at"]
+    exclude = ["token_hash"]
+    list_select_related = ["user", "club"]
+
+
+class ProposedLineInline(admin.TabularInline):
+    model = ProposedLine
+    extra = 0
+    show_change_link = True
+    autocomplete_fields = ["item", "character", "proposed_item"]
 
 
 @admin.register(ProposedBatch)
@@ -28,6 +42,10 @@ class ProposedBatchAdmin(admin.ModelAdmin):
     search_fields = ["connection__label", "user__email", "idempotency_key"]
     date_hierarchy = "created"
     ordering = ["-created"]
+    autocomplete_fields = ["club", "connection", "user", "confirmed_by", "reversed_by"]
+    readonly_fields = ["created", "confirmed_at", "reversed_at"]
+    inlines = [ProposedLineInline]
+    list_select_related = ["club", "connection", "user"]
 
 
 @admin.register(ProposedItem)
@@ -37,6 +55,9 @@ class ProposedItemAdmin(admin.ModelAdmin):
     search_fields = ["name"]
     date_hierarchy = "created"
     ordering = ["-created"]
+    autocomplete_fields = ["club", "approved_item", "batch", "connection"]
+    readonly_fields = ["created"]
+    list_select_related = ["club", "batch"]
 
 
 @admin.register(ProposedLine)
@@ -45,3 +66,5 @@ class ProposedLineAdmin(admin.ModelAdmin):
     list_filter = ["batch__club"]
     search_fields = ["character__name", "item__name"]
     ordering = ["-batch__created"]
+    autocomplete_fields = ["batch", "character", "item", "proposed_item"]
+    list_select_related = ["batch", "character", "item"]
