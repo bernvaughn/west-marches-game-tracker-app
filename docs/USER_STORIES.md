@@ -1466,7 +1466,7 @@ Rules for every story in this round:
 - Sessions that were made by repeating earlier stay as ordinary sessions, with the same dates, answers, attendance and recaps. Nothing is deleted or cancelled.
 - This replaces P2.
 
-**P13 Say I'm coming, as me.** As a player, I want to say yes, maybe, or no to a session once, for myself, so I do not have to choose a character before the night. *(play_sessions)*
+**P13 Say I'm coming, as me.** As a player, I want to say yes, maybe, or no to a session once, for myself, so I do not have to choose a character before the night. *(play_sessions)* *(Changed by P20, round 27: the dashboard card has the answer buttons.)*
 - There is one answer per player and session. The session page, the dashboard card and the "next session" card show my answer, and no character is shown or asked for.
 - I can change my answer until the session starts. After that only a game master or club admin can, for anyone.
 - A game master or club admin can answer for any player in the club, so a player who tells me at the table counts.
@@ -1478,10 +1478,11 @@ Rules for every story in this round:
 - The list groups players into yes, maybe, no, and not answered, and shows each player's name. Players who have a character may also show the names of their active characters as a hint. It is a hint only and never counts as a choice.
 - This replaces P5 where it listed characters.
 
-**P15 Pick characters when we play.** As a game master, I want to choose which character each player brought when I take attendance, so the record is true even though nobody picked one ahead of time. *(play_sessions, player_characters)*
+**P15 Pick characters when we play.** As a game master, I want to choose which character each player brought when I take attendance, so the record is true even though nobody picked one ahead of time. *(play_sessions, player_characters)* *(Changed by P19, round 27: the game master can add any member.)*
 - The attendance page starts from the players who said "yes". Each row shows the player and a tick box for each of their active characters, and none is ticked at first.
 - I tick the characters that played. A player may bring more than one. A player with no tick is not marked as having played, so a "yes" who did not turn up does not count.
 - I can also add a player who never answered, and tick their characters, as before.
+- *(Changed by P19, round 27: the game master can add any member.)*
 - A player may use a "Bringing this character" button on the session page once it has started, and until I confirm attendance. It only pre-ticks that character for me, and I can untick it. It locks nothing and records nothing by itself.
 - Everything else about attendance (P6) stays: corrections are recorded with who and when, dead and archived characters are never offered, and only characters that played count in P7 and P8.
 - Downtime points for attending (P9) are awarded per character that played, as now.
@@ -1508,7 +1509,7 @@ Rules for every story in this round:
 
 The sessions page (P3) shows one month at a time, and the dashboards show only a single "next session". A club that plays about once a month often has an empty month on screen even though a session is only days away, just across the month line.
 
-**P18 See the upcoming sessions.** As a player, game master, or club admin, I want the sessions page and my dashboards to show a short list of upcoming sessions, whatever month the calendar is showing, so I always see when we play next and what is cancelled. *(play_sessions, accounts)*
+**P18 See the upcoming sessions.** As a player, game master, or club admin, I want the sessions page and my dashboards to show a short list of upcoming sessions, whatever month the calendar is showing, so I always see when we play next and what is cancelled. *(play_sessions, accounts)* *(Changed by P20, round 27: the dashboard card has the answer buttons.)*
 - A "Coming up" list sits above the month calendar on the sessions page, on wide screens and on phones. It shows the next 5 sessions in order across any months, and stays the same whichever month the calendar shows.
 - Each row shows the weekday and date, the time with the zone's short name (P17), the title, the game master, and how many players said yes (P13).
 - Each row shows my own answer as a small badge ("Yes", "Maybe", "No", or "Not answered"), with a link to the session page where I can change it (P13).
@@ -1520,6 +1521,50 @@ The sessions page (P3) shows one month at a time, and the dashboards show only a
 - The same "Upcoming sessions" list, with at least 3 sessions, replaces the single "next session" card on the player dashboard and the club home page, and on the game master and club admin desk (U118). A dashboard card with fewer sessions than 3 shows all that exist, then the empty message. The card links to the sessions page.
 - The dashboard cards and the sessions page agree on which sessions are upcoming and in what order.
 - The lists work without JavaScript and do not print.
+
+## Round 27: after the session (2026-11-27)
+
+A mock session (Gwen the game master, Alice and Bob as players) found gaps after a game night. This round closes them. No new models; counts and milestones are computed from `SessionAttendance`.
+
+Rules for every story in this round:
+- Attendance stays per character. That is the record of who played, and it is what history, the report, and downtime points use.
+- The wrap-up panel shows only for game masters and club admins.
+- All new numbers (sessions played, milestones) are computed from `SessionAttendance` rows.
+
+**P19 Attendance: add any player, show who played.** *(play_sessions)* This changes P15, which only added players who "never answered".
+- The "Add a member" menu lists every member who is not already "yes", labelled with their answer ("Bob (maybe)"). The label no longer says "never answered".
+- Adding a "maybe" or "no" member sets their RSVP to yes, records who did it, and shows their characters to tick.
+- A member who is already "yes" is never offered twice.
+- After attendance is saved, the session page lists the characters who played by name ("Played: Aria Windrunner, Borin Stonefist"). It no longer says "recorded for N characters".
+- Characters with `played=False` are not listed.
+
+**P20 One upcoming list with RSVP buttons.** *(play_sessions, accounts)* This changes P13 (the dashboard card) and P18 (the dashboard list).
+- The player dashboard shows one "Upcoming sessions" card. "My Sessions" is gone.
+- The card heading shows once.
+- Each non-cancelled row that has not started shows Yes / Maybe / No buttons and the current answer. A press saves it and returns to the same page. Buttons work without JavaScript.
+- The sessions page list and the club home list keep the badge and link only.
+- Session detail RSVP section still works.
+
+**P21 Session wrap-up.** *(play_sessions, accounts, player_characters)*
+- A "Wrap up" panel for game masters and club admins on the most recent non-cancelled ended session in the last 14 days.
+- "Attendance confirmed" and "Recap written" show done or not done, with links.
+- "Award loot" and "Downtime points" are links with no done state (no new model).
+- The session desk "After the session" Award Loot link carries `?session=<id>` of the latest ended session, within 14 days. Otherwise it stays as now.
+- Award Loot with `?session=<id>` ticks characters with `played=True`, fills the note with the session title, and sets the date to the session date. A bad or foreign id is ignored. Without it, the page is unchanged.
+
+**P22 Last session card, tally and milestones.** *(play_sessions, accounts)*
+- Card shows the latest ended, non-cancelled session in the club.
+- Recap shown, never `gm_notes`.
+- "You played as <character>" or "You did not play".
+- Tally = sessions the selected character played.
+- Milestones: 1 "First steps", 5 "Regular", 10 "Veteran", 25 "Legend".
+- "New" mark for 7 days after the session that reached it.
+- Hidden when no session has ended.
+- No inline style. Does not print.
+
+**Q6 Quest turn-in celebration.** *(quests)*
+- After a turn-in, reward items animate with the existing loot fanfare. A coin-only reward still celebrates. A failed turn-in does not.
+- Replay button, sound off by default, honours reduced motion. The toast stays.
 
 ## Quests
 
