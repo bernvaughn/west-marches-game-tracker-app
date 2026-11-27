@@ -43,6 +43,18 @@ SWEEP_DEFAULTS = {
 }
 
 
+def _base_env() -> dict:
+    """Process env without an inherited RESEND_API_KEY.
+
+    The throwaway server must not send real mail. A caller that wants the key
+    (for example the club-admin email flow) adds it to the dict returned by
+    :func:`fresh_demo_db`; :func:`run_server` keeps it.
+    """
+    env = dict(os.environ)
+    env.pop("RESEND_API_KEY", None)
+    return env
+
+
 def fresh_demo_db(path: str | Path) -> dict:
     """Build a fresh seeded SQLite database at ``path``.
 
@@ -54,7 +66,7 @@ def fresh_demo_db(path: str | Path) -> dict:
     if path.exists() and path.stat().st_size > 0:
         raise FileExistsError(f"refusing to overwrite non-empty database file: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
-    env = dict(os.environ)
+    env = _base_env()
     env["DATABASE_PATH"] = str(path)
     env["DJANGO_SETTINGS_MODULE"] = "config.settings"
     env["DJANGO_DEBUG"] = "1"
@@ -71,13 +83,13 @@ def fresh_demo_db(path: str | Path) -> dict:
 
 
 def _server_env(env: dict) -> dict:
-    """Build the server process env from ``env`` plus the throwaway defaults."""
+    """Build the server process env from ``env`` plus the throwaway defaults.
+
+    ``env`` is kept as given, so a caller-set RESEND_API_KEY survives.
+    """
     server_env = dict(env)
     for key, value in SWEEP_DEFAULTS.items():
         server_env.setdefault(key, value)
-    # Remove an inherited RESEND_API_KEY unless the caller set it explicitly.
-    if "RESEND_API_KEY" not in env:
-        server_env.pop("RESEND_API_KEY", None)
     return server_env
 
 
@@ -205,6 +217,8 @@ class Recorder:
                 self._problem(f"console error: {text}")
             if "Content Security Policy" in text or "violates the following" in text:
                 self.csp_violations.append(text)
+                if msg.type != "error":
+                    self._problem(f"csp violation: {text}")
 
         page.on("console", on_console)
 
@@ -226,7 +240,7 @@ class Recorder:
     def _problem(self, text: str) -> None:
         self._problems.append(text)
 
-    def check(self, flow, url, control, expected, actual=None, ok=True, *args, **kwargs):
+    def check(self, flow, url, control, expected, actual=None, ok=True):
         """Log one control result and print a ✓/✗ line."""
         record = {
             "flow": flow,

@@ -148,7 +148,6 @@ def test_server_env_defaults_and_resend_key():
     assert env["DJANGO_SECURE_SSL_REDIRECT"] == "0"
     assert env["RATELIMIT_LOGIN_ATTEMPTS"] == "100000"
     assert env["RATELIMIT_MCP_ATTEMPTS"] == "100000"
-    # Inherited RESEND_API_KEY is removed.
     assert "RESEND_API_KEY" not in env
     # Caller key is kept.
     base_with_key = dict(base)
@@ -159,6 +158,26 @@ def test_server_env_defaults_and_resend_key():
     base_debug = dict(base)
     base_debug["DJANGO_DEBUG"] = "0"
     assert flow_check_lib._server_env(base_debug)["DJANGO_DEBUG"] == "0"
+
+
+def test_fresh_demo_db_env_drops_inherited_resend_key(tmp_path, monkeypatch):
+    """The real path: process env -> fresh_demo_db -> run_server env."""
+    monkeypatch.setenv("RESEND_API_KEY", "inherited")
+    monkeypatch.setattr(flow_check_lib.subprocess, "run", lambda *a, **k: None)
+    env = flow_check_lib.fresh_demo_db(tmp_path / "demo.sqlite3")
+    assert "RESEND_API_KEY" not in env
+    assert "RESEND_API_KEY" not in flow_check_lib._server_env(env)
+    # A key the caller adds afterwards survives.
+    env["RESEND_API_KEY"] = "caller"
+    assert flow_check_lib._server_env(env)["RESEND_API_KEY"] == "caller"
+
+
+def test_recorder_counts_non_error_csp_message_as_problem():
+    page = _FakePage()
+    rec = flow_check_lib.Recorder(page)
+    page.handlers["console"][0](_FakeMessage("warning", "Content Security Policy: blocked"))
+    assert rec.csp_violations == ["Content Security Policy: blocked"]
+    assert not rec.clean
 
 
 def test_source_guard_no_wait_for_function_or_pkill():
