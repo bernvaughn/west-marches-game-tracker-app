@@ -30,8 +30,8 @@ def attendance(request, club_slug, pk):
 
     GET: renders per-member rows with active character checkboxes (none ticked at
     first, unless an AttendanceHint pre-ticks one).
-    POST: either adds a never-answered member as attending (recorded as a yes
-    RSVP), or saves the ticked characters as SessionAttendance rows.
+    POST: either adds any member who is not already "yes" as attending (recorded as a yes
+    RSVP by the GM), or saves the ticked characters as SessionAttendance rows.
     """
     session = club_get_object_or_404(request, PlaySession, pk=pk)
     club = request.club
@@ -44,20 +44,25 @@ def attendance(request, club_slug, pk):
     if request.method == "POST":
         form = AttendanceForm(club, session, request.POST)
 
-        # Adding a never-answered member records them as a yes RSVP; their
-        # characters then appear on the page to be ticked.
+        # Adding a member who is not already "yes" records them as a yes RSVP
+        # by the GM; their characters then appear on the page to be ticked.
         if request.POST.get("add_member"):
             member_id = request.POST.get("add_member")
             try:
                 member = Membership.objects.for_club(club).get(pk=member_id)
             except (Membership.DoesNotExist, ValueError, TypeError):
                 member = None
-            if (
-                member is not None
-                and not PlayerRSVP.objects.filter(session=session, member=member).exists()
-            ):
+            if member is None:
+                messages.error(request, "That member is not in this club.")
+            elif PlayerRSVP.objects.filter(
+                session=session, member=member, answer=PlayerRSVP.Answer.YES
+            ).exists():
+                messages.info(request, f"{member.user} is already marked as attending.")
+            elif form.fields["add_member"].queryset.filter(pk=member_id).exists():
                 set_player_rsvp(session, member, PlayerRSVP.Answer.YES, request.user)
                 messages.success(request, f"{member.user} added as attending.")
+            else:
+                messages.error(request, "That member cannot be added as attending.")
             return redirect("play_sessions:attendance", club_slug=club.slug, pk=session.pk)
 
         if form.is_valid():
