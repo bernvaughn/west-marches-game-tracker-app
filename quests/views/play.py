@@ -110,6 +110,9 @@ def index(request, club_slug):
             q.notice_label = "Full"
             q.notice_url = reverse("quests:detail", args=[request.club.slug, q.pk])
         taken_down.append(q)
+    celebration = request.session.pop("quest_celebration", None)
+    if celebration and celebration.get("club") != request.club.slug:
+        celebration = None
     return render(
         request,
         "quests/index.html",
@@ -118,6 +121,7 @@ def index(request, club_slug):
             "taken_down": taken_down,
             "character": character,
             "is_admin": is_admin,
+            "celebration": celebration,
         },
     )
 
@@ -196,6 +200,21 @@ def _missing_text(missing):
     )
 
 
+def _reward_rows(quest):
+    """Reward rows for the celebration fanfare: [{"symbol", "label"}, ...]."""
+    rows = []
+    for rw in quest.rewards.select_related("item"):
+        if rw.coins > 0:
+            rows.append({"symbol": "💰", "label": f"{rw.coins} gp"})
+        if rw.item_id and rw.quantity > 0:
+            if rw.item.is_stacked:
+                label = StackedPricingService.unit_label(rw.item, rw.quantity)
+            else:
+                label = f"{rw.quantity} {rw.item.name}"
+            rows.append({"symbol": rw.item.symbol or "", "label": label})
+    return rows
+
+
 @club_member_required
 @require_POST
 def turn_in(request, club_slug, pk):
@@ -206,17 +225,10 @@ def turn_in(request, club_slug, pk):
         messages.error(request, "You have no character in this club.")
         return detail_url
 
-    # Build reward summary for toast
-    reward_parts = []
-    for rw in quest.rewards.select_related("item"):
-        if rw.coins > 0:
-            reward_parts.append(f"{rw.coins} gp")
-        if rw.item_id and rw.quantity > 0:
-            if rw.item.is_stacked:
-                reward_parts.append(StackedPricingService.unit_label(rw.item, rw.quantity))
-            else:
-                reward_parts.append(f"{rw.quantity} {rw.item.name}")
-    reward_summary = ", ".join(reward_parts) if reward_parts else "no reward"
+    # Reward rows for the celebration fanfare, built with the same wording
+    # as the toast so the reward summary text is unchanged.
+    rows = _reward_rows(quest)
+    reward_summary = ", ".join(row["label"] for row in rows) if rows else "no reward"
 
     try:
         services.turn_in(quest, character, request.user)
@@ -231,8 +243,20 @@ def turn_in(request, club_slug, pk):
         # Success!
         toast_message = f"✦ {character.name} completed {quest.name}! Reward: {reward_summary}"
 
+        if rows:
+            request.session["quest_celebration"] = {
+                "club": request.club.slug,
+                "quest": quest.name,
+                "character": character.name,
+                "rows": rows,
+            }
+
         if is_htmx(request):
-            # HTMX request: return 204 with HX-Redirect and HX-Trigger
+            # HTMX request: return 204 with HX-Redirect and HX-Trigger.
+            # The 204 never swaps, so the HX-Trigger toast is lost on the
+            # client-side redirect; add a Django toast message that shows
+            # once the index loads.
+            messages.success(request, toast_message, extra_tags="toast-success")
             return hx_response(
                 redirect=reverse("quests:index", args=[club_slug]),
                 trigger={
@@ -241,6 +265,9 @@ def turn_in(request, club_slug, pk):
                 },
             )
 
-        # Non-htmx: current behavior
-        messages.success(request, f"{character} completed {quest.name}.")
+        # Non-htmx: celebrate on the quest board index.
+        messages.success(
+            request, f"{character} completed {quest.name}.", extra_tags="toast-success"
+        )
+        return redirect("quests:index", club_slug=request.club.slug)
     return detail_url

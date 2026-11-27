@@ -102,3 +102,22 @@
 @media print {
   .wm-reward-list { display: none; }
 }
+
+/* Q6: quest turn-in celebration panel. The animation itself comes from the
+   loot fanfare (container_fanfare.js / container_fanfare.css, reused as-is);
+   these styles are tokens only and never fight prefers-reduced-motion. */
+.wm-quest-celebration {
+  margin: var(--wm-space-6) 0 var(--wm-space-4);
+  text-align: center;
+  /* Room for the absolutely-positioned reveal items during the animation. */
+  min-height: 22rem;
+}
+.wm-quest-celebration h2 {
+  margin: 0 0 var(--wm-space-2);
+  font-family: var(--wm-font-heading);
+  font-size: var(--wm-text-2xl);
+}
+.wm-quest-celebration p {
+  margin: 0 0 var(--wm-space-4);
+  color: var(--wm-text-muted);
+}
