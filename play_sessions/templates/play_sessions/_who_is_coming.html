@@ -64,10 +64,12 @@
     </div>
   {% endif %}
 
-  {% if attendance_recorded %}
-    <p class="text-muted small mt-2">
-      Attendance recorded for {{ attendance_recorded }} character{{ attendance_recorded|pluralize }}.
-    </p>
+  {% if attendance_confirmed %}
+    {% if played_names %}
+      <p class="text-muted small mt-2">Played: {{ played_names|join:", " }}</p>
+    {% else %}
+      <p class="text-muted small mt-2">Nobody played.</p>
+    {% endif %}
   {% endif %}
 
 {% else %}

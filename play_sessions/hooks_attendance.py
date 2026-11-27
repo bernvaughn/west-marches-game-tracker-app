@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from . import core
+from .models import SessionAttendance
 from .services_attendance import who_is_coming
 
 
@@ -26,6 +27,7 @@ def _who_is_coming_context(request, session):
         "can_manage": can_manage,
         "membership": membership,
         "session_started": session_started,
+        "attendance_confirmed": attendance_confirmed,
         "can_bring": session_started and not attendance_confirmed,
         "attendance_url": reverse(
             "play_sessions:attendance",
@@ -36,7 +38,12 @@ def _who_is_coming_context(request, session):
             kwargs={"club_slug": club.slug, "pk": session.pk},
         ),
         "rsvp_form": None,  # Filled in by the section template
-        "attendance_recorded": session.attendance.count(),
+        "played_names": [
+            a.character.name
+            for a in SessionAttendance.objects.filter(session=session, played=True)
+            .select_related("character")
+            .order_by("character__name")
+        ],
     }
 
 

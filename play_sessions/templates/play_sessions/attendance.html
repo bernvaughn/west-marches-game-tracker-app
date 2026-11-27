@@ -7,8 +7,7 @@
 
 {% if not rows %}
   <div class="alert alert-info">
-    No members are marked as attending yet. Ask them to RSVP, or add a member who
-    never answered below.
+    Ask them to RSVP, or add a member below.
   </div>
 {% endif %}
 
@@ -89,6 +88,7 @@
   <button type="submit" class="btn btn-primary">Save attendance</button>
 </form>
 
+{% if form.add_member.field.queryset.exists %}
 <form method="post" action="{% url 'play_sessions:attendance' club_slug=club.slug pk=session.pk %}" class="mt-3">
   {% csrf_token %}
   <label for="{{ form.add_member.id_for_label }}" class="me-2">{{ form.add_member.label }}</label>
@@ -96,6 +96,7 @@
   <button type="submit" class="btn btn-outline-secondary btn-sm">Add member</button>
   {{ form.add_member.errors }}
 </form>
+{% endif %}
 
 {% if history %}
   <h3 class="h5 mt-4">History</h3>

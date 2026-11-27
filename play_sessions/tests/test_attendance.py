@@ -469,20 +469,23 @@ def test_attendance_view_gm_and_admin_allowed(client):
         assert response.status_code == 200
 
 
-@pytest.mark.story("P6")
-def test_attendance_post_adds_never_answered_member(client):
-    """A manager can add a member who never answered and tick their characters."""
+@pytest.mark.story("P19")
+@pytest.mark.parametrize("answer", [None, PlayerRSVP.Answer.MAYBE, PlayerRSVP.Answer.NO])
+def test_attendance_post_adds_unanswered_maybe_no_member(client, answer):
+    """Adding an unanswered, maybe or no member records a yes RSVP by the GM."""
     club, gm, player, session = _make_club_and_session()
-    Character.objects.create(name="Char", club=club, owner=player)
+    char = Character.objects.create(name="Char", club=club, owner=player)
+    if answer is not None:
+        set_player_rsvp(session, player, answer, gm.user)
 
-    assert not PlayerRSVP.objects.filter(session=session).exists()
+    assert not session.attendance.exists()
 
     client.force_login(gm.user)
     url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
     response = client.post(url, {"add_member": player.pk})
     assert response.status_code == 302
 
-    # The member is now recorded as attending (yes RSVP)
+    # The member is now recorded as attending (yes RSVP) by the GM
     rsvp = PlayerRSVP.objects.get(session=session, member=player)
     assert rsvp.answer == PlayerRSVP.Answer.YES
     assert rsvp.answered_by == gm.user
@@ -492,6 +495,7 @@ def test_attendance_post_adds_never_answered_member(client):
     assert response.status_code == 200
     rows = response.context["rows"]
     assert len(rows) == 1
+    assert rows[0]["characters"][0]["character"] == char
     assert rows[0]["characters"][0]["checked"] is False
 
 
@@ -638,3 +642,132 @@ def test_bringing_view_other_players_character_refused(client):
     url = reverse("play_sessions:bringing", kwargs={"club_slug": club.slug, "pk": session.pk})
     response = client.post(url, {"character": char.pk})
     assert response.status_code == 403
+
+
+@pytest.mark.story("P19")
+def test_add_member_menu_lists_not_yes_members_labelled(client):
+    """The menu lists every non-yes member labelled with their answer."""
+    club, gm, player, session = _make_club_and_session()
+    other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
+    other = Membership.objects.create(user=other_user, club=club)
+    never_user = User.objects.create_user(email="never@test.com", password="pass12345678")
+    never = Membership.objects.create(user=never_user, club=club)
+    Character.objects.create(name="Char", club=club, owner=player)
+    Character.objects.create(name="Other Char", club=club, owner=other)
+    Character.objects.create(name="Never Char", club=club, owner=never)
+
+    set_player_rsvp(session, player, PlayerRSVP.Answer.MAYBE, gm.user)
+    set_player_rsvp(session, other, PlayerRSVP.Answer.NO, gm.user)
+
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    response = client.get(url)
+    assert response.status_code == 200
+
+    page = response.content.decode()
+    assert "never answered" not in page
+    assert "(maybe)" in page
+    assert "(no)" in page
+    assert "(no answer)" in page
+
+    form = response.context["form"]
+    queryset = form.fields["add_member"].queryset
+    assert player in queryset
+    assert other in queryset
+    assert never in queryset
+    assert gm in queryset
+
+    labels = {m.pk: str(form.fields["add_member"].label_from_instance(m)) for m in queryset}
+    assert "(maybe)" in labels[player.pk]
+    assert "(no)" in labels[other.pk]
+    assert "(no answer)" in labels[never.pk]
+    assert "(no answer)" in labels[gm.pk]
+
+
+@pytest.mark.story("P19")
+def test_yes_member_never_offered_twice(client):
+    """A yes member is not in the menu and a forged POST changes nothing."""
+    club, gm, player, session = _make_club_and_session()
+    Character.objects.create(name="Char", club=club, owner=player)
+    set_player_rsvp(session, player, PlayerRSVP.Answer.YES, gm.user)
+
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    response = client.get(url)
+    assert response.status_code == 200
+
+    form = response.context["form"]
+    assert player not in form.fields["add_member"].queryset
+    page = response.content.decode()
+    assert "never answered" not in page
+
+    rsvp_count_before = PlayerRSVP.objects.count()
+    response = client.post(url, {"add_member": player.pk})
+    assert response.status_code == 302
+    assert PlayerRSVP.objects.count() == rsvp_count_before
+    assert not session.attendance.exists()
+
+    response = client.get(url)
+    assert player not in response.context["form"].fields["add_member"].queryset
+
+
+@pytest.mark.story("P19")
+def test_attendance_post_refuses_other_club_member(client):
+    """A member of another club is refused."""
+    club, gm, player, session = _make_club_and_session()
+    other_club = Club.objects.create(name="Other Club", slug="other-club")
+    other_user = User.objects.create_user(email="otherclub@test.com", password="pass12345678")
+    other = Membership.objects.create(user=other_user, club=other_club)
+
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    response = client.post(url, {"add_member": other.pk})
+    assert response.status_code == 302
+    assert not PlayerRSVP.objects.filter(session=session).exists()
+    assert not session.attendance.exists()
+
+
+@pytest.mark.story("P19")
+def test_attendance_post_added_maybe_member_character_saves_played(client):
+    """An added maybe member's ticked character saves as played=True."""
+    club, gm, player, session = _make_club_and_session()
+    char = Character.objects.create(name="Char", club=club, owner=player)
+    set_player_rsvp(session, player, PlayerRSVP.Answer.MAYBE, gm.user)
+
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    client.post(url, {"add_member": player.pk})
+    client.post(url, {f"members-{player.pk}": [char.pk]})
+
+    att = SessionAttendance.objects.get(session=session, character=char)
+    assert att.played is True
+    assert att.confirmed_by == gm.user
+
+
+@pytest.mark.story("P19")
+def test_session_detail_shows_played_names(client):
+    """The session page names played characters and no longer counts them."""
+    club, gm, player, session = _make_club_and_session()
+    played_char = Character.objects.create(name="Played Char", club=club, owner=player)
+    Character.objects.create(name="Absent Char", club=club, owner=player)
+    set_player_rsvp(session, player, PlayerRSVP.Answer.YES, gm.user)
+
+    client.force_login(gm.user)
+    url = reverse("play_sessions:attendance", kwargs={"club_slug": club.slug, "pk": session.pk})
+    detail_url = reverse(
+        "play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk}
+    )
+
+    # Before any save: no Played line
+    response = client.get(detail_url)
+    assert "Played:" not in response.content.decode()
+
+    client.post(url, {f"members-{player.pk}": [played_char.pk]})
+
+    response = client.get(detail_url)
+    page = response.content.decode()
+    assert "Played: Played Char" in page
+    # played=False characters are not in the played list
+    played_list = page.split("Played: ", 1)[1].split("<", 1)[0]
+    assert played_list == "Played Char"
+    assert "recorded for" not in page
