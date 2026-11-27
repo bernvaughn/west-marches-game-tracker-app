@@ -515,6 +515,12 @@ def message_give(request, club_slug, pk, kind):
 
     # Handle back from review - return to the FORM and keep the batch.
     if post and action == "edit":
+        if batch:
+            # The batch review page carries no form data, so a bound form would
+            # show "required" errors. Render fresh, unbound forms instead.
+            form = GRANT_FORMS[kind](None, **kwargs)
+            if formset is not None:
+                formset = item_line_formset(items, None, extra=3, club=request.club)
         ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
         return render_modal_or_page(request, *fill, ctx)
 
@@ -538,8 +544,6 @@ def message_give(request, club_slug, pk, kind):
             # If batch is empty, fall through to single-grant logic below
 
     # Normal form flow (not batch)
-    # Use all() for cleaner check
-    no_action = all(k not in request.POST for k in ("add", "edit", "review"))
     # Use all() for cleaner check
     no_action = all(k not in request.POST for k in ("add", "edit", "review"))
     if post and no_action:

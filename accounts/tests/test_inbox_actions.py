@@ -413,10 +413,12 @@ def test_batch_back_returns_form_with_batch_count(club, club_admin, character, m
     c.post(give_url(club, msg, "coins"), payload(character, coins_gp=10, action="add"))
     c.post(give_url(club, msg, "coins"), payload(character, coins_gp=5, action="add"))
 
-    r = c.post(give_url(club, msg, "coins"), payload(character, coins_gp=10, action="edit"))
+    # A real Back from the batch review page posts no form fields (HTMX).
+    r = c.post(give_url(club, msg, "coins"), {"action": "edit"}, **HX)
     assert r.status_code == 200
     body = r.content.decode()
     assert "Batch: 2 grants" in body
+    assert "This field is required" not in body
     assert 'name="confirmed"' not in body
 
 

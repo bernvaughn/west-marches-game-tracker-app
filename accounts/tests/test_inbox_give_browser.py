@@ -124,6 +124,19 @@ def test_inbox_give_batch_back_returns_to_form(transactional_db, live_server, wi
             page.locator('button:has-text("Back")').click()
             page.wait_for_selector('text="Batch: 2 grants"', timeout=5000)
             assert page.locator('text="Batch: 2 grants"').count() >= 1
+
+            # Back must land on a clean form: no validation errors.
+            assert page.locator(f"{MODAL} .invalid-feedback").count() == 0
+            assert page.locator(f"{MODAL} :text('This field is required')").count() == 0
+
+            # Review Batch then Give still grants.
+            page.locator('button:has-text("Review Batch")').click()
+            page.wait_for_selector('text="Batch Grant Summary"', timeout=5000)
+            page.locator('button:has-text("Give")').click()
+            page.wait_for_selector(MODAL, state="hidden", timeout=5000)
+            granted = page.locator(".wm-granted:visible").filter(has_text="Aria Windrunner")
+            granted.first.wait_for(timeout=15000)
+            assert granted.count() >= 1
         finally:
             browser.close()
 
