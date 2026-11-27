@@ -9,6 +9,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from mail.models import ClubMailSettings, EmailMessage
+from mail.sending import SendResult
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("E11")]
 
@@ -28,6 +29,18 @@ def _login(client, user):
 def _clear_ratelimit(club_slug):
     """Clear rate limit cache for a club."""
     cache.delete(f"ratelimit:test_email:club:{club_slug}:3600")
+
+
+def _mock_send_now_failure():
+    """Patch send_now so the immediate send fails without touching the network.
+
+    Keeps the message QUEUED and its payload intact, which is what the view
+    does when the synchronous send fails.
+    """
+    return patch(
+        "mail.views.test_email.send_now",
+        return_value=SendResult(ok=False, provider_id="", error="network: test"),
+    )
 
 
 def test_test_email_get_requires_club_admin(club_admin, player, login, club):
@@ -52,11 +65,13 @@ def test_test_email_sends_to_admin(club_admin, login, club, settings):
 
     caches["default"].clear()
     settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
     c = _login(login(club_admin), club_admin)
     url = reverse("mail:test_email", args=[club.slug])
-    r = c.post(url, {"recipient": club_admin.memberships.get(club=club).id})
+    with _mock_send_now_failure():
+        r = c.post(url, {"recipient": club_admin.memberships.get(club=club).id})
     assert r.status_code == 200
 
     # Check email was queued with kind="test"
@@ -75,6 +90,7 @@ def test_test_email_sends_to_other_admin(club_admin, game_master, login, club, s
 
     caches["default"].clear()
     settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
     # Make game_master an admin of this club
     gm_membership = game_master.memberships.get(club=club)
     gm_membership.is_club_admin = True
@@ -84,7 +100,8 @@ def test_test_email_sends_to_other_admin(club_admin, game_master, login, club, s
     c = _login(login(club_admin), club_admin)
     url = reverse("mail:test_email", args=[club.slug])
     recipient_id = gm_membership.id
-    r = c.post(url, {"recipient": recipient_id})
+    with _mock_send_now_failure():
+        r = c.post(url, {"recipient": recipient_id})
     assert r.status_code == 200
 
     msg = EmailMessage.objects.filter(club=club, kind="test").first()
@@ -120,6 +137,7 @@ def test_test_email_rate_limit(club_admin, login, club, settings):
 
     caches["default"].clear()
     settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
     c = _login(login(club_admin), club_admin)
@@ -128,7 +146,8 @@ def test_test_email_rate_limit(club_admin, login, club, settings):
 
     # Send 5 emails - should succeed
     for i in range(5):
-        r = c.post(url, {"recipient": recipient_id})
+        with _mock_send_now_failure():
+            r = c.post(url, {"recipient": recipient_id})
         assert r.status_code == 200, f"Request {i + 1} failed: {r.content.decode()}"
 
     # 6th email - should be rate limited (429)
@@ -169,12 +188,14 @@ def test_test_email_log_shows_kind_test(club_admin, login, club, settings):
 
     caches["default"].clear()
     settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
     c = _login(login(club_admin), club_admin)
     url = reverse("mail:test_email", args=[club.slug])
     recipient_id = club_admin.memberships.get(club=club).id
-    r = c.post(url, {"recipient": recipient_id})
+    with _mock_send_now_failure():
+        r = c.post(url, {"recipient": recipient_id})
     assert r.status_code == 200
 
     msg = EmailMessage.objects.filter(club=club, kind="test").first()
@@ -189,12 +210,14 @@ def test_test_email_page_shows_queued_status(club_admin, login, club, settings):
 
     caches["default"].clear()
     settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
     c = _login(login(club_admin), club_admin)
     url = reverse("mail:test_email", args=[club.slug])
     recipient_id = club_admin.memberships.get(club=club).id
-    r = c.post(url, {"recipient": recipient_id})
+    with _mock_send_now_failure():
+        r = c.post(url, {"recipient": recipient_id})
     assert r.status_code == 200
     body = r.content.decode()
     assert "Queued" in body or "queued" in body.lower()
@@ -229,12 +252,14 @@ def test_test_email_htmx_returns_partial(club_admin, login, club, settings):
 
     caches["default"].clear()
     settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
     ClubMailSettings.objects.create(club=club, contact_email="club@test.com")
 
     c = _login(login(club_admin), club_admin)
     url = reverse("mail:test_email", args=[club.slug])
     recipient_id = club_admin.memberships.get(club=club).id
-    r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
+    with _mock_send_now_failure():
+        r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
     assert r.status_code == 200
     body = r.content.decode()
     assert "Send a test email" in body
@@ -371,8 +396,8 @@ def test_test_email_immediate_send_network_error(club_admin, login, club, settin
 
 
 @override_settings(CACHES=RATELIMIT_CACHE_SETTINGS)
-def test_test_email_immediate_send_no_api_key_keeps_queued(club_admin, login, club, settings):
-    """Missing RESEND_API_KEY keeps the message QUEUED for background retry."""
+def test_test_email_no_api_key_returns_400_no_row(club_admin, login, club, settings):
+    """MAIL_ENABLED but no RESEND_API_KEY: POST is refused 400, no failed row."""
     from django.core.cache import caches
 
     caches["default"].clear()
@@ -384,13 +409,9 @@ def test_test_email_immediate_send_no_api_key_keeps_queued(club_admin, login, cl
     url = reverse("mail:test_email", args=[club.slug])
     recipient_id = club_admin.memberships.get(club=club).id
     r = c.post(url, {"recipient": recipient_id}, HTTP_HX_REQUEST="true")
-    assert r.status_code == 200
-
-    msg = EmailMessage.objects.filter(club=club, kind="test").first()
-    assert msg is not None
-    assert msg.status == EmailMessage.Status.QUEUED
-    assert "no_key: RESEND_API_KEY not configured" in msg.last_error
-
+    assert r.status_code == 400
     body = r.content.decode()
-    assert "Failed" in body
-    assert "no_key" in body
+    assert "No RESEND_API_KEY is set" in body
+
+    # No failed row is written when a test email cannot be delivered.
+    assert EmailMessage.objects.filter(club=club, kind="test").count() == 0
