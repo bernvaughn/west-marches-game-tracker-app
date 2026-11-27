@@ -5,6 +5,7 @@ Registered automatically from ``PlaySessionsConfig.ready()`` via
 circular imports at app load time.
 """
 
+from django.urls import reverse
 from django.utils import timezone
 
 from .core import can_manage_sessions
@@ -47,7 +48,9 @@ def register():
 def _next_session_ctx(request, club, membership=None):
     """Wrap ``upcoming_sessions`` for the dashboard provider.
 
-    Returns ``{"coming_up", "club", "membership", "can_manage_sessions"}``.
+    Returns ``{"coming_up", "club", "membership", "can_manage_sessions",
+    "show_rsvp", "rsvp_next"}``. The club-home inclusion tag builds its own
+    context without these keys, so club home keeps badge and link only.
     """
     now = timezone.now()
     data = upcoming_sessions(club, now, membership, limit=3)
@@ -56,4 +59,6 @@ def _next_session_ctx(request, club, membership=None):
         "club": club,
         "membership": membership,
         "can_manage_sessions": can_manage_sessions(request.user, club),
+        "show_rsvp": True,
+        "rsvp_next": reverse("accounts:player_dashboard", args=[club.slug]),
     }

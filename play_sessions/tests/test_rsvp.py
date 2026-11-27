@@ -274,26 +274,153 @@ def test_htmx_post_returns_section_fragment(client, rsvp_setup):
     assert b'name="answer"' in response.content
 
 
-def test_dashboard_card_shows_answer(client, rsvp_setup):
-    """Dashboard card shows the answer for the membership."""
+def _dashboard_url(club):
+    return reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug})
+
+
+def _rsvp_url(club, session):
+    return reverse("play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk})
+
+
+def _player_with_character(player_membership, club):
+    """Give the membership a character so the dashboard loads for the player."""
+    Character.objects.create(name="Hero", club=club, owner=player_membership)
+
+
+def test_dashboard_card_shows_rsvp_buttons_and_answer(client, rsvp_setup):
+    """Dashboard card shows Yes / Maybe / No buttons and the current answer."""
     player_user = rsvp_setup["player_user"]
     player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
     club = rsvp_setup["club"]
+    club.timezone = "UTC"
+    club.save()
 
     # Set RSVP for membership
     PlayerRSVP.objects.create(
-        session=session, member=player_membership, answer="yes", answered_by=player_user
+        session=session, member=player_membership, answer="maybe", answered_by=player_user
     )
+    _player_with_character(player_membership, club)
 
     client.force_login(player_user)
-    dashboard_url = reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug})
-    response = client.get(dashboard_url)
+    response = client.get(_dashboard_url(club))
 
     assert response.status_code == 200
     content = response.content.decode()
     assert "Test Session" in content
-    assert "Yes" in content  # The badge for Yes
+    assert "You: Maybe" in content
+    # Three answer buttons, one per answer value.
+    assert content.count('name="answer"') == 3
+    assert 'value="yes"' in content
+    assert 'value="maybe"' in content
+    assert 'value="no"' in content
+    # The current answer is pressed, the others are not.
+    assert content.count('aria-pressed="true"') == 1
+    assert content.count('aria-pressed="false"') == 2
+
+
+def test_dashboard_rsvp_post_saves_and_returns(client, rsvp_setup):
+    """POST answer=maybe with next=dashboard saves and returns to the dashboard."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+    club.timezone = "UTC"
+    club.save()
+
+    _player_with_character(player_membership, club)
+    client.force_login(player_user)
+    dashboard_url = _dashboard_url(club)
+    response = client.post(
+        _rsvp_url(club, session),
+        {"answer": "maybe", "next": dashboard_url},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert response.redirect_chain[-1][0] == dashboard_url
+    rsvp = PlayerRSVP.objects.get(session=session, member=player_membership)
+    assert rsvp.answer == "maybe"
+    assert rsvp.answered_by == player_user
+    content = response.content.decode()
+    assert "You: Maybe" in content
+
+
+def test_dashboard_no_my_sessions(client, rsvp_setup):
+    """The My Sessions card and provider are gone; next_session partial still works."""
+    from accounts.dashboard_providers import get_provider
+
+    assert get_provider("my_sessions") is None
+
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    club = rsvp_setup["club"]
+    club.timezone = "UTC"
+    club.save()
+
+    _player_with_character(player_membership, club)
+    client.force_login(player_user)
+    response = client.get(_dashboard_url(club))
+    assert response.status_code == 200
+    assert "My Sessions" not in response.content.decode()
+
+    # Partial for my_sessions returns 404.
+    partial_url = reverse(
+        "accounts:dashboard_partial",
+        kwargs={"club_slug": club.slug, "provider_key": "my_sessions"},
+    )
+    assert client.get(partial_url).status_code == 404
+
+    # Partial for next_session still returns 200.
+    partial_url = reverse(
+        "accounts:dashboard_partial",
+        kwargs={"club_slug": club.slug, "provider_key": "next_session"},
+    )
+    assert client.get(partial_url).status_code == 200
+
+
+def test_dashboard_cancelled_session_no_form(client, rsvp_setup):
+    """Cancelled session row shows no RSVP form."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+    club.timezone = "UTC"
+    club.save()
+
+    session.cancelled = True
+    session.save()
+
+    _player_with_character(player_membership, club)
+    client.force_login(player_user)
+    response = client.get(_dashboard_url(club))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert _rsvp_url(club, session) not in content
+
+
+def test_dashboard_started_session_no_form(client, rsvp_setup):
+    """Started session (earlier today) row shows no RSVP form but keeps its answer."""
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+    club.timezone = "UTC"
+    club.save()
+
+    PlayerRSVP.objects.create(
+        session=session, member=player_membership, answer="yes", answered_by=player_user
+    )
+    session.starts_at = timezone.now() - timedelta(hours=1)
+    session.save()
+
+    _player_with_character(player_membership, club)
+    client.force_login(player_user)
+    response = client.get(_dashboard_url(club))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert _rsvp_url(club, session) not in content
+    assert "You: Yes" in content
 
 
 def test_sheet_page_no_rsvp_section(client, rsvp_setup):

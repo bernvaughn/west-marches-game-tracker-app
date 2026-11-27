@@ -1,13 +1,11 @@
-"""Hooks for RSVP (P13): session section, dashboard provider."""
+"""Hooks for RSVP (P13): session section only."""
 
 import logging
 
 from django.utils import timezone
 
-from accounts.dashboard_providers import BaseDashboardProvider, register_provider
-
 from . import core
-from .models import PlayerRSVP, PlaySession
+from .models import PlayerRSVP
 from .rsvp_forms import rsvp_answers
 
 logger = logging.getLogger(__name__)
@@ -79,56 +77,14 @@ def _rsvp_section_visible(request, session) -> bool:
     return True
 
 
-# --- Dashboard provider ------------------------------------------------------
-
-
-class MySessionsProvider(BaseDashboardProvider):
-    """Dashboard provider: My sessions (my RSVP answers for my membership)."""
-
-    key = "my_sessions"
-    order = 9
-    template = "play_sessions/_dashboard_rsvps.html"
-
-    def get_context(self, request, club, character, membership):
-        """Return upcoming sessions with the membership's RSVP answer."""
-        if membership is None:
-            return {"sessions": []}
-
-        now = timezone.now()
-        sessions = (
-            PlaySession.objects.for_club(club)
-            .filter(starts_at__gt=now, cancelled=False)
-            .order_by("starts_at")[:5]
-        )
-
-        session_data = []
-        for session in sessions:
-            # Get RSVP for this membership
-            rsvp = PlayerRSVP.objects.filter(session=session, member=membership).first()
-            answer = rsvp.answer if rsvp else None
-
-            # Convert to club local time
-            starts_local = core.to_club_local(club, session.starts_at)
-            # Player can answer if not locked and not cancelled
-            can_answer = session.starts_at > now
-
-            session_data.append(
-                {
-                    "session": session,
-                    "starts_local": starts_local,
-                    "answer": answer,
-                    "can_answer": can_answer,
-                }
-            )
-
-        return {"sessions": session_data}
-
-    def should_show(self, request, club, character, membership) -> bool:
-        return membership is not None
-
-
 def register():
-    """Register RSVP hooks: session section and dashboard provider."""
+    """Register RSVP hooks: session section only.
+
+    The "My Sessions" dashboard provider and its partial
+    (``play_sessions/_dashboard_rsvps.html``) were removed in P20: the
+    "Upcoming sessions" card now carries the inline Yes / Maybe / No RSVP
+    buttons instead.
+    """
     # Session detail section
     core.register_session_section(
         key="rsvp",
@@ -137,6 +93,3 @@ def register():
         context_fn=_rsvp_section_context,
         visible_fn=_rsvp_section_visible,
     )
-
-    # Dashboard provider
-    register_provider(MySessionsProvider())

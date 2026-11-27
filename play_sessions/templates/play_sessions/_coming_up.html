@@ -6,12 +6,15 @@
      membership       - Membership or None
      can_manage_sessions - bool, True when the member may add sessions
      hide_heading     - optional; true when the host card already shows the heading
+     show_rsvp        - optional; true when the host card offers inline RSVP buttons
+     rsvp_next        - optional; URL to redirect to after saving an RSVP
    Each session dict: id, title, local_start (aware, club zone), zone_label,
    gm_name, yes_count, my_answer (yes/maybe/no/none, None when cancelled),
-   cancelled, detail_url, is_next, when_text.
+   can_rsvp (true when the member may answer), cancelled, detail_url, is_next,
+   when_text.
 {% endcomment %}
 {% load play_sessions_tags %}
-<section class="coming-up" aria-label="Upcoming sessions">
+<section class="coming-up" {% if not hide_heading %}aria-label="Upcoming sessions"{% endif %}>
   {% if not hide_heading %}<h2 class="coming-up-heading">Upcoming sessions</h2>{% endif %}
   {% if coming_up %}
   <ul class="coming-up-list">
@@ -29,8 +32,49 @@
       <span class="coming-up-gm">GM: {{ session.gm_name }}</span>
       {% endif %}
       <span class="coming-up-yes">{{ session.yes_count }} yes</span>
-      {% if not session.cancelled and session.my_answer %}
-      <span class="coming-up-answer">You: {{ session.my_answer|title }}</span>
+      {% if not session.cancelled %}
+        {% if show_rsvp and session.can_rsvp %}
+        <form
+          method="post"
+          action="{% url 'play_sessions:rsvp_set' club.slug session.id %}"
+          class="d-flex flex-wrap gap-1"
+        >
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ rsvp_next }}">
+          <button
+            type="submit"
+            name="answer"
+            value="yes"
+            class="btn btn-sm {% if session.my_answer == 'yes' %}btn-success{% else %}btn-outline-success{% endif %}"
+            aria-pressed="{% if session.my_answer == 'yes' %}true{% else %}false{% endif %}"
+          >
+            Yes
+          </button>
+          <button
+            type="submit"
+            name="answer"
+            value="maybe"
+            class="btn btn-sm {% if session.my_answer == 'maybe' %}btn-success{% else %}btn-outline-success{% endif %}"
+            aria-pressed="{% if session.my_answer == 'maybe' %}true{% else %}false{% endif %}"
+          >
+            Maybe
+          </button>
+          <button
+            type="submit"
+            name="answer"
+            value="no"
+            class="btn btn-sm {% if session.my_answer == 'no' %}btn-success{% else %}btn-outline-success{% endif %}"
+            aria-pressed="{% if session.my_answer == 'no' %}true{% else %}false{% endif %}"
+          >
+            No
+          </button>
+        </form>
+        {% endif %}
+        {% if session.my_answer == 'none' %}
+        <span class="coming-up-answer">Not answered</span>
+        {% elif session.my_answer %}
+        <span class="coming-up-answer">You: {{ session.my_answer|title }}</span>
+        {% endif %}
       {% endif %}
       {% if session.cancelled %}
       {% include "components/badge.html" with status="danger" text="Cancelled" %}

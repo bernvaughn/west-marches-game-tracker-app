@@ -46,7 +46,9 @@ def upcoming_sessions(club, now, membership, limit):
 
     Returns ``{"sessions": [...], "first_month": (year, month) | None}``.
     Each session dict holds id, title, local_start, zone_label, gm_name,
-    yes_count, my_answer, cancelled, detail_url, is_next, when_text.
+    yes_count, my_answer, cancelled, can_rsvp, detail_url, is_next,
+    when_text. ``can_rsvp`` is true only for non-cancelled sessions that
+    have not started yet (``starts_at > now``).
     """
     zone = core.club_zone(club)
     now_local = core.to_club_local(club, now)
@@ -103,6 +105,7 @@ def upcoming_sessions(club, now, membership, limit):
                 "yes_count": session.yes_count,
                 "my_answer": my_answer,
                 "cancelled": cancelled,
+                "can_rsvp": not cancelled and session.starts_at > now,
                 "detail_url": reverse("play_sessions:session_detail", args=[club.slug, session.pk]),
                 "is_next": is_next,
                 "when_text": when_text,
