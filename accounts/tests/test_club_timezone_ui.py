@@ -60,6 +60,10 @@ def test_settings_page_mail_cards_get_context_on_plain_load(club_admin, login, c
     body = r.content.decode()
     assert "Email is disabled" not in body
     assert club_admin.email in body  # recipient dropdown lists club admins
+    # No key under DEBUG: the card advertises that test email is unavailable.
+    assert "No RESEND_API_KEY is set" in body
+    assert 'class="form-select" disabled' in body
+    assert 'class="btn btn-primary" disabled' in body
 
 
 def test_settings_page_shows_disabled_reason_when_mail_off(club_admin, login, club, settings):
@@ -71,6 +75,30 @@ def test_settings_page_shows_disabled_reason_when_mail_off(club_admin, login, cl
     body = c.get(reverse(CLUB_SETTINGS, args=[club.slug])).content.decode()
     assert "Email is disabled" in body
     assert "RESEND_API_KEY" in body
+
+
+def test_settings_page_test_email_unavailable_without_key(club_admin, login, club, settings):
+    """MAIL_ENABLED under DEBUG with no key: notice shows, controls disabled."""
+    settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = ""
+    c = _login(login(club_admin), club_admin)
+    body = c.get(reverse(CLUB_SETTINGS, args=[club.slug])).content.decode()
+    assert "No RESEND_API_KEY is set" in body
+    assert "test email cannot be delivered" in body
+    assert 'class="form-select" disabled' in body
+    assert 'class="btn btn-primary" disabled' in body
+
+
+def test_settings_page_test_email_enabled_with_key(club_admin, login, club, settings):
+    """With a RESEND_API_KEY, no notice and the test email controls are enabled."""
+    settings.MAIL_ENABLED = True
+    settings.RESEND_API_KEY = "resend_test_key"
+    c = _login(login(club_admin), club_admin)
+    body = c.get(reverse(CLUB_SETTINGS, args=[club.slug])).content.decode()
+    assert "No RESEND_API_KEY is set" not in body
+    assert "Email is disabled" not in body
+    assert 'class="form-select" disabled' not in body
+    assert 'class="btn btn-primary" disabled' not in body
 
 
 def test_superuser_get_settings(site_admin, login, club):

@@ -38,7 +38,12 @@ def club_settings(request, club_slug):
     # The embedded mail cards (contact email, test email) need this context on a
     # plain page load, not just after their own HTMX actions.
     from mail.models import ClubMailSettings, EmailMessage
-    from mail.service import email_disabled_reason, email_enabled
+    from mail.service import (
+        email_can_send,
+        email_disabled_reason,
+        email_enabled,
+        test_email_unavailable_reason,
+    )
 
     from ..models import Membership
 
@@ -49,7 +54,9 @@ def club_settings(request, club_slug):
         "settings": ClubMailSettings.objects.get_or_create(club=club)[0],
         "admins": Membership.objects.filter(club=club, is_club_admin=True).select_related("user"),
         "email_on": email_enabled(),
+        "can_send": email_can_send(),
         "disabled_reason": email_disabled_reason(),
+        "send_blocked_reason": test_email_unavailable_reason(),
         "recent_tests": EmailMessage.objects.filter(club=club, kind="test").order_by("-created")[
             :10
         ],

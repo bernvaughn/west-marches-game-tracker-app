@@ -48,6 +48,32 @@ def email_disabled_reason() -> str:
     return "Email is disabled for this site."
 
 
+def email_can_send() -> bool:
+    """True only when a real RESEND_API_KEY is configured.
+
+    MAIL_ENABLED is also true under DEBUG, but a test email cannot actually be
+    delivered without a key. Use this to decide whether the "Send test email"
+    button may be enabled.
+    """
+    return bool(getattr(settings, "RESEND_API_KEY", ""))
+
+
+def test_email_unavailable_reason() -> str:
+    """User-friendly reason a test email cannot be sent right now.
+
+    Returns an empty string when email can be sent or is fully disabled (that
+    case shows the "Email is disabled" banner instead).
+    """
+    if email_can_send():
+        return ""
+    if email_enabled():
+        return (
+            "No RESEND_API_KEY is set. In development, emails are only logged "
+            "to the server console, so a test email cannot be delivered."
+        )
+    return ""
+
+
 def queue_email(
     kind: str,
     to: str,
