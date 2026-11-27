@@ -23,7 +23,7 @@
 .sessions-list-day { margin-bottom: .25rem; }
 .sessions-list-daynum { font-weight: 600; font-size: var(--wm-text-sm); color: var(--wm-text); margin-bottom: .25rem; }
 .sessions-today { font-weight: 400; font-size: var(--wm-text-xs); color: var(--wm-accent); }
-.sessions-list-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; padding: .625rem 0; border-bottom: 1px solid var(--wm-border); text-decoration: none; color: var(--wm-text); }
+.sessions-list-row { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; padding: .625rem 0; border-bottom: 1px solid var(--wm-border); text-decoration: none; color: var(--wm-text); }
 .sessions-list-row--cancelled { opacity: .6; }
 .sessions-list-row--cancelled .sessions-title { text-decoration: line-through; }
 .sessions-title { font-weight: 600; }
@@ -49,3 +49,22 @@
 .coming-up-show-month { margin: .25rem 0 0; }
 .coming-up-show-month-link { font-size: var(--wm-text-sm); color: var(--wm-accent); text-decoration: none; }
 .coming-up-show-month-link:hover, .coming-up-show-month-link:focus { text-decoration: underline; }
+
+/* Last session card (P22): milestone badges and print hiding. Colours from tokens only. */
+.last-session { }
+.last-session-title { font-weight: 600; color: var(--wm-text); }
+.last-session-title:hover { text-decoration: underline; }
+.last-session-date { font-size: var(--wm-text-sm); }
+.last-session-recap { line-height: 1.6; }
+.last-session-played { font-size: var(--wm-text-sm); }
+.last-session-tally { font-size: var(--wm-text-sm); font-weight: 500; }
+.last-session-milestones { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
+.last-session-milestone { display: inline-flex; align-items: center; gap: .375rem; padding: .25rem .5rem; border-radius: .375rem; font-size: var(--wm-text-xs); font-weight: 600; }
+.last-session-milestone.earned { background: var(--wm-accent-bg); color: var(--wm-accent); }
+.last-session-milestone.locked { background: var(--wm-surface-sunken); color: var(--wm-text-muted); opacity: .6; }
+.last-session-milestone-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.25rem; height: 1.25rem; border-radius: .25rem; background: currentColor; color: var(--wm-surface); font-size: var(--wm-text-xxs); }
+.last-session-milestone.earned .last-session-milestone-badge { background: var(--wm-accent); color: #fff; }
+.last-session-milestone.locked .last-session-milestone-badge { background: var(--wm-border); color: var(--wm-text-muted); }
+.last-session-new-badge { font-size: var(--wm-text-xxs); font-weight: 700; padding: .125rem .375rem; border-radius: .25rem; background: var(--wm-warning); color: #fff; text-transform: uppercase; letter-spacing: .025em; }
+.last-session-next-milestone { font-size: var(--wm-text-xs); }
+@media print { .last-session { display: none !important; } }
