@@ -4,6 +4,24 @@
 {% block content %}
 {% url 'quests:manage' club.slug as manage_url %}
 {% if is_admin %}{% include "components/page_header.html" with title="Quests" subtitle="Bring the items on a notice to claim its reward." action_url=manage_url action_label="Manage quests" %}{% else %}{% include "components/page_header.html" with title="Quests" subtitle="Bring the items on a notice to claim its reward." %}{% endif %}
+{% if celebration %}
+<section class="wm-quest-celebration" aria-labelledby="quest-celebration-title">
+  <div data-fanfare data-container-icon="📜">
+    <h2 id="quest-celebration-title">Quest complete: {{ celebration.quest }}</h2>
+    <p>{{ celebration.character }} turned it in.</p>
+    <span class="wm-fanfare-container-icon">📜</span>
+    <div data-wm-reveal>
+      <ul>
+        {% for row in celebration.rows %}
+        <li data-wm-reveal-item><span aria-hidden="true">{{ row.symbol }}</span>{{ row.label }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <p class="visually-hidden" role="status" aria-live="polite" data-wm-live></p>
+  </div>
+</section>
+{% include "player_characters/characters/_fanfare_assets.html" %}
+{% endif %}
 <div class="wm-board" hx-get="{% url 'quests:index' club.slug %}" hx-trigger="questCompleted from:body" hx-target=".wm-board" hx-swap="outerHTML">
   {% if board %}
   <ul class="wm-board-grid">
