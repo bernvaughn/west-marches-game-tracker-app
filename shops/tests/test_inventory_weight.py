@@ -1,5 +1,7 @@
-"""Tests for weight column in shop inventory (story: shop counter weight column)."""
+"""Tests for the Weight column in the shop's "Your inventory" table."""
 
+import html
+import re
 from datetime import date
 
 import pytest
@@ -7,10 +9,13 @@ from django.urls import reverse
 
 from items.models import Item
 from ledger.services import Line, record
+from player_characters.inventory import inventory_rows
 from player_characters.sheet import inventory_values
 from shops.models import Rotation
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("Shop weight column")]
+
+WEIGHT_TD = re.compile(r'<td class="num wm-col-weight"([^>]*)>(.*?)</td>', re.S)
 
 
 @pytest.fixture
@@ -23,6 +28,18 @@ def card(client, club, shop):
     """Extract the #your-inventory section from the shop detail page."""
     b = client.get(reverse("shops:detail", args=[club.slug, shop.id])).content.decode()
     return b[b.index('id="your-inventory"') :]
+
+
+def sheet_page(client, club, character):
+    return client.get(reverse("characters:detail", args=[club.slug, character.pk])).content.decode()
+
+
+def weight_cell(page, item_name):
+    """Return (attrs, text) of the Weight <td> in the table row for ``item_name``."""
+    for chunk in page.split("<tr")[1:]:
+        if item_name in chunk and (m := WEIGHT_TD.search(chunk)):
+            return m.group(1), html.unescape(m.group(2)).strip()
+    raise AssertionError(f"no weight cell found for {item_name!r}")
 
 
 @pytest.fixture
@@ -50,95 +67,92 @@ def unweighted_item(club):
     return Item.objects.create(club=club, name="Magic Scroll", value_cp=1000)
 
 
-def test_weighted_item_shows_weight_text(login, player, club, open_shop, character, weighted_item):
-    """Weighted single item shows the same weight text as the sheet."""
-    record(character, "award", [Line(item=weighted_item, quantity=1)])
+@pytest.fixture
+def unweighted_stacked_item(club):
+    """A stacked item with no weight."""
+    return Item.objects.create(
+        club=club, name="Pebbles", value_cp=1, unit_name="pebble", is_stacked=True
+    )
 
-    # Get weight text from inventory_values (what the sheet uses)
-    from player_characters.inventory import inventory_rows
+
+def test_shop_weight_cells_match_sheet(
+    login,
+    player,
+    club,
+    open_shop,
+    character,
+    weighted_item,
+    stacked_weighted_item,
+    unweighted_item,
+):
+    """Each item's Weight cell on the shop page equals the sheet's, text and tooltip."""
+    record(
+        character,
+        "award",
+        [
+            Line(item=weighted_item, quantity=3),
+            Line(item=stacked_weighted_item, quantity=5),
+            Line(item=unweighted_item, quantity=1),
+        ],
+    )
+    client = login(player)
+    shop_html = card(client, club, open_shop)
+    sheet_html = sheet_page(client, club, character)
 
     rows = inventory_rows(character)
-    vals = inventory_values(rows)
-    expected_weight = vals[0]["weight_text"]
+    values = {r.item.name: v for r, v in zip(rows, inventory_values(rows), strict=True)}
+    assert values["Iron Pot"]["weight_text"] == "5.0 lb"
+    assert values["Arrows"]["weight_text"] == "10.0 lb"  # 5 units x 2 lb
+    assert values["Magic Scroll"]["weight_text"] == "—"
 
-    c = card(login(player), club, open_shop)
-    assert expected_weight in c
-    assert "wm-col-weight" in c
-
-
-def test_stacked_item_shows_per_unit_tooltip(
-    login, player, club, open_shop, character, stacked_weighted_item
-):
-    """Stacked weighted item shows per-unit tooltip with unit name."""
-    record(character, "award", [Line(item=stacked_weighted_item, quantity=20)])
-
-    c = card(login(player), club, open_shop)
-    # The cell has data-wm-tooltip with per-unit text and unit_name
-    assert "data-wm-tooltip" in c
-    assert "per arrow" in c
+    for name, v in values.items():
+        shop_attrs, shop_text = weight_cell(shop_html, name)
+        sheet_attrs, sheet_text = weight_cell(sheet_html, name)
+        assert shop_text == sheet_text == v["weight_text"], name
+        assert shop_attrs.strip() == sheet_attrs.strip(), name
 
 
 def test_unweighted_item_shows_dash_and_no_tooltip(
     login, player, club, open_shop, character, unweighted_item
 ):
-    """Unweighted item shows a dash and has no tooltip."""
     record(character, "award", [Line(item=unweighted_item, quantity=1)])
 
-    c = card(login(player), club, open_shop)
-    # Cell shows dash (em dash or —)
-    assert "—" in c
-    # No tooltip on the weight cell for unweighted items
-    # The weight column cell should not have data-wm-tooltip
-    # We check that the dash is present and the tooltip pattern is not
-    # in the weight column context. In the template, the tooltip is only
-    # added when is_stacked AND weight_hundredths is not None. For
-    # unweighted non-stacked, weight_hundredths is None, so no tooltip
+    attrs, text = weight_cell(card(login(player), club, open_shop), "Magic Scroll")
+    assert text == "—"
+    assert "data-wm-tooltip" not in attrs
+    assert "title" not in attrs
 
 
-def test_weight_column_header_has_wm_col_weight(login, player, club, open_shop, character, item):
-    """Header has wm-col-weight class for mobile hide hook."""
-    record(character, "award", [Line(item=item, quantity=1)])
-    c = card(login(player), club, open_shop)
-    assert 'class="num wm-col-weight"' in c
+def test_unweighted_stacked_item_shows_dash_and_no_tooltip(
+    login, player, club, open_shop, character, unweighted_stacked_item
+):
+    """The tooltip is guarded on a known weight, even for stacked items."""
+    record(character, "award", [Line(item=unweighted_stacked_item, quantity=7)])
+
+    attrs, text = weight_cell(card(login(player), club, open_shop), "Pebbles")
+    assert text == "—"
+    assert "data-wm-tooltip" not in attrs
+    assert "title" not in attrs
 
 
-def test_weight_text_matches_sheet(login, player, club, open_shop, character, weighted_item):
-    """Shop page shows the same weight text as the sheet for each item."""
-    record(character, "award", [Line(item=weighted_item, quantity=3)])
-
-    # Sheet weight text via inventory_values
-    from player_characters.inventory import inventory_rows
-
-    rows = inventory_rows(character)
-    vals = inventory_values(rows)
-    sheet_weight = vals[0]["weight_text"]
-
-    c = card(login(player), club, open_shop)
-    assert sheet_weight in c
-
-
-def test_stacked_item_row_total_weight(
+def test_stacked_item_shows_per_unit_tooltip(
     login, player, club, open_shop, character, stacked_weighted_item
 ):
-    """Stacked item weight text equals per-unit times quantity (row total)."""
-    record(character, "award", [Line(item=stacked_weighted_item, quantity=5)])  # 5 * 2 lb = 10 lb
+    record(character, "award", [Line(item=stacked_weighted_item, quantity=20)])
 
-    from player_characters.inventory import inventory_rows
+    (vals,) = inventory_values(inventory_rows(character))
+    per_unit = vals["weight_per_unit_text"]
+    assert per_unit == "2.0 lb"
+    assert vals["weight_text"] == "40.0 lb"  # row total, not per unit
 
-    rows = inventory_rows(character)
-    vals = inventory_values(rows)
-    expected_total = vals[0]["weight_text"]  # should be "10.0 lb"
+    attrs, text = weight_cell(card(login(player), club, open_shop), "Arrows")
+    assert text == vals["weight_text"]
+    assert "data-wm-tooltip" in attrs
+    assert f'title="{per_unit} per arrow"' in attrs
 
+
+def test_weight_header_has_hide_class(login, player, club, open_shop, character, item):
+    """The header carries wm-col-weight, the hook that hides it on narrow screens."""
+    record(character, "award", [Line(item=item, quantity=1)])
     c = card(login(player), club, open_shop)
-    assert expected_total in c
-
-
-def test_no_weight_tracking_switch_column_always_present(
-    login, player, club, open_shop, character, weighted_item
-):
-    """No weight-tracking switch exists; column markup always matches sheet (always present)."""
-    record(character, "award", [Line(item=weighted_item, quantity=1)])
-    c = card(login(player), club, open_shop)
-    # The column is always present (no conditional hiding based on a setting)
-    assert "wm-col-weight" in c
-    assert "Weight" in c  # header text
+    assert '<th scope="col" class="num wm-col-weight">Weight</th>' in c
