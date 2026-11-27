@@ -128,7 +128,15 @@ def _is_int(value):
         return False
 
 
-def _render_bulk_award(request, form, club, items, prefill_pks=None, prefill_session=None, status=200):
+def _render_bulk_award(
+    request,
+    form,
+    club,
+    items,
+    prefill_pks=None,
+    prefill_session=None,
+    status=200,
+):
     """Re-render the bulk-award form, keeping checkboxes and posted values."""
     character_data = []
     post = request.POST

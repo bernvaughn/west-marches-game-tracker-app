@@ -1,5 +1,6 @@
 """Tests for bulk award prefill from session (P21)."""
 
+import re
 from datetime import UTC
 
 import pytest
@@ -35,11 +36,25 @@ def _make_club_and_session_with_attendance():
     char2 = Character.objects.create(name="Did Not Play", club=club, owner=player)
     char3 = Character.objects.create(name="Other Played", club=club, owner=other)
 
-    SessionAttendance.objects.create(session=session, character=char1, played=True, confirmed_by=gm.user)
-    SessionAttendance.objects.create(session=session, character=char2, played=False, confirmed_by=gm.user)
-    SessionAttendance.objects.create(session=session, character=char3, played=True, confirmed_by=gm.user)
+    SessionAttendance.objects.create(
+        session=session, character=char1, played=True, confirmed_by=gm.user
+    )
+    SessionAttendance.objects.create(
+        session=session, character=char2, played=False, confirmed_by=gm.user
+    )
+    SessionAttendance.objects.create(
+        session=session, character=char3, played=True, confirmed_by=gm.user
+    )
 
     return club, gm, player, other, session, char1, char2, char3
+
+
+def _get_checked_character_pks(content):
+    """Extract character PKs that have checked checkboxes."""
+    checked_checkboxes = re.findall(
+        r'<input[^>]*name="characters"[^>]*value="(\d+)"[^>]*checked', content
+    )
+    return {int(pk) for pk in checked_checkboxes}
 
 
 def test_prefill_ticks_only_played_true(client, _make_club_and_session_with_attendance):
@@ -48,14 +63,10 @@ def test_prefill_ticks_only_played_true(client, _make_club_and_session_with_atte
     url = reverse("characters:bulk_award", args=[club.slug]) + f"?session={session.pk}"
     response = client.get(url)
     content = response.content.decode()
-    # char1 and char3 played=True should be ticked
-    assert f'id="award-{char1.pk}"' in content and 'checked' in content.split(f'id="award-{char1.pk}"')[1][:50]
-    assert f'id="award-{char3.pk}"' in content and 'checked' in content.split(f'id="award-{char3.pk}"')[1][:50]
-    # char2 played=False should not be ticked
-    assert f'id="award-{char2.pk}"' in content
-    # Check that char2's checkbox doesn't have checked
-    char2_section = content.split(f'id="award-{char2.pk}"')[1][:100]
-    assert 'checked' not in char2_section or 'checked' in content.split(f'id="award-{char2.pk}"')[0][-100:]
+    checked_pks = _get_checked_character_pks(content)
+    assert char1.pk in checked_pks, f"char1 ({char1.pk}) should be checked"
+    assert char3.pk in checked_pks, f"char3 ({char3.pk}) should be checked"
+    assert char2.pk not in checked_pks, f"char2 ({char2.pk}) should not be checked"
 
 
 def test_prefill_note_is_session_title(client, _make_club_and_session_with_attendance):
@@ -88,12 +99,8 @@ def test_prefill_without_session_param(client, _make_club_and_session_with_atten
     response = client.get(url)
     content = response.content.decode()
     # No checkboxes should be ticked by default
-    assert 'checked' not in content or all(
-        'checked' not in section.split('id="award-')[1][:50]
-        for section in content.split('id="award-')[1:]
-    )
-    # Date should be today (we can't easily test exact date, but it shouldn't be the session date)
-    # The note should be empty
+    checked_pks = _get_checked_character_pks(content)
+    assert len(checked_pks) == 0, f"No checkboxes should be checked, but found: {checked_pks}"
 
 
 def test_prefill_bad_id_ignored(client, _make_club_and_session_with_attendance):
@@ -105,20 +112,16 @@ def test_prefill_bad_id_ignored(client, _make_club_and_session_with_attendance):
     assert response.status_code == 200
     content = response.content.decode()
     # Should not have prefill
-    assert 'checked' not in content or all(
-        'checked' not in section.split('id="award-')[1][:50]
-        for section in content.split('id="award-')[1:]
-    )
+    checked_pks = _get_checked_character_pks(content)
+    assert len(checked_pks) == 0
 
     # Non-existent id
     url = reverse("characters:bulk_award", args=[club.slug]) + "?session=999999"
     response = client.get(url)
     assert response.status_code == 200
     content = response.content.decode()
-    assert 'checked' not in content or all(
-        'checked' not in section.split('id="award-')[1][:50]
-        for section in content.split('id="award-')[1:]
-    )
+    checked_pks = _get_checked_character_pks(content)
+    assert len(checked_pks) == 0
 
 
 def test_prefill_foreign_session_ignored(client, _make_club_and_session_with_attendance):
@@ -142,10 +145,8 @@ def test_prefill_foreign_session_ignored(client, _make_club_and_session_with_att
     assert response.status_code == 200
     content = response.content.decode()
     # Should not have prefill
-    assert 'checked' not in content or all(
-        'checked' not in section.split('id="award-')[1][:50]
-        for section in content.split('id="award-')[1:]
-    )
+    checked_pks = _get_checked_character_pks(content)
+    assert len(checked_pks) == 0
 
 
 def test_prefill_post_ignores_prefill(client, _make_club_and_session_with_attendance):
@@ -167,7 +168,8 @@ def test_prefill_post_ignores_prefill(client, _make_club_and_session_with_attend
     # Should redirect on success
     assert response.status_code == 302
     # Verify only char2 got the award
-    from ledger.models import Entry
-    entries = Entry.objects.filter(character__in=[char1, char2, char3], kind="award")
+    from ledger.models import LedgerEntry
+
+    entries = LedgerEntry.objects.filter(character__in=[char1, char2, char3], kind="award")
     assert entries.count() == 1
     assert entries.first().character == char2

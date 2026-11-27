@@ -4,7 +4,6 @@ Provides a helper to find the latest ended session and registers the
 "Wrap up" session section for managers.
 """
 
-from django.db.models import F
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone

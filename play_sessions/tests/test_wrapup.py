@@ -8,8 +8,8 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.models import Club, Membership, User
-from play_sessions.models import PlaySession, SessionAttendance
 from play_sessions.hooks_wrapup import wrapup_session
+from play_sessions.models import PlaySession, SessionAttendance
 from player_characters.models import Character
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P21")]
@@ -30,6 +30,14 @@ def _make_club_and_users():
 
 # Use a fixed "now" for all tests: 2024-06-02 (day after session ended)
 FIXED_NOW = timezone.datetime(2024, 6, 2, 12, 0, tzinfo=UTC)
+
+
+def _session_detail_url(club_slug, pk):
+    return reverse("play_sessions:session_detail", kwargs={"club_slug": club_slug, "pk": pk})
+
+
+def _club_home_url(club_slug):
+    return reverse("club_home", kwargs={"club_slug": club_slug})
 
 
 @pytest.fixture
@@ -89,7 +97,7 @@ def test_wrapup_session_future_session_excluded():
     club = Club.objects.create(name="Future Club", slug="future-club", timezone="UTC")
     gm_user = User.objects.create_user(email="gm@test.com", password="pass12345678")
     gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
-    session = PlaySession.objects.create(
+    PlaySession.objects.create(
         club=club,
         title="Future Session",
         starts_at=timezone.datetime(2030, 6, 1, 18, 0, tzinfo=UTC),
@@ -105,7 +113,7 @@ def test_wrapup_session_cancelled_excluded():
     club = Club.objects.create(name="Cancelled Club", slug="cancelled-club", timezone="UTC")
     gm_user = User.objects.create_user(email="gm@test.com", password="pass12345678")
     gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
-    session = PlaySession.objects.create(
+    PlaySession.objects.create(
         club=club,
         title="Cancelled Session",
         starts_at=timezone.datetime(2024, 6, 1, 18, 0, tzinfo=UTC),
@@ -123,7 +131,7 @@ def test_wrapup_session_older_when_newer_exists():
     gm_user = User.objects.create_user(email="gm@test.com", password="pass12345678")
     gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
     # Older session
-    old = PlaySession.objects.create(
+    PlaySession.objects.create(
         club=club,
         title="Old Session",
         starts_at=timezone.datetime(2024, 6, 1, 18, 0, tzinfo=UTC),
@@ -150,7 +158,7 @@ def test_wrapup_visible_to_gm(client, wrapup_club_and_session):
     club, gm, admin, player, other, session = wrapup_club_and_session
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     assert response.status_code == 200
     assert b"Wrap up" in response.content
@@ -160,7 +168,7 @@ def test_wrapup_visible_to_club_admin(client, wrapup_club_and_session):
     club, gm, admin, player, other, session = wrapup_club_and_session
     client.force_login(admin.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     assert response.status_code == 200
     assert b"Wrap up" in response.content
@@ -170,7 +178,7 @@ def test_wrapup_not_visible_to_player(client, wrapup_club_and_session):
     club, gm, admin, player, other, session = wrapup_club_and_session
     client.force_login(player.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     assert response.status_code == 200
     assert b"Wrap up" not in response.content
@@ -189,7 +197,7 @@ def test_wrapup_not_visible_on_future_session(client):
     )
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     assert b"Wrap up" not in response.content
 
@@ -208,7 +216,7 @@ def test_wrapup_not_visible_on_cancelled_session(client):
     )
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     assert b"Wrap up" not in response.content
 
@@ -226,7 +234,7 @@ def test_wrapup_not_visible_over_14_days(client):
     )
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     assert b"Wrap up" not in response.content
 
@@ -252,13 +260,14 @@ def test_wrapup_not_visible_on_older_session_when_newer_exists(client):
         game_master=gm,
     )
     client.force_login(gm.user)
-    with patch("django.utils.timezone.now", return_value=timezone.datetime(2024, 6, 6, 12, 0, tzinfo=UTC)):
+    now = timezone.datetime(2024, 6, 6, 12, 0, tzinfo=UTC)
+    with patch("django.utils.timezone.now", return_value=now):
         # On the older session page, wrapup should not show
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": old.pk})
+        url = _session_detail_url(club.slug, old.pk)
         response = client.get(url)
         assert b"Wrap up" not in response.content
         # On the newer session page, wrapup should show
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": new.pk})
+        url = _session_detail_url(club.slug, new.pk)
         response = client.get(url)
         assert b"Wrap up" in response.content
 
@@ -270,7 +279,7 @@ def test_wrapup_attendance_recap_not_done(client, wrapup_club_and_session):
     club, gm, admin, player, other, session = wrapup_club_and_session
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     content = response.content.decode()
     assert "Not done" in content
@@ -281,10 +290,12 @@ def test_wrapup_attendance_recap_not_done(client, wrapup_club_and_session):
 def test_wrapup_attendance_done(client, wrapup_club_and_session):
     club, gm, admin, player, other, session = wrapup_club_and_session
     char = Character.objects.get(name="Hero")
-    SessionAttendance.objects.create(session=session, character=char, played=True, confirmed_by=gm.user)
+    SessionAttendance.objects.create(
+        session=session, character=char, played=True, confirmed_by=gm.user
+    )
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     content = response.content.decode()
     assert "Done" in content
@@ -297,7 +308,7 @@ def test_wrapup_recap_done(client, wrapup_club_and_session):
     session.save()
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     content = response.content.decode()
     assert "Done" in content
@@ -311,7 +322,7 @@ def test_wrapup_links_present(client, wrapup_club_and_session):
     club, gm, admin, player, other, session = wrapup_club_and_session
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("play_sessions:session_detail", kwargs={"club_slug": club.slug, "pk": session.pk})
+        url = _session_detail_url(club.slug, session.pk)
         response = client.get(url)
     content = response.content.decode()
     # Award loot link with session param
@@ -327,7 +338,7 @@ def test_session_desk_award_loot_has_session_param(client, wrapup_club_and_sessi
     club, gm, admin, player, other, session = wrapup_club_and_session
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("club_home", kwargs={"club_slug": club.slug})
+        url = _club_home_url(club.slug)
         response = client.get(url)
     content = response.content.decode()
     assert f"?session={session.pk}" in content
@@ -339,7 +350,7 @@ def test_session_desk_award_loot_plain_when_no_wrapup_session(client):
     gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("club_home", kwargs={"club_slug": club.slug})
+        url = _club_home_url(club.slug)
         response = client.get(url)
     content = response.content.decode()
     # Should not have session param
@@ -351,7 +362,7 @@ def test_session_desk_award_loot_plain_when_session_over_14_days(client):
     club = Club.objects.create(name="Old Club", slug="old-club", timezone="UTC")
     gm_user = User.objects.create_user(email="gm@test.com", password="pass12345678")
     gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
-    session = PlaySession.objects.create(
+    PlaySession.objects.create(
         club=club,
         title="Old Session",
         starts_at=timezone.datetime(2024, 5, 1, 18, 0, tzinfo=UTC),
@@ -360,7 +371,7 @@ def test_session_desk_award_loot_plain_when_session_over_14_days(client):
     )
     client.force_login(gm.user)
     with patch("django.utils.timezone.now", return_value=FIXED_NOW):
-        url = reverse("club_home", kwargs={"club_slug": club.slug})
+        url = _club_home_url(club.slug)
         response = client.get(url)
     content = response.content.decode()
     # Should not have session param
