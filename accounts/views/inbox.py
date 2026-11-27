@@ -27,7 +27,7 @@ from ..forms.inbox import (
     StockRequestForm,
     allowed_statuses,
 )
-from ..htmx import hx_response, is_htmx, render_modal_or_page
+from ..htmx import hx_response, is_htmx, render_modal_or_page, set_hx_headers
 from ..models import Message
 from ..permissions import admin_or_gm_required, club_admin_required, club_member_required
 from ..scoping import club_get_object_or_404, club_queryset
@@ -230,12 +230,20 @@ def message_status(request, club_slug, pk):
 @club_admin_required
 @require_POST
 def message_bulk_status(request, club_slug):
+    message_ids = request.POST.getlist("message_ids")
+    if not message_ids:
+        if is_htmx(request):
+            response = _render_inbox(request)
+            response["HX-Reswap"] = "none"
+            return set_hx_headers(
+                response,
+                trigger={"toast": {"message": "Tick at least one message.", "type": "warning"}},
+            )
+        flash.warning(request, "Tick at least one message.")
+        return redirect(_inbox_url(club_slug, _filter_of(request.POST), _kind_of(request.POST)))
     form = BulkStatusForm(request.POST, club=request.club)
     if not form.is_valid():
         return HttpResponseBadRequest("Invalid bulk status request")
-    message_ids = request.POST.getlist("message_ids")
-    if not message_ids:
-        return HttpResponseBadRequest("No messages selected")
     status = form.cleaned_data["status"]
     club_queryset(request, Message).filter(pk__in=message_ids).update(status=status)
     if is_htmx(request):
