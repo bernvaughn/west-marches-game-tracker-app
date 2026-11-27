@@ -320,8 +320,10 @@ def _apply_batch_grant(request, msg, batch, club):
             elif grant_kind == "map":
                 map_entries.append(grant)
 
-        # Process coins - one ledger entry
-        if coins_total != 0 or mark_handled:
+        # Process coins - one ledger entry. A map-only batch has no coins, so do
+        # not write a Line(coins=0): the ledger rejects "a line needs an item or
+        # coins" and the failure would surface silently on the confirm page.
+        if coins_total != 0:
             lines = [Line(coins=coins_total)]
             record(
                 character,
@@ -449,21 +451,40 @@ def message_give(request, club_slug, pk, kind):
 
     back = _filter_of(data or request.GET)
 
-    # Handle batch flow
     action = data.get("action") if post else request.GET.get("action")
+    batch = _batch_get(request, pk)
+    fill = ("accounts/inbox/_give_form.html", "accounts/inbox/give.html")
 
-    # GET with action=batch_review: show batch confirm page
-    if post and action == "review":
-        batch = _batch_get(request, pk)
-        if not batch:
-            # Show review page even if empty - will error on confirm
-            ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
-            return _render_confirm(request, ctx)
-
+    # Batch review: only when a batch exists. A single-grant Review falls
+    # through to the single-grant flow below, which builds summary + carry.
+    if post and action == "review" and batch:
         ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
         ctx["title"] = f"Review batch for {GRANT_TITLES[kind]}"
         ctx["batch_summary"] = _batch_summary(batch)
         ctx["carry"] = []
+        return _render_confirm(request, ctx)
+
+    # Single-grant review: validate, then show summary + carry on the confirm page.
+    if post and action == "review" and not batch:
+        valid = form.is_valid()
+        if formset is not None:
+            valid = formset.is_valid() and valid
+        if not valid:
+            ctx = _build_context(request, msg, kind, form, formset, back, pk, [])
+            return render_modal_or_page(request, *fill, ctx)
+        lines = formset_lines(formset, 1) if formset is not None else []
+        if kind == "items" and not lines:
+            form.add_error(None, "Add at least one item.")
+            ctx = _build_context(request, msg, kind, form, formset, back, pk, [])
+            return render_modal_or_page(request, *fill, ctx)
+        ctx = _build_context(request, msg, kind, form, formset, back, pk, [])
+        ctx["summary"] = _summary(kind, form.cleaned_data, lines)
+        ctx["carry"] = [
+            (name, value)
+            for name, values in request.POST.lists()
+            if name not in _NOT_CARRIED
+            for value in values
+        ]
         return _render_confirm(request, ctx)
 
     # Handle add to batch
@@ -492,11 +513,16 @@ def message_give(request, club_slug, pk, kind):
                 request, "accounts/inbox/_give_form.html", "accounts/inbox/give.html", ctx
             )
 
-    # Handle back from review - preserve batch
+    # Handle back from review - return to the FORM and keep the batch.
     if post and action == "edit":
-        batch = _batch_get(request, pk)
+        if batch:
+            # The batch review page carries no form data, so a bound form would
+            # show "required" errors. Render fresh, unbound forms instead.
+            form = GRANT_FORMS[kind](None, **kwargs)
+            if formset is not None:
+                formset = item_line_formset(items, None, extra=3, club=request.club)
         ctx = _build_context(request, msg, kind, form, formset, back, pk, batch)
-        return _render_confirm(request, ctx)
+        return render_modal_or_page(request, *fill, ctx)
 
     # Handle confirm batch (only if batch has items)
     if post and data.get("confirmed"):
@@ -518,7 +544,6 @@ def message_give(request, club_slug, pk, kind):
             # If batch is empty, fall through to single-grant logic below
 
     # Normal form flow (not batch)
-    fill = ("accounts/inbox/_give_form.html", "accounts/inbox/give.html")
     # Use all() for cleaner check
     no_action = all(k not in request.POST for k in ("add", "edit", "review"))
     if post and no_action:

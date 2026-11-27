@@ -5,7 +5,8 @@ every control: save the time zone, save the weight settings, save/invalid/clear
 the contact email, and send a test email. The page is run in three mail
 configurations:
 
-  A. RESEND_API_KEY unset, DEBUG=1        -> email on, but no key configured
+  A. RESEND_API_KEY unset, DEBUG=1        -> email on, but a test email cannot be sent
+                                             (notice shown, Send disabled)
   B. dummy RESEND_API_KEY + closed proxy  -> email on, send cannot reach Resend
   C. no key, DEBUG=0                      -> email off
 
@@ -73,10 +74,18 @@ class RunSpec:
     env: dict[str, str]
     email_on: bool
     ignore_static_404: bool
+    can_send: bool = True  # False: email on (DEBUG) but no RESEND_API_KEY
 
 
 RUNS: tuple[RunSpec, ...] = (
-    RunSpec("a", "A: RESEND_API_KEY unset, DEBUG=1 (email on, no key)", {}, True, False),
+    RunSpec(
+        "a",
+        "A: RESEND_API_KEY unset, DEBUG=1 (email on, no key)",
+        {},
+        True,
+        False,
+        can_send=False,
+    ),
     RunSpec(
         "b",
         "B: dummy key + closed proxy (email on, send fails)",
@@ -153,7 +162,7 @@ def check_width(server, width, spec, browser):
     def ctrl(control, expected, actual, ok=True, url=settings):
         rec.check(FLOW, url, control, expected, actual=actual, ok=ok)
 
-    confirmed = {"a": False, "b": False}
+    confirmed = {"b": False}
 
     def section(name, fn):
         """Run one control group; a raised error becomes one failed control."""
@@ -197,20 +206,29 @@ def check_width(server, width, spec, browser):
             ok=banner_count == expected_banners,
         )
 
+        blocked = not spec.email_on or not spec.can_send
         recipient_card = card_with(page, "#id_recipient")
         recipient = recipient_card.locator("#id_recipient")
         send_btn = recipient_card.locator("button[type=submit]")
         ctrl(
             "recipient select disabled state",
-            "disabled iff email is off",
+            "disabled iff email is off or cannot be sent",
             f"disabled={recipient.is_disabled()}",
-            ok=recipient.is_disabled() == (not spec.email_on),
+            ok=recipient.is_disabled() == blocked,
         )
         ctrl(
             "Send button disabled state",
-            "disabled iff email is off",
+            "disabled iff email is off or cannot be sent",
             f"disabled={send_btn.is_disabled()}",
-            ok=send_btn.is_disabled() == (not spec.email_on),
+            ok=send_btn.is_disabled() == blocked,
+        )
+        notice = page.locator('.wm-alert:has-text("Test email unavailable")')
+        expect_notice = spec.email_on and not spec.can_send
+        ctrl(
+            "Test email unavailable notice",
+            "shown iff email is on but cannot be sent",
+            f"{notice.count()} notice(s)",
+            ok=(notice.count() == 1) == expect_notice,
         )
 
         options = recipient.locator("option")
@@ -391,9 +409,9 @@ def check_width(server, width, spec, browser):
         recipient = t_card.locator("#id_recipient")
         btn = t_card.locator("button[type=submit]")
 
-        if not spec.email_on:
+        if not spec.email_on or not spec.can_send:
             ctrl(
-                "send test email blocked when email off",
+                "send test email blocked when email off or cannot be sent",
                 "button disabled",
                 f"disabled={btn.is_disabled()}",
                 ok=btn.is_disabled(),
@@ -431,32 +449,19 @@ def check_width(server, width, spec, browser):
         failed = t_card.locator(".alert-danger:has-text('Failed')")
         failed_text = failed.first.text_content() if failed.count() else ""
         sent_count = sent.count()
-        if spec.letter == "a":
-            ok = failed.count() >= 1 and sent_count == 0 and "no_key" in failed_text.lower()
-            confirmed["a"] = confirmed["a"] or ok
-            ctrl(
-                "send result run A (no key configured)",
-                "'Failed' + no_key, no 'Sent'",
-                failed_text,
-                ok=ok,
-            )
-        else:
-            net = any(word in failed_text.lower() for word in ("network", "proxy", "connect"))
-            ok = failed.count() >= 1 and sent_count == 0 and net
-            ctrl(
-                "send result run B (dummy key, closed proxy)",
-                "'Failed' + network reason, no 'Sent'",
-                failed_text,
-                ok=ok,
-            )
+        net = any(word in failed_text.lower() for word in ("network", "proxy", "connect"))
+        ok = failed.count() >= 1 and sent_count == 0 and net
+        ctrl(
+            "send result run B (dummy key, closed proxy)",
+            "'Failed' + network reason, no 'Sent'",
+            failed_text,
+            ok=ok,
+        )
 
         rows = t_card.locator("tbody tr")
         if rows.count() >= 1:
             row_text = " | ".join(rows.first.locator("td").all_text_contents())
-            if spec.letter == "a":
-                match = "no_key" in row_text and "gm@example.com" in row_text
-            else:
-                match = any(word in row_text.lower() for word in ("network", "proxy", "connect"))
+            match = any(word in row_text.lower() for word in ("network", "proxy", "connect"))
             ctrl(
                 "recent tests row matches the send result",
                 "status and error match the on-screen result",
@@ -573,7 +578,7 @@ def main(argv=None) -> int:
 
     problems_total = 0
     controls_total = 0
-    confirmed = {"a": False, "b": False}
+    confirmed = {"b": False}
 
     print(f"flow check {FLOW}: club admin settings and email ({SETTINGS_PATH})")
     print(f"runs: {', '.join(s.name for s in specs)}")
@@ -594,7 +599,6 @@ def main(argv=None) -> int:
                             res = check_width(server, width, spec, browser)
                             problems_total += len(res["problems"])
                             controls_total += res["controls"]
-                            confirmed["a"] = confirmed["a"] or res["confirmed"]["a"]
                             confirmed["b"] = confirmed["b"] or res["confirmed"]["b"]
                             print(
                                 f"{label}: {res['controls']} control(s) tried, "
@@ -623,11 +627,6 @@ def main(argv=None) -> int:
     print(f"browser: {browser_name}")
     print(f"total: {controls_total} control(s) tried, {problems_total} problem(s)")
     suspects = []
-    if confirmed["a"]:
-        suspects.append(
-            "(a) key unset + DEBUG: send fails with 'no_key' while the page says email is on "
-            "(banner, recipient list and result disagree)"
-        )
     if confirmed["b"]:
         suspects.append("(b) contact email saved alert shows raw '{{ settings.contact_email }}'")
     if suspects:

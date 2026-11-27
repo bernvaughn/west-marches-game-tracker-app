@@ -25,6 +25,11 @@
       return;
     }
 
+    // Remove noscript fallbacks so they don't become real fields after htmx swap.
+    // Without this, the <noscript><select> inside each picker row submits as a
+    // real field and Django reads the last (empty) value, losing the picked item.
+    root.querySelectorAll("noscript").forEach((n) => n.remove());
+
     let selectedIndex = -1;
     let resultButtons = [];
     let debounceTimer = null;

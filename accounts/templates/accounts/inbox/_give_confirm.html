@@ -6,6 +6,7 @@
 {% endblock %}
 {% block title %}{{ title }}{% endblock %}
 {% block body %}
+{{ form.non_field_errors }}
 {% if batch %}
 <h5>Batch Grant Summary</h5>
 {% if batch_summary %}

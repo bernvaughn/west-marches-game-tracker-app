@@ -6,6 +6,7 @@ from django.urls import reverse
 from accounts.models import Membership, Message
 from items.models import Item
 from ledger.models import LedgerEntry
+from ledger.services import coin_balance, item_quantities
 from map.models import CreditGrant, FoundMark, HexMap, Location, Tile, TileVisit
 
 pytestmark = pytest.mark.story("U38")
@@ -366,3 +367,128 @@ def test_batch_cleared_on_fresh_get(club, club_admin, character, msg, item, logi
     r = c.get(give_url(club, msg, "coins"))
     assert r.status_code == 200
     assert r.context["batch"] == []
+
+
+def test_single_review_shows_character_and_coins(club, club_admin, character, msg, login):
+    """A single-grant Review names the character and the coin amount (bug: was empty)."""
+    c = login(club_admin)
+    r = c.post(
+        give_url(club, msg, "coins"),
+        payload(character, coins_gp=5, action="review"),
+    )
+    body = r.content.decode()
+    assert r.status_code == 200
+    assert character.name in body
+    assert "5 gp" in body
+    assert 'name="confirmed"' in body
+    assert nothing_written()
+
+
+def test_single_grant_review_back_review_give(club, club_admin, character, msg, login):
+    """A single grant can go Review, Back, Review, Give and lands in the Granted list."""
+    c = login(club_admin)
+    r = c.post(give_url(club, msg, "coins"), payload(character, coins_gp=5, action="review"))
+    assert r.status_code == 200
+    assert character.name in r.content.decode() and "5 gp" in r.content.decode()
+
+    # Back returns to the form and keeps the values.
+    r = c.post(give_url(club, msg, "coins"), payload(character, coins_gp=5, edit="1"))
+    assert r.status_code == 200
+    assert 'name="confirmed"' not in r.content.decode()
+
+    # Review again, then Give.
+    r = c.post(give_url(club, msg, "coins"), payload(character, coins_gp=5, action="review"))
+    assert r.status_code == 200
+    assert character.name in r.content.decode() and "5 gp" in r.content.decode()
+    r = c.post(give_url(club, msg, "coins"), payload(character, coins_gp=5, confirmed="1"))
+    assert r.status_code == 302
+    assert coin_balance(character) == 500
+    msg.refresh_from_db()
+    assert msg.status == "handled"
+
+
+def test_batch_back_returns_form_with_batch_count(club, club_admin, character, msg, login):
+    """Batch Back returns to the form showing 'Batch: 2 grants' (bug: looped to review)."""
+    c = login(club_admin)
+    c.post(give_url(club, msg, "coins"), payload(character, coins_gp=10, action="add"))
+    c.post(give_url(club, msg, "coins"), payload(character, coins_gp=5, action="add"))
+
+    # A real Back from the batch review page posts no form fields (HTMX).
+    r = c.post(give_url(club, msg, "coins"), {"action": "edit"}, **HX)
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "Batch: 2 grants" in body
+    assert "This field is required" not in body
+    assert 'name="confirmed"' not in body
+
+
+def test_map_only_batch_confirms_and_grants(club, club_admin, character, msg, location, login):
+    """A map-only batch confirms and writes a CreditGrant (bug: 'needs an item or coins')."""
+    c = login(club_admin)
+    c.post(
+        give_url(club, msg, "map"),
+        payload(character, map_kind="discovered", location=location.pk, action="add"),
+    )
+    r = c.post(
+        give_url(club, msg, "map"),
+        payload(character, map_kind="discovered", location=location.pk, confirmed="1"),
+        **HX,
+    )
+    assert r.status_code == 204
+    assert "appModalClose" in r["HX-Trigger"]
+    g = CreditGrant.objects.get()
+    assert g.character == character
+    assert g.source_message == msg
+    assert not LedgerEntry.objects.exists()
+
+
+def test_items_only_batch_with_mark_handled(club, club_admin, character, msg, item, login):
+    """An items-only batch with mark_handled writes items, no spurious coins line."""
+    c = login(club_admin)
+    c.post(
+        give_url(club, msg, "items"),
+        payload(
+            character,
+            **{"items-0-item": item.pk, "items-0-quantity": 2},
+            action="add",
+        ),
+    )
+    r = c.post(
+        give_url(club, msg, "items"),
+        payload(
+            character,
+            **{"items-0-item": item.pk, "items-0-quantity": 2},
+            confirmed="1",
+        ),
+        **HX,
+    )
+    assert r.status_code == 204
+    assert "appModalClose" in r["HX-Trigger"]
+    assert item_quantities(character) == {item.pk: 2}
+
+
+def test_batch_ledger_error_shows_on_confirm(
+    club, club_admin, character, msg, location, login, monkeypatch
+):
+    """A failed batch grant shows its error on the confirm page instead of failing silently."""
+    from accounts.views import inbox
+    from ledger.services import LedgerError
+
+    def boom(*a, **k):
+        raise LedgerError("cannot grant: map credit already recorded")
+
+    monkeypatch.setattr(inbox.map_services, "add_to_credit", boom)
+    c = login(club_admin)
+    c.post(
+        give_url(club, msg, "map"),
+        payload(character, map_kind="discovered", location=location.pk, action="add"),
+    )
+    r = c.post(
+        give_url(club, msg, "map"),
+        payload(character, map_kind="discovered", location=location.pk, confirmed="1"),
+        **HX,
+    )
+    body = r.content.decode()
+    assert r.status_code == 200
+    assert "cannot grant" in body
+    assert not CreditGrant.objects.exists()
