@@ -29,6 +29,25 @@ REVEAL_ITEM = "[data-wm-reveal-item]"
 REPLAY_BUTTON = "[data-wm-fanfare-replay]"
 SOUND_TOGGLE = "[data-wm-fanfare-sound]"
 
+# Strict visibility check: every reveal item really occupies space, the fanfare
+# is no longer armed, and the reveal row is not hidden. Replaces the old
+# computed-style check, which passed even while the reveal parent was
+# `display: none` (getComputedStyle reports opacity/transform on hidden nodes).
+REVEAL_VISIBLE = (
+    "(function () {"
+    "  var fanfare = document.querySelector('[data-fanfare]');"
+    "  var reveal = document.querySelector('[data-wm-reveal]');"
+    "  var items = Array.from(document.querySelectorAll('[data-wm-reveal-item]'));"
+    "  if (!fanfare || !reveal || !items.length) return false;"
+    "  if (fanfare.classList.contains('wm-fanfare--armed')) return false;"
+    "  if (getComputedStyle(reveal).display === 'none') return false;"
+    "  return items.every(function (el) {"
+    "    var r = el.getBoundingClientRect();"
+    "    return r.width > 0 && r.height > 0;"
+    "  });"
+    "})()"
+)
+
 
 def _url(name, *args):
     return reverse(f"quests:{name}", args=["club-a", *args])
@@ -314,25 +333,14 @@ def test_turn_in_celebration_replay_and_sound_off(transactional_db, live_server)
             assert sound.count() == 1
             assert sound.get_attribute("aria-pressed") == "false"
 
-            # Wait for the initial animation to finish: both reveal items settled.
-            _wait_for(
-                page,
-                f'document.querySelectorAll("{REVEAL_ITEM}").length === 2 '
-                f'&& Array.from(document.querySelectorAll("{REVEAL_ITEM}"))'
-                f'.every(el => getComputedStyle(el).opacity === "1" '
-                f'&& getComputedStyle(el).transform === "none")',
-            )
+            # Wait for the initial animation to finish: every reveal item
+            # really visible (not just opacity/transform on a hidden node).
+            _wait_for(page, REVEAL_VISIBLE)
 
             # Replay re-animates without posting to the server.
             post_requests.clear()
             replay.click()
-            _wait_for(
-                page,
-                f'document.querySelectorAll("{REVEAL_ITEM}").length === 2 '
-                f'&& Array.from(document.querySelectorAll("{REVEAL_ITEM}"))'
-                f'.every(el => getComputedStyle(el).opacity === "1" '
-                f'&& getComputedStyle(el).transform === "none")',
-            )
+            _wait_for(page, REVEAL_VISIBLE)
             assert len(post_requests) == 0
 
             _assert_no_console_csp(console_messages)
