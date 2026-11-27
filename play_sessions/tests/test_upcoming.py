@@ -12,6 +12,8 @@ import pytest
 from django.db import connection
 from django.template.loader import render_to_string
 from django.test.utils import CaptureQueriesContext
+from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import Club, Membership, User
 from play_sessions.models import PlayerRSVP, PlaySession
@@ -445,3 +447,96 @@ def test_partial_renders_rows_and_empty_state():
         },
     )
     assert "Add a session" not in html
+
+
+def test_can_rsvp_true_for_false_for_cancelled_and_started():
+    """can_rsvp is true for a future session, false when cancelled or started."""
+    club = _club(timezone_name="UTC")
+    now = datetime(2024, 7, 15, 10, tzinfo=UTC)
+    membership = _membership(club, "player@test.com")
+    gm = _membership(club, "gm@test.com", is_game_master=True)
+
+    future = _session(club, starts_at=now + timedelta(days=1), title="Future", gm=gm)
+    cancelled = _session(
+        club, starts_at=now + timedelta(days=2), title="Cancelled", cancelled=True, gm=gm
+    )
+    started = _session(club, starts_at=now - timedelta(hours=1), title="Started", gm=gm)
+
+    result = upcoming_sessions(club, now, membership, 10)
+    rows = {s["id"]: s for s in result["sessions"]}
+    assert rows[future.pk]["can_rsvp"] is True
+    assert rows[cancelled.pk]["can_rsvp"] is False
+    assert rows[started.pk]["can_rsvp"] is False
+
+
+def test_partial_shows_rsvp_form_only_when_show_rsvp():
+    """The partial renders the RSVP form only when show_rsvp is set."""
+    club = _club(timezone_name="UTC")
+    gm = _membership(club, "gm@test.com", is_game_master=True)
+    membership = _membership(club, "player@test.com")
+    _session(club, starts_at=datetime(2024, 7, 15, 16, tzinfo=UTC), title="Next session", gm=gm)
+
+    result = upcoming_sessions(club, datetime(2024, 7, 15, 10, tzinfo=UTC), membership, 10)
+
+    common = {
+        "coming_up": result["sessions"],
+        "first_month": result["first_month"],
+        "club": club,
+        "membership": membership,
+        "can_manage_sessions": True,
+    }
+
+    html = render_to_string(
+        "play_sessions/_coming_up.html",
+        {**common, "show_rsvp": True, "rsvp_next": "/c/club/dashboard/"},
+    )
+    assert html.count('name="answer"') == 3
+    assert 'value="yes"' in html
+    assert 'value="maybe"' in html
+    assert 'value="no"' in html
+    assert "Not answered" in html
+
+    # Without show_rsvp (club home and sessions page contexts) no form is rendered.
+    html = render_to_string("play_sessions/_coming_up.html", common)
+    assert 'name="answer"' not in html
+    assert "Not answered" in html
+
+
+def test_club_home_and_calendar_have_no_rsvp_form(client, club, game_master):
+    """Club home and the sessions page keep badge and link only, no RSVP form."""
+    club.timezone = "UTC"
+    club.save()
+    gm_membership = Membership.objects.get(user=game_master, club=club)
+    session = _session(
+        club, starts_at=timezone.now() + timedelta(days=2), title="Soon", gm=gm_membership
+    )
+    rsvp_action = reverse(
+        "play_sessions:rsvp_set", kwargs={"club_slug": club.slug, "pk": session.pk}
+    )
+
+    client.force_login(game_master)
+    for url in (
+        reverse("club_home", kwargs={"club_slug": club.slug}),
+        reverse("play_sessions:calendar", kwargs={"club_slug": club.slug}),
+    ):
+        response = client.get(url)
+        assert response.status_code == 200, url
+        assert rsvp_action not in response.content.decode(), url
+
+
+def test_dashboard_card_heading_shows_once(client, club, player, character):
+    """The dashboard card shows the 'Upcoming sessions' heading exactly once."""
+    club.timezone = "UTC"
+    club.save()
+    gm = Membership.objects.filter(club=club, is_game_master=True).first()
+    if gm is None:
+        gm_user = User.objects.create_user(email="gm@test.com", password="pw", display_name="Gm")
+        gm = Membership.objects.create(user=gm_user, club=club, is_game_master=True)
+    _session(club, starts_at=timezone.now() + timedelta(days=2), title="Soon", gm=gm)
+
+    client.force_login(player)
+    response = client.get(reverse("accounts:player_dashboard", kwargs={"club_slug": club.slug}))
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Soon" in content
+    assert content.count("Upcoming sessions") == 1
