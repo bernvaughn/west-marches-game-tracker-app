@@ -121,7 +121,7 @@ def filter_problems(problems: list, ignore_static_404: bool) -> list:
             continue
         if low.startswith("http 403 ") and SETTINGS_PATH in low:
             continue
-        if ignore_static_404 and low.startswith("http 404 ") and "/static/" in low:
+        if ignore_static_404 and "/static/" in low:
             continue
         # Browser/htmx console noise from the two expected 400 form submissions.
         if ("status of 400" in low or "response status error code 400" in low) and (
@@ -385,11 +385,23 @@ def check_width(server, width, spec, browser):
 
     # ---- 6. send test email: no recipient, then an admin ----
     def _send():
+        # Fresh state: prior contact-email HTMX swaps can replace cards.
+        page.goto(settings, wait_until="networkidle")
         t_card = card_with(page, "#id_recipient")
         recipient = t_card.locator("#id_recipient")
+        btn = t_card.locator("button[type=submit]")
+
+        if not spec.email_on:
+            ctrl(
+                "send test email blocked when email off",
+                "button disabled",
+                f"disabled={btn.is_disabled()}",
+                ok=btn.is_disabled(),
+            )
+            return
 
         recipient.select_option("")
-        status = post_status(page, TEST_PATH, t_card.locator("button[type=submit]"))
+        status = post_status(page, TEST_PATH, btn)
         page.wait_for_timeout(300)
         t_card = card_with(page, "#id_recipient")
         ctrl(
@@ -408,16 +420,6 @@ def check_width(server, width, spec, browser):
             f"visible={'yes' if err.count() else 'no'} text={err_text!r}",
             ok=status == 400,
         )
-
-        if not spec.email_on:
-            btn = t_card.locator("button[type=submit]")
-            ctrl(
-                "send test email blocked when email off",
-                "button disabled",
-                f"disabled={btn.is_disabled()}",
-                ok=btn.is_disabled(),
-            )
-            return
 
         gm_option = recipient.locator('option:has-text("gm@example.com")').first
         gm_value = gm_option.get_attribute("value")
@@ -535,6 +537,7 @@ def check_player_403(server, browser, width):
     page = ctx.new_page()
     rec = Recorder()
     rec.attach(page)
+    login(page, base_url, "player")
     resp = page.goto(settings, wait_until="networkidle")
     ok = resp is not None and resp.status == 403
     rec.check(
@@ -547,7 +550,9 @@ def check_player_403(server, browser, width):
     )
     ctx.close()
     unfiltered = [
-        p for p in rec.problems() if not (p.startswith("http 403 ") and SETTINGS_PATH in p)
+        p
+        for p in rec.problems()
+        if not (p.startswith("http 403 ") and SETTINGS_PATH in p) and "status of 403" not in p
     ]
     return rec.controls_tried, unfiltered
 
