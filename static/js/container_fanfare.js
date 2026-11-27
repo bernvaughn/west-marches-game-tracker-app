@@ -21,6 +21,8 @@
   var SOUND_KEY = "containerFanfareSound";
   var REDUCED_MQ = "(prefers-reduced-motion: reduce)";
   var STAGGER_MS = 250;
+  var RUN_ATTR = "data-wm-fanfare-run";
+  var IN_FLIGHT = new Map(); // root => {timer, items, handler} for the in-flight run
   var AUDIO_CTX = null;
   var mq = window.matchMedia && window.matchMedia(REDUCED_MQ);
 
@@ -114,6 +116,16 @@
     if (reveal) reveal.style.display = "";
   }
 
+  function cancelFanfareRun(root) {
+    var run = IN_FLIGHT.get(root);
+    if (!run) return;
+    clearTimeout(run.timer);
+    run.items.forEach(function (item) {
+      item.removeEventListener("animationend", run.handler);
+    });
+    IN_FLIGHT.delete(root);
+  }
+
   function animateFanfare(root) {
     var reveal = root.querySelector("[" + REVEAL_ATTR + "]");
     var items = Array.from(reveal ? reveal.querySelectorAll("[" + REVEAL_ITEM_ATTR + "]") : []);
@@ -131,8 +143,19 @@
       return;
     }
 
-    /* Prepare the stage: hide final row, show container icon large in middle. */
-    if (reveal) reveal.style.display = "none";
+    /* Cancel any in-flight run on this root so Replay during a run restarts
+       cleanly: its listeners and timer are dropped. */
+    cancelFanfareRun(root);
+
+    /* Guard each run with a counter on root so it settles only once per run. */
+    var run = (parseInt(root.getAttribute(RUN_ATTR) || "0", 10) || 0) + 1;
+    root.setAttribute(RUN_ATTR, String(run));
+
+    /* Prepare the stage: show container icon large in middle.
+       Do NOT hide the reveal row: items inside a `display: none` parent never
+       animate, so animationend never fires and showFinalRow() is never called.
+       Items are position: absolute while armed, so the reveal box collapses
+       by itself while they pop out. */
     if (containerIconEl) {
       containerIconEl.style.display = "block";
       containerIconEl.style.fontSize = "clamp(4rem, 15vw, 8rem)";
@@ -153,25 +176,41 @@
     });
     root.classList.add(ARMED_CLASS);
 
-    /* Animate items one by one with stagger. */
+    /* Animate items one by one with stagger. Only the pop animation ending
+       on the item itself counts: the settle animation also fires animationend,
+       and child elements bubble it up. */
     var pending = items.length;
     var settled = false;
-    var onItemEnd = function () {
+    var timer = null;
+
+    function finish() {
+      if (settled) return;
+      if (root.getAttribute(RUN_ATTR) != String(run)) return;
+      settled = true;
+      cancelFanfareRun(root);
+      showFinalRow(root);
+      liveText(root, messageFor(root));
+      playSettle();
+    }
+
+    function onItemEnd(event) {
+      if (settled) return;
+      if (root.getAttribute(RUN_ATTR) != String(run)) return;
+      if (event.target !== event.currentTarget) return;
+      if (event.animationName !== "wm-fanfare-item-pop") return;
       pending -= 1;
-      if (pending <= 0 && !settled) {
-        settled = true;
-        items.forEach(function (item) {
-          item.removeEventListener("animationend", onItemEnd);
-        });
-        // Settle items into the row flow: clear absolute positioning and transforms
-        showFinalRow(root);
-        liveText(root, messageFor(root));
-        playSettle();
-      }
-    };
+      if (pending <= 0) finish();
+    }
+
     items.forEach(function (item) {
       item.addEventListener("animationend", onItemEnd, { once: true });
     });
+
+    /* Timer fallback: settle even if an animationend is lost (tab in
+       background, Firefox). Fires after the last staggered pop would end. */
+    timer = setTimeout(finish, (items.length - 1) * STAGGER_MS + 500 + 150);
+
+    IN_FLIGHT.set(root, { timer: timer, items: items, handler: onItemEnd });
 
     /* Trigger pop sounds with stagger. */
     items.forEach(function (item, index) {

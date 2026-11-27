@@ -10,6 +10,7 @@ from accounts.htmx import hx_response, is_htmx
 from accounts.permissions import club_member_required, is_club_admin, is_game_master
 from accounts.scoping import club_get_object_or_404
 from items.services import StackedPricingService
+from ledger.coins import format_coins
 from ledger.services import InsufficientItems, available_items
 from player_characters import life
 from player_characters.selection import selected_character
@@ -205,7 +206,7 @@ def _reward_rows(quest):
     rows = []
     for rw in quest.rewards.select_related("item"):
         if rw.coins > 0:
-            rows.append({"symbol": "💰", "label": f"{rw.coins} gp"})
+            rows.append({"symbol": "💰", "label": format_coins(rw.coins)})
         if rw.item_id and rw.quantity > 0:
             if rw.item.is_stacked:
                 label = StackedPricingService.unit_label(rw.item, rw.quantity)

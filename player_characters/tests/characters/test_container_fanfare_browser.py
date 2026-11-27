@@ -26,6 +26,25 @@ REPLAY_BUTTON = "[data-wm-fanfare-replay]"
 SOUND_TOGGLE = "[data-wm-fanfare-sound]"
 LIVE_REGION = "[data-wm-live]"
 
+# Strict visibility check: every reveal item really occupies space, the fanfare
+# is no longer armed, and the reveal row is not hidden. Replaces the old
+# computed-style check, which passed even while the reveal parent was
+# `display: none` (getComputedStyle reports opacity/transform on hidden nodes).
+REVEAL_VISIBLE = (
+    "(function () {"
+    "  var fanfare = document.querySelector('[data-fanfare]');"
+    "  var reveal = document.querySelector('[data-wm-reveal]');"
+    "  var items = Array.from(document.querySelectorAll('[data-wm-reveal-item]'));"
+    "  if (!fanfare || !reveal || !items.length) return false;"
+    "  if (fanfare.classList.contains('wm-fanfare--armed')) return false;"
+    "  if (getComputedStyle(reveal).display === 'none') return false;"
+    "  return items.every(function (el) {"
+    "    var r = el.getBoundingClientRect();"
+    "    return r.width > 0 && r.height > 0;"
+    "  });"
+    "})()"
+)
+
 
 def _seed_demo():
     call_command("seed_demo", verbosity=0)
@@ -96,15 +115,8 @@ def test_fanfare_animation_finishes_with_all_items(viewport, transactional_db, l
             fanfare = page.locator(FANFARE_CONTAINER)
             fanfare.wait_for(timeout=5000)
 
-            # Wait for animation to complete: items should be visible in the reveal row
-            # The reveal items are initially hidden during animation, then shown
-            _wait_for(
-                page,
-                f'document.querySelectorAll("{REVEAL_ITEMS}").length === 2 '
-                f'&& Array.from(document.querySelectorAll("{REVEAL_ITEMS}"))'
-                f'.every(el => getComputedStyle(el).opacity === "1" '
-                f'&& getComputedStyle(el).transform === "none")',
-            )
+            # Wait for animation to complete: every reveal item really visible.
+            _wait_for(page, REVEAL_VISIBLE)
 
             # Verify both items are in the row with correct content
             items = page.locator(REVEAL_ITEMS)

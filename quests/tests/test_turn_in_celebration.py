@@ -29,6 +29,25 @@ REVEAL_ITEM = "[data-wm-reveal-item]"
 REPLAY_BUTTON = "[data-wm-fanfare-replay]"
 SOUND_TOGGLE = "[data-wm-fanfare-sound]"
 
+# Strict visibility check: every reveal item really occupies space, the fanfare
+# is no longer armed, and the reveal row is not hidden. Replaces the old
+# computed-style check, which passed even while the reveal parent was
+# `display: none` (getComputedStyle reports opacity/transform on hidden nodes).
+REVEAL_VISIBLE = (
+    "(function () {"
+    "  var fanfare = document.querySelector('[data-fanfare]');"
+    "  var reveal = document.querySelector('[data-wm-reveal]');"
+    "  var items = Array.from(document.querySelectorAll('[data-wm-reveal-item]'));"
+    "  if (!fanfare || !reveal || !items.length) return false;"
+    "  if (fanfare.classList.contains('wm-fanfare--armed')) return false;"
+    "  if (getComputedStyle(reveal).display === 'none') return false;"
+    "  return items.every(function (el) {"
+    "    var r = el.getBoundingClientRect();"
+    "    return r.width > 0 && r.height > 0;"
+    "  });"
+    "})()"
+)
+
 
 def _url(name, *args):
     return reverse(f"quests:{name}", args=["club-a", *args])
@@ -97,7 +116,7 @@ def test_success_shows_celebration_panel(login, player, quest, character, item, 
         body,
         quest,
         character,
-        [{"symbol": "💰", "label": "1000 gp"}, {"symbol": "", "label": "1 Healing potion"}],
+        [{"symbol": "💰", "label": "10 gp"}, {"symbol": "", "label": "1 Healing potion"}],
     )
     assert "💰" in body
     # The turn-in toast stays, now shown as a toast on the board.
@@ -117,7 +136,7 @@ def test_success_htmx_shows_celebration_panel(login, player, quest, character, i
     assert set(trigger) == {"toast", "questCompleted"}
     assert trigger["toast"]["type"] == "success"
     assert trigger["toast"]["message"] == (
-        f"✦ {character.name} completed {quest.name}! Reward: 1000 gp, 1 Healing potion"
+        f"✦ {character.name} completed {quest.name}! Reward: 10 gp, 1 Healing potion"
     )
     assert trigger["questCompleted"] is True
 
@@ -126,7 +145,7 @@ def test_success_htmx_shows_celebration_panel(login, player, quest, character, i
         body,
         quest,
         character,
-        [{"symbol": "💰", "label": "1000 gp"}, {"symbol": "", "label": "1 Healing potion"}],
+        [{"symbol": "💰", "label": "10 gp"}, {"symbol": "", "label": "1 Healing potion"}],
     )
     assert "wm-message-toast" in body
     assert trigger["toast"]["message"] in body
@@ -142,8 +161,8 @@ def test_coin_only_reward_still_celebrates(login, player, quest, character, item
     _turn_in(client, quest, character)
 
     body = client.get(_url("index")).content.decode()
-    _assert_panel(body, quest, character, [{"symbol": "💰", "label": "500 gp"}])
-    assert "500 gp" in body
+    _assert_panel(body, quest, character, [{"symbol": "💰", "label": "5 gp"}])
+    assert "5 gp" in body
 
 
 @pytest.mark.story("Q6")
@@ -205,7 +224,7 @@ def test_club_mismatch_ignored(login, player, quest, character):
         "club": "other-club",
         "quest": "Other quest",
         "character": "Someone",
-        "rows": [{"symbol": "💰", "label": "500 gp"}],
+        "rows": [{"symbol": "💰", "label": "5 gp"}],
     }
     client.session.save()
 
@@ -308,31 +327,29 @@ def test_turn_in_celebration_replay_and_sound_off(transactional_db, live_server)
             assert quest.name in panel.locator("h2").text_content()
             assert character.name in panel.text_content()
 
+            # Celebration row shows formatted coin amount (copper converted to gp).
+            assert "2 gp" in panel.text_content()
+            assert "1 Healing potion" in panel.text_content()
+
+            # Toast shows the same reward amount as the board.
+            toast_msg = page.locator(".wm-toast-message")
+            toast_msg.wait_for(state="visible", timeout=5000)
+            assert "Reward: 2 gp, 1 Healing potion" in toast_msg.text_content()
+
             replay = page.locator(REPLAY_BUTTON)
             sound = page.locator(SOUND_TOGGLE)
             assert replay.count() == 1
             assert sound.count() == 1
             assert sound.get_attribute("aria-pressed") == "false"
 
-            # Wait for the initial animation to finish: both reveal items settled.
-            _wait_for(
-                page,
-                f'document.querySelectorAll("{REVEAL_ITEM}").length === 2 '
-                f'&& Array.from(document.querySelectorAll("{REVEAL_ITEM}"))'
-                f'.every(el => getComputedStyle(el).opacity === "1" '
-                f'&& getComputedStyle(el).transform === "none")',
-            )
+            # Wait for the initial animation to finish: every reveal item
+            # really visible (not just opacity/transform on a hidden node).
+            _wait_for(page, REVEAL_VISIBLE)
 
             # Replay re-animates without posting to the server.
             post_requests.clear()
             replay.click()
-            _wait_for(
-                page,
-                f'document.querySelectorAll("{REVEAL_ITEM}").length === 2 '
-                f'&& Array.from(document.querySelectorAll("{REVEAL_ITEM}"))'
-                f'.every(el => getComputedStyle(el).opacity === "1" '
-                f'&& getComputedStyle(el).transform === "none")',
-            )
+            _wait_for(page, REVEAL_VISIBLE)
             assert len(post_requests) == 0
 
             _assert_no_console_csp(console_messages)

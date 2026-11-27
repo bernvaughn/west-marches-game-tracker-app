@@ -49,7 +49,8 @@ def test_contact_email_post_shows_saved_confirmation(club_admin, login, club):
     assert r.status_code == 200
     body = r.content.decode()
     assert "Contact email saved" in body
-    assert "contact@club.com" in body
+    assert "{{" not in body, "template variable was not expanded in the alert text"
+    assert "The contact email is now contact@club.com." in body
 
     settings = ClubMailSettings.objects.get(club=club)
     assert settings.contact_email == "contact@club.com"
