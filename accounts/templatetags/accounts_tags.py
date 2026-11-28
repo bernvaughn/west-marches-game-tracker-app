@@ -85,10 +85,35 @@ def nav_entries(context):
 
 @register.filter
 def menu_sections(nav):
-    """Non-empty Menu groups as (key, heading, icon, links), in display order (U60)."""
+    """Non-empty Menu groups as (key, heading, icon, links), in display order (U60).
+
+    A URL renders once per menu: the first section that contains it wins, so a
+    link whose URL already appeared in an earlier section is dropped. A section
+    left empty is not rendered.
+    """
     from .. import navigation
 
-    return [(k, h, i, nav[k]) for k, h, i in navigation.MENU_GROUPS if nav.get(k)]
+    seen = set()
+    sections = []
+    for k, h, i in navigation.MENU_GROUPS:
+        links = [link for link in nav.get(k, []) if not (link.url in seen or seen.add(link.url))]
+        if links:
+            sections.append((k, h, i, links))
+    return sections
+
+
+@register.filter
+def nav_audiences(nav):
+    """The set of link audiences present across the rendered menu sections.
+
+    Used by _nav_key.html to derive the GM/Admin rows from the rendered links
+    (and superuser), not from the group names.
+    """
+    audiences = set()
+    for _k, _h, _i, links in menu_sections(nav):
+        for link in links:
+            audiences.add(link.audience)
+    return audiences
 
 
 @register.filter

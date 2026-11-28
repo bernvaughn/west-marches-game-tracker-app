@@ -4,19 +4,9 @@
 {% include "components/page_header.html" with title=club.name subtitle="Pick an area." %}
 {% if session_desk %}{% include "accounts/_session_desk.html" %}{% endif %}
 {% nav_entries as nav %}
-{% for key, heading, icon, links in nav|menu_sections %}{% if key != "account" %}
+{% for key, heading, icon, links in nav|menu_sections %}{% if key != "account" and key != "siteadmin" %}
 {% include "components/section_open.html" with title=heading icon=icon %}
 <div class="wm-card-grid">{% for link in links %}{% include "accounts/_area_card.html" %}{% endfor %}</div>
 {% include "components/section_close.html" %}
 {% endif %}{% endfor %}
-{% if nav.gm %}
-{% include "components/section_open.html" with title="Game master" icon="person-gear" %}
-<div class="wm-card-grid">{% for link in nav.gm %}{% include "accounts/_area_card.html" %}{% endfor %}</div>
-{% include "components/section_close.html" %}
-{% endif %}
-{% if nav.admin %}
-{% include "components/section_open.html" with title="Club admin" icon="gear-fill" %}
-<div class="wm-card-grid">{% for link in nav.admin %}{% include "accounts/_area_card.html" %}{% endfor %}</div>
-{% include "components/section_close.html" %}
-{% endif %}
 {% endblock %}

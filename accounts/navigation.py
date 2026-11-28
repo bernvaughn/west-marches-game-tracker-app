@@ -11,17 +11,43 @@ from django.urls import reverse
 
 from .apps import is_admin, is_gm, is_gm_or_admin
 
-GROUPS = ("primary", "character", "town", "map", "club", "account", "gm", "admin")
+GROUPS = (
+    "primary",
+    "home",
+    "character",
+    "items",
+    "quests",
+    "map",
+    "sessions",
+    "downtime",
+    "club",
+    "mail",
+    "agent",
+    "account",
+    "siteadmin",
+    "town",
+    "gm",
+    "admin",
+)
 
 # Menu groups in display order: (key, heading, icon). Read by the top bar and club home (U60).
+# Legacy keys town/gm/admin are kept until the finish child removes them.
 MENU_GROUPS = (
-    ("character", "Character", "person"),
-    ("town", "Town", "shop"),
+    ("home", "Home", "house-door"),
+    ("character", "Characters", "person"),
+    ("items", "Items and shops", "bag"),
+    ("quests", "Quests", "journal-text"),
     ("map", "Map", "map"),
+    ("sessions", "Sessions", "calendar-event"),
+    ("downtime", "Downtime and money", "hourglass-split"),
     ("club", "Club", "people"),
+    ("mail", "Mail", "envelope"),
+    ("agent", "Agent access", "robot"),
     ("account", "Account", "gear"),
-    ("gm", "Game Master", "person-gear"),
-    ("admin", "Club Admin", "gear-fill"),
+    ("siteadmin", "Site admin", "gear-fill"),
+    ("town", "Town", "shop"),
+    ("gm", "Game master", "person-gear"),
+    ("admin", "Club admin", "gear-fill"),
 )
 
 
@@ -65,6 +91,8 @@ def _derive_audience(group: str, check: object) -> str:
         return "admin"
     if check is is_gm or check is is_gm_or_admin:
         return "gm"
+    if group == "siteadmin":
+        return "admin"
     if group == "admin":
         return "admin"
     if group == "gm":
@@ -142,11 +170,7 @@ def entries_for(request):
             entry.audience,
         )
         result[entry.group].append(link)
-        if (
-            entry.icon
-            and entry.shortcut_order is not None
-            and entry.group not in ("primary", "account", "gm", "admin")
-        ):
+        if entry.icon and entry.shortcut_order is not None and entry.audience == "player":
             key = entry.shortcut_order
             shortcuts.append((key, link._replace(label=entry.shortcut_label or link.label)))
     result["primary"].extend(link for _, link in sorted(shortcuts, key=lambda t: t[0]))

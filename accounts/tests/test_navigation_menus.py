@@ -3,11 +3,13 @@ import re
 from html.parser import HTMLParser
 
 import pytest
+from django.contrib.staticfiles import finders
 from django.test import RequestFactory
 from django.urls import reverse
 
 from accounts import navigation
 from accounts.apps import is_admin, is_gm, is_gm_or_admin, is_member
+from accounts.templatetags.accounts_tags import menu_sections
 
 pytestmark = pytest.mark.django_db
 
@@ -135,6 +137,13 @@ def test_old_nav_links_still_reachable(login, club, player, club_admin, game_mas
         assert reverse("password_change") in links
 
 
+@pytest.fixture
+def registry(monkeypatch):
+    entries = []
+    monkeypatch.setattr(navigation, "_entries", entries)
+    return entries
+
+
 class _Tree(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -251,9 +260,80 @@ def test_registered_entries_keep_their_audience(club, game_master, club_admin):
         request.club = club
         request.membership = Membership.objects.get(user=user, club=club)
         nav = navigation.entries_for(request)
-        for group, links in nav.items():
-            expected = "gm" if group == "gm" else ("admin" if group == "admin" else "player")
-            assert all(link.audience == expected for link in links)
+        for _group, links in nav.items():
+            assert all(link.audience in {"player", "gm", "admin"} for link in links)
+
+    # Audience is driven by the check, not the group name: admin audience only
+    # from an is_admin check or the legacy admin/siteadmin group; player links
+    # never carry an is_gm*/is_admin check.
+    for entry in navigation._entries:
+        if entry.audience == "admin":
+            assert entry.check is navigation.is_admin or entry.group in ("admin", "siteadmin")
+        elif entry.audience == "player":
+            assert entry.check not in (
+                navigation.is_admin,
+                navigation.is_gm,
+                navigation.is_gm_or_admin,
+            )
+
+
+@pytest.mark.story("U29")
+def test_menu_sections_drops_repeat_url_first_section_wins(registry, rf, club, player):
+    url = reverse("club_home", args=[club.slug])
+    navigation.register("gm", "Late", "club_home", None, 9)
+    navigation.register("home", "Early", "club_home", None, 1)
+    request = rf.get("/")
+    request.user = player
+    request.club = club
+    nav = navigation.entries_for(request)
+    urls_by_section = {k: [link.url for link in links] for k, _h, _i, links in menu_sections(nav)}
+    # home comes before gm in MENU_GROUPS: first section wins; empty gm dropped.
+    assert urls_by_section.get("home") == [url]
+    assert "gm" not in urls_by_section
+
+
+@pytest.mark.story("U168")
+def test_no_font_icon_markup_in_side_menu(login, club, player):
+    nav = nav_html(page(login, player, club))
+    assert "bi bi-" not in nav
+
+
+@pytest.mark.story("U168")
+def test_side_menu_svg_icons_exist_in_sprite(login, club, player):
+    sprite = finders.find("vendor/bootstrap-icons-1.11.3/bootstrap-icons.svg")
+    assert sprite is not None, "bootstrap-icons sprite not found"
+    svg = pathlib.Path(sprite).read_text()
+    nav = nav_html(page(login, player, club))
+    for m in re.finditer(r'<svg class="wm-icon"[^>]*><use href="[^"]*#([^"]+)"', nav):
+        assert f'id="{m.group(1)}"' in svg, m.group(1)
+
+
+@pytest.mark.story("U29")
+def test_shortcut_skipped_for_non_player_audience(registry, rf, club, game_master):
+    navigation.register("gm", "B", "club_home", None, 5, icon="shop", shortcut_order=2)
+    request = rf.get("/")
+    request.user = game_master
+    request.club = club
+    result = navigation.entries_for(request)
+    assert result["primary"] == []
+
+
+@pytest.mark.story("U168")
+def test_superuser_sees_site_admin_group(login, club, site_admin):
+    from accounts.models import Membership
+
+    Membership.objects.create(user=site_admin, club=club)
+    nav = nav_html(page(login, site_admin, club))
+    assert "wm-menu-group-siteadmin" in nav
+    assert "Site admin" in nav
+    assert reverse("site_clubs") in nav
+
+
+@pytest.mark.story("U168")
+def test_non_superuser_does_not_see_site_admin_group(login, club, game_master):
+    nav = nav_html(page(login, game_master, club))
+    assert "wm-menu-group-siteadmin" not in nav
+    assert "Site admin" not in nav
 
 
 @pytest.mark.story("U168")
