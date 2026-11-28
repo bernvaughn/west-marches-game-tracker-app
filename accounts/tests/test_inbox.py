@@ -412,12 +412,11 @@ def test_message_template_submitted_body_is_saved(club, player, character, login
 
 
 @pytest.mark.story("U60")
-def test_message_form_has_template_choices():
-    from accounts.forms.inbox import TEMPLATE_CHOICES, MessageForm
+def test_message_form_has_no_template_field():
+    from accounts.forms.inbox import MessageForm
 
     form = MessageForm()
-    assert form.fields["template"].choices == TEMPLATE_CHOICES
-    assert form.fields["template"].required is False
+    assert "template" not in form.fields
     assert "template" not in form.Meta.fields
 
 
