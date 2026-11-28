@@ -156,6 +156,29 @@
   }
 }
 
+/* Phone tap targets for footer links (U96 continuation). */
+@media (max-width: 575.98px) {
+  .wm-site-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--wm-size-touch);
+    padding: 0 var(--wm-space-3);
+    color: inherit;
+    text-decoration: none;
+  }
+  .wm-site-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    column-gap: var(--wm-space-2);
+    white-space: normal;
+  }
+  .wm-site-footer-sep {
+    display: none;
+  }
+}
+
 /* Inbox (U84 S10) */
 @media (max-width: 575.98px) {
   .wm-map-kind .btn-group { display: flex; flex-wrap: wrap; gap: var(--wm-space-1, .25rem); }
