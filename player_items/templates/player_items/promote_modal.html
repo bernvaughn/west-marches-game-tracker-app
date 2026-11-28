@@ -6,6 +6,7 @@
   action="{{ form_action }}"
   hx-post="{{ form_action }}"
   hx-target="#app-modal .modal-content"
+  id="promote-form"
 >
   {% csrf_token %}
   {% if form.non_field_errors %}
@@ -70,5 +71,5 @@
 {% endblock %}
 {% block footer %}
 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-<button class="btn btn-primary" type="submit">Promote</button>
+<button class="btn btn-primary" type="submit" form="promote-form">Promote</button>
 {% endblock %}
