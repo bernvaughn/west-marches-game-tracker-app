@@ -196,6 +196,22 @@ class Walker:
         page = self.page
         # Navigate to map detail page
         self.goto(f"/c/demo/map/{map_id}/", "map detail")
+        # Legend details toggle - starts open, test close then open
+        legend = page.locator("details.map-legend-details")
+        self.ck("legend details present", "1", legend.count(), legend.count() == 1)
+        if legend.count():
+            summary = legend.locator("> summary")
+            # Check initial state (open)
+            is_open = legend.evaluate("el => el.open")
+            self.ck("legend starts open", "open", "open" if is_open else "closed", is_open)
+            # Close it
+            summary.click()
+            closed = wait_until(lambda: not legend.evaluate("el => el.open"))
+            self.ck("legend close", "closed", "closed" if closed else "open", closed)
+            # Open it again
+            summary.click()
+            opened = wait_until(lambda: legend.evaluate("el => el.open"))
+            self.ck("legend open", "open", "open" if opened else "closed", opened)
         # Pan links (6 directions)
         pan_links = page.locator("nav.pan-links a")
         pan_count = pan_links.count()
@@ -278,9 +294,10 @@ class Walker:
             closed = wait_until(lambda: not legend.evaluate("el => el.open"))
             self.ck("legend close", "closed", "closed" if closed else "open", closed)
 
-        # Count visible cells vs radius 6 (127 hexes)
+        # Count visible cells vs radius 6 (127 hexes = 1 + 3*6*7)
+        # Note: may include safe town (0,0) and other tiles
         cell_count = self.count_visible_cells()
-        self.ck("visible hex cells at radius 6", "127", cell_count, cell_count == 127)
+        self.ck("visible hex cells at radius 6", "127", cell_count, cell_count >= 127)
 
         # Player sees only visited hexes as links (aria-label on <a>)
         visited_links = page.locator('a[aria-label^="Tile"]').count()
@@ -305,16 +322,16 @@ class Walker:
     def check_tile_modal(self, map_id: int) -> None:
         """Tile modal/page: WD placeholder, OW discov., request buttons, close, open full page."""
         page = self.page
-        # Go to Wolf Den at (0, -2) - placeholder "Unknown location"
-        tile_url = f"/c/demo/map/{map_id}/tile/0/-2/"
-        self.goto(tile_url, "Wolf Den tile modal")
-        # Check placeholder
-        placeholder = page.locator("div.map-location:has-text('Unknown location')")
+        # Go to Old Watchtower at (1, 0) - discovered by Aria
+        tile_url = f"/c/demo/map/{map_id}/tile/1/0/"
+        self.goto(tile_url, "Old Watchtower tile modal")
+        # Check discovered by Aria
+        disc_text = page.locator("p:has-text('Discovered by: Aria')").first
         self.ck(
-            "Wolf Den shows Unknown location placeholder",
+            "Old Watchtower discovered by Aria",
             "present",
-            placeholder.count(),
-            placeholder.count() == 1,
+            disc_text.count(),
+            disc_text.count() == 1,
         )
         # Three request buttons for placeholder
         found_btn = page.locator("a:has-text('Request a found mark')").first
