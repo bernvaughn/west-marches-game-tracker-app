@@ -154,3 +154,11 @@ def test_closed_shop(login, player, club_admin, site_admin, club, closed_shop):
 def test_open_shop_no_banner(login, player, club, shop, always_open):
     body = login(player).get(url("detail", club, shop.id)).content.decode()
     assert "shop-closed-banner" not in body
+
+
+@pytest.mark.story("C1")
+def test_weight_column_optional_hides_on_phone(login, player, club, shop, always_open, stock):
+    """The Weight header and cell carry wm-col-optional so the Buy button fits at 390 px."""
+    body = login(player).get(url("detail", club, shop.id)).content.decode()
+    assert '<th class="num wm-col-optional">Weight</th>' in body
+    assert 'class="num wm-col-optional"' in body
