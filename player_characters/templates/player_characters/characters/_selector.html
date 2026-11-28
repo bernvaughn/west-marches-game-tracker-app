@@ -34,7 +34,7 @@
   <noscript><button type="submit" class="btn btn-sm btn-outline-primary">Switch</button></noscript>
 </form>
 {% elif selected_character %}
-{% with ctx=selected_character|selector_context %}
+{% with ctx=selected_character|character_summary %}
 <span class="navbar-text character-name">
   Acting as {{ selected_character.name }}{% include "player_characters/characters/_life_badge.html" with character=selected_character compact=True %}
   {% if ctx.coins %} · {{ ctx.coins }}{% endif %}

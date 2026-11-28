@@ -23,6 +23,12 @@ def selector_context(characters):
     return [(characters, character_selector_context(characters))]
 
 
+@register.filter
+def character_summary(character):
+    """Return the selector context dict for a single character."""
+    return character_selector_context(character)
+
+
 @register.simple_tag(takes_context=True)
 def all_selector_context(context):
     """Return list of (character, context) for all owned characters in current club."""
