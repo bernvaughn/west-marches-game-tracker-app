@@ -28,14 +28,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }).join("&");
     htmx.ajax("get", url, { target: "#app-modal .modal-content" });
   });
-  document.body.addEventListener("htmx:afterSwap", function (e) {
-    var trigger = e.detail.xhr && e.detail.xhr.getResponseHeader("HX-Trigger");
-    if (!trigger) return;
-    try {
-      var data = JSON.parse(trigger);
-      if (data.refreshQueue) {
-        location.reload();
-      }
-    } catch {}
-  });
 });
