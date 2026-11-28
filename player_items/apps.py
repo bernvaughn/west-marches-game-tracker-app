@@ -71,10 +71,10 @@ class PlayerItemsConfig(AppConfig):
 
         reg = navigation.register
         reg(
-            "admin",
+            "character",
             open_review_group_label,
             "player_items:review",
             is_admin,
-            45,
+            70,
             icon="eye",
         )

@@ -58,7 +58,7 @@ class AccountsConfig(AppConfig):
         register_provider(QuickActionsProvider())
         reg = navigation.register
         reg(
-            "character",
+            "home",
             "Dashboard",
             "accounts:player_dashboard",
             is_member,
@@ -68,27 +68,26 @@ class AccountsConfig(AppConfig):
             shortcut_label="Dashboard",
             also_current=("club_home",),
         )
-        reg("club", "People", "accounts:index", not_admin, 100, icon="people")
+        reg("club", "People", "accounts:index", None, 10, icon="people")
         reg(
             "club",
             "Message the admins",
             "accounts:message_new",
             is_member,
-            60,
+            20,
             icon="chat-left-text",
         )
         reg(
-            "club",
+            "items",
             "Request stock",
             "accounts:stock_request_new",
             is_member,
-            65,
+            30,
             icon="box-arrow-up",
         )
-        reg("admin", "Members", "accounts:index", is_admin, 10, icon="people")
-        reg("admin", "Whitelist", "accounts:whitelist", is_admin, 20, icon="person-check")
-        reg("admin", "Inbox", "accounts:message_inbox", is_admin, 30, icon="inbox")
-        reg("admin", "Club settings", "accounts:club_settings", is_admin, 40, icon="gear")
+        reg("club", "Whitelist", "accounts:whitelist", is_admin, 30, icon="person-check")
+        reg("club", "Inbox", "accounts:message_inbox", is_admin, 40, icon="inbox")
+        reg("club", "Club settings", "accounts:club_settings", is_admin, 50, icon="gear")
 
         # Account links (visible to all authenticated users, not club-specific)
         reg("account", "Your clubs", "home", lambda r: True, 10, icon="houses", club_required=False)
