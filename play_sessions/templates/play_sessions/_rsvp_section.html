@@ -31,7 +31,7 @@
         {% for member in members %}
         <li class="d-flex align-items-center gap-2">
           {{ member.user.display_name|default:member.user.email }}
-          {% with active_chars=member.characters.active %}
+          {% with active_chars=member.active_characters %}
           {% if active_chars %}
           <small class="text-muted">({% for c in active_chars %}{{ c.name }}{% if not forloop.last %}, {% endif %}{% endfor %})</small>
           {% endif %}

@@ -2,6 +2,7 @@
 
 import logging
 
+from django.db.models import Prefetch
 from django.utils import timezone
 
 from . import core
@@ -41,10 +42,18 @@ def _rsvp_section_context(request, session):
     members = []
     if can_manage:
         from accounts.models import Membership
+        from player_characters.models import Character
 
         members = list(
             Membership.objects.for_club(session.club)
             .select_related("user")
+            .prefetch_related(
+                Prefetch(
+                    "characters",
+                    queryset=Character.objects.not_archived().living(),
+                    to_attr="active_characters",
+                )
+            )
             .order_by("user__display_name", "user__email")
         )
         answers_map = rsvp_answers(session, members)

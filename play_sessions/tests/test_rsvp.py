@@ -540,3 +540,69 @@ def test_next_session_card_shows_my_answer(client, rsvp_setup):
     content = response.content.decode()
     assert "Test Session" in content
     assert "Maybe" in content
+
+
+def test_session_detail_manager_sees_active_characters(client, rsvp_setup):
+    """Manager sees active character names next to member names in Current answers.
+
+    Plain GET of the real session page. Archived and dead characters are excluded.
+    A member with no active characters shows no empty parentheses.
+    """
+    from datetime import date
+
+    gm_user = rsvp_setup["gm_user"]
+    player_user = rsvp_setup["player_user"]
+    player_membership = rsvp_setup["player_membership"]
+    session = rsvp_setup["session"]
+    club = rsvp_setup["club"]
+
+    # Create another player with no characters
+    other_user = User.objects.create_user(email="other@test.com", password="pass12345678")
+    other_membership = Membership.objects.create(user=other_user, club=club)
+
+    # Add archived and dead characters for the player
+    Character.objects.create(
+        name="Archived Hero", club=club, owner=player_membership, archived_at=timezone.now()
+    )
+    Character.objects.create(
+        name="Dead Hero", club=club, owner=player_membership, died_on=date.today()
+    )
+
+    # Set RSVPs
+    PlayerRSVP.objects.create(
+        session=session, member=player_membership, answer="yes", answered_by=player_user
+    )
+    PlayerRSVP.objects.create(
+        session=session, member=other_membership, answer="no", answered_by=other_user
+    )
+
+    client.force_login(gm_user)
+    detail_url = reverse(
+        "play_sessions:session_detail",
+        kwargs={"club_slug": club.slug, "pk": session.pk},
+    )
+    response = client.get(detail_url)
+
+    assert response.status_code == 200
+    content = response.content.decode()
+
+    # Scope to just the RSVP section block (ends before the next section)
+    start = content.find('id="rsvp-section"')
+    end = content.find('id="section-who_is_coming"', start)
+    rsvp_section = content[start:end]
+
+    # Player's active characters (Hero One, Hero Two) should appear
+    assert "player@test.com" in rsvp_section
+    assert "(Hero One, Hero Two)" in rsvp_section
+
+    # Archived and dead characters should NOT appear
+    assert "Archived Hero" not in rsvp_section
+    assert "Dead Hero" not in rsvp_section
+
+    # Other member with no characters should show no empty parentheses
+    assert "other@test.com" in rsvp_section
+    assert "()" not in rsvp_section
+
+    # GM's own membership (if they have one) should also work
+    # The GM membership exists in rsvp_setup but has no RSVP set
+    # Just verify the section renders without error
