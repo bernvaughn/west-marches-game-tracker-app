@@ -78,7 +78,7 @@ class Walker:
 
     def section(self, name: str, fn) -> None:
         """Run one section. A crash is recorded as a failed check, not hidden."""
-        print(f'  [DEBUG] section: {name}', flush=True)
+        print(f"  [DEBUG] section: {name}", flush=True)
         try:
             fn()
         except Exception as exc:
@@ -299,8 +299,10 @@ class Walker:
         # Print page has no print button, only text - flow 6
         print_page = page.locator("h1:has-text('The Marches (print)')")
         self.ck(
-            "print page has title", "The Marches (print)", print_page.count(),
-            print_page.count() == 1
+            "print page has title",
+            "The Marches (print)",
+            print_page.count(),
+            print_page.count() == 1,
         )
         # Back to the map
         back_print = page.get_by_role("link", name="Back to the map")
@@ -834,7 +836,7 @@ class Walker:
 
 def run_flow(w: Walker, map_id: int) -> None:
     # Already logged in from run_width
-    print(f'  [DEBUG] run_flow start, map_id={map_id}', flush=True)
+    print(f"  [DEBUG] run_flow start, map_id={map_id}", flush=True)
     w.goto("/c/demo/", "club home")
     w.ck(
         "login as alice",
@@ -842,7 +844,7 @@ def run_flow(w: Walker, map_id: int) -> None:
         w.page.evaluate("location.pathname"),
         "/accounts/login/" not in w.page.evaluate("location.pathname"),
     )
-    print(f'  [DEBUG] after club home', flush=True)
+    print("  [DEBUG] after club home", flush=True)
 
     w.section("map index", lambda: w.check_map_index())
     w.section("map detail", lambda: w.check_map_detail(map_id))
