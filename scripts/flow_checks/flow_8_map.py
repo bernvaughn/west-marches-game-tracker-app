@@ -78,6 +78,7 @@ class Walker:
 
     def section(self, name: str, fn) -> None:
         """Run one section. A crash is recorded as a failed check, not hidden."""
+        print(f'  [DEBUG] section: {name}', flush=True)
         try:
             fn()
         except Exception as exc:
@@ -168,7 +169,7 @@ class Walker:
     def check_map_index(self) -> None:
         """Map list: map link, XP table, Map requests, no New map for player."""
         page = self.page
-        self.nav_to("Maps", MAP_INDEX)
+        self.nav_to("All maps", MAP_INDEX, "All maps")
         # Map link
         map_link = page.locator("ul.map-grid a").first
         self.ck("map list shows The Marches", "The Marches", map_link.inner_text().strip(), True)
@@ -177,12 +178,12 @@ class Walker:
         back = page.get_by_role("link", name="Back to maps")
         self.click_nav(back, "back to maps", MAP_INDEX)
         # XP table link
-        xp_link = page.locator("a:has-text('XP table')").first
+        xp_link = page.get_by_role("link", name="XP table").first
         self.click_nav(xp_link, "XP table link", re.compile(r"/c/demo/map/xp/"))
         page.go_back()
         wait_until(lambda: "map/" in self.page.url)
         # Map requests link
-        req_link = page.locator("a:has-text('Map requests')").first
+        req_link = page.get_by_role("link", name="Map requests").first
         self.click_nav(req_link, "Map requests link", REQUESTS_QUEUE)
         page.go_back()
         wait_until(lambda: "map/$" in self.page.url)
@@ -193,6 +194,8 @@ class Walker:
     def check_map_detail(self, map_id: int) -> dict:
         """Map detail: pan links, picker, legend, tile cells, request visit button."""
         page = self.page
+        # Navigate to map detail page
+        self.goto(f"/c/demo/map/{map_id}/", "map detail")
         # Pan links (6 directions)
         pan_links = page.locator("nav.pan-links a")
         pan_count = pan_links.count()
@@ -557,6 +560,9 @@ class Walker:
     def check_gm_queue_and_approve(self, map_id: int) -> None:
         """GM: queue shows Borin's visit + alice's rows; per-row approve/decline; bulk approve."""
         page = self.page
+        # Log out player first by navigating to logout URL
+        page.goto(f"{self.base_url}/accounts/logout/", wait_until="networkidle")
+        # Now log in as GM using lib.login (login page won't have logout form after logout)
         lib.login(page, self.base_url, "gm")
         self.goto(REQUESTS_QUEUE, "GM requests queue")
         # Should see Borin's visit + alice's 4 rows = 5 rows
@@ -823,7 +829,8 @@ class Walker:
 
 
 def run_flow(w: Walker, map_id: int) -> None:
-    lib.login(w.page, w.base_url, "player")
+    # Already logged in from run_width
+    print(f'  [DEBUG] run_flow start, map_id={map_id}', flush=True)
     w.goto("/c/demo/", "club home")
     w.ck(
         "login as alice",
@@ -831,6 +838,7 @@ def run_flow(w: Walker, map_id: int) -> None:
         w.page.evaluate("location.pathname"),
         "/accounts/login/" not in w.page.evaluate("location.pathname"),
     )
+    print(f'  [DEBUG] after club home', flush=True)
 
     w.section("map index", lambda: w.check_map_index())
     w.section("map detail", lambda: w.check_map_detail(map_id))
@@ -853,12 +861,13 @@ def run_width(browser, width: int, height: int) -> tuple[int, list[str]]:
         with lib.run_server(env) as server:
             w = Walker(browser, server.base_url, width, height)
             try:
-                # Get the map ID from the seeded demo
-                # We know from demo.py it's "The Marches"
-                # Need to find its ID - we'll navigate to map index and extract
+                # Login first, then get the map ID from the seeded demo
+                lib.login(w.page, w.base_url, "player")
                 w.goto("/c/demo/map/", "map index to get map ID")
-                map_link = w.page.locator("ul.map-grid a").first
-                href = map_link.get_attribute("href")
+                # Use locator wait_for with attached state (no .first)
+                map_link = w.page.locator("ul.map-grid a")
+                map_link.wait_for(state="attached", timeout=10000)
+                href = map_link.first.get_attribute("href")
                 map_id = int(href.split("/")[-2]) if href else 1
                 run_flow(w, map_id)
             except Exception as exc:
