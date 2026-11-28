@@ -232,6 +232,11 @@ def print_session_pack_modal(request, club_slug, pk):
 def _compute_print_diff(character):
     """Compute grouped summary of ledger changes since last_printed_at.
 
+    Uses ``created`` (DateTimeField, auto_now_add) rather than ``date``
+    (DateField) so entries created on the same day as the print do not
+    reappear after printing. Backdated entries added after a print still
+    show because their ``created`` timestamp is later than ``last_printed_at``.
+
     Returns a dict with keys:
     - 'first_print': bool (True if never printed before)
     - 'coins': int (net coin change in cp)
@@ -245,7 +250,7 @@ def _compute_print_diff(character):
         first_print = True
     else:
         entries = LedgerEntry.objects.filter(
-            character=character, date__gte=last_printed.date()
+            character=character, created__gt=last_printed
         ).order_by("date", "id")
         first_print = False
 

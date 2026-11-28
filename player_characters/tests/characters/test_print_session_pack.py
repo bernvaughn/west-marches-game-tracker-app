@@ -170,7 +170,6 @@ def test_compute_diff_first_print_returns_all_history(character, item, second_it
 def test_compute_diff_after_print_returns_only_new_changes(character, item, second_item, player):
     """After printing, diff only shows entries since last_printed_at."""
     two_days_ago = timezone.localdate() - timedelta(days=2)
-    yesterday = timezone.localdate() - timedelta(days=1)
     today = timezone.localdate()
     # Initial entry two days ago
     record(
@@ -181,10 +180,8 @@ def test_compute_diff_after_print_returns_only_new_changes(character, item, seco
         actor=player,
         date=two_days_ago,
     )
-    # Simulate a print yesterday
-    character.last_printed_at = timezone.make_aware(
-        timezone.datetime.combine(yesterday, timezone.datetime.min.time())
-    )
+    # Simulate a print now (after the old entry was created)
+    character.last_printed_at = timezone.now()
     character.save(update_fields=["last_printed_at"])
 
     # New entries today (after print)
@@ -208,9 +205,8 @@ def test_compute_diff_after_print_returns_only_new_changes(character, item, seco
 def test_compute_diff_quest_entries_not_double_counted(character, item, player):
     """Quest turn-in and reward entries appear under Quests, not Coins/Items."""
     two_days_ago = timezone.localdate() - timedelta(days=2)
-    yesterday = timezone.localdate() - timedelta(days=1)
     today = timezone.localdate()
-    # Setup: give character items two days ago, then "print" yesterday
+    # Setup: give character items two days ago, then "print" now
     record(
         character,
         "award",
@@ -219,9 +215,7 @@ def test_compute_diff_quest_entries_not_double_counted(character, item, player):
         actor=player,
         date=two_days_ago,
     )
-    character.last_printed_at = timezone.make_aware(
-        timezone.datetime.combine(yesterday, timezone.datetime.min.time())
-    )
+    character.last_printed_at = timezone.now()
     character.save(update_fields=["last_printed_at"])
 
     # Now do quest turn-in and reward today
@@ -298,6 +292,48 @@ def test_compute_diff_no_entries_returns_empty(character):
     assert diff["items"] == []
     assert diff["quests"] == []
     assert diff["downtime"] == []
+
+
+@pytest.mark.story("S10")
+def test_modal_shows_no_changes_after_print_then_new_entry(login, club, player, character, item):
+    """After printing, modal shows no changes; a new entry appears alone."""
+    # Seed an entry, then print the pack
+    record(
+        character,
+        "award",
+        [Line(item=item, quantity=2), Line(coins=500)],
+        note="Initial loot",
+        actor=player,
+    )
+    url = reverse("characters:print_session_pack", args=[club.slug, character.pk])
+    r = login(player).post(url, {"sheet": "1", "items": "1", "quests": "1"})
+    assert r.status_code == 200
+    character.refresh_from_db()
+    assert character.last_printed_at is not None
+
+    # Reopen modal: no changes since last print
+    modal_url = reverse("accounts:print_session_pack_modal", args=[club.slug, character.pk])
+    r = login(player).get(modal_url)
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "No changes since last print" in body
+
+    # Add a new entry after the print
+    record(
+        character,
+        "award",
+        [Line(coins=1000)],
+        note="Found coins",
+        actor=player,
+    )
+
+    # Reopen modal: only the new entry shows
+    r = login(player).get(modal_url)
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert "No changes since last print" not in body
+    assert "Coins:" in body
+    assert "10 gp" in body
 
 
 # =============================================================================
