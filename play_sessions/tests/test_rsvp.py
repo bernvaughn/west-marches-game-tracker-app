@@ -1,6 +1,7 @@
 """Tests for RSVP (P13: per player)."""
 
-from datetime import timedelta
+from datetime import UTC, timedelta
+from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
@@ -9,6 +10,8 @@ from django.utils import timezone
 from accounts.models import Club, Membership, User
 from play_sessions.models import PlayerRSVP, PlaySession
 from player_characters.models import Character
+
+FIXED_NOW = timezone.datetime(2024, 6, 2, 12, 0, tzinfo=UTC)
 
 pytestmark = [pytest.mark.django_db, pytest.mark.story("P13")]
 
@@ -400,7 +403,12 @@ def test_dashboard_cancelled_session_no_form(client, rsvp_setup):
 
 
 def test_dashboard_started_session_no_form(client, rsvp_setup):
-    """Started session (earlier today) row shows no RSVP form but keeps its answer."""
+    """Started session (earlier today) row shows no RSVP form but keeps its answer.
+
+    The clock is pinned to midday UTC so ``starts_at = now - 1h`` is still
+    earlier today (not yesterday near midnight UTC). Otherwise
+    ``upcoming_sessions`` would drop the row between 00:00 and 01:00 UTC.
+    """
     player_user = rsvp_setup["player_user"]
     player_membership = rsvp_setup["player_membership"]
     session = rsvp_setup["session"]
@@ -408,15 +416,17 @@ def test_dashboard_started_session_no_form(client, rsvp_setup):
     club.timezone = "UTC"
     club.save()
 
-    PlayerRSVP.objects.create(
-        session=session, member=player_membership, answer="yes", answered_by=player_user
-    )
-    session.starts_at = timezone.now() - timedelta(hours=1)
-    session.save()
+    with patch("django.utils.timezone.now", return_value=FIXED_NOW):
+        PlayerRSVP.objects.create(
+            session=session, member=player_membership, answer="yes", answered_by=player_user
+        )
+        session.starts_at = timezone.now() - timedelta(hours=1)
+        session.save()
 
-    _player_with_character(player_membership, club)
-    client.force_login(player_user)
-    response = client.get(_dashboard_url(club))
+        _player_with_character(player_membership, club)
+        client.force_login(player_user)
+        response = client.get(_dashboard_url(club))
+
     assert response.status_code == 200
     content = response.content.decode()
     assert _rsvp_url(club, session) not in content
