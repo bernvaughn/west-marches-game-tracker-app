@@ -64,6 +64,15 @@ def shop(club):
 # --- permissions: add -----------------------------------------------------
 
 
+def test_add_modal_submit_button_has_form_attribute(club, login, player, character):
+    c = login(player)
+    r = c.get(add_url(club, character), HTTP_HX_REQUEST="true")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert 'form="entry-form"' in body
+    assert 'id="entry-form"' in body
+
+
 def test_owner_can_add(club, login, player, character):
     c = login(player)
     assert c.get(add_url(club, character)).status_code == 200
@@ -148,6 +157,16 @@ def test_other_player_cannot_edit(club, login, other_player, character):
 
 
 # --- permissions: remove --------------------------------------------------
+
+
+def test_remove_modal_submit_button_has_form_attribute(club, login, player, character):
+    item = make_item(club, character, name="Old")
+    c = login(player)
+    r = c.get(remove_url(club, character, item), HTTP_HX_REQUEST="true")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert 'form="remove-form"' in body
+    assert 'id="remove-form"' in body
 
 
 def test_owner_can_remove(club, login, player, character):
