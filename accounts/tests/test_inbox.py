@@ -205,9 +205,21 @@ def test_bulk_reopen(club, club_admin, player, login):
 
 
 @pytest.mark.story("U30")
-def test_bulk_empty_selection_400(club, club_admin, player, login):
+def test_bulk_empty_selection_warns(club, club_admin, player, login):
     cl = login(club_admin)
-    assert cl.post(_bulk_url(club), {"status": "handled"}).status_code == 400
+    # HTMX: 200 with a warning toast header; nothing is marked.
+    r = cl.post(
+        _bulk_url(club),
+        {"status": "handled"},
+        HTTP_HX_Request="true",
+    )
+    assert r.status_code == 200
+    assert "Tick at least one message" in r["HX-Trigger"]
+    # non-HTMX: 302 with a warning flash on the inbox page.
+    r = cl.post(_bulk_url(club), {"status": "handled"})
+    assert r.status_code == 302
+    r = cl.get(r.url)
+    assert "Tick at least one message" in r.content.decode()
 
 
 @pytest.mark.story("U30")
