@@ -118,8 +118,8 @@
             <small class="wm-sheet-owned-inline">{% if r.item.is_stacked %}{{ r.owned }} {{ r.item.unit_name }}{% else %}&times; {{ r.owned }}{% endif %}{% if r.available != r.owned %}&middot; {% if r.item.is_stacked %}{{ r.available }} {{ r.item.unit_name }}{% else %}{{ r.available }}{% endif %} available{% endif %}</small></td>
           <td class="num wm-col-value"{% if r.item.is_stacked %} data-wm-tooltip title="{{ r.value_per_unit_text }} per {{ r.item.unit_name }}"{% endif %}>{{ r.value_text }}</td>
           <td class="num wm-col-weight"{% if r.item.is_stacked and r.weight_hundredths is not None %} data-wm-tooltip title="{{ r.weight_per_unit_text }} per {{ r.item.unit_name }}"{% endif %}>{{ r.weight_text }}</td>
-          <td class="num wm-col-optional">{% if r.item.is_stacked %}{% if r.owned > 0 %}{{ r.item|with_units:r.owned }}{% else %}0{% endif %}{% else %}{{ r.owned }}{% endif %}</td>
-          <td class="num wm-col-optional">{% if r.item.is_stacked %}{% if r.available > 0 %}{{ r.item|with_units:r.available }}{% else %}0{% endif %}{% else %}{{ r.available }}{% endif %}</td>
+          <td class="num wm-col-optional">{% if r.item.is_stacked %}{% if r.owned > 0 %}{{ r.owned }} {{ r.item.unit_name }}{% else %}0{% endif %}{% else %}{{ r.owned }}{% endif %}</td>
+          <td class="num wm-col-optional">{% if r.item.is_stacked %}{% if r.available > 0 %}{{ r.available }} {{ r.item.unit_name }}{% else %}0{% endif %}{% else %}{{ r.available }}{% endif %}</td>
           <td class="no-print wm-row-actions-cell">
             {% url 'characters:junk' club.slug character.pk r.item.pk as junk_url %}
             {% url 'characters:print_item' club.slug character.pk r.item.pk as print_url %}
