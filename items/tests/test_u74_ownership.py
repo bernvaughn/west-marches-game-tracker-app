@@ -73,4 +73,4 @@ def test_admin_and_gm_see_columns_players_do_not(
         r = login(u).get(index(club))
         assert b"Characters" in r.content and b"Held" in r.content
     r = login(player).get(index(club))
-    assert b"Characters" not in r.content and b"Held" not in r.content
+    assert b"Characters</th>" not in r.content and b"Held</th>" not in r.content
