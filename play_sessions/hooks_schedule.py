@@ -27,7 +27,7 @@ def _manage_visible(request, session):
 def register():
     nav = navigation.register
     nav(
-        "gm",
+        "sessions",
         "New session",
         "play_sessions:session_create",
         is_gm_or_admin,

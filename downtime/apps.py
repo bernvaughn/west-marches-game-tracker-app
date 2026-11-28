@@ -6,33 +6,30 @@ class DowntimeConfig(AppConfig):
 
     def ready(self):
         from accounts import approvals, navigation
-        from accounts.apps import is_admin, is_gm_or_admin, not_gm_or_admin
+        from accounts.apps import is_admin, is_gm_or_admin
 
         from .approvals import pending_point_requests
 
         approvals.register(pending_point_requests)
 
         reg = navigation.register
-        # Each slice adds its own navigation lines here.
-        reg("gm", "Downtime points", "downtime:points_award", is_gm_or_admin, 15, icon="coin")
+        reg("downtime", "Downtime points", "downtime:points_award", is_gm_or_admin, 85, icon="coin")
         reg(
-            "town", "Downtime", "downtime:play", None, 35, icon="hourglass-split", shortcut_order=35
-        )
-        reg("admin", "Agenda", "downtime:agenda", is_admin, 54, icon="calendar-event")
-        reg("admin", "Downtime actions", "downtime:actions", is_admin, 70, icon="list-task")
-        reg(
-            "character",
-            "Request downtime points",
-            "downtime:requests",
-            not_gm_or_admin,
-            80,
+            "downtime",
+            "Downtime",
+            "downtime:play",
+            None,
+            35,
             icon="hourglass-split",
+            shortcut_order=35,
         )
+        reg("downtime", "Agenda", "downtime:agenda", is_admin, 90, icon="calendar-event")
+        reg("downtime", "Downtime actions", "downtime:actions", is_admin, 95, icon="list-task")
         reg(
-            "gm",
-            "Downtime point requests",
+            "downtime",
+            "Downtime requests",
             "downtime:requests",
-            is_gm_or_admin,
+            None,
             80,
             icon="hourglass-split",
         )

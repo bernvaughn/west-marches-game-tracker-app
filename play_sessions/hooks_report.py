@@ -36,7 +36,7 @@ def register():
         _sheet_context,
     )
     navigation.register(
-        "admin",
+        "sessions",
         "Attendance report",
         "play_sessions:report",
         is_admin,

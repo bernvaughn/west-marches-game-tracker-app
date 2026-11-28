@@ -19,7 +19,7 @@ def register():
 
     reg = navigation.register
     reg(
-        "club",
+        "sessions",
         "Sessions",
         "play_sessions:calendar",
         is_member,

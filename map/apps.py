@@ -13,7 +13,7 @@ class MapConfig(AppConfig):
         approvals.register(open_map_requests)
 
         from accounts import navigation
-        from accounts.apps import is_gm_or_admin, not_gm_or_admin
+        from accounts.apps import is_gm_or_admin
 
         reg = navigation.register
         reg(
@@ -27,6 +27,5 @@ class MapConfig(AppConfig):
             shortcut_label="Map",
         )
         reg("map", "XP table", "map:xp", None, 120, icon="table")
-        reg("map", "Map requests", "map:requests", not_gm_or_admin, 70, icon="pin-map")
-        reg("gm", "Map requests", "map:requests", is_gm_or_admin, 10, icon="pin-map")
-        reg("gm", "New map", "map:map_create", is_gm_or_admin, 20, icon="map-plus")
+        reg("map", "Map requests", "map:requests", None, 70, icon="pin-map")
+        reg("map", "New map", "map:map_create", is_gm_or_admin, 80, icon="plus-square")
