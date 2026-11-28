@@ -16,14 +16,14 @@ class AgentAccessConfig(AppConfig):
         from accounts.apps import is_gm, is_gm_or_admin
 
         reg = navigation.register
-        reg("gm", "Agent access", "agent_access:index", is_gm_or_admin, 90, icon="person-gear")
-        reg("gm", "Agent connections", "agent_access:connections", is_gm, 50, icon="link-45deg")
-        reg("gm", "Agent batches", "agent_access:batches", is_gm, 40, icon="boxes")
+        reg("agent", "Agent access", "agent_access:index", is_gm_or_admin, 10, icon="person-gear")
+        reg("agent", "Agent connections", "agent_access:connections", is_gm, 20, icon="link-45deg")
+        reg("agent", "Agent batches", "agent_access:batches", is_gm, 30, icon="boxes")
         reg(
-            "gm",
+            "items",
             "Proposed items",
             "agent_access:proposed_items",
             is_gm_or_admin,
-            30,
-            icon="box-seam",
+            40,
+            icon="lightbulb",
         )
