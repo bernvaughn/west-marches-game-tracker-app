@@ -232,7 +232,7 @@ class TestTemplateDeleteView:
     """Tests for the template delete view."""
 
     def test_get_shows_confirmation(self, client, club_admin, club, template):
-        """GET shows delete confirmation."""
+        """GET shows delete confirmation with confirm_url on action and hx-post."""
         client.force_login(club_admin)
         url = reverse(
             "starting_equipment:template_delete", kwargs={"club_slug": club.slug, "pk": template.pk}
@@ -241,6 +241,8 @@ class TestTemplateDeleteView:
         assert response.status_code == 200
         assert b"Delete Template" in response.content
         assert template.name.encode() in response.content
+        assert f'action="{url}"'.encode() in response.content
+        assert f'hx-post="{url}"'.encode() in response.content
 
     def test_post_deletes_template(self, client, club_admin, club, template):
         """POST deletes template and redirects."""
