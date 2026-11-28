@@ -11,8 +11,10 @@ def test_wait_until_returns_value_or_none():
 def test_parse_tile_path():
     """Test parsing of tile path from URL."""
     import re
+
     tile_page_re = re.compile(r"/c/demo/map/\d+/tile/-?\d+/-?\d+/$")
-    tile_modal_re = re.compile(r"/c/demo/map/\d+/tile/-?\d+/-?\d+/")
+    # Modal URL can have or not have trailing slash
+    tile_modal_re = re.compile(r"/c/demo/map/\d+/tile/-?\d+/-?\d+/?$")
 
     assert tile_page_re.match("/c/demo/map/1/tile/0/-2/")
     assert tile_page_re.match("/c/demo/map/12/tile/-5/10/")
@@ -36,6 +38,7 @@ def test_credit_names():
 
 def test_radius_cell_counts():
     """Test expected cell counts for given radii."""
+
     # radius 0 = 1 hex
     # radius 1 = 7 hexes
     # radius 2 = 19 hexes (wait, formula is 3*r*(r+1)+1)
