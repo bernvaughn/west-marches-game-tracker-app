@@ -5,32 +5,19 @@ Registers the admin nav entry, signal receivers, and ensures the job is register
 
 from django.db.models.signals import post_save, pre_save
 
+from accounts.apps import is_admin
 from accounts.navigation import register as nav_register
-
-
-def _is_admin_check(request):
-    """Check if user is club admin.
-
-    Reuse request.membership (set by ClubMiddleware) instead of re-querying the
-    database, so rendering this nav entry adds no extra queries per page load.
-    """
-    user = getattr(request, "user", None)
-    if not user or not user.is_authenticated:
-        return False
-    if user.is_superuser:
-        return True
-    membership = getattr(request, "membership", None)
-    return bool(membership and membership.is_club_admin)
 
 
 def register():
     """Register nav entry, signals, and ensure job is imported."""
-    # Nav entry in admin group
+    # Nav entry in mail group
     nav_register(
-        "admin",
-        "Reminders",
-        "mail:reminder_settings",
-        _is_admin_check,
+        group="mail",
+        label="Reminders",
+        url_name="mail:reminder_settings",
+        icon="bell",
+        check=is_admin,
         order=55,
     )
 
