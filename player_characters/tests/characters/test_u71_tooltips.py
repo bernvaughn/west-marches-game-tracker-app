@@ -81,8 +81,23 @@ def test_icon_buttons_keep_aria_label_and_long_tooltip(page):
     for label, text in ICONS.items():
         found = [e for e in page.els if e[1].get("aria-label") == label]
         assert found, label
-        assert "data-wm-tooltip" in found[0][1]
-        assert found[0][1]["title"] == text
+        toggle = found[0]
+        assert toggle[1]["aria-label"] == label
+        if label == "Print card":
+            # The print-card toggle is a Bootstrap dropdown: its tooltip moved
+            # to the wrapping btn-group so the dropdown and tooltip do not bind
+            # two Bootstrap instances to the same element.
+            assert "data-wm-tooltip" not in toggle[1], label
+            wrapper = [
+                e
+                for e in page.els
+                if e[0] == "div" and e[1].get("title") == text and "data-wm-tooltip" in e[1]
+            ]
+            assert wrapper, label
+            assert wrapper[0][1]["title"] == text, label
+        else:
+            assert "data-wm-tooltip" in toggle[1], label
+            assert toggle[1]["title"] == text, label
 
 
 @pytest.mark.story("U71")

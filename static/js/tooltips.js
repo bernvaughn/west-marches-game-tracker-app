@@ -7,6 +7,7 @@
     var els = Array.prototype.slice.call(root.querySelectorAll('[data-wm-tooltip]'));
     if (root.matches && root.matches('[data-wm-tooltip]')) els.push(root);
     els.forEach(function (el) {
+      if (el.matches('[data-bs-toggle="dropdown"]')) return;
       window.bootstrap.Tooltip.getOrCreateInstance(el, { trigger: 'hover focus' });
     });
     // Character preview tooltips
@@ -86,7 +87,8 @@
   document.addEventListener('htmx:load', function (e) { init(e.detail.elt); });
   document.addEventListener('htmx:beforeSwap', function (e) { dispose(e.detail.target); });
   document.addEventListener('show.bs.dropdown', function (e) {
-    var t = window.bootstrap && window.bootstrap.Tooltip.getInstance(e.target);
+    var target = e.target && e.target.closest('[data-wm-tooltip]');
+    var t = window.bootstrap && window.bootstrap.Tooltip.getInstance(target);
     if (t) t.hide();
   });
 })();

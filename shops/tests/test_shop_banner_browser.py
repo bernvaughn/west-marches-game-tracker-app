@@ -226,3 +226,31 @@ def test_toggles_at_mobile_width(lantern, shop_page):
     page = shop_page(lantern, width=390)
     _check_both_toggles(page)
     assert page.js_errors == []
+
+
+@pytest.mark.browser
+def test_shop_switcher_dropdown_opens_without_console_error(lantern, shop_page):
+    """The shop switcher dropdown opens and closes with a clean console.
+
+    Regression test for the Bootstrap tooltip/dropdown instance conflict:
+    the switcher toggle used to carry both data-bs-toggle="dropdown" and
+    data-wm-tooltip, so Bootstrap logged an error on every click.
+    """
+    from playwright.sync_api import expect
+
+    page = shop_page(lantern)
+    toggle = page.locator(".shop-switcher .dropdown-toggle")
+    expect(toggle).to_be_visible()
+
+    errors = []
+    page.on("console", lambda m: m.type == "error" and errors.append(m.text))
+    page.on("pageerror", lambda e: errors.append(str(e)))
+
+    toggle.click()
+    menu = page.locator(".shop-switcher .dropdown-menu.show")
+    expect(menu).to_be_visible()
+
+    toggle.click()
+    expect(menu).not_to_be_visible()
+
+    assert errors == []
