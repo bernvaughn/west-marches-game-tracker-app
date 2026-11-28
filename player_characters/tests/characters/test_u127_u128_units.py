@@ -64,7 +64,10 @@ def test_too_many_stacked_counts_one(rope, item):
 def test_sheet_shows_units_for_stacked_item(login, club, player, character, rope):
     record(character, "award", [Line(item=rope, quantity=40)])
     body = login(player).get(sheet_url(club, character)).content.decode()
-    assert "40 ft Rope" in body
+    # Owned and Available cells show number and unit only (no item name)
+    assert '<td class="num wm-col-optional">40 ft</td>' in body
+    # Item name no longer appears in Owned/Available cells
+    assert '<td class="num wm-col-optional">40 ft Rope</td>' not in body
     # normal style label never appears on the sheet
     assert "3 × " not in body
 
@@ -73,9 +76,30 @@ def test_sheet_shows_bare_number_for_normal_item(login, club, player, character,
     record(character, "award", [Line(item=item, quantity=3)])
     record(character, "award", [Line(item=rope, quantity=40)])
     body = login(player).get(sheet_url(club, character)).content.decode()
-    assert "40 ft Rope" in body
+    # Stacked item: Owned/Available cells show number and unit only
+    assert '<td class="num wm-col-optional">40 ft</td>' in body
+    assert '<td class="num wm-col-optional">40 ft Rope</td>' not in body
+    # Normal item: bare number
     assert '<td class="num wm-col-optional">3</td>' in body
     assert "3 × " not in body
+
+
+def test_sheet_shows_different_owned_available_and_zero(
+    login, club, player, character, rope, parchment
+):
+    """Test that Owned and Available show number and unit only."""
+    # Award 50 ft rope, then consume 10 so Owned=40, Available=40 (no holds)
+    record(character, "award", [Line(item=rope, quantity=50)])
+    record(character, "consumed", [Line(item=rope, quantity=-10)], note="Used some")
+    # Award 25 sheet parchment
+    record(character, "award", [Line(item=parchment, quantity=25)])
+    body = login(player).get(sheet_url(club, character)).content.decode()
+    # Both Owned and Available cells show number and unit only
+    assert '<td class="num wm-col-optional">40 ft</td>' in body
+    assert '<td class="num wm-col-optional">25 sheet</td>' in body
+    # Item names not in Owned/Available cells (check cell content specifically)
+    assert '<td class="num wm-col-optional">40 ft Rope</td>' not in body
+    assert '<td class="num wm-col-optional">25 sheet Parchment</td>' not in body
 
 
 @pytest.mark.story("U37")
@@ -93,8 +117,8 @@ def test_inventory_phone_markup(login, club, player, character, item, rope):
 
     # Normal item: Owned td has wm-col-optional and shows bare number 2
     assert '<td class="num wm-col-optional">2</td>' in body
-    # Stacked item: Owned td has wm-col-optional and shows with units
-    assert '<td class="num wm-col-optional">40 ft Rope</td>' in body
+    # Stacked item: Owned td has wm-col-optional and shows number and unit only
+    assert '<td class="num wm-col-optional">40 ft</td>' in body
 
     # wm-sheet-item-name wrapper exists
     assert 'class="wm-sheet-item-name"' in body
@@ -166,7 +190,10 @@ def test_player_consume_units(login, club, player, character, rope):
     e = entries(character).get(kind="consumed")
     assert e.lines.get(item=rope).quantity == -10
     body = c.get(sheet_url(club, character)).content.decode()
-    assert "40 ft Rope" in body
+    # Owned/Available cells show number and unit only
+    assert '<td class="num wm-col-optional">40 ft</td>' in body
+    assert '<td class="num wm-col-optional">40 ft Rope</td>' not in body
+    # Old full text should not appear in sheet (but may be in ledger)
     assert "50 ft Rope" not in body.split("Recent ledger entries")[0]
 
 
@@ -250,7 +277,9 @@ def test_gm_consume_units(login, club, game_master, character, rope):
     e = entries(character).get(kind="consumed")
     assert e.lines.get(item=rope).quantity == -20
     body = c.get(sheet_url(club, character)).content.decode()
-    assert "30 ft Rope" in body
+    # Owned/Available cells show number and unit only
+    assert '<td class="num wm-col-optional">30 ft</td>' in body
+    assert '<td class="num wm-col-optional">30 ft Rope</td>' not in body
 
 
 def test_gm_consume_over_cap_refused(login, club, game_master, character, rope):
