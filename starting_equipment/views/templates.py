@@ -3,6 +3,7 @@
 from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect, render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
 
@@ -104,6 +105,10 @@ class TemplateDeleteView(StartingEquipmentBaseView):
     def get(self, request, club_slug, pk):
         template = self.get_club_template_or_404(pk=pk)
         context = self.get_template_context(template=template)
+        context["confirm_url"] = reverse(
+            "starting_equipment:template_delete",
+            kwargs={"club_slug": club_slug, "pk": template.pk},
+        )
         return render(request, "starting_equipment/template_delete_confirm.html", context)
 
     def post(self, request, club_slug, pk):
