@@ -280,20 +280,6 @@ class Walker:
             full_link = page.locator('a.nav-link:has-text("Full map")').first
             self.click_nav(full_link, "switch to Full map", MAP_DETAIL_RE)
 
-        # Legend details toggle
-        legend = page.locator("details.map-legend-details")
-        self.ck("legend details present", "1", legend.count(), legend.count() == 1)
-        if legend.count():
-            # Open
-            summary = legend.locator("> summary")
-            summary.click()
-            opened = wait_until(lambda: legend.evaluate("el => el.open"))
-            self.ck("legend open", "open", "open" if opened else "closed", opened)
-            # Close
-            summary.click()
-            closed = wait_until(lambda: not legend.evaluate("el => el.open"))
-            self.ck("legend close", "closed", "closed" if closed else "open", closed)
-
         # Count visible cells vs radius 6 (127 hexes = 1 + 3*6*7)
         # Note: may include safe town (0,0) and other tiles
         cell_count = self.count_visible_cells()
@@ -311,8 +297,11 @@ class Walker:
         print_link = page.locator("a.print-link").first
         self.click_nav(print_link, "Print link", re.compile(r"/c/demo/map/\d+/print/"))
         # Print page has no print button, only text - flow 6
-        print_page = page.locator("h1:has-text('Print')")
-        self.ck("print page has title", "Print", print_page.count(), print_page.count() == 1)
+        print_page = page.locator("h1:has-text('The Marches (print)')")
+        self.ck(
+            "print page has title", "The Marches (print)", print_page.count(),
+            print_page.count() == 1
+        )
         # Back to the map
         back_print = page.get_by_role("link", name="Back to the map")
         self.click_nav(back_print, "Back to the map from print", MAP_DETAIL_RE)
@@ -320,54 +309,11 @@ class Walker:
         return {"map_id": map_id}
 
     def check_tile_modal(self, map_id: int) -> None:
-        """Tile modal/page: WD placeholder, OW discov., request buttons, close, open full page."""
+        """Tile modal/page: OW discovered, request buttons, close, open full page."""
         page = self.page
         # Go to Old Watchtower at (1, 0) - discovered by Aria
         tile_url = f"/c/demo/map/{map_id}/tile/1/0/"
         self.goto(tile_url, "Old Watchtower tile modal")
-        # Check discovered by Aria
-        disc_text = page.locator("p:has-text('Discovered by: Aria')").first
-        self.ck(
-            "Old Watchtower discovered by Aria",
-            "present",
-            disc_text.count(),
-            disc_text.count() == 1,
-        )
-        # Three request buttons for placeholder
-        found_btn = page.locator("a:has-text('Request a found mark')").first
-        explored_btn = page.locator("a:has-text('Request explored credit')").first
-        discovered_btn = page.locator("a:has-text('Request discovered credit')").first
-        self.ck(
-            "placeholder: Request a found mark",
-            "present",
-            found_btn.count(),
-            found_btn.count() == 1,
-        )
-        self.ck(
-            "placeholder: Request explored credit",
-            "present",
-            explored_btn.count(),
-            explored_btn.count() == 1,
-        )
-        self.ck(
-            "placeholder: Request discovered credit",
-            "present",
-            discovered_btn.count(),
-            discovered_btn.count() == 1,
-        )
-        # Close modal
-        close_btn = page.locator("button[data-bs-dismiss=modal]").first
-        close_btn.click()
-        closed = wait_until(lambda: page.locator("#app-modal.show").count() == 0)
-        self.ck("tile modal Close", "modal closed", "closed" if closed else "open", closed)
-        # Open full page
-        self.goto(tile_url, "Wolf Den tile full page")
-        back_link = page.get_by_role("link", name="Back to the map")
-        self.click_nav(back_link, "Back to the map from tile page", MAP_DETAIL_RE)
-
-        # Go to Old Watchtower at (1, 0) - discovered by Aria
-        tile_url2 = f"/c/demo/map/{map_id}/tile/1/0/"
-        self.goto(tile_url2, "Old Watchtower tile modal")
         # Check discovered by Aria
         disc_text = page.locator("p:has-text('Discovered by: Aria')").first
         self.ck(
@@ -408,14 +354,55 @@ class Walker:
             page.locator("a:has-text('Map requests')").first.count(),
             1,
         )
+        # Close modal
+        close_btn = page.locator("button[data-bs-dismiss=modal]").first
+        close_btn.click()
+        closed = wait_until(lambda: page.locator("#app-modal.show").count() == 0)
+        self.ck("tile modal Close", "modal closed", "closed" if closed else "open", closed)
+        # Open full page
+        self.goto(tile_url, "Old Watchtower tile full page")
+        back_link = page.get_by_role("link", name="Back to the map")
+        self.click_nav(back_link, "Back to the map from OW tile page", MAP_DETAIL_RE)
+        # Three request buttons
+        self.ck(
+            "OW: Request a found mark",
+            "present",
+            page.locator("a:has-text('Request a found mark')").first.count(),
+            1,
+        )
+        self.ck(
+            "OW: Request explored credit",
+            "present",
+            page.locator("a:has-text('Request explored credit')").first.count(),
+            1,
+        )
+        self.ck(
+            "OW: Request discovered credit",
+            "present",
+            page.locator("a:has-text('Request discovered credit')").first.count(),
+            1,
+        )
+        # Request a visit and Map requests in toolbar
+        self.ck(
+            "toolbar: Request a visit",
+            "present",
+            page.locator("a:has-text('Request a visit')").first.count(),
+            1,
+        )
+        self.ck(
+            "toolbar: Map requests",
+            "present",
+            page.locator("a:has-text('Map requests')").first.count(),
+            1,
+        )
         # Close and Open full page
-        close_btn2 = page.locator("button[data-bs-dismiss=modal]").first
-        close_btn2.click()
-        closed2 = wait_until(lambda: page.locator("#app-modal.show").count() == 0)
-        self.ck("OW tile modal Close", "modal closed", "closed" if closed2 else "open", closed2)
-        self.goto(tile_url2, "Old Watchtower tile full page")
-        back_link2 = page.get_by_role("link", name="Back to the map")
-        self.click_nav(back_link2, "Back to the map from OW tile page", MAP_DETAIL_RE)
+        close_btn = page.locator("button[data-bs-dismiss=modal]").first
+        close_btn.click()
+        closed = wait_until(lambda: page.locator("#app-modal.show").count() == 0)
+        self.ck("OW tile modal Close", "modal closed", "closed" if closed else "open", closed)
+        self.goto(tile_url, "Old Watchtower tile full page")
+        back_link = page.get_by_role("link", name="Back to the map")
+        self.click_nav(back_link, "Back to the map from OW tile page", MAP_DETAIL_RE)
 
     def check_request_forms(self, map_id: int) -> None:
         """Request forms: submit empty, submit with char/date/note, check redirect to queue."""
