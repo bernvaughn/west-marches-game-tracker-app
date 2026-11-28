@@ -319,3 +319,53 @@ def test_gm_or_admin_links_show_as_gm_for_club_admin_too(login, club, club_admin
         login(club_admin).get(reverse("club_home", args=[club.slug]), follow=True).content.decode()
     )
     assert "wm-nav-link-gm" in nav and "wm-nav-mark-gm" in nav
+
+
+def h2_texts(body):
+    """Extract h2 heading texts from the page body, excluding the site menu title."""
+    texts = []
+    for match in re.finditer(r"<h2[^>]*>(.*?)</h2>", body, re.DOTALL):
+        if 'id="site-menu-title"' in match.group(0):
+            continue
+        inner = match.group(1)
+        text = re.sub(r"<[^>]+>", "", inner)
+        text = " ".join(text.split())
+        if text:
+            texts.append(text)
+    return texts
+
+
+@pytest.mark.story("U60")
+def test_club_home_headings_appear_once(login, club, player, game_master, club_admin, site_admin):
+    """Each club home section heading appears exactly once (C2 / U60)."""
+    for user in (player, game_master, club_admin, site_admin):
+        body = page(login, user, club)
+        headings = h2_texts(body)
+        for heading in headings:
+            assert headings.count(heading) == 1, f"Duplicate heading: {heading!r}"
+        assert "Game master" not in headings, headings
+        assert "Club admin" not in headings, headings
+
+
+@pytest.mark.story("U60")
+def test_club_home_gm_admin_links_appear_once(login, club, game_master, club_admin):
+    """GM and Admin section links still appear on the club home (C2 / U60)."""
+    gm_urls = [
+        reverse("agent_access:index", args=[club.slug]),
+        reverse("map:requests", args=[club.slug]),
+        reverse("characters:index", args=[club.slug]),
+    ]
+    admin_urls = [
+        reverse("accounts:whitelist", args=[club.slug]),
+        reverse("shops:manage_list", args=[club.slug]),
+        reverse("quests:manage", args=[club.slug]),
+        reverse("items:index", args=[club.slug]),
+    ]
+
+    body = page(login, game_master, club)
+    for url in gm_urls:
+        assert url in body, f"GM link missing: {url}"
+
+    body = page(login, club_admin, club)
+    for url in admin_urls:
+        assert url in body, f"Admin link missing: {url}"
