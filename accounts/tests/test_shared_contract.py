@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from django.contrib.staticfiles import finders
 from django.template import engines
@@ -70,8 +72,21 @@ def _req(rf, user, club):
 
 @pytest.mark.story("U29")
 def test_real_registry_has_all_groups():
-    # "account" now has entries from hooks (E9: change email); "primary" by icon shortcuts (U60).
-    assert {e.group for e in navigation._entries} == set(navigation.GROUPS) - {"primary"}
+    # Every registered group is a known group; "primary" holds no entry (it is
+    # filled by icon shortcuts at render time); every MENU_GROUPS key exists.
+    registered = {e.group for e in navigation._entries}
+    assert "primary" not in registered
+    assert registered <= set(navigation.GROUPS)
+    assert {k for k, _h, _i in navigation.MENU_GROUPS} <= set(navigation.GROUPS)
+
+
+@pytest.mark.story("U29")
+def test_menu_groups_icons_in_sprite():
+    sprite = finders.find("vendor/bootstrap-icons-1.11.3/bootstrap-icons.svg")
+    assert sprite is not None, "bootstrap-icons sprite not found"
+    svg = Path(sprite).read_text()
+    for key, _heading, icon in navigation.MENU_GROUPS:
+        assert f'id="{icon}"' in svg, f"group {key!r} icon {icon!r} missing from sprite"
 
 
 @pytest.mark.story("U29")

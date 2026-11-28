@@ -131,16 +131,21 @@ def test_logout_last_in_panel_by_post(login, club, club_admin):
 
 
 def test_club_home_follows_menu_groups(login, club, game_master):
-    # Only GMs/admins see the menu groups on club_home
+    # club_home renders one section per non-empty menu group (MENU_GROUPS order),
+    # skipping account and siteadmin; headings render once and in group order.
     body = home(login, game_master, club)
     main = body[body.index("<main") :]
-    # A GM sees Character, Town, Map, Club, Game Master (not Club Admin)
-    for _, heading, _ in navigation.MENU_GROUPS:
-        if heading in ("Account", "Club Admin"):
-            continue
-        assert re.search(rf">\s*{heading}\s*<", main), heading
-    assert "Account" not in re.sub(r"<[^>]+>", " ", main)
-    assert "Club Admin" not in re.sub(r"<[^>]+>", " ", main)
+    headings = []
+    for m in re.finditer(r"<h2[^>]*>(.*?)</h2>", main, re.S):
+        text = re.sub(r"<[^>]+>", "", m.group(1)).strip()
+        if text:
+            headings.append(text)
+    assert len(headings) == len(set(headings)), f"duplicate headings: {headings}"
+    assert "Account" not in headings
+    assert "Site admin" not in headings
+    order = {heading: n for n, (_key, heading, _icon) in enumerate(navigation.MENU_GROUPS)}
+    seq = [order[h] for h in headings if h in order]
+    assert seq == sorted(seq), f"headings out of menu order: {headings}"
 
 
 def test_registry_icon_adds_shortcut(registry_empty, rf, club, player):

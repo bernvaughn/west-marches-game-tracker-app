@@ -1,19 +1,20 @@
 {% comment %}nav_key: menu key listing the roles the person actually has.
-   Context: has_gm (truthy when the person has the game master role),
-              has_admin (truthy when the person has the club admin role).
+   Context: audiences (set of link audiences rendered in menu_sections),
+              is_superuser (bool).
+   has_gm is "gm" in audiences; has_admin is "admin" in audiences or is_superuser.
    Renders nothing for a plain player. One row per role: colour swatch,
    text mark, role name. (U168)
-{% endcomment %}{% if has_gm or has_admin %}
+{% endcomment %}{% if "gm" in audiences or "admin" in audiences or is_superuser %}
 <section class="wm-menu-group wm-menu-group-key">
   <h3 class="wm-menu-heading">Key</h3>
-  {% if has_gm %}
+  {% if "gm" in audiences %}
   <div class="wm-nav-key-row">
     <span class="wm-nav-key-swatch wm-nav-key-swatch-gm" aria-hidden="true"></span>
     <span class="wm-nav-mark wm-nav-mark-gm">GM</span>
     <span>Game master</span>
   </div>
   {% endif %}
-  {% if has_admin %}
+  {% if "admin" in audiences or is_superuser %}
   <div class="wm-nav-key-row">
     <span class="wm-nav-key-swatch wm-nav-key-swatch-admin" aria-hidden="true"></span>
     <span class="wm-nav-mark wm-nav-mark-admin">Admin</span>

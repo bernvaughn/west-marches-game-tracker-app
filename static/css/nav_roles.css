@@ -2,6 +2,19 @@
    Colours live in tokens.css; this file only binds them to menu links and the key.
    Player links are uncoloured with no mark. */
 
+.wm-menu-heading,
+.wm-menu-link {
+  display: flex;
+  align-items: center;
+  gap: var(--wm-space-2);
+}
+.wm-menu-heading .wm-icon,
+.wm-menu-link .wm-icon {
+  flex: none;
+}
+.wm-nav-mark {
+  margin-left: auto;
+}
 .wm-nav-link-gm { color: var(--wm-role-gm); }
 .wm-nav-link-admin { color: var(--wm-role-admin); }
 .wm-nav-link-player { color: var(--wm-text); }
