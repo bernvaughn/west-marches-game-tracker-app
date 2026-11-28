@@ -27,13 +27,15 @@
   {% include "components/section_open.html" with title="Admin Response" %}
 
     {% if msg.granted_entries.exists %}
-      <h6 class="mt-3">Items &amp; Coins Granted</h6>
+      <h6 class="mt-3">Items & Coins Granted</h6>
       <dl class="wm-dl mb-3">
         {% for entry in msg.granted_entries.all %}
           <dt>{{ entry.character.name }}</dt>
           <dd>
-            {% if entry.coins %}<span class="text-success">{{ entry.coins|coins_text }}</span>{% endif %}
-            {% for line in entry.lines.all %}<div>{{ line.item.name }} × {{ line.quantity }}</div>{% endfor %}
+            {% for line in entry.lines.all %}
+              {% if line.coins %}<div class="text-success">{{ line.coins|coins_text }}</div>{% endif %}
+              {% if line.item %}<div>{{ line.item.name }} × {{ line.quantity }}</div>{% endif %}
+            {% endfor %}
             {% if entry.note %}<div class="text-muted small mt-1">{{ entry.note }}</div>{% endif %}
           </dd>
         {% endfor %}
