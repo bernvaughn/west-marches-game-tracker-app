@@ -5,7 +5,12 @@
 
 {% block content %}
 {% url 'accounts:message_inbox' msg.club.slug as inbox_url %}
+{% url 'accounts:message_new' msg.club.slug as new_url %}
+{% if is_admin %}
 {% include "components/page_header.html" with title=page_title back_url=inbox_url back_label="Back to inbox" %}
+{% else %}
+{% include "components/page_header.html" with title=page_title back_url=new_url back_label="Back to messages" %}
+{% endif %}
 
 {% include "components/card_open.html" %}
   <div class="mb-3">
