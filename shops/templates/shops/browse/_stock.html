@@ -1,7 +1,7 @@
 {% load coins loot_tags units life_tags weights %}
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
-  <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Weight</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
+  <thead><tr><th>Item</th><th class="num">Price</th><th class="num wm-col-optional">Weight</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
   <tbody>
   {% for stock in rows %}
     {% with reason=selected_character|buy_block_reason %}
