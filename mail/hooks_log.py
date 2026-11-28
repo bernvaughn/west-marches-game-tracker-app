@@ -13,13 +13,14 @@ def _prune_job():
 
 
 def register():
-    # Nav entry: "Email log" in admin group
+    # Nav entry: "Email log" in mail group
     nav_register(
-        "admin",
-        "Email log",
-        "mail:log",
-        is_admin,
-        50,
+        group="mail",
+        label="Email log",
+        url_name="mail:log",
+        icon="journal-text",
+        check=is_admin,
+        order=50,
     )
     # Register prune job
     register_job("prune_email", _prune_job)
