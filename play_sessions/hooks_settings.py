@@ -7,9 +7,9 @@ from play_sessions import core
 
 def register():
     """Register nav entry and signal receiver for session settings."""
-    # Nav entry in admin group, order 60 (after Inbox at 30)
+    # Nav entry in sessions group, order 60
     navigation.register(
-        "admin",
+        "sessions",
         "Session settings",
         "play_sessions:settings",
         is_admin_check,

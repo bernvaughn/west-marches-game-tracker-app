@@ -5,23 +5,14 @@ class LedgerConfig(AppConfig):
     name = "ledger"
 
     def ready(self):
-        from accounts import apps as accounts_apps
         from accounts import navigation
 
         reg = navigation.register
         reg(
-            "character",
+            "downtime",
             "Ledger",
             "ledger:index",
-            accounts_apps.not_gm_or_admin,
-            60,
-            icon="journal-text",
-        )
-        reg(
-            "gm",
-            "Club ledger",
-            "ledger:index",
-            accounts_apps.is_gm_or_admin,
-            5,
+            None,
+            40,
             icon="journal-text",
         )
