@@ -13,11 +13,12 @@
   action="{{ form_action }}"
   hx-post="{{ form_action }}"
   hx-target="#app-modal .modal-content"
+  id="remove-form"
 >
   {% csrf_token %}
 </form>
 {% endblock %}
 {% block footer %}
 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-<button class="btn btn-danger" type="submit">Remove</button>
+<button class="btn btn-danger" type="submit" form="remove-form">Remove</button>
 {% endblock %}

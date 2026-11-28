@@ -40,6 +40,16 @@ def make_item(club, character, name="Potion", quantity=1):
 # --- permissions ---------------------------------------------------------
 
 
+def test_promote_modal_submit_button_has_form_attribute(club, login, club_admin, character):
+    make_item(club, character, "Potion", 2)
+    c = login(club_admin)
+    r = c.get(promote_url(club), HTTP_HX_REQUEST="true")
+    assert r.status_code == 200
+    body = r.content.decode()
+    assert 'form="promote-form"' in body
+    assert 'id="promote-form"' in body
+
+
 def test_club_admin_get_promote_modal(club, login, club_admin, character):
     make_item(club, character, "Potion", 2)
     c = login(club_admin)
