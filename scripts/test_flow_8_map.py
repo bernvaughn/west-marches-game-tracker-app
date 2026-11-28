@@ -1,6 +1,14 @@
 """Browser-free tests for the pure helpers in scripts/flow_checks/flow_8_map.py."""
 
-from scripts.flow_checks.flow_8_map import wait_until
+from scripts.flow_checks.flow_8_map import (
+    DIRECTIONS,
+    OPPOSITE,
+    TILE_PAGE_RE,
+    expected_pan,
+    hex_count,
+    parse_window_url,
+    wait_until,
+)
 
 
 def test_wait_until_returns_value_or_none():
@@ -8,46 +16,48 @@ def test_wait_until_returns_value_or_none():
     assert wait_until(lambda: False, timeout=0.2, interval=0.05) is None
 
 
-def test_parse_tile_path():
-    """Test parsing of tile path from URL."""
-    import re
+def test_wait_until_swallows_errors_while_polling():
+    calls = []
 
-    tile_page_re = re.compile(r"/c/demo/map/\d+/tile/-?\d+/-?\d+/$")
-    # Modal URL can have or not have trailing slash
-    tile_modal_re = re.compile(r"/c/demo/map/\d+/tile/-?\d+/-?\d+/?$")
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise RuntimeError("not yet")
+        return True
 
-    assert tile_page_re.match("/c/demo/map/1/tile/0/-2/")
-    assert tile_page_re.match("/c/demo/map/12/tile/-5/10/")
-    assert not tile_page_re.match("/c/demo/map/1/tile/0/-2")
-    assert not tile_page_re.match("/c/demo/map/tile/0/-2/")
-
-    assert tile_modal_re.match("/c/demo/map/1/tile/0/-2/")
-    assert tile_modal_re.match("/c/demo/map/1/tile/0/-2")
-    assert tile_modal_re.match("/c/demo/map/12/tile/-5/10/")
+    assert wait_until(flaky, timeout=2, interval=0.01) is True
 
 
-def test_credit_names():
-    """Test the expected credit kind names."""
-    kinds = ["discovered", "explored", "found", "visit"]
-    assert "discovered" in kinds
-    assert "explored" in kinds
-    assert "found" in kinds
-    assert "visit" in kinds
-    assert len(kinds) == 4
+def test_hex_count_matches_the_window_size():
+    assert hex_count(1) == 7
+    assert hex_count(2) == 19
+    assert hex_count(6) == 127
+    assert hex_count(15) == 721
 
 
-def test_radius_cell_counts():
-    """Test expected cell counts for given radii."""
+def test_parse_window_url_uses_app_defaults():
+    assert parse_window_url("http://x/c/demo/map/1/") == (0, 0, 6)
+    assert parse_window_url("http://x/c/demo/map/1/?q=6&r=-6&radius=6") == (6, -6, 6)
+    assert parse_window_url("http://x/c/demo/map/1/?radius=2") == (0, 0, 2)
+    assert parse_window_url("http://x/c/demo/map/1/?q=bad") == (0, 0, 6)
 
-    # radius 0 = 1 hex
-    # radius 1 = 7 hexes
-    # radius 2 = 19 hexes (wait, formula is 3*r*(r+1)+1)
-    # Actually: 1 + 6 + 12 + 18 + ... = 1 + 3*r*(r+1)
-    def cell_count(radius):
-        return 1 + 3 * radius * (radius + 1)
 
-    assert cell_count(0) == 1
-    assert cell_count(1) == 7
-    assert cell_count(2) == 19
-    assert cell_count(6) == 127
-    assert cell_count(15) == 721
+def test_expected_pan_moves_by_radius():
+    assert expected_pan("E", 0, 0, 6) == (6, 0)
+    assert expected_pan("NE", 0, 0, 6) == (6, -6)
+    assert expected_pan("SW", 1, 1, 2) == (-1, 3)
+
+
+def test_opposite_directions_cancel_out():
+    for name, back in OPPOSITE.items():
+        dq, dr = DIRECTIONS[name]
+        bq, br = DIRECTIONS[back]
+        assert (dq + bq, dr + br) == (0, 0)
+        assert OPPOSITE[back] == name
+
+
+def test_tile_page_regex():
+    assert TILE_PAGE_RE.search("/c/demo/map/1/tile/0/-2/")
+    assert TILE_PAGE_RE.search("/c/demo/map/12/tile/-5/10/")
+    assert not TILE_PAGE_RE.search("/c/demo/map/1/tile/0/-2")
+    assert not TILE_PAGE_RE.search("/c/demo/map/1/")

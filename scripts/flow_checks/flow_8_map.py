@@ -23,6 +23,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT))
@@ -58,17 +59,71 @@ def wait_until(condition, timeout: float = 10.0, interval: float = 0.1):
     return None
 
 
+OPPOSITE = {"E": "W", "W": "E", "NE": "SW", "SW": "NE", "NW": "SE", "SE": "NW"}
+DIRECTIONS = {"E": (1, 0), "W": (-1, 0), "NE": (1, -1), "NW": (0, -1), "SE": (0, 1), "SW": (-1, 1)}
+DEFAULT_RADIUS = 6
+NOTES = {
+    "visit": "f8-visit",
+    "explored": "f8-explored",
+    "found": "f8-found",
+    "discovered": "f8-discovered",
+}
+
+
+def hex_count(radius: int) -> int:
+    """Number of hexes in a hex-shaped window of the given radius."""
+    return 1 + 3 * radius * (radius + 1)
+
+
+def parse_window_url(url: str) -> tuple[int, int, int]:
+    """Read (q, r, radius) from a map URL, with the app's defaults (0, 0, 6)."""
+    params = parse_qs(urlparse(url).query)
+
+    def num(key: str, default: int) -> int:
+        try:
+            return int(params[key][0])
+        except (KeyError, ValueError, IndexError):
+            return default
+
+    return num("q", 0), num("r", 0), num("radius", DEFAULT_RADIUS)
+
+
+def expected_pan(name: str, q: int, r: int, radius: int) -> tuple[int, int]:
+    """Where a pan link of the given direction should land."""
+    dq, dr = DIRECTIONS[name]
+    return q + dq * radius, r + dr * radius
+
+
+ERRORS = ".errorlist, .invalid-feedback, .is-invalid"
+
+
 class Walker:
-    """One browser context at one width, logging every control through a Recorder."""
+    """One browser session at one width, logging every control through a Recorder."""
 
     def __init__(self, browser, base_url: str, width: int, height: int) -> None:
+        self.browser = browser
         self.base_url = base_url
         self.width = width
-        self.ctx = browser.new_context(viewport={"width": width, "height": height})
+        self.height = height
+        self.rec = lib.Recorder()
+        self.ctx = None
+        self.page = None
+        self._open_context()
+
+    def _open_context(self) -> None:
+        self.ctx = self.browser.new_context(viewport={"width": self.width, "height": self.height})
         self.page = self.ctx.new_page()
         self.page.set_default_timeout(8000)
-        self.rec = lib.Recorder()
         self.rec.attach(self.page)
+
+    def new_session(self, role: str) -> None:
+        """Drop the current browser context (and its login) and log in as ``role``.
+
+        Logout is POST-only, so a fresh context per role is the clean switch.
+        """
+        self.ctx.close()
+        self._open_context()
+        lib.login(self.page, self.base_url, role)
 
     # -- logging ---------------------------------------------------------
 
@@ -78,7 +133,7 @@ class Walker:
 
     def section(self, name: str, fn) -> None:
         """Run one section. A crash is recorded as a failed check, not hidden."""
-        print(f"  [DEBUG] section: {name}", flush=True)
+        print(f"  section: {name}", flush=True)
         try:
             fn()
         except Exception as exc:
@@ -88,6 +143,11 @@ class Walker:
 
     def goto(self, path: str, control: str) -> bool:
         resp = self.page.goto(f"{self.base_url}{path}", wait_until="networkidle")
+        status = resp.status if resp else None
+        return self.ck(control, "2xx/3xx", status, status is not None and 200 <= status < 400)
+
+    def reload(self, control: str) -> bool:
+        resp = self.page.reload(wait_until="networkidle")
         status = resp.status if resp else None
         return self.ck(control, "2xx/3xx", status, status is not None and 200 <= status < 400)
 
@@ -117,11 +177,6 @@ class Walker:
         shown = wait_until(lambda: self.page.locator("#site-menu.show").is_visible())
         return self.ck(control, "side menu visible", "visible" if shown else "hidden", shown)
 
-    def close_menu(self, control: str) -> bool:
-        self.page.locator("#site-menu .btn-close").click()
-        gone = wait_until(lambda: self.page.locator("#site-menu.show").count() == 0)
-        return self.ck(control, "side menu closed", "closed" if gone else "still open", gone)
-
     def nav_to(self, label: str, expect_path, menu_label: str | None = None) -> bool:
         """Go to a top-level page with the header shortcut, else through the side menu."""
         link = self.page.locator(f'.wm-shortcuts a.wm-shortcut[aria-label="{label}"]')
@@ -138,725 +193,576 @@ class Walker:
     # -- helpers ---------------------------------------------------------
 
     def toast_text(self) -> str:
-        found = wait_until(lambda: self.page.locator(".wm-toast .wm-toast-message").count() > 0, 8)
-        if not found:
+        """Text of the first flash message (a plain Django message is an inline alert)."""
+        loc = self.page.locator("ul.wm-messages li.wm-alert")
+        if not wait_until(lambda: loc.count() > 0, 8):
             return ""
-        return self.page.locator(".wm-toast .wm-toast-message").first.inner_text().strip()
+        return loc.first.inner_text().strip()
 
-    def switch_character(self, name: str) -> bool:
+    def has_text(self, control: str, text: str, scope=None) -> bool:
+        loc = (scope or self.page).get_by_text(text).first
+        return self.ck(control, f"{text!r} visible", loc.count(), loc.count() > 0)
+
+    def count_cells(self) -> int:
+        """Hex cells in the SVG map (one <g> per cell)."""
+        return self.page.locator(".hexmap svg g").count()
+
+    def modal_shown(self) -> bool:
+        return bool(wait_until(lambda: self.page.locator("#app-modal.show").count() == 1))
+
+    def modal_hidden(self) -> bool:
+        return bool(wait_until(lambda: self.page.locator("#app-modal.show").count() == 0))
+
+    def open_tile_modal(self, q: int, r: int, control: str) -> bool:
+        """Click a hex cell on the map page and wait for the shared modal."""
+        cell = self.page.locator(f'a[aria-label^="Tile ({q}, {r})"]').first
+        if not cell.count():
+            return self.ck(control, "cell is a link", "no link for this cell", False)
+        cell.click()
+        shown = self.modal_shown()
+        title = ""
+        if shown:
+            title = self.page.locator("#app-modal .modal-title").inner_text()
+        return self.ck(
+            control, f"modal open for ({q}, {r})", title, shown and f"({q}, {r})" in title
+        )
+
+    def char_box(self, name: str, scope=None):
+        """The checkbox of the character called ``name`` (request form by default)."""
+        scope = scope or self.page.locator("form.wm-form")
+        return scope.get_by_label(name).first
+
+    def pick_only(self, name: str, scope) -> None:
+        boxes = scope.locator("input[name=characters]")
+        for i in range(boxes.count()):
+            boxes.nth(i).uncheck()
+        self.char_box(name, scope).check()
+
+    def check_player_picker(self) -> None:
+        """The player's own picker: 'Show the map for' one character, then Show."""
         page = self.page
-        toggle = page.locator(".character-selector .dropdown-toggle")
-        toggle.click()
-        menu = page.locator(".character-selector .dropdown-menu")
-        shown = wait_until(lambda: menu.is_visible())
+        picker = page.locator("form.map-picker-form")
+        self.ck("player picker form", "1", picker.count(), picker.count() == 1)
+        names = [t.strip() for t in picker.locator("label").all_inner_texts()]
         self.ck(
-            f"character selector opens (to pick {name})",
-            "menu visible with characters",
-            f"visible={bool(shown)} items={menu.locator('a[data-character-pk]').count()}",
-            shown and menu.locator("a[data-character-pk]").count() >= 1,
+            "picker lists Aria and Wren",
+            "Aria, Wren",
+            names,
+            any("Aria" in n for n in names) and any("Wren" in n for n in names),
         )
-        option = menu.locator("a[data-character-pk]").filter(has_text=name)
-        return self.click_nav(
-            option, f"character switch to {name}", page.evaluate("location.pathname")
+        self.pick_only("Wren", picker)
+        self.click_nav(
+            picker.get_by_role("button", name="Show"), "picker Show (Wren)", MAP_DETAIL_RE
         )
-
-    def count_visible_cells(self) -> int:
-        """Count visible hex cells in the SVG map."""
-        return self.page.locator(".hexmap svg a, .hexmap svg g").count()
+        links = page.locator('a[aria-label^="Tile (1, 0)"]').count()
+        self.ck("Wren has not visited (1, 0)", "0", links, links == 0)
+        wren = self.char_box("Wren", page.locator("form.map-picker-form")).is_checked()
+        self.ck("picker choice survives Show", "Wren ticked", wren, wren)
+        self.reload("picker reload")
+        wren = self.char_box("Wren", page.locator("form.map-picker-form")).is_checked()
+        self.ck("picker choice survives reload", "Wren ticked", wren, wren)
+        # Back to Aria so the rest of the flow sees her tiles.
+        picker = page.locator("form.map-picker-form")
+        self.pick_only("Aria", picker)
+        self.click_nav(
+            picker.get_by_role("button", name="Show"), "picker Show (Aria)", MAP_DETAIL_RE
+        )
+        links = page.locator('a[aria-label^="Tile (1, 0)"]').count()
+        self.ck("Aria has visited (1, 0)", "1", links, links == 1)
 
     # -- sections --------------------------------------------------------
 
     def check_map_index(self) -> None:
-        """Map list: map link, XP table, Map requests, no New map for player."""
+        """Map list: map link, XP table, Map requests, no New map for a player."""
         page = self.page
         self.nav_to("All maps", MAP_INDEX, "All maps")
-        # Map link
         map_link = page.locator("ul.map-grid a").first
-        self.ck("map list shows The Marches", "The Marches", map_link.inner_text().strip(), True)
+        self.ck(
+            "map list shows The Marches",
+            "The Marches",
+            map_link.inner_text().strip(),
+            "The Marches" in map_link.inner_text(),
+        )
         self.click_nav(map_link, "map link: The Marches", MAP_DETAIL_RE)
-        # Back to maps
-        back = page.get_by_role("link", name="Back to maps")
-        self.click_nav(back, "back to maps", MAP_INDEX)
-        # XP table link
-        xp_link = page.get_by_role("link", name="XP table").first
-        self.click_nav(xp_link, "XP table link", re.compile(r"/c/demo/map/xp/"))
-        page.go_back()
-        wait_until(lambda: "map/" in self.page.url)
-        # Map requests link
-        req_link = page.get_by_role("link", name="Map requests").first
-        self.click_nav(req_link, "Map requests link", REQUESTS_QUEUE)
-        page.go_back()
-        wait_until(lambda: "map/$" in self.page.url)
-        # No New map for player
+        self.click_nav(page.get_by_role("link", name="Back to maps"), "Back to maps", MAP_INDEX)
+        self.click_nav(
+            page.get_by_role("link", name="XP table").first,
+            "XP table link",
+            re.compile(r"/map/xp/"),
+        )
+        self.click_nav(
+            page.get_by_role("link", name="Back to maps"), "Back to maps from XP table", MAP_INDEX
+        )
+        self.click_nav(
+            page.get_by_role("link", name="Map requests").first, "Map requests link", REQUESTS_QUEUE
+        )
+        self.click_nav(page.get_by_role("link", name="Back to maps"), "Back to maps", MAP_INDEX)
         new_map = page.locator("a:has-text('New map')")
         self.ck("no New map button for player", "hidden", new_map.count(), new_map.count() == 0)
 
-    def check_map_detail(self, map_id: int) -> dict:
-        """Map detail: pan links, picker, legend, tile cells, request visit button."""
+    def check_map_detail(self, map_id: int) -> None:
+        """Map detail: legend, pan links, cells, visit button, print link, zoom by URL."""
         page = self.page
-        # Navigate to map detail page
-        self.goto(f"/c/demo/map/{map_id}/", "map detail")
-        # Legend details toggle - starts open, test close then open
+        detail = f"/c/demo/map/{map_id}/"
+        self.goto(detail, "map detail")
+
         legend = page.locator("details.map-legend-details")
-        self.ck("legend details present", "1", legend.count(), legend.count() == 1)
+        self.ck("legend present", "1", legend.count(), legend.count() == 1)
         if legend.count():
             summary = legend.locator("> summary")
-            # Check initial state (open)
             is_open = legend.evaluate("el => el.open")
             self.ck("legend starts open", "open", "open" if is_open else "closed", is_open)
-            # Close it
             summary.click()
             closed = wait_until(lambda: not legend.evaluate("el => el.open"))
-            self.ck("legend close", "closed", "closed" if closed else "open", closed)
-            # Open it again
+            self.ck("legend toggle closes", "closed", "closed" if closed else "open", closed)
             summary.click()
             opened = wait_until(lambda: legend.evaluate("el => el.open"))
-            self.ck("legend open", "open", "open" if opened else "closed", opened)
-        # Pan links (6 directions)
-        pan_links = page.locator("nav.pan-links a")
-        pan_count = pan_links.count()
-        self.ck("pan links present", "6 (E, W, NE, NW, SE, SW)", pan_count, pan_count == 6)
-        for i in range(pan_count):
-            link = pan_links.nth(i)
-            name = link.inner_text().strip()
-            self.click_nav(link, f"pan {name}", MAP_DETAIL_RE)
-            # Check URL has q/r/radius
-            url = self.page.url
-            has_q = "q=" in url
-            has_r = "r=" in url
-            has_radius = "radius=" in url
-            self.ck(
-                f"pan {name} URL params",
-                "q, r, radius present",
-                f"q={has_q} r={has_r} radius={has_radius}",
-                has_q and has_r and has_radius,
-            )
-            # Reload and check state persists
-            resp = self.page.reload(wait_until="networkidle")
-            status = resp.status if resp else None
-            self.ck(
-                f"pan {name} reload", "2xx/3xx", status, status is not None and 200 <= status < 400
-            )
-            # Go back to center
-            center_link = (
-                self.page.locator('nav.pan-links a:text-is("W")').first
-                if name == "E"
-                else self.page.locator('nav.pan-links a:text-is("E")').first
-                if name == "W"
-                else self.page.locator('nav.pan-links a:text-is("SW")').first
-                if name == "NE"
-                else self.page.locator('nav.pan-links a:text-is("SE")').first
-                if name == "NW"
-                else self.page.locator('nav.pan-links a:text-is("NW")').first
-                if name == "SE"
-                else self.page.locator('nav.pan-links a:text-is("NE")').first
-            )
-            self.click_nav(center_link, f"pan back from {name}", MAP_DETAIL_RE)
+            self.ck("legend toggle opens", "open", "open" if opened else "closed", opened)
 
-        # Picker - only shown in Players' view for editors. As player, we test the map view tabs.
-        # Switch to Players' view
-        players_link = page.locator('a.nav-link:has-text("Players\' view")').first
-        if players_link.count():
-            self.click_nav(players_link, "switch to Players' view", MAP_DETAIL_RE)
-            # Check picker form present
-            picker_form = page.locator("form.map-picker-form")
-            self.ck(
-                "picker form in Players' view",
-                "present",
-                picker_form.count(),
-                picker_form.count() == 1,
-            )
-            if picker_form.count():
-                # Try selecting a character and submitting
-                checkbox = picker_form.locator("input[name='characters']").first
-                if checkbox.count():
-                    checkbox.check()
-                    self.click_nav(
-                        picker_form.locator("button[type=submit]"),
-                        "picker Show button",
-                        MAP_DETAIL_RE,
-                    )
-            # Back to Full map
-            full_link = page.locator('a.nav-link:has-text("Full map")').first
-            self.click_nav(full_link, "switch to Full map", MAP_DETAIL_RE)
-
-        # Count visible cells vs radius 6 (127 hexes = 1 + 3*6*7)
-        # Note: may include safe town (0,0) and other tiles
-        cell_count = self.count_visible_cells()
-        self.ck("visible hex cells at radius 6", "127", cell_count, cell_count >= 127)
-
-        # Player sees only visited hexes as links (aria-label on <a>)
-        visited_links = page.locator('a[aria-label^="Tile"]').count()
-        self.ck("visited hex links (player)", ">0", visited_links, visited_links > 0)
-
-        # Request a visit button in toolbar
-        visit_btn = page.locator("a:has-text('Request a visit')").first
+        cells = self.count_cells()
+        self.ck("hex cells at default radius", hex_count(6), cells, cells == hex_count(6))
+        links = page.locator('a[aria-label^="Tile"]').count()
+        self.ck("player sees visited hexes as links", ">0", links, links > 0)
+        tabs = page.locator("nav.view-switch").count()
+        self.ck("no view tabs for a player", "0", tabs, tabs == 0)
+        self.check_player_picker()
+        visit_btn = page.get_by_role("link", name="Request a visit")
         self.ck("Request a visit button", "present", visit_btn.count(), visit_btn.count() == 1)
 
-        # Print link
-        print_link = page.locator("a.print-link").first
-        self.click_nav(print_link, "Print link", re.compile(r"/c/demo/map/\d+/print/"))
-        # Print page has no print button, only text - flow 6
-        print_page = page.locator("h1:has-text('The Marches (print)')")
-        self.ck(
-            "print page has title",
-            "The Marches (print)",
-            print_page.count(),
-            print_page.count() == 1,
-        )
-        # Back to the map
-        back_print = page.get_by_role("link", name="Back to the map")
-        self.click_nav(back_print, "Back to the map from print", MAP_DETAIL_RE)
+        pan = page.locator("nav.pan-links a")
+        names = [t.strip() for t in pan.all_inner_texts()]
+        self.ck("pan links", "E W NE NW SE SW", " ".join(names), sorted(names) == sorted(OPPOSITE))
+        for name in names:
+            self.click_nav(
+                page.locator(f'nav.pan-links a:text-is("{name}")'), f"pan {name}", MAP_DETAIL_RE
+            )
+            got = parse_window_url(page.url)
+            want = expected_pan(name, 0, 0, DEFAULT_RADIUS) + (DEFAULT_RADIUS,)
+            self.ck(f"pan {name} window", want, got, got == want)
+            cells = self.count_cells()
+            self.ck(f"pan {name} keeps all cells", hex_count(6), cells, cells == hex_count(6))
+            self.reload(f"pan {name} reload")
+            got = parse_window_url(page.url)
+            self.ck(f"pan {name} window survives reload", want, got, got == want)
+            self.click_nav(
+                page.locator(f'nav.pan-links a:text-is("{OPPOSITE[name]}")'),
+                f"pan back {OPPOSITE[name]}",
+                MAP_DETAIL_RE,
+            )
+            got = parse_window_url(page.url)
+            self.ck(f"pan {name} then back", (0, 0, 6), got, got == (0, 0, 6))
 
-        return {"map_id": map_id}
+        # There is no zoom control; radius is read from the URL only. Note it.
+        zoom = page.locator("[aria-label*=zoom i], button:has-text('Zoom'), a:has-text('Zoom')")
+        self.ck("zoom control in the UI", "none (note, not a failure)", zoom.count(), True)
+        for radius in (2, 15):
+            self.goto(f"{detail}?radius={radius}", f"map radius={radius} by URL")
+            cells = self.count_cells()
+            self.ck(
+                f"radius {radius} cell count", hex_count(radius), cells, cells == hex_count(radius)
+            )
+
+        self.goto(detail, "map detail again")
+        self.click_nav(
+            page.locator("a.print-link"), "Print link", re.compile(r"/c/demo/map/\d+/print/")
+        )
+        title = page.title()
+        self.ck("print page title", "contains '(print)'", title, "(print)" in title)
+        self.click_nav(
+            page.get_by_role("link", name="Back to the map"),
+            "Back to the map from print",
+            MAP_DETAIL_RE,
+        )
 
     def check_tile_modal(self, map_id: int) -> None:
-        """Tile modal/page: OW discovered, request buttons, close, open full page."""
+        """Hex cells open the shared modal; Close, X, Open full page, tile page."""
         page = self.page
-        # Go to Old Watchtower at (1, 0) - discovered by Aria
-        tile_url = f"/c/demo/map/{map_id}/tile/1/0/"
-        self.goto(tile_url, "Old Watchtower tile modal")
-        # Check discovered by Aria
-        disc_text = page.locator("p:has-text('Discovered by: Aria')").first
-        self.ck(
-            "Old Watchtower discovered by Aria",
-            "present",
-            disc_text.count(),
-            disc_text.count() == 1,
-        )
-        # Three request buttons
-        self.ck(
-            "OW: Request a found mark",
-            "present",
-            page.locator("a:has-text('Request a found mark')").first.count(),
-            1,
-        )
-        self.ck(
-            "OW: Request explored credit",
-            "present",
-            page.locator("a:has-text('Request explored credit')").first.count(),
-            1,
-        )
-        self.ck(
-            "OW: Request discovered credit",
-            "present",
-            page.locator("a:has-text('Request discovered credit')").first.count(),
-            1,
-        )
-        # Request a visit and Map requests in toolbar
-        self.ck(
-            "toolbar: Request a visit",
-            "present",
-            page.locator("a:has-text('Request a visit')").first.count(),
-            1,
-        )
-        self.ck(
-            "toolbar: Map requests",
-            "present",
-            page.locator("a:has-text('Map requests')").first.count(),
-            1,
-        )
-        # Close modal
-        close_btn = page.locator("button[data-bs-dismiss=modal]").first
-        close_btn.click()
-        closed = wait_until(lambda: page.locator("#app-modal.show").count() == 0)
-        self.ck("tile modal Close", "modal closed", "closed" if closed else "open", closed)
-        # Open full page
-        self.goto(tile_url, "Old Watchtower tile full page")
-        back_link = page.get_by_role("link", name="Back to the map")
-        self.click_nav(back_link, "Back to the map from OW tile page", MAP_DETAIL_RE)
-        # Three request buttons
-        self.ck(
-            "OW: Request a found mark",
-            "present",
-            page.locator("a:has-text('Request a found mark')").first.count(),
-            1,
-        )
-        self.ck(
-            "OW: Request explored credit",
-            "present",
-            page.locator("a:has-text('Request explored credit')").first.count(),
-            1,
-        )
-        self.ck(
-            "OW: Request discovered credit",
-            "present",
-            page.locator("a:has-text('Request discovered credit')").first.count(),
-            1,
-        )
-        # Request a visit and Map requests in toolbar
-        self.ck(
-            "toolbar: Request a visit",
-            "present",
-            page.locator("a:has-text('Request a visit')").first.count(),
-            1,
-        )
-        self.ck(
-            "toolbar: Map requests",
-            "present",
-            page.locator("a:has-text('Map requests')").first.count(),
-            1,
-        )
-        # Close and Open full page
-        close_btn = page.locator("button[data-bs-dismiss=modal]").first
-        close_btn.click()
-        closed = wait_until(lambda: page.locator("#app-modal.show").count() == 0)
-        self.ck("OW tile modal Close", "modal closed", "closed" if closed else "open", closed)
-        self.goto(tile_url, "Old Watchtower tile full page")
-        back_link = page.get_by_role("link", name="Back to the map")
-        self.click_nav(back_link, "Back to the map from OW tile page", MAP_DETAIL_RE)
+        detail = f"/c/demo/map/{map_id}/"
+        self.goto(detail, "map detail for tiles")
 
-    def check_request_forms(self, map_id: int) -> None:
-        """Request forms: submit empty, submit with char/date/note, check redirect to queue."""
+        # Old Watchtower (1, 0): discovered by Aria.
+        self.open_tile_modal(1, 0, "hex cell (1, 0) opens modal")
+        modal = page.locator("#app-modal")
+        self.has_text("modal: Old Watchtower", "Old Watchtower", modal)
+        self.has_text("modal: Discovered by Aria", "Discovered by: Aria", modal)
+        for label in (
+            "Request a found mark",
+            "Request explored credit",
+            "Request discovered credit",
+            "Request a visit",
+        ):
+            self.has_text(f"modal: {label}", label, modal)
+        page.locator("#app-modal .modal-footer button[data-bs-dismiss=modal]").click()
+        self.ck("modal footer Close", "modal closed", self.modal_hidden(), self.modal_hidden())
+
+        self.open_tile_modal(1, 0, "hex cell (1, 0) reopens modal")
+        page.locator("#app-modal .btn-close").click()
+        self.ck("modal X button", "modal closed", self.modal_hidden(), self.modal_hidden())
+
+        self.open_tile_modal(1, 0, "hex cell (1, 0) opens modal for full page")
+        self.click_nav(
+            page.locator("#app-modal a:text-is('Open full page')"),
+            "modal Open full page",
+            TILE_PAGE_RE,
+        )
+        self.has_text("tile page: Old Watchtower", "Old Watchtower")
+        self.has_text("tile page: Discovered by Aria", "Discovered by: Aria")
+        self.has_text("tile page: Request a visit", "Request a visit")
+        self.click_nav(
+            page.get_by_role("link", name="Back to the map"),
+            "tile page Back to the map",
+            MAP_DETAIL_RE,
+        )
+
+        # Wolf Den (0, -2): Aria visited it, but nobody discovered it, so she sees nothing.
+        self.open_tile_modal(0, -2, "hex cell (0, -2) opens modal")
+        self.has_text("modal: nothing here yet", "Nothing here yet", modal)
+        wolf = page.get_by_text("Wolf Den").count()
+        self.ck("modal hides the Wolf Den name", "0", wolf, wolf == 0)
+        page.locator("#app-modal .modal-footer button[data-bs-dismiss=modal]").click()
+        self.modal_hidden()
+
+    def request_form(
+        self, control: str, kind: str, characters: list[str], toast: str, fix_coords=None
+    ) -> None:
+        """On a request form: submit with no character, then fill, send, check the flash message."""
         page = self.page
-
-        # 1. Visit request for a new tile (2, 0) - Aria hasn't visited
-        visit_url = f"/c/demo/map/requests/new/visit/{map_id}/?q=2&r=0"
-        self.goto(visit_url, "Request visit form (new tile 2,0)")
-        # Submit empty
-        page.locator("button:has-text('Send request')").click()
-        wait_until(
-            lambda: page.locator(".is-invalid, .form-control.is-invalid, .alert-danger").count() > 0
+        self.ck(
+            f"{control}: date defaults",
+            "non-empty",
+            page.input_value("input[name=date]"),
+            page.input_value("input[name=date]") != "",
         )
-        errors = page.locator(
-            ".is-invalid, .form-control.is-invalid, .alert-danger, .text-danger"
-        ).count()
-        self.ck("visit form empty submit", "field errors visible", errors, errors > 0)
-        # Fill and submit
-        page.fill("input[name=date]", "2024-01-15")
-        page.fill("textarea[name=note]", "Test visit request")
-        # Character dropdown/checkbox - Aria
-        char_checkbox = page.locator("input[name='characters'][value]").first
-        if char_checkbox.count():
-            char_checkbox.check()
+        # Wren is not ticked by default; Aria is. Clear everything and send.
+        boxes = page.locator("input[name=characters]")
+        for i in range(boxes.count()):
+            boxes.nth(i).uncheck()
+        page.get_by_role("button", name="Send request").click()
+        shown = wait_until(lambda: page.locator(ERRORS).count() > 0)
+        self.ck(
+            f"{control}: send with no character",
+            "field error visible",
+            bool(shown),
+            bool(shown) and "/new/" in page.url,
+        )
+        for name in characters:
+            self.char_box(name).check()
+        if fix_coords:
+            page.fill("input[name=q]", str(fix_coords[0]))
+            page.fill("input[name=r]", str(fix_coords[1]))
+        page.fill("textarea[name=note]", NOTES[kind])
         self.click_nav(
-            page.locator("button:has-text('Send request')"), "visit form submit", REQUESTS_QUEUE
-        )
-        toast = self.toast_text()
-        self.ck("visit request toast", "Visit request sent.", toast, toast == "Visit request sent.")
-        # Map requests link on form
-        self.goto(visit_url, "back to visit form")
-        req_link = page.locator("a:has-text('Map requests')").first
-        self.click_nav(req_link, "Map requests link on visit form", REQUESTS_QUEUE)
-
-        # 2. Explored credit on Old Watchtower (1,0) - need location ID
-        # First get the location ID from the tile modal
-        tile_url = f"/c/demo/map/{map_id}/tile/1/0/"
-        self.goto(tile_url, "OW tile for explored request")
-        explored_link = page.locator("a:has-text('Request explored credit')").first
-        explored_url = explored_link.get_attribute("href")
-        self.click_nav(explored_link, "Request explored credit link", REQUEST_CREDIT_RE)
-        # Submit empty
-        page.locator("button:has-text('Send request')").click()
-        wait_until(
-            lambda: page.locator(".is-invalid, .form-control.is-invalid, .alert-danger").count() > 0
-        )
-        errors = page.locator(
-            ".is-invalid, .form-control.is-invalid, .alert-danger, .text-danger"
-        ).count()
-        self.ck("explored form empty submit", "field errors visible", errors, errors > 0)
-        # Fill and submit
-        page.fill("input[name=date]", "2024-01-15")
-        page.fill("textarea[name=note]", "Test explored request")
-        char_checkbox = page.locator("input[name='characters'][value]").first
-        if char_checkbox.count():
-            char_checkbox.check()
-        self.click_nav(
-            page.locator("button:has-text('Send request')"), "explored form submit", REQUESTS_QUEUE
-        )
-        toast = self.toast_text()
-        self.ck("explored request toast", "Request sent.", toast, toast == "Request sent.")
-        # Map requests link on form
-        self.goto(explored_url, "back to explored form")
-        req_link = page.locator("a:has-text('Map requests')").first
-        self.click_nav(req_link, "Map requests link on explored form", REQUESTS_QUEUE)
-
-        # 3. Found mark on Wolf Den placeholder (0,-2)
-        tile_url2 = f"/c/demo/map/{map_id}/tile/0/-2/"
-        self.goto(tile_url2, "Wolf Den tile for found request")
-        found_link = page.locator("a:has-text('Request a found mark')").first
-        found_url = found_link.get_attribute("href")
-        self.click_nav(found_link, "Request a found mark link", REQUEST_CREDIT_RE)
-        # Submit empty
-        page.locator("button:has-text('Send request')").click()
-        wait_until(
-            lambda: page.locator(".is-invalid, .form-control.is-invalid, .alert-danger").count() > 0
-        )
-        errors = page.locator(
-            ".is-invalid, .form-control.is-invalid, .alert-danger, .text-danger"
-        ).count()
-        self.ck("found form empty submit", "field errors visible", errors, errors > 0)
-        # Fill and submit
-        page.fill("input[name=date]", "2024-01-15")
-        page.fill("textarea[name=note]", "Test found request")
-        char_checkbox = page.locator("input[name='characters'][value]").first
-        if char_checkbox.count():
-            char_checkbox.check()
-        self.click_nav(
-            page.locator("button:has-text('Send request')"), "found form submit", REQUESTS_QUEUE
-        )
-        toast = self.toast_text()
-        self.ck("found request toast", "Request sent.", toast, toast == "Request sent.")
-        # Map requests link on form
-        self.goto(found_url, "back to found form")
-        req_link = page.locator("a:has-text('Map requests')").first
-        self.click_nav(req_link, "Map requests link on found form", REQUESTS_QUEUE)
-
-        # 4. Discovered credit on Old Watchtower (1,0)
-        self.goto(tile_url, "OW tile for discovered request")
-        discovered_link = page.locator("a:has-text('Request discovered credit')").first
-        discovered_url = discovered_link.get_attribute("href")
-        self.click_nav(discovered_link, "Request discovered credit link", REQUEST_CREDIT_RE)
-        # Submit empty
-        page.locator("button:has-text('Send request')").click()
-        wait_until(
-            lambda: page.locator(".is-invalid, .form-control.is-invalid, .alert-danger").count() > 0
-        )
-        errors = page.locator(
-            ".is-invalid, .form-control.is-invalid, .alert-danger, .text-danger"
-        ).count()
-        self.ck("discovered form empty submit", "field errors visible", errors, errors > 0)
-        # Fill and submit - also try Wren (alice's second character)
-        page.fill("input[name=date]", "2024-01-15")
-        page.fill("textarea[name=note]", "Test discovered request")
-        char_checkboxes = page.locator("input[name='characters'][value]").all()
-        for cb in char_checkboxes:
-            label_text = (
-                page.locator(f"label[for='{cb.get_attribute('id')}']").inner_text().strip()
-                if cb.get_attribute("id")
-                else ""
-            )
-            if "Wren" in label_text or "Aria" in label_text:
-                cb.check()
-        self.click_nav(
-            page.locator("button:has-text('Send request')"),
-            "discovered form submit",
+            page.get_by_role("button", name="Send request"),
+            f"{control}: send request",
             REQUESTS_QUEUE,
         )
-        toast = self.toast_text()
-        self.ck("discovered request toast", "Request sent.", toast, toast == "Request sent.")
-        # Map requests link on form
-        self.goto(discovered_url, "back to discovered form")
-        req_link = page.locator("a:has-text('Map requests')").first
-        self.click_nav(req_link, "Map requests link on discovered form", REQUESTS_QUEUE)
+        got = self.toast_text()
+        self.ck(f"{control}: flash message", toast, got, got == toast)
 
-        # Verify player queue shows 4 Requested rows
-        self.goto(REQUESTS_QUEUE, "player requests queue")
-        rows = page.locator("tbody tr").all()
-        requested_count = sum(1 for r in rows if "Requested" in r.inner_text())
-        self.ck("player queue shows 4 Requested rows", "4", requested_count, requested_count == 4)
+    def check_request_forms(self, map_id: int) -> None:
+        """Four requests from the real tile pages: visit, explored, found, discovered."""
+        page = self.page
+        # Visit: from the tile page toolbar, then move the position to a new tile.
+        self.goto(f"/c/demo/map/{map_id}/tile/1/0/", "Old Watchtower tile page")
+        self.click_nav(
+            page.get_by_role("link", name="Request a visit"),
+            "tile page Request a visit",
+            REQUEST_VISIT_RE,
+        )
+        self.request_form("visit", "visit", ["Aria"], "Visit request sent.", fix_coords=(2, 0))
+
+        self.goto(f"/c/demo/map/{map_id}/tile/1/0/", "Old Watchtower tile page")
+        self.click_nav(
+            page.get_by_role("link", name="Request explored credit"),
+            "tile page Request explored credit",
+            REQUEST_CREDIT_RE,
+        )
+        self.request_form("explored", "explored", ["Aria"], "Request sent.")
+
+        # Found mark for Wren only; approval also records her visit to the tile.
+        self.goto(f"/c/demo/map/{map_id}/tile/1/0/", "Old Watchtower tile page")
+        self.click_nav(
+            page.get_by_role("link", name="Request a found mark"),
+            "tile page Request a found mark",
+            REQUEST_CREDIT_RE,
+        )
+        self.request_form("found", "found", ["Wren"], "Request sent.")
+
+        self.goto(f"/c/demo/map/{map_id}/tile/1/0/", "Old Watchtower tile page")
+        self.click_nav(
+            page.get_by_role("link", name="Request discovered credit"),
+            "tile page Request discovered credit",
+            REQUEST_CREDIT_RE,
+        )
+        # Both of alice's characters on one request.
+        self.request_form("discovered", "discovered", ["Aria", "Wren"], "Request sent.")
+
+        # The Map requests link on a form.
+        self.goto(f"/c/demo/map/requests/new/visit/{map_id}/", "visit form")
+        self.click_nav(
+            page.get_by_role("link", name="Map requests"), "form Map requests link", REQUESTS_QUEUE
+        )
+        self.goto(REQUESTS_QUEUE, "player queue")
+        for kind, note in NOTES.items():
+            row = page.locator("tbody tr").filter(has_text=note)
+            self.ck(
+                f"queue row for {kind}",
+                "Requested",
+                row.count(),
+                row.count() == 1 and "Requested" in row.inner_text(),
+            )
+        boxes = page.locator("input[name=requests]").count()
+        self.ck("player has no select checkboxes", "0", boxes, boxes == 0)
+        acts = page.locator("tbody form").count()
+        self.ck("player has no approve or decline buttons", "0", acts, acts == 0)
 
     def check_requests_queue_player(self) -> None:
-        """Player queue at 1280 and 390: summary cell, optional columns."""
+        """Player queue at 1280 and 390: summary cell or optional columns."""
         page = self.page
         self.goto(REQUESTS_QUEUE, "player requests queue")
-        # d-sm-none summary cell at 390
-        summary_cells = page.locator("td.d-sm-none").count()
-        self.ck(
-            "player queue summary cell (d-sm-none)",
-            "present at 390",
-            summary_cells,
-            summary_cells >= 1 if self.width == 390 else True,
-        )
-        # Optional columns at 1280
-        if self.width == 1280:
-            opt_cols = page.locator("th.wm-col-optional:visible").count()
-            self.ck("player queue optional columns at 1280", "visible", opt_cols, opt_cols >= 5)
+        summary = page.locator("td.wm-req-summary:visible").count()
+        optional = page.locator("th.wm-col-optional:visible").count()
+        if self.width == 390:
+            self.ck("queue summary cell shows", ">=1", summary, summary >= 1)
+            self.ck("queue optional columns hidden", "0", optional, optional == 0)
+        else:
+            self.ck("queue summary cell hidden", "0", summary, summary == 0)
+            self.ck("queue optional columns show", ">=5", optional, optional >= 5)
 
-    def check_gm_queue_and_approve(self, map_id: int) -> None:
-        """GM: queue shows Borin's visit + alice's rows; per-row approve/decline; bulk approve."""
+    def gm_row(self, kind: str):
+        return self.page.locator("tbody tr").filter(has_text=NOTES[kind])
+
+    def gm_decide(self, kind: str, action: str, toast: str) -> None:
+        """Click the per-row Approve or Decline button of one of alice's requests."""
         page = self.page
-        # Log out player first by navigating to logout URL
-        page.goto(f"{self.base_url}/accounts/logout/", wait_until="networkidle")
-        # Now log in as GM using lib.login (login page won't have logout form after logout)
-        lib.login(page, self.base_url, "gm")
-        self.goto(REQUESTS_QUEUE, "GM requests queue")
-        # Should see Borin's visit + alice's 4 rows = 5 rows
-        rows = page.locator("tbody tr").all()
-        self.ck("GM queue shows 5 rows (Borin + alice x4)", "5", len(rows), len(rows) == 5)
-        # Per-row Approve and Decline for requested
-        req_rows = page.locator("tbody tr:has-text('Requested')").all()
-        self.ck("GM queue has Requested rows", ">0", len(req_rows), len(req_rows) >= 1)
-        # Decline one (the first requested that's not a visit)
-        for row in req_rows:
-            kind_badge = row.locator("td .badge").first
-            kind_text = kind_badge.inner_text().strip() if kind_badge.count() else ""
-            if kind_text != "Visit":
-                decline_form = row.locator("form[action*='decline']")
-                if decline_form.count():
-                    with page.expect_navigation(wait_until="networkidle") as info:
-                        decline_form.locator("button[type=submit]").click()
-                    resp = info.value
-                    status = resp.status if resp else None
-                    self.ck(
-                        "GM decline non-visit request",
-                        "2xx/3xx",
-                        status,
-                        status is not None and 200 <= status < 400,
-                    )
-                    toast = self.toast_text()
-                    self.ck(
-                        "decline toast", "Request declined.", toast, "declined" in toast.lower()
-                    )
-                    break
-        # Per-row Approve one
-        self.goto(REQUESTS_QUEUE, "GM queue after decline")
-        req_rows = page.locator("tbody tr:has-text('Requested')").all()
-        for row in req_rows:
-            kind_badge = row.locator("td .badge").first
-            kind_text = kind_badge.inner_text().strip() if kind_badge.count() else ""
-            if kind_text != "Visit":
-                approve_form = row.locator("form[action*='approve']")
-                if approve_form.count():
-                    with page.expect_navigation(wait_until="networkidle") as info:
-                        approve_form.locator("button[type=submit]").click()
-                    resp = info.value
-                    status = resp.status if resp else None
-                    self.ck(
-                        "GM approve non-visit request",
-                        "2xx/3xx",
-                        status,
-                        status is not None and 200 <= status < 400,
-                    )
-                    toast = self.toast_text()
-                    self.ck(
-                        "approve toast", "Request approved.", toast, "approved" in toast.lower()
-                    )
-                    break
+        row = self.gm_row(kind)
+        button = row.locator(f"form[action*='{action}'] button[type=submit]")
+        self.click_nav(button, f"GM {action} {kind} request", REQUESTS_QUEUE)
+        got = self.toast_text()
+        self.ck(f"GM {action} {kind} flash message", toast, got, got == toast)
+        self.reload(f"GM {action} {kind} reload")
+        text = self.gm_row(kind).inner_text()
+        want = "Approved" if action == "approve" else "Declined"
+        self.ck(f"GM {kind} status after reload", want, text[:60], want in text)
+        assert page is self.page
 
-        # Bulk approve: select all, open modal, check tabs, cancel, then approve
-        self.goto(REQUESTS_QUEUE, "GM queue for bulk approve")
-        # Select all checkbox
-        all_box = page.locator("#bulk-select-all")
-        if all_box.count():
-            all_box.check()
-            wait_until(lambda: page.locator("input[name='requests']:checked").count() > 0)
-        # Bulk approve button
+    def check_gm_queue_and_approve(self) -> None:
+        """GM: sees Borin's visit and alice's four rows; decline, approve, bulk approve."""
+        page = self.page
+        self.goto(REQUESTS_QUEUE, "GM requests queue")
+        rows = page.locator("tbody tr").count()
+        self.ck("GM queue rows (Borin + alice x4)", 5, rows, rows == 5)
+        self.ck(
+            "GM select-all checkbox",
+            "present",
+            page.locator("#bulk-select-all").count(),
+            page.locator("#bulk-select-all").count() == 1,
+        )
         bulk_btn = page.locator("#bulk-approve-btn")
         self.ck(
-            "bulk approve button visible", "visible", bulk_btn.is_visible(), bulk_btn.is_visible()
+            "bulk button hidden with nothing ticked",
+            "hidden",
+            bulk_btn.is_visible(),
+            not bulk_btn.is_visible(),
         )
-        if bulk_btn.is_visible():
-            bulk_btn.click()
-            # Wait for modal
-            modal = page.locator("#app-modal.show")
-            wait_until(lambda: modal.count() == 1)
-            self.ck("bulk approve modal opens", "open", modal.count(), modal.count() == 1)
-            # Check tabs: Discovery, Exploration, Found mark
-            tabs = page.locator("#bulk-approve-tabs .nav-link").all()
-            tab_texts = [t.inner_text().strip() for t in tabs]
-            self.ck(
-                "bulk modal tabs",
-                "Discovery, Exploration, Found mark",
-                tab_texts,
-                tab_texts == ["Discovery", "Exploration", "Found mark"],
-            )
-            # Check groups by kind
-            for tab_id in ["pane-discovered", "pane-explored", "pane-found"]:
-                page.locator(f"button[data-bs-target='#{tab_id}']").click()
-                pane = page.locator(f"#{tab_id}")
-                wait_until(
-                    lambda p=pane: (
-                        "show active" in p.get_attribute("class")
-                        or "active" in p.get_attribute("class")
-                    )
+
+        self.gm_decide("visit", "approve", "Request approved.")
+        self.gm_decide("discovered", "decline", "Request declined.")
+        self.gm_decide("explored", "approve", "Request approved.")
+
+        # Per-row checkbox shows the bulk button with a count.
+        found_box = self.gm_row("found").locator("input[name=requests]")
+        found_box.check()
+        shown = wait_until(lambda: bulk_btn.is_visible())
+        count = page.locator("#bulk-count").inner_text()
+        self.ck(
+            "row checkbox shows bulk button",
+            "Approve selected (1)",
+            f"{shown} {count}",
+            shown and count == "1",
+        )
+        found_box.uncheck()
+        hidden = wait_until(lambda: not bulk_btn.is_visible())
+        self.ck("unticking hides bulk button", "hidden", bool(hidden), bool(hidden))
+
+        # Select all, open the modal, look at each tab, cancel.
+        page.locator("#bulk-select-all").check()
+        wait_until(lambda: bulk_btn.is_visible())
+        bulk_btn.click()
+        self.ck("bulk modal opens", "open", self.modal_shown(), self.modal_shown())
+        tabs = [t.strip() for t in page.locator("#bulk-approve-tabs .nav-link").all_inner_texts()]
+        self.ck(
+            "bulk modal tabs",
+            "Discovery, Exploration, Found mark",
+            tabs,
+            tabs == ["Discovery", "Exploration", "Found mark"],
+        )
+        # Only the found request is still open, so only the Found mark tab has a row.
+        rows_per_tab = {"explored": 0, "found": 1, "discovered": 0}
+        for tab_id, want in rows_per_tab.items():
+            page.locator(f"#tab-{tab_id}").click()
+            active = wait_until(
+                lambda t=tab_id: (
+                    "active" in (page.locator(f"#pane-{t}").get_attribute("class") or "")
                 )
-                rows_in_pane = pane.locator("tr").count()
-                self.ck(f"bulk modal {tab_id} has rows", ">=0", rows_in_pane, rows_in_pane >= 0)
-            # Cancel/close
-            page.locator("button[data-bs-dismiss=modal]").first.click()
-            wait_until(lambda: page.locator("#app-modal.show").count() == 0)
-            self.ck(
-                "bulk modal cancel",
-                "closed",
-                page.locator("#app-modal.show").count(),
-                page.locator("#app-modal.show").count() == 0,
             )
-            # Now approve all
-            all_box.check()
-            wait_until(lambda: page.locator("input[name='requests']:checked").count() > 0)
-            bulk_btn.click()
-            modal = page.locator("#app-modal.show")
-            wait_until(lambda: modal.count() == 1)
-            # Click Approve all in modal
-            approve_all = page.locator("button:has-text('Approve all')").first
-            with page.expect_response(
-                lambda r: r.url.endswith("bulk-approve/") and r.request.method == "POST"
-            ) as info:
-                approve_all.click()
-            resp = info.value
-            status = resp.status if resp else None
-            self.ck(
-                "bulk approve POST", "2xx/3xx", status, status is not None and 200 <= status < 400
-            )
-            # Wait for toast and reload
-            wait_until(lambda: page.locator(".wm-toast").count() > 0)
-            toast = self.toast_text()
-            self.ck("bulk approve toast", "Approved", toast, "Approved" in toast)
-            # refreshQueue triggers reload
-            wait_until(lambda: "requests" in page.url)
-            self.ck(
-                "bulk approve reload", "queue page", "requests" in page.url, "requests" in page.url
-            )
+            self.ck(f"bulk modal {tab_id} tab", "pane active", bool(active), bool(active))
+            rows = page.locator(f"#pane-{tab_id} tbody tr:not(:has(td[colspan]))").count()
+            self.ck(f"bulk modal {tab_id} rows", want, rows, rows == want)
+        page.locator("#app-modal .modal-footer button[data-bs-dismiss=modal]").click()
+        self.ck("bulk modal Cancel", "closed", self.modal_hidden(), self.modal_hidden())
+        ticked = page.locator("input[name=requests]:checked").count()
+        self.ck("rows stay ticked after Cancel", ">=1", ticked, ticked >= 1)
+
+        # Open again and approve.
+        bulk_btn.click()
+        self.modal_shown()
+        with page.expect_response(
+            lambda r: r.url.endswith("bulk-approve/") and r.request.method == "POST"
+        ) as info:
+            page.locator("#app-modal .modal-footer button[type=submit]").click()
+        status = info.value.status
+        self.ck("bulk approve POST", "2xx/3xx", status, 200 <= status < 400)
+        # KNOWN APP BUG (filed under the epic): the 204 has no swap, so htmx never fires
+        # afterSwap and the queue is not reloaded. This check fails until that is fixed.
+        loaded = wait_until(
+            lambda: (
+                page.locator("#bulk-approve-btn").count() == 1
+                and "Approved" in self.gm_row("found").inner_text()
+            ),
+            15,
+        )
+        self.ck(
+            "bulk approve reloads the queue by itself",
+            "found request Approved without a manual reload",
+            bool(loaded),
+            bool(loaded),
+        )
+        self.reload("bulk approve reload")
+        text = self.gm_row("found").inner_text()
+        self.ck(
+            "found request Approved after reload",
+            "Approved",
+            "Approved" in text,
+            "Approved" in text,
+        )
+        left = page.locator("input[name=requests]").count()
+        # Bulk approve skips visit requests, so Borin's visit is the one row left.
+        self.ck("only Borin's visit is left to tick", 1, left, left == 1)
 
     def check_gm_map_controls(self, map_id: int) -> None:
-        """GM map controls: Full/Players/My tabs, picker, New map, edit links."""
+        """GM map controls: view tabs, picker, New map and edit links. No data edits."""
         page = self.page
         self.goto(f"/c/demo/map/{map_id}/", "GM map detail")
-        # Tabs with aria-current
-        tabs = page.locator("nav.view-switch .nav-link").all()
-        for tab in tabs:
-            aria_current = tab.get_attribute("aria-current")
-            _ = "active" in tab.get_attribute("class") or ""
-            self.ck(
-                f"GM tab {tab.inner_text().strip()}",
-                "aria-current=page if active",
-                aria_current,
-                True,
-            )
-        # Picker checkboxes + Show (in Players' view)
-        players_link = page.locator('a.nav-link:has-text("Players\' view")').first
-        self.click_nav(players_link, "GM switch to Players' view", MAP_DETAIL_RE)
-        picker_form = page.locator("form.map-picker-form")
-        self.ck(
-            "GM picker form in Players' view",
-            "present",
-            picker_form.count(),
-            picker_form.count() == 1,
+        current = page.locator("nav.view-switch a[aria-current=page]").inner_text()
+        self.ck("GM Full map tab current", "Full map", current, current.strip() == "Full map")
+        self.click_nav(
+            page.locator('nav.view-switch a:text-is("Players\' view")'),
+            "GM Players' view tab",
+            MAP_DETAIL_RE,
         )
-        if picker_form.count():
-            checkbox = picker_form.locator("input[name='characters']").first
-            if checkbox.count():
-                checkbox.check()
-                self.click_nav(
-                    picker_form.locator("button[type=submit]"), "GM picker Show", MAP_DETAIL_RE
-                )
-        # New map link
-        full_link = page.locator('a.nav-link:has-text("Full map")').first
-        self.click_nav(full_link, "GM back to Full map", MAP_DETAIL_RE)
-        new_map = page.locator("a:has-text('New map')").first
-        self.ck("GM New map link", "present", new_map.count(), new_map.count() == 1)
-        # Edit map/location links - visit but don't edit
-        edit_map = page.locator("a:has-text('Edit map')").first
-        if edit_map.count():
-            self.click_nav(edit_map, "GM edit map link", re.compile(r"/c/demo/map/\d+/edit/"))
-            page.go_back()
-            wait_until(lambda: "map/" in page.url and page.url.endswith("/"))
+        current = page.locator("nav.view-switch a[aria-current=page]").inner_text()
+        self.ck(
+            "GM Players' view tab current",
+            "Players' view",
+            current,
+            current.strip() == "Players' view",
+        )
+        picker = page.locator("form.map-picker-form")
+        self.ck("GM picker form", "1", picker.count(), picker.count() == 1)
+        boxes = picker.locator("input[name=characters]")
+        self.ck("GM picker has characters", ">=1", boxes.count(), boxes.count() >= 1)
+        if boxes.count():
+            boxes.first.check()
+            self.click_nav(
+                picker.get_by_role("button", name="Show"), "GM picker Show", MAP_DETAIL_RE
+            )
+            ticked = page.locator("form.map-picker-form input[name=characters]:checked").count()
+            self.ck("picker choice survives Show", ">=1", ticked, ticked >= 1)
+            self.reload("picker reload")
+            ticked = page.locator("form.map-picker-form input[name=characters]:checked").count()
+            self.ck("picker choice survives reload", ">=1", ticked, ticked >= 1)
+        mine = page.locator("nav.view-switch a:text-is('My characters')")
+        if mine.count():
+            self.click_nav(mine, "GM My characters tab", MAP_DETAIL_RE)
+        self.click_nav(
+            page.locator("nav.view-switch a:text-is('Full map')"), "GM Full map tab", MAP_DETAIL_RE
+        )
+        edit = page.get_by_role("link", name=re.compile("Edit map|Edit this map"))
+        if edit.count():
+            self.click_nav(edit.first, "GM edit map link", re.compile(r"/c/demo/map/\d+/edit/"))
+            self.goto(f"/c/demo/map/{map_id}/", "GM map detail again")
+        self.goto(MAP_INDEX, "GM map list")
+        new_map = page.get_by_role("link", name="New map")
+        self.ck("GM sees New map", "1", new_map.count(), new_map.count() == 1)
+        if new_map.count():
+            self.click_nav(new_map, "GM New map link", re.compile(r"/c/demo/map/new/"))
 
     def check_player_after_approval(self, map_id: int) -> None:
-        """Back as alice: queue shows Approved/Declined; tile shows credits; reload persists."""
+        """Back as alice: Approved/Declined badges and the credit on tile and map; reload."""
         page = self.page
-        lib.login(page, self.base_url, "player")
-        # Queue shows Approved/Declined badges
-        self.goto(REQUESTS_QUEUE, "player queue after GM approval")
-        rows = page.locator("tbody tr").all()
-        approved = sum(1 for r in rows if "Approved" in r.inner_text())
-        declined = sum(1 for r in rows if "Declined" in r.inner_text())
-        self.ck("player queue has Approved rows", ">=1", approved, approved >= 1)
-        self.ck("player queue has Declined rows", ">=1", declined, declined >= 1)
+        self.goto(REQUESTS_QUEUE, "player queue after approval")
+        want = {
+            "visit": "Approved",
+            "explored": "Approved",
+            "found": "Approved",
+            "discovered": "Declined",
+        }
+        for kind, status in want.items():
+            text = page.locator("tbody tr").filter(has_text=NOTES[kind]).inner_text()
+            self.ck(f"alice {kind} request {status}", status, status in text, status in text)
 
-        # Tile page: Old Watchtower shows Aria in "Explored by"
-        tile_url = f"/c/demo/map/{map_id}/tile/1/0/"
-        self.goto(tile_url, "OW tile after approval")
-        explored_text = page.locator("p:has-text('Explored by:')").first
-        self.ck(
-            "OW explored by Aria",
-            "Aria in explored",
-            explored_text.count(),
-            explored_text.count() == 1,
-        )
-        if explored_text.count():
-            self.ck(
-                "OW explored by includes Aria",
-                "Aria",
-                "Aria" in explored_text.inner_text(),
-                "Aria" in explored_text.inner_text(),
-            )
+        tile = f"/c/demo/map/{map_id}/tile/1/0/"
+        for label in ("after approval", "after reload"):
+            if label == "after reload":
+                self.reload("OW tile reload")
+            else:
+                self.goto(tile, "Old Watchtower tile page")
+            text = page.locator("p:has-text('Explored by:')").first.inner_text()
+            self.ck(f"credit shows: OW explored by Aria {label}", "Aria", text, "Aria" in text)
 
-        # Wolf Den now shows its name instead of "Unknown location"
-        tile_url2 = f"/c/demo/map/{map_id}/tile/0/-2/"
-        self.goto(tile_url2, "Wolf Den tile after approval")
-        wd_name = page.locator("div.map-location h3:has-text('Wolf Den')").first
-        self.ck(
-            "Wolf Den shows name not Unknown", "Wolf Den", wd_name.count(), wd_name.count() == 1
-        )
-        # No "!" unexplored marker on map cell
-        # Check the map cell for (0,-2) - should not have hex-unexplored
+        # Found mark approved for Wren: her view of the map now has (1, 0) and its name.
         self.goto(f"/c/demo/map/{map_id}/", "map after approval")
-        # Reload and check state persists
-        resp = page.reload(wait_until="networkidle")
-        status = resp.status if resp else None
-        self.ck(
-            "map reload after approval",
-            "2xx/3xx",
-            status,
-            status is not None and 200 <= status < 400,
+        picker = page.locator("form.map-picker-form")
+        self.pick_only("Wren", picker)
+        self.click_nav(
+            picker.get_by_role("button", name="Show"), "picker Show (Wren)", MAP_DETAIL_RE
         )
-        # Check Wolf Den tile still shows name
-        self.goto(tile_url2, "Wolf Den tile after reload")
-        wd_name2 = page.locator("div.map-location h3:has-text('Wolf Den')").first
-        self.ck(
-            "Wolf Den name persists after reload",
-            "Wolf Den",
-            wd_name2.count(),
-            wd_name2.count() == 1,
+        for label in ("after approval", "after reload"):
+            if label == "after reload":
+                self.reload("Wren map reload")
+            link = page.locator('a[aria-label^="Tile (1, 0)"]').count()
+            self.ck(f"credit shows: Wren sees (1, 0) {label}", "1", link, link == 1)
+        self.open_tile_modal(1, 0, "Wren hex cell (1, 0) opens modal")
+        self.has_text(
+            "credit shows: Wren sees Old Watchtower", "Old Watchtower", page.locator("#app-modal")
         )
-        # Check OW explored persists
-        self.goto(tile_url, "OW tile after reload")
-        explored_text2 = page.locator("p:has-text('Explored by:')").first
-        self.ck(
-            "OW explored persists after reload",
-            "Aria in explored",
-            explored_text2.count(),
-            explored_text2.count() == 1,
-        )
+        page.locator("#app-modal .modal-footer button[data-bs-dismiss=modal]").click()
+        self.modal_hidden()
 
-        # New tile visit (2,0) is now a link on the map
-        self.goto(f"/c/demo/map/{map_id}/", "map after reload for new tile")
-        new_tile_link = page.locator('a[aria-label="Tile (2, 0)"]').first
-        self.ck(
-            "new tile (2,0) is now a link",
-            "present",
-            new_tile_link.count(),
-            new_tile_link.count() == 1,
-        )
-
-        # Also check radius URL parameter works (zoom test via URL - no UI control)
-        for radius in [2, 15]:
-            radius_url = f"/c/demo/map/{map_id}/?radius={radius}"
-            self.goto(radius_url, f"map radius={radius} via URL")
-            cell_count = self.count_visible_cells()
-            expected = 7 if radius == 2 else 331  # radius 2 = 7 hexes, radius 15 = 331 hexes
+        # The approved visit: (2, 0) is now a link on Aria's map.
+        self.goto(f"/c/demo/map/{map_id}/", "Aria map after approval")
+        for label in ("after approval", "after reload"):
+            if label == "after reload":
+                self.reload("Aria map reload")
+            new_tile = page.locator('a[aria-label^="Tile (2, 0)"]').count()
             self.ck(
-                f"radius={radius} cell count", str(expected), cell_count, cell_count == expected
+                f"credit shows: visit tile (2, 0) is a link {label}", "1", new_tile, new_tile == 1
             )
-        # Note: no zoom control in UI
-        self.ck("zoom control in UI", "none (radius only via URL)", "no UI control found", True)
 
 
 def run_flow(w: Walker, map_id: int) -> None:
-    # Already logged in from run_width
-    print(f"  [DEBUG] run_flow start, map_id={map_id}", flush=True)
-    w.goto("/c/demo/", "club home")
-    w.ck(
-        "login as alice",
-        "left /accounts/login/",
-        w.page.evaluate("location.pathname"),
-        "/accounts/login/" not in w.page.evaluate("location.pathname"),
-    )
-    print("  [DEBUG] after club home", flush=True)
-
-    w.section("map index", lambda: w.check_map_index())
+    w.section("map index", w.check_map_index)
     w.section("map detail", lambda: w.check_map_detail(map_id))
-    w.section("tile modal/page", lambda: w.check_tile_modal(map_id))
+    w.section("tile modal and page", lambda: w.check_tile_modal(map_id))
     w.section("request forms", lambda: w.check_request_forms(map_id))
-    w.section("player queue", lambda: w.check_requests_queue_player())
+    w.section("player queue", w.check_requests_queue_player)
 
-    # GM approval
-    w.section("GM queue and approve", lambda: w.check_gm_queue_and_approve(map_id))
+    w.new_session("gm")
+    w.section("GM queue and approve", w.check_gm_queue_and_approve)
     w.section("GM map controls", lambda: w.check_gm_map_controls(map_id))
 
-    # Back as alice
+    w.new_session("player")
     w.section("player after approval", lambda: w.check_player_after_approval(map_id))
 
 
@@ -867,14 +773,10 @@ def run_width(browser, width: int, height: int) -> tuple[int, list[str]]:
         with lib.run_server(env) as server:
             w = Walker(browser, server.base_url, width, height)
             try:
-                # Login first, then get the map ID from the seeded demo
                 lib.login(w.page, w.base_url, "player")
-                w.goto("/c/demo/map/", "map index to get map ID")
-                # Use locator wait_for with attached state (no .first)
-                map_link = w.page.locator("ul.map-grid a")
-                map_link.wait_for(state="attached", timeout=10000)
-                href = map_link.first.get_attribute("href")
-                map_id = int(href.split("/")[-2]) if href else 1
+                w.goto("/c/demo/map/", "map list")
+                href = w.page.locator("ul.map-grid a").first.get_attribute("href")
+                map_id = int(href.rstrip("/").split("/")[-1])
                 run_flow(w, map_id)
             except Exception as exc:
                 w.ck("flow", "completes", f"{type(exc).__name__}: {exc}"[:300], False)
