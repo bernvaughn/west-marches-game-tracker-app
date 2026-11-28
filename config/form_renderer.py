@@ -17,7 +17,7 @@ SELECT_TEMPLATES = {
     "django/forms/widgets/select_multiple.html",
 }
 
-TEXT_TYPES = {"text", "number", "email", "password", "date", "url", "file", "search", "tel"}
+TEXT_TYPES = {"text", "number", "email", "password", "date", "time", "url", "file", "search", "tel"}
 
 
 def _add_class(attrs, classes):
