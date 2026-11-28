@@ -479,7 +479,7 @@ def check_sheet(w: Walker) -> None:
                 if full_link.count():
                     w.click_nav(full_link, f"sheet: dropdown {item_name} Full page", PRINT_ITEM_RE)
                     # On print page, check print button
-                    print_btn = w.page.locator('[data-wm-print]').first
+                    print_btn = w.page.locator("[data-wm-print]").first
                     w.ck(
                         f"sheet: dropdown {item_name} Full page print button exists",
                         "present",
@@ -490,7 +490,9 @@ def check_sheet(w: Walker) -> None:
                         w._reset_print_calls()
                         print_btn.click()
                         time.sleep(0.5)
-                        w._check_print_call(f"sheet: dropdown {item_name} Full page print button", "print_page.js")
+                        w._check_print_call(
+                            f"sheet: dropdown {item_name} Full page print button", "print_page.js"
+                        )
                     w.check_print_media("sheet: dropdown Full page print")
                     # Go back to sheet
                     w.nav_to("My character", SHEET_PATH_RE)
@@ -503,7 +505,7 @@ def check_sheet(w: Walker) -> None:
                 if grid_link.count():
                     w.click_nav(grid_link, f"sheet: dropdown {item_name} Grid spot", PRINT_ITEM_RE)
                     # On print page, check print button
-                    print_btn = w.page.locator('[data-wm-print]').first
+                    print_btn = w.page.locator("[data-wm-print]").first
                     w.ck(
                         f"sheet: dropdown {item_name} Grid spot print button exists",
                         "present",
@@ -514,7 +516,9 @@ def check_sheet(w: Walker) -> None:
                         w._reset_print_calls()
                         print_btn.click()
                         time.sleep(0.5)
-                        w._check_print_call(f"sheet: dropdown {item_name} Grid spot print button", "print_page.js")
+                        w._check_print_call(
+                            f"sheet: dropdown {item_name} Grid spot print button", "print_page.js"
+                        )
                     w.check_print_media("sheet: dropdown Grid spot print")
                     w.nav_to("My character", SHEET_PATH_RE)
 
@@ -908,7 +912,8 @@ def check_dashboard_modal(w: Walker) -> None:
                         closed,
                     )
 
-                    # Reopen and check "Changes since last print" shows diff (first print shows all history)
+                    # Reopen and check Changes since last print shows diff
+                    # (first print shows all history)
                     pack_link.click()
                     wait_until(lambda: w.page.locator("#app-modal.show").is_visible())
                     diff_text = (
