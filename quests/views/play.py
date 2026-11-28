@@ -16,6 +16,7 @@ from player_characters import life
 from player_characters.selection import selected_character
 from quests import services
 from quests.models import Quest, QuestCompletion
+from quests.turnin import turnin_context
 
 
 def _is_admin(request):
@@ -137,22 +138,14 @@ def detail(request, club_slug, pk):
     row = None
     stamp = None
     turnin_rows = []
+    rewards = quest.rewards.select_related("item")
     blocked_reason = None
     if character is not None:
-        have = available_items(character)
         missing = services.missing_items(quest, character)
         left = services.character_completions_left(quest, character)
-        for req in quest.requirements.select_related("item"):
-            has = have.get(req.item_id, 0)
-            turnin_rows.append(
-                {
-                    "item": req.item,
-                    "needed": req.quantity,
-                    "has": has,
-                    "short": max(0, req.quantity - has),
-                    "unit_name": req.item.unit_name if req.item.is_stacked else "",
-                }
-            )
+        context = turnin_context(quest, character)
+        turnin_rows = context["turnin_rows"]
+        rewards = context["rewards"]
         # Same order as quests.services.turn_in (liveness is checked above).
         reason = life.buy_block_reason(character)
         if reason:
@@ -181,7 +174,7 @@ def detail(request, club_slug, pk):
         {
             "quest": quest,
             "requirements": quest.requirements.select_related("item"),
-            "rewards": quest.rewards.select_related("item"),
+            "rewards": rewards,
             "character": character,
             "row": row,
             "turnin_rows": turnin_rows,

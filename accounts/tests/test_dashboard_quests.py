@@ -1,12 +1,14 @@
 """Tests for dashboard quest turn-in HTMX endpoint."""
 
 import pathlib
+from datetime import timedelta
 
 import pytest
 from django.urls import reverse
 from django.utils import timezone
 
-from quests.models import QuestCompletion
+from items.models import Item
+from quests.models import Quest, QuestCompletion, QuestRequirement, QuestReward
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -170,6 +172,74 @@ def test_dashboard_quest_turnin_not_live_404(login, player, upcoming_quest, char
     url = _url("dashboard_quest_turnin", upcoming_quest.pk)
     response = c.get(url)
     assert response.status_code == 404
+
+
+@pytest.mark.django_db
+@pytest.mark.story("S4")
+def test_dashboard_quest_turnin_get_shows_rewards(login, player, quest, character):
+    """GET of the real dashboard endpoint shows the Rewards list (coins and items)."""
+    c = login(player)
+    url = _url("dashboard_quest_turnin", quest.pk)
+    response = c.get(url)
+    assert response.status_code == 200
+    body = response.content.decode()
+    assert "Rewards" in body
+    assert "Healing potion" in body
+
+
+@pytest.mark.django_db
+@pytest.mark.story("S4")
+def test_dashboard_quest_turnin_get_shows_stacked_unit_names(login, player, character, club, give):
+    """Needed, Has and Missing cells show the unit name for a stacked item."""
+    arrows = Item.objects.create(
+        club=club, name="Arrows", is_stacked=True, unit_name="arrows", value_cp=5
+    )
+    today = timezone.localdate()
+    quest = Quest.objects.create(
+        club=club, name="Arrow practice", start_date=today - timedelta(days=7)
+    )
+    QuestRequirement.objects.create(quest=quest, item=arrows, quantity=5)
+    QuestReward.objects.create(quest=quest, coins=50)
+    give(character, arrows, 2)
+
+    c = login(player)
+    url = _url("dashboard_quest_turnin", quest.pk)
+    response = c.get(url)
+    assert response.status_code == 200
+    body = response.content.decode()
+    assert "5 arrows" in body
+    assert "2 arrows" in body
+    assert "Missing" in body
+    assert "3 arrows" in body
+
+
+@pytest.mark.django_db
+@pytest.mark.story("S4")
+def test_dashboard_quest_turnin_post_insufficient_items_shows_rewards_and_units(
+    login, player, character, club, give
+):
+    """400 re-render after a failed turn-in still shows rewards and unit names."""
+    arrows = Item.objects.create(
+        club=club, name="Arrows", is_stacked=True, unit_name="arrows", value_cp=5
+    )
+    today = timezone.localdate()
+    quest = Quest.objects.create(
+        club=club, name="Arrow practice", start_date=today - timedelta(days=7)
+    )
+    QuestRequirement.objects.create(quest=quest, item=arrows, quantity=5)
+    QuestReward.objects.create(quest=quest, coins=50)
+    give(character, arrows, 2)  # have 2, need 5 -> turn-in fails
+
+    c = login(player)
+    url = _url("dashboard_quest_turnin", quest.pk)
+    response = c.post(url)
+    assert response.status_code == 400
+    body = response.content.decode()
+    assert "Rewards" in body
+    assert "5 arrows" in body
+    assert "2 arrows" in body
+    assert "Missing" in body
+    assert "3 arrows" in body
 
 
 def test_dashboard_quest_buttons_above_stretched_link():
