@@ -6,8 +6,6 @@ class ItemsConfig(AppConfig):
 
     def ready(self):
         from accounts import navigation
-        from accounts.apps import is_admin, not_admin
 
         reg = navigation.register
-        reg("club", "Items", "items:index", not_admin, 110, icon="box-seam")
-        reg("admin", "Item catalogue", "items:index", is_admin, 40, icon="box-seam")
+        reg("items", "Items", "items:index", None, 10, icon="box-seam")

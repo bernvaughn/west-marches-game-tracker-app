@@ -10,10 +10,10 @@ class StartingEquipmentConfig(AppConfig):
 
         reg = navigation.register
         reg(
-            "admin",
+            "items",
             "Starting Equipment Templates",
             "starting_equipment:templates",
             is_admin,
-            45,
+            54,
             icon="box",
         )

@@ -11,10 +11,10 @@ class CharacterOptionsConfig(AppConfig):
         from accounts.navigation import register
 
         register(
-            "admin",
+            "items",
             "Character options",
             "character_options:index",
             is_admin,
-            46,
+            56,
             icon="sliders",
         )

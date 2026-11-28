@@ -9,6 +9,6 @@ class ShopsConfig(AppConfig):
         from accounts.apps import is_admin
 
         reg = navigation.register
-        reg("town", "Shops", "shops:index", None, 20, icon="shop", shortcut_order=20)
-        reg("admin", "Manage shops", "shops:manage_list", is_admin, 50, icon="shop")
-        reg("admin", "Rotations", "shops:rotation_list", is_admin, 55, icon="arrow-repeat")
+        reg("items", "Shops", "shops:index", None, 20, icon="shop", shortcut_order=20)
+        reg("items", "Manage shops", "shops:manage_list", is_admin, 50, icon="shop-window")
+        reg("items", "Rotations", "shops:rotation_list", is_admin, 52, icon="arrow-repeat")
