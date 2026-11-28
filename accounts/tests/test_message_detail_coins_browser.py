@@ -11,11 +11,12 @@ Run with: uv run pytest -m browser accounts/tests/test_message_detail_coins_brow
 import pytest
 from django.core.management import call_command
 from django.test import Client
-from ledger.values import Line
 
 from accounts.models import Message, User
 from ledger.models import LedgerEntry
-from ledger.services import record
+from ledger.services import Line, record
+
+# record imported from ledger.services above
 from player_characters.models import Character
 
 DEMO_CLUB_SLUG = "demo"
@@ -39,7 +40,7 @@ def _setup_message_with_coin_grant(club):
     """Create a message from Alice and record a 1 gp coin grant via ledger.services.record."""
     alice_user = User.objects.get(email=DEMO_ALICE_EMAIL)
     alice_mem = alice_user.memberships.get(club=club)
-    aria = Character.objects.get(owner=alice_mem, club=club)
+    aria = Character.objects.filter(owner=alice_mem, club=club).first()
 
     # Create a message from Alice to admins
     msg = Message.objects.create(
@@ -67,7 +68,7 @@ def _setup_message_with_mixed_grant(club):
 
     alice_user = User.objects.get(email=DEMO_ALICE_EMAIL)
     alice_mem = alice_user.memberships.get(club=club)
-    aria = Character.objects.get(owner=alice_mem, club=club)
+    aria = Character.objects.filter(owner=alice_mem, club=club).first()
 
     msg = Message.objects.create(
         club=club,
@@ -99,7 +100,7 @@ def _setup_message_with_item_grant(club):
 
     alice_user = User.objects.get(email=DEMO_ALICE_EMAIL)
     alice_mem = alice_user.memberships.get(club=club)
-    aria = Character.objects.get(owner=alice_mem, club=club)
+    aria = Character.objects.filter(owner=alice_mem, club=club).first()
 
     msg = Message.objects.create(
         club=club,
@@ -162,8 +163,10 @@ def test_message_detail_shows_coin_only_grant(transactional_db, live_server, wid
             # Must NOT show the buggy "× 0"
             assert "× 0" not in text, f"Should not contain '× 0' but got: {text}"
 
-            # Should show character name (Aria Windrunner)
-            assert "Aria Windrunner" in text
+            # Character name is in dt, grant details in dd - check the dl for both
+            dl = granted_section.locator("xpath=following-sibling::dl[1]").first
+            dl_text = dl.inner_text()
+            assert "Aria Windrunner" in dl_text
         finally:
             browser.close()
 
@@ -208,8 +211,10 @@ def test_message_detail_shows_mixed_grant(transactional_db, live_server, width):
             # Must NOT show the buggy "× 0"
             assert "× 0" not in text, f"Should not contain '× 0' but got: {text}"
 
-            # Should show character name
-            assert "Aria Windrunner" in text
+            # Character name is in dt, grant details in dd - check the dl for both
+            dl = granted_section.locator("xpath=following-sibling::dl[1]").first
+            dl_text = dl.inner_text()
+            assert "Aria Windrunner" in dl_text
         finally:
             browser.close()
 
@@ -249,7 +254,9 @@ def test_message_detail_shows_item_only_grant(transactional_db, live_server, wid
             # Must NOT show the buggy "× 0"
             assert "× 0" not in text, f"Should not contain '× 0' but got: {text}"
 
-            # Should show character name
-            assert "Aria Windrunner" in text
+            # Character name is in dt, grant details in dd - check the dl for both
+            dl = granted_section.locator("xpath=following-sibling::dl[1]").first
+            dl_text = dl.inner_text()
+            assert "Aria Windrunner" in dl_text
         finally:
             browser.close()
