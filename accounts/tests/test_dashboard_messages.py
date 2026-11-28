@@ -176,6 +176,72 @@ def test_message_detail_shows_admin_response(club, player, character, player_wit
 
 
 @pytest.mark.story("S9")
+def test_message_detail_shows_coin_only_grant(club, player, character, login):
+    """Coin-only grant shows '1 gp' and not '× 0'."""
+    from accounts.models import Message
+    from ledger.services import Line, record
+
+    mem = player.memberships.get(club=club)
+    msg = Message.objects.create(club=club, sender=mem, character=character, body="Coin test")
+    record(character, "award", [Line(coins=100)], source_message=msg)
+
+    c = login(player)
+    resp = c.get(_url_message_detail(club, msg.pk))
+    content = resp.content.decode()
+    assert "1 gp" in content
+    assert "× 0" not in content
+    assert character.name in content
+
+
+@pytest.mark.story("S9")
+def test_message_detail_shows_mixed_grant(club, player, character, login):
+    """Mixed coin+item grant shows both coins and item."""
+    from accounts.models import Message
+    from items.models import Item
+    from ledger.services import Line, record
+
+    mem = player.memberships.get(club=club)
+    msg = Message.objects.create(club=club, sender=mem, character=character, body="Mixed test")
+    item = Item.objects.create(
+        club=club, name="Rope", is_stacked=True, unit_name="ft", value_cp=100
+    )
+    record(character, "award", [Line(coins=50), Line(item=item, quantity=3)], source_message=msg)
+
+    c = login(player)
+    resp = c.get(_url_message_detail(club, msg.pk))
+    content = resp.content.decode()
+    # 50 cp = 5 sp
+    assert "5 sp" in content
+    assert "Rope" in content
+    assert "3" in content
+    assert "× 0" not in content
+    assert character.name in content
+
+
+@pytest.mark.story("S9")
+def test_message_detail_shows_item_only_grant(club, player, character, login):
+    """Item-only grant shows item name and quantity."""
+    from accounts.models import Message
+    from items.models import Item
+    from ledger.services import Line, record
+
+    mem = player.memberships.get(club=club)
+    msg = Message.objects.create(club=club, sender=mem, character=character, body="Item test")
+    item = Item.objects.create(
+        club=club, name="Rope", is_stacked=True, unit_name="ft", value_cp=100
+    )
+    record(character, "award", [Line(item=item, quantity=3)], source_message=msg)
+
+    c = login(player)
+    resp = c.get(_url_message_detail(club, msg.pk))
+    content = resp.content.decode()
+    assert "Rope" in content
+    assert "3" in content
+    assert "× 0" not in content
+    assert character.name in content
+
+
+@pytest.mark.story("S9")
 def test_my_messages_provider_attributes():
     """MyMessagesDashboardProvider keeps its key and order."""
     from accounts.dashboard_providers import MyMessagesDashboardProvider
