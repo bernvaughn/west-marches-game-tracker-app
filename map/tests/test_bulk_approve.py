@@ -105,8 +105,8 @@ def test_gm_bulk_approve_creates_credits_and_marks(
     gm = login(game_master)
     resp = gm.post(_url(club), {"requests": [r.pk for r in reqs]}, HTTP_HX_REQUEST="true")
     assert resp.status_code == 204
-    trigger = resp["HX-Trigger"]
-    assert "appModalClose" in trigger and "refreshQueue" in trigger
+    assert resp["HX-Refresh"] == "true"
+    assert "appModalClose" in resp["HX-Trigger"]
 
     for r in reqs:
         r.refresh_from_db()

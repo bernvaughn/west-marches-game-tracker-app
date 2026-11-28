@@ -344,13 +344,8 @@ def bulk_approve(request, club_slug):
                 f" {skipped} request(s) were skipped "
                 "(already decided, visits, or missing a location)."
             )
-        return hx_response(
-            trigger={
-                "appModalClose": True,
-                "toast": {"message": message, "type": "success"},
-                "refreshQueue": True,
-            }
-        )
+        messages.success(request, message, extra_tags="toast-success")
+        return hx_response(trigger={"appModalClose": True}, refresh=True)
 
     return render(
         request,
