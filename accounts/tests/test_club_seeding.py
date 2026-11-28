@@ -284,6 +284,23 @@ def test_seed_new_club_twice_unchanged_counts(club):
     assert new_pack_slot_count == pack_slot_count
 
 
+def test_new_club_weights_twice_unchanged(club):
+    """Seeding a new club twice leaves item weights unchanged."""
+    seed_new_club(club)
+    first_weights = {
+        item.name: item.weight_hundredth_lb
+        for item in Item.objects.filter(club=club).exclude(weight_hundredth_lb__isnull=True)
+    }
+
+    seed_new_club(club)
+
+    second_weights = {
+        item.name: item.weight_hundredth_lb
+        for item in Item.objects.filter(club=club).exclude(weight_hundredth_lb__isnull=True)
+    }
+    assert first_weights == second_weights
+
+
 def test_seed_failure_rolls_back_via_direct_call(club, monkeypatch):
     """A seeding failure inside seed_new_club rolls back the whole club (direct call)."""
 
@@ -308,7 +325,7 @@ def test_seed_failure_rolls_back_via_direct_call(club, monkeypatch):
 
 def test_demo_new_club_parity():
     """Demo club and a new club have the same pack names, choice-group
-    slugs, General Store stock names."""
+    slugs, General Store stock names, and weighted items."""
     from django.core.management import call_command
 
     # Seed demo club
@@ -360,6 +377,43 @@ def test_demo_new_club_parity():
     new_stock = set(new_store.stock.values_list("item__name", flat=True))
     assert demo_stock == new_stock
 
+    # Weighted items: every weighted item on the new club has the same weight on the demo club.
+    demo_weights = {
+        item.name: item.weight_hundredth_lb
+        for item in Item.objects.filter(club=demo_club).exclude(weight_hundredth_lb__isnull=True)
+    }
+    new_weights = {
+        item.name: item.weight_hundredth_lb
+        for item in Item.objects.filter(club=new_club).exclude(weight_hundredth_lb__isnull=True)
+    }
+    for name, weight in new_weights.items():
+        assert name in demo_weights, f"{name} weighted on new club but not on demo club"
+        assert demo_weights[name] == weight, (
+            f"{name} weight differs: demo={demo_weights[name]} new={weight}"
+        )
+
+
+def test_demo_weighted_items_are_not_on_new_club():
+    """Demo-only weighted items (Healing potion, Wolf pelt, Moonstone amulet, etc.)
+    are not on a new club - they are demo data only."""
+    from django.core.management import call_command
+
+    call_command("seed_demo")
+
+    new_club = Club.objects.create(name="Parity Club", slug="parity-club-4")
+    seed_new_club(new_club)
+
+    new_weighted = set(
+        Item.objects.filter(club=new_club)
+        .exclude(weight_hundredth_lb__isnull=True)
+        .values_list("name", flat=True)
+    )
+    # Demo-only weighted items should NOT appear on a new club
+    demo_only = {"Healing potion", "Wolf pelt", "Moonstone amulet", "Parchment", "Hempen cord"}
+    assert demo_only.isdisjoint(new_weighted), (
+        f"Demo-only weights leaked to new club: {demo_only & new_weighted}"
+    )
+
 
 def test_demo_stacked_is_new_club_stacked_plus_demo_extras():
     """Demo stacked gear is the new club's stacked gear plus Parchment and Hempen cord."""
@@ -409,7 +463,8 @@ def test_seed_new_club_twice_adds_no_stacked_items_or_stock():
 
 
 def test_new_club_has_no_demo_only_rows():
-    """A new club must not have demo-only rows (ItemNote, requests, feedback).
+    """A new club must not have demo-only rows (ItemNote, requests, feedback,
+    sessions, player items, dead/archived characters, mail settings).
     Stacked ammunition items are now part of standard seeding."""
     new_club = Club.objects.create(name="Parity Club", slug="parity-club-2")
     seed_new_club(new_club)
@@ -443,3 +498,24 @@ def test_new_club_has_no_demo_only_rows():
 
     # No MagicItemStartingOption (only created in demo)
     assert not MagicItemStartingOption.objects.filter(template__club=new_club).exists()
+
+    # No sessions
+    from play_sessions.models import PlaySession
+
+    assert not PlaySession.objects.filter(club=new_club).exists()
+
+    # No player items
+    from player_items.models import PlayerItem
+
+    assert not PlayerItem.objects.filter(club=new_club).exists()
+
+    # No dead or archived characters
+    from player_characters.models import Character
+
+    assert not Character.objects.filter(club=new_club, died_on__isnull=False).exists()
+    assert not Character.objects.filter(club=new_club, archived_at__isnull=False).exists()
+
+    # No club mail settings
+    from mail.models import ClubMailSettings
+
+    assert not ClubMailSettings.objects.filter(club=new_club).exists()

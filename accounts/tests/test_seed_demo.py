@@ -7,13 +7,29 @@ from django.urls import reverse
 from accounts.demo import DEMO_LOGINS, DEMO_PASSWORD
 from accounts.models import Club, Membership, Message, SiteFeedback, User, WhitelistEntry
 from downtime.models import DowntimePointRequest
-from items.models import ContainerSlot, ContainerSlotOption, Item
+from items.models import ClubWeightSettings, ContainerSlot, ContainerSlotOption, Item
 from items.opening import open_container
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import available_items, coin_balance
+from mail.models import ClubMailSettings
 from map.models import HexMap, Location, Tile, TileVisit, XPLevel
-from player_characters.models import Character, ItemNote, JunkMark, SelectedCharacter
+from play_sessions.models import (
+    AttendanceHint,
+    PlayerRSVP,
+    PlaySession,
+    SessionAttendance,
+    SessionAward,
+    SessionSettings,
+)
+from player_characters.models import (
+    Character,
+    CharacterStatusChange,
+    ItemNote,
+    JunkMark,
+    SelectedCharacter,
+)
 from player_characters.sheet import xp_progress
+from player_items.models import PlayerItem, PlayerItemChange, PlayerNotice
 from quests.models import Quest, QuestRequirement, QuestReward
 from shops.models import Rotation, Shop, ShopStock
 from starting_equipment.models import (
@@ -55,6 +71,18 @@ MODELS = [
     MagicItemStartingOption,
     SiteFeedback,
     WhitelistEntry,
+    PlaySession,
+    PlayerRSVP,
+    SessionAttendance,
+    SessionAward,
+    SessionSettings,
+    AttendanceHint,
+    PlayerItem,
+    PlayerItemChange,
+    PlayerNotice,
+    CharacterStatusChange,
+    ClubWeightSettings,
+    ClubMailSettings,
 ]
 
 
@@ -357,3 +385,141 @@ def test_bundle_buy_smoke():
     from ledger.services import available_items
 
     assert available_items(aria)[parchment.pk] == 35
+
+
+def test_demo_sessions_exist():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    assert PlaySession.objects.filter(club=club, title="The Goblin Caves").exists()
+    assert PlaySession.objects.filter(club=club, title="Ruins of Karth").exists()
+    assert PlaySession.objects.filter(club=club, title="The Sunless Cellar").exists()
+    assert PlaySession.objects.filter(club=club, title="The Whispering Caves").exists()
+
+
+def test_demo_session_settings_and_token():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    settings = SessionSettings.objects.get(club=club)
+    assert settings.award_points == 1
+    assert settings.feed_token != ""
+
+
+def test_demo_rsvps_exist():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    alice = Membership.objects.get(club=club, user__email="alice@example.com")
+    bob = Membership.objects.get(club=club, user__email="bob@example.com")
+    session = PlaySession.objects.get(club=club, title="The Sunless Cellar")
+    alice_rsvp = PlayerRSVP.objects.get(session=session, member=alice)
+    bob_rsvp = PlayerRSVP.objects.get(session=session, member=bob)
+    assert alice_rsvp.answer == "yes"
+    assert bob_rsvp.answer == "maybe"
+
+
+def test_demo_attendance_and_awards():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    session = PlaySession.objects.get(club=club, title="The Goblin Caves")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    assert SessionAttendance.objects.filter(session=session, character=aria).exists()
+    assert SessionAttendance.objects.filter(session=session, character=borin).exists()
+    assert SessionAward.objects.filter(session=session, character=aria).exists()
+    assert SessionAward.objects.filter(session=session, character=borin).exists()
+
+
+def test_demo_attendance_hint():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    session = PlaySession.objects.get(club=club, title="The Sunless Cellar")
+    wren = Character.objects.get(club=club, name="Wren Thistledown")
+    assert AttendanceHint.objects.filter(session=session, character=wren).exists()
+
+
+def test_demo_weighted_items():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    for name in (
+        "Rope",
+        "Torch",
+        "Longsword",
+        "Healing potion",
+        "Wolf pelt",
+        "Moonstone amulet",
+        "Parchment",
+        "Hempen cord",
+    ):
+        item = Item.objects.get(club=club, name=name)
+        assert item.weight_hundredth_lb is not None, f"{name} has no weight"
+
+
+def test_demo_club_weight_settings():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    settings = ClubWeightSettings.objects.get(club=club)
+    assert settings.count_coin_weight is True
+
+
+def test_demo_borin_capacity_override():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    assert borin.carrying_capacity_lb == 300
+
+
+def test_demo_dead_and_archived_characters():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    garrick = Character.objects.get(club=club, name="Garrick Ashdown")
+    pip = Character.objects.get(club=club, name="Pip Quickfoot")
+    assert garrick.is_dead
+    assert garrick.died_on is not None
+    assert pip.is_archived
+    assert pip.archived_at is not None
+
+
+def test_demo_player_items():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+    wren = Character.objects.get(club=club, name="Wren Thistledown")
+    borin = Character.objects.get(club=club, name="Borin Stonefist")
+    assert PlayerItem.objects.filter(character=aria, name="Grandmother's locket").exists()
+    assert PlayerItem.objects.filter(character=wren, name="Lockpicks").exists()
+    # Borin has two lockpicks (same name_key as Wren's, grouped for merge)
+    assert PlayerItem.objects.filter(character=borin, name="lockpicks").exists()
+    assert PlayerItem.objects.filter(character=borin, name="Whetstone").exists()
+
+
+def test_demo_player_notice():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    alice = Membership.objects.get(club=club, user__email="alice@example.com")
+    assert PlayerNotice.objects.filter(membership=alice, kind="item_promoted").exists()
+
+
+def test_demo_club_mail_settings():
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    settings = ClubMailSettings.objects.get(club=club)
+    assert settings.contact_email == "gm@example.com"
+
+
+def test_second_seed_demo_adds_no_session_rows():
+    """A second run adds no SessionAward, PlayerItemChange, CharacterStatusChange or point rows."""
+    call_command("seed_demo")
+    club = Club.objects.get(slug="demo")
+    session = PlaySession.objects.get(club=club, title="The Goblin Caves")
+    aria = Character.objects.get(club=club, name="Aria Windrunner")
+
+    award_count = SessionAward.objects.filter(session=session, character=aria).count()
+    change_count = PlayerItemChange.objects.filter(club=club).count()
+    status_count = CharacterStatusChange.objects.filter(character__club=club).count()
+
+    call_command("seed_demo")
+
+    assert SessionAward.objects.filter(session=session, character=aria).count() == award_count
+    assert PlayerItemChange.objects.filter(club=club).count() == change_count
+    assert CharacterStatusChange.objects.filter(character__club=club).count() == status_count
+    # No duplicate attendance rows
+    assert SessionAttendance.objects.filter(session=session, character=aria).count() == 1

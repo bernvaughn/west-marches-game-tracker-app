@@ -144,12 +144,12 @@ def test_approvals_contract(rf, monkeypatch, club, player):
 
 
 @pytest.mark.story("U24")
-def test_demo_gives_alice_two_characters(db):
+def test_demo_gives_alice_three_characters(db):
     from django.core.management import call_command
 
     call_command("seed_demo")
     call_command("seed_demo")
-    assert Character.objects.filter(owner__user__email="alice@example.com").count() == 2
+    assert Character.objects.filter(owner__user__email="alice@example.com").count() == 3
 
 
 @pytest.fixture

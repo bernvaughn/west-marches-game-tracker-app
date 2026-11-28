@@ -67,6 +67,10 @@ unchanged; add `--force` to upgrade an existing template to the choice groups
 (`--force` replaces admin edits to the default template's lines and coins).
 To configure the packs only, run `uv run python manage.py seed_pack_containers --club <slug>`.
 To add the General Store to an existing club, run `uv run python manage.py seed_general_store --club <slug>`.
+
+Item weights from the SRD and gear lists are set on catalogue and General Store items
+when a new club is created. Existing clubs can backfill missing weights with
+`uv run python manage.py seed_item_weights --club <slug> --apply` (dry run without `--apply`).
 See [DATA_MODEL.md](docs/DATA_MODEL.md#what-a-new-club-is-seeded-with).
 
 ## Demo data
@@ -76,6 +80,7 @@ It also creates "Tilda Brightwater", a level 1 Cleric owned by bob@example.com.
 She holds one unopened Priest's Pack and has not claimed her starting equipment.
 
 Additional demo data:
+- **Sessions**: "The Goblin Caves" (9 days ago, with recap), "Ruins of Karth" (2 days ago), plus two upcoming sessions. RSVP and attendance rows exist so the wrap-up panel and Last session card show.
 - **Stacked items**: Parchment (sheets) and Hempen cord (feet) in the catalogue.
 - **Bundle shop lines**: The Rusty Lantern sells Parchment in bundles of 10 (unlimited) and Hempen cord in bundles of 50 (qty 4).
 - **Unit holdings**: Aria Windrunner holds 25 sheets of Parchment and 40 ft of Hempen cord.
@@ -89,6 +94,12 @@ Additional demo data:
 - **Partial quest progress**: Borin Stonefist holds one Wolf pelt, so "Pelts for the Tanner" shows 1 of 3 on the quest board (U136).
 - **Pending whitelist entry**: newplayer@example.com is on the demo club whitelist, so the People page whitelist is not empty (U133).
 - **Site feedback**: Alice filed a bug report about tooltip flicker on mobile.
+- **Item weights**: Rope, Torch, Longsword and demo-only items (Healing potion, Wolf pelt, Moonstone amulet, Parchment, Hempen cord) have weights. The demo club counts coin weight toward carrying weight.
+- **Carrying capacity override**: Borin Stonefist has a manual capacity of 300 lb.
+- **Dead character**: Garrick Ashdown (Bob's level 3 Fighter) died 10 days ago; the Fallen page and memorial show him.
+- **Archived character**: Pip Quickfoot (Alice's level 1 Rogue) is archived; the archive list shows her.
+- **Player-written items**: Aria's "Grandmother's locket", Wren's and Borin's "Lockpicks" (grouped for merge review), Borin's "Whetstone". One notice for Alice about a promoted item.
+- **Club mail settings**: Contact email is gm@example.com for the "message the admins" feature.
 
 `seed_demo` is safe to run more than once.
 

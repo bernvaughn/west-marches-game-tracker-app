@@ -1,4 +1,14 @@
-from .models import Item
+from .models import ClubWeightSettings, Item
+
+# Weights for demo-only items not covered by SRD or gear lists (hundredths of a lb).
+# Filled only while blank, so an admin-set weight survives a re-run.
+DEMO_WEIGHTS = {
+    "Healing potion": 50,  # 0.5 lb per vial
+    "Wolf pelt": 200,  # 2.0 lb
+    "Moonstone amulet": 10,  # 0.1 lb
+    "Parchment": 1,  # 0.01 lb per sheet
+    "Hempen cord": 2,  # 0.02 lb per foot
+}
 
 ITEMS = [
     ("Rope", 100, "🪢", "standard", "", ""),
@@ -108,3 +118,16 @@ def seed(club):
             updated.append("value_units")
         if updated:
             item.save(update_fields=updated)
+
+    # Fill blank weights on demo items (only while blank).
+    for name, weight_hundredths in DEMO_WEIGHTS.items():
+        item = Item.objects.filter(club=club, name=name).first()
+        if item is not None and item.weight_hundredth_lb is None:
+            item.weight_hundredth_lb = weight_hundredths
+            item.save(update_fields=["weight_hundredth_lb"])
+
+    # Demo club counts coin weight toward carrying weight.
+    ClubWeightSettings.objects.get_or_create(
+        club=club,
+        defaults={"count_coin_weight": True},
+    )
