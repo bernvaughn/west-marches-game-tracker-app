@@ -1,24 +1,33 @@
-"""Flow 10: message the admins.
+"""Flow 10: message the admins, then answer it as an admin.
 
-As a player (alice, Aria Windrunner): send a message to the club admins,
-check it appears as Open, then check the admin's answer arrives (status
-change + grant).
+As a player (alice, Aria Windrunner): send a message to the club admins, check
+it shows as Open, then check the admin's answer arrives (Handled status, the
+grant, the dashboard preview and the coins on the sheet).
 
-As an admin: open the inbox, read the message, mark it Handled, and give
-a coins grant on a second message.
+As a club admin (gm): open the inbox, find the message, read it, mark it
+Handled, and give a 1 gp coin grant. Those admin actions are SETUP only: flow 7
+(``flow_7_gm.py``) already checks the status modals, the inbox filters, bulk
+Apply and Give. This flow checks only what is new:
 
-Runs at 1280 and 390 wide. Each width gets its own fresh seeded demo
-database and server. Firefox is used if it launches, else Chromium.
+* the sent message appears for the player and for the admin;
+* the admin outcome (Handled status, the grant) arrives in the player's views;
+* the Handled status and the grant survive a reload;
+* permissions (a player cannot open the inbox or another player's message);
+* the player's "Back to inbox" link, the site admin detail page, and 390 layout.
 
-Every control is a Recorder.check: a visible result, a 2xx/3xx answer,
-and a clean recorder (no console error, CSP violation, 4xx/5xx since
-the previous check). A missing control is a failed check, never a skip.
+The product has no reply box and no read/unread mark: the "answer" is a status
+change or a grant. Nothing to click for those, so nothing is filed for them.
 
-Flow 7 already covers the message form templates, inbox filters, status
-modals, bulk Apply and Give in detail. This flow exercises each control
-as part of the player→admin→player loop without repeating those checks.
+Runs at 1280 and 390 wide. Each width gets its own fresh seeded demo database
+and server (RESEND_API_KEY is stripped, so email is off). Firefox is used if it
+launches, else Chromium; the browser name is printed.
 
-Run: python scripts/flow_checks/flow_10_admin_message.py
+Every control is logged through ``Tab.check`` (a visible result, a 2xx/3xx
+answer where one is expected, and a clean recorder: no console error, CSP
+violation, or 4xx/5xx since the previous check). A missing control is a failed
+check, never a skip.
+
+Run: ``python scripts/flow_checks/flow_10_admin_message.py`` (exit 0 clean, 1 on problems).
 """
 
 from __future__ import annotations
@@ -28,6 +37,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import traceback
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -39,42 +49,66 @@ import scripts.flow_check_lib as lib  # noqa: E402
 
 FLOW = "flow_10_admin_message"
 CLUB = "/c/demo"
+INBOX = f"{CLUB}/accounts/messages/"
+FORM = f"{CLUB}/accounts/messages/new/"
 
 MSG_BODY = "Flow 10: can the admins check the goblin cave loot?"
+NEEDLE = MSG_BODY[:30]
+BOB_BODY = "Flow 10 bob: please look at my map credit."
 MSG_LONG = "x" * 2001  # one over the 2000-char model limit
-GRANT_GP = "1"
-DETAIL_URL_RE = re.compile(r"/c/demo/accounts/messages/\d+/$")
+GRANT_GP = 1
+CP_PER = {"cp": 1, "sp": 10, "gp": 100, "pp": 1000}
 
-# Seed extras: give the admin user a club membership so the admin can view
-# message detail pages (the view accesses request.membership.id).
+DETAIL_PATH_RE = re.compile(r"/c/demo/accounts/messages/(\d+)/$")
+SHEET_PATH_RE = re.compile(r"/c/demo/characters/\d+/$")
+CHECKBOX_RE = re.compile(r'name="message_ids"\s+value="(\d+)"')
+COINS_RE = re.compile(r"([\d,]+)\s*(pp|gp|sp|cp)\b")
+
+# Seed extras: a second player (bob) with a message of his own, so the
+# permission checks use a real message owned by someone else. Plain seed data;
+# nothing here gives the admin extra access.
 SEED_EXTRAS = """
-from accounts.models import Club, Membership
-from django.contrib.auth import get_user_model
-User = get_user_model()
+from accounts.models import Club, Membership, Message
+from player_characters.models import Character
 club = Club.objects.get(slug="demo")
-admin = User.objects.get(email="admin@example.com")
-Membership.objects.get_or_create(user=admin, club=club,
-    defaults={"is_club_admin": True, "is_game_master": True})
+bob = Membership.objects.get(user__email="bob@example.com", club=club)
+brin, _ = Character.objects.get_or_create(club=club, owner=bob, name="Brin Stoneback")
+Message.objects.get_or_create(club=club, sender=bob, character=brin,
+    body="Flow 10 bob: please look at my map credit.")
 """
 
 
 # --------------------------------------------------------------------------- pure helpers
 
 
-def first_int(text: str | None) -> int | None:
-    """First integer found in text, else None."""
-    match = re.search(r"\d[\d,]*", text or "")
-    return int(match.group(0).replace(",", "")) if match else None
+def message_pk(row_html: str) -> int | None:
+    """Message pk from the tick-box in an inbox row's HTML, else None."""
+    match = CHECKBOX_RE.search(row_html or "")
+    return int(match.group(1)) if match else None
+
+
+def detail_pk(path: str) -> int | None:
+    """Message pk from a detail page path (``/c/demo/accounts/messages/7/``), else None."""
+    match = DETAIL_PATH_RE.search(path or "")
+    return int(match.group(1)) if match else None
 
 
 def rows_matching(texts: list[str], needle: str) -> list[str]:
-    """List items from texts that contain needle."""
+    """Items from ``texts`` that contain ``needle``."""
     return [t for t in texts if needle in t]
 
 
 def status_of_badge(text: str) -> str:
-    """Normalise a badge display text to its status value."""
-    return text.strip().lower()
+    """Normalise a status badge's text ("Handled") to its value ("handled")."""
+    return (text or "").strip().lower()
+
+
+def coins_to_cp(text: str) -> int | None:
+    """Copper value of a coin text such as "12 gp 3 sp"; None when there is no coin."""
+    parts = COINS_RE.findall(text or "")
+    if not parts:
+        return None
+    return sum(int(n.replace(",", "")) * CP_PER[unit] for n, unit in parts)
 
 
 # --------------------------------------------------------------------------- Tab
@@ -96,6 +130,9 @@ class Tab:
         self.rec = lib.Recorder()
         self.rec.attach(self.page)
         self._mark = 0
+        self.problems: list[str] = []
+        self.responses: list[tuple[str, int]] = []
+        self.page.on("response", lambda r: self.responses.append((r.url, r.status)))
 
     # -- checks --------------------------------------------------------------
 
@@ -115,7 +152,15 @@ class Tab:
             ok=ok2,
         )
         self._mark = self.rec.mark()
+        if not ok2:
+            self.problems.append(f"{control}: expected {expected!r}, got {shown}")
         return ok2
+
+    def flush(self) -> None:
+        """Record recorder problems that no check has covered yet (setup steps)."""
+        for text in self.rec.since(self._mark):
+            self.problems.append(f"unchecked: {text}")
+        self._mark = self.rec.mark()
 
     def wait(self, expr: str, timeout: float = 8) -> bool:
         try:
@@ -127,67 +172,68 @@ class Tab:
     # -- navigation ----------------------------------------------------------
 
     def goto(self, path: str, control: str | None = None, expect_status: int = 200):
+        """Open a page. ``control`` None means setup only (no check, errors still count)."""
         resp = self.page.goto(f"{self.base}{path}", wait_until="networkidle")
         status = resp.status if resp else None
-        ok = status == expect_status
-        problem = None if expect_status < 400 else str(expect_status)
-        self.check(
-            control or f"open {path}",
-            f"HTTP {expect_status}",
-            f"HTTP {status}",
-            ok,
-            url=self.page.url,
-            expect_problem=problem,
-        )
+        if control is not None:
+            problem = None if expect_status < 400 else str(expect_status)
+            self.check(
+                control,
+                f"HTTP {expect_status}",
+                f"HTTP {status}",
+                status == expect_status,
+                url=self.page.url,
+                expect_problem=problem,
+            )
         return status
 
-    def click_nav(self, locator, control: str, expect_path=None) -> bool:
-        with self.page.expect_navigation(wait_until="networkidle") as info:
-            locator.click()
-        resp = info.value
-        status = resp.status if resp else None
-        path = self.page.evaluate("location.pathname")
-        ok = status is not None and 200 <= status < 400
-        if expect_path is not None:
-            ok = ok and (
-                bool(expect_path.search(path))
-                if hasattr(expect_path, "search")
-                else path == expect_path
-            )
-        return self.check(
-            control,
-            f"2xx/3xx at {getattr(expect_path, 'pattern', expect_path)}",
-            f"{status} {path}",
-            ok,
-        )
+    def reload(self) -> int | None:
+        resp = self.page.reload(wait_until="networkidle")
+        return resp.status if resp else None
 
-    def open_menu(self, control: str) -> bool:
-        self.page.locator("a.wm-hamburger").click()
-        shown = self.wait("!!document.querySelector('#site-menu.show')")
-        return self.check(control, "side menu visible", "visible" if shown else "hidden", shown)
-
-    def close_menu(self, control: str) -> bool:
-        self.page.locator("#site-menu .btn-close").click()
-        gone = False
+    def pathname(self) -> str:
+        """Current path. Polls: an HTMX swap can replace the document mid-evaluate."""
         end = time.time() + 5
+        while True:
+            try:
+                return self.page.evaluate("location.pathname")
+            except Exception:
+                if time.time() > end:
+                    raise
+                time.sleep(0.1)
+
+    def click_through(self, locator, expect_path=None) -> str:
+        """Click a link and wait until the page settles on the next path.
+
+        Waits for the path to change (or match ``expect_path``) instead of
+        ``expect_navigation``: HTMX boosts some links and a boosted click
+        swaps the body without a navigation event.
+        """
+        before = self.pathname()
+        locator.click()
+        end = time.time() + 8
         while time.time() < end:
-            if self.page.locator("#site-menu.show").count() == 0:
-                gone = True
+            path = self.pathname()
+            done = bool(expect_path.search(path)) if expect_path is not None else path != before
+            if done:
                 break
             time.sleep(0.1)
-        return self.check(control, "side menu closed", "closed" if gone else "still open", gone)
+        self.page.wait_for_load_state("networkidle")
+        return self.pathname()
 
-    def nav_to(self, label: str, expect_path, menu_label: str | None = None) -> bool:
-        link = self.page.locator(f'.wm-shortcuts a.wm-shortcut[aria-label="{label}"]')
-        if link.count() and link.first.is_visible():
-            return self.click_nav(link.first, f'header nav link "{label}"', expect_path)
-        menu_label = menu_label or label
-        self.open_menu(f'hamburger opens menu for "{menu_label}"')
-        return self.click_nav(
-            self.page.locator(f'#site-menu a:text-is("{menu_label}")').first,
-            f'side menu link "{menu_label}"',
-            expect_path,
+    def click_nav(self, locator, control: str, expect_path=None) -> bool:
+        path = self.click_through(locator, expect_path)
+        ok = bool(expect_path.search(path)) if expect_path is not None else True
+        return self.check(
+            control, f"lands on {getattr(expect_path, 'pattern', 'next page')}", path, ok
         )
+
+    def status_for(self, path_suffix: str) -> int | None:
+        """Latest HTTP status seen for a URL path (any request), else None."""
+        for url, status in reversed(self.responses):
+            if url.split("?")[0].endswith(path_suffix):
+                return status
+        return None
 
     # -- reading -------------------------------------------------------------
 
@@ -201,20 +247,62 @@ class Tab:
             time.sleep(0.1)
         return loc.first
 
-    def no_hscroll(self, control: str):
+    def h2(self) -> str:
+        """Text of the first h2 in main; polls like :meth:`pathname`."""
+        end = time.time() + 5
+        while True:
+            try:
+                return self.page.evaluate(
+                    "(() => { const el = document.querySelector('main h2');"
+                    " return el ? el.innerText.trim() : ''; })()"
+                )
+            except Exception:
+                if time.time() > end:
+                    raise
+                time.sleep(0.1)
+
+    def main_text(self) -> str:
+        return self.page.locator("main").first.inner_text()
+
+    def no_hscroll(self, control: str, path: str) -> None:
+        """Open ``path`` first, then measure that page."""
+        self.goto(path)
         sw, iw = self.page.evaluate("[document.documentElement.scrollWidth, window.innerWidth]")
-        self.check(control, f"scrollWidth <= {iw}", f"scrollWidth {sw}", sw <= iw + 1)
+        self.check(control, f"scrollWidth <= {iw}", f"scrollWidth {sw}", sw <= iw + 1, url=path)
 
-    def text(self, selector="main") -> str:
-        return self.page.locator(selector).first.inner_text()
+    def inbox_find(self, needle: str) -> tuple[list[str], int | None]:
+        """Texts of the inbox rows that contain ``needle``, and the first one's pk."""
+        rows = self.page.evaluate(
+            "Array.from(document.querySelectorAll('#inbox-list tbody tr'))"
+            ".filter(r => r.querySelector('input[name=message_ids]'))"
+            ".map(r => [r.innerText, r.innerHTML])"
+        )
+        texts = rows_matching([text for text, _ in rows], needle)
+        pk = next((message_pk(html) for text, html in rows if text in texts), None)
+        return texts, pk
 
-    # -- modal ---------------------------------------------------------------
+    def badge_of(self, scope) -> str:
+        """Status value shown by the first badge inside ``scope`` (a locator or selector)."""
+        loc = self.page.locator(scope) if isinstance(scope, str) else scope
+        badge = loc.locator(".wm-badge, .badge")
+        return status_of_badge(badge.first.inner_text()) if badge.count() else ""
 
-    def modal_open(self) -> bool:
-        return self.wait("!!document.querySelector('#app-modal.show .modal-content .modal-body')")
+    def sheet_coins_cp(self) -> int | None:
+        """Open the character sheet from the header (or menu) and read the coin total."""
+        link = self.page.locator('.wm-shortcuts a.wm-shortcut[aria-label="Character"]')
+        if link.count() and link.first.is_visible():
+            self.click_through(link.first, SHEET_PATH_RE)
+        else:
+            self.page.locator("a.wm-hamburger").click()
+            self.wait("!!document.querySelector('#site-menu.show')")
+            self.click_through(
+                self.page.locator('#site-menu a:text-is("My character")').first, SHEET_PATH_RE
+            )
+        if not SHEET_PATH_RE.match(self.pathname()):
+            return None
+        return coins_to_cp(self.page.locator(".wm-sheet-coins-total").first.inner_text())
 
-    def modal_closed(self) -> bool:
-        return self.page.locator("#app-modal.show").count() == 0
+    # -- modal (setup only) ----------------------------------------------------
 
     def modal_has(self, text: str, timeout: float = 8) -> bool:
         return self.wait(
@@ -223,18 +311,60 @@ class Tab:
             timeout,
         )
 
-    def modal_text(self) -> str:
-        return self.page.locator("#app-modal .modal-content").first.inner_text()
+    def modal_closed(self, timeout: float = 8) -> bool:
+        return self.wait("!document.querySelector('#app-modal.show')", timeout)
+
+    def row_action(self, pk: int, label: str, expect_text: str) -> None:
+        """Click one inbox row action and wait for its modal. Raises if missing."""
+        link = self.page.locator(
+            f"#inbox-list tbody tr:has(input[name=message_ids][value='{pk}']) "
+            f"a[aria-label='{label}']"
+        )
+        if link.count() == 0:
+            raise MissingControl(f"inbox row #{pk} has no '{label}' action")
+        link.first.click()
+        if not self.modal_has(expect_text):
+            raise MissingControl(f"'{label}' modal did not open")
+
+    def confirm_modal(self) -> None:
+        self.page.locator("#app-modal .modal-footer button[type=submit]").first.click()
+        if not self.modal_closed():
+            raise MissingControl("modal did not close after confirm")
+
+    def set_status(self, pk: int, status_filter: str, label: str, expect_text: str) -> None:
+        """Mark handled / reopen through the real status modal (setup, no checks)."""
+        self.goto(f"{INBOX}?status={status_filter}&kind=all")
+        self.row_action(pk, label, expect_text)
+        self.confirm_modal()
+
+    def give_coins(self, pk: int, gp: int) -> None:
+        """Give coins through the real Give modal: fill, Review, Confirm (setup, no checks)."""
+        self.goto(f"{INBOX}?status=open&kind=all")
+        self.row_action(pk, "Give coins", "Give coins")
+        self.page.fill("#app-modal input[name=coins_gp]", str(gp))
+        self.page.locator("#app-modal button[value=review]").first.click()
+        if not self.modal_has("Give this from"):
+            raise MissingControl("Give coins Review summary did not show")
+        self.page.locator("#app-modal button[name=confirmed]").first.click()
+        if not self.modal_closed():
+            raise MissingControl("Give coins modal did not close after confirm")
 
 
 # --------------------------------------------------------------------------- player steps
 
 
-def player_send_message(p: Tab) -> None:
+def player_send_message(p: Tab, state: dict) -> None:
     """Alice opens the dashboard, clicks Message Admins, sends a message."""
     p.goto(f"{CLUB}/", "open club home as Alice")
+    state["coins_before"] = p.sheet_coins_cp()
+    p.check(
+        "sheet shows Aria's coin total before the grant",
+        "a coin total",
+        state["coins_before"],
+        state["coins_before"] is not None,
+    )
+    p.goto(f"{CLUB}/")
 
-    # Click the "Message Admins" dashboard card link.
     p.need("a:has-text('Message Admins')", "dashboard 'Message Admins' card link")
     p.click_nav(
         p.page.locator("a:has-text('Message Admins')").first,
@@ -242,542 +372,281 @@ def player_send_message(p: Tab) -> None:
         re.compile(r"/c/demo/accounts/messages/new/$"),
     )
 
-    # Empty body: HTML5 'required' blocks submit; check the page stays put.
-    before_url = p.page.evaluate("location.pathname")
-    p.page.locator("#message-form button[type=submit]").click()
-    p.page.wait_for_load_state("networkidle")
-    after_url = p.page.evaluate("location.pathname")
-    p.check(
-        "send with empty body",
-        "page stays on form (HTML5 required blocks submit)",
-        f"url={after_url}",
-        after_url == before_url,
-    )
+    # Empty body and an over-long body: the browser's own validation blocks the submit.
+    for control, body in (("send with empty body", ""), ("send with 2001 chars", MSG_LONG)):
+        p.page.fill("textarea[name=body]", body)
+        before = p.pathname()
+        p.page.locator("#message-form button[type=submit]").click()
+        p.page.wait_for_load_state("networkidle")
+        after = p.pathname()
+        p.check(control, "page stays on the form (no send)", after, after == before)
 
-    # 2001 chars: over the 2000 limit; HTML5 maxlength blocks submit.
-    p.page.fill("textarea[name=body]", MSG_LONG)
-    before_url = p.page.evaluate("location.pathname")
-    p.page.locator("#message-form button[type=submit]").click()
-    p.page.wait_for_load_state("networkidle")
-    after_url = p.page.evaluate("location.pathname")
-    p.check(
-        "send with 2001 chars",
-        "page stays on form (HTML5 maxlength blocks submit)",
-        f"url={after_url}",
-        after_url == before_url,
-    )
-
-    # Valid message.
     p.page.fill("textarea[name=body]", MSG_BODY)
     with p.page.expect_navigation(wait_until="networkidle") as nav:
         p.page.locator("#message-form button[type=submit]").click()
     status = nav.value.status
-    flash = p.text(".alert") if p.page.locator(".alert").count() else ""
-    rows = p.page.evaluate(
-        "Array.from(document.querySelectorAll('table tbody tr')).map(r => r.textContent)"
-    )
-    open_row = any(MSG_BODY[:30] in r and "Open" in r for r in rows)
+    flash = p.page.locator(".alert").first.inner_text() if p.page.locator(".alert").count() else ""
+    row = p.page.locator("table tbody tr", has_text=NEEDLE)
     p.check(
         "send valid message",
-        "2xx, flash 'Message sent', new Open row",
-        f"HTTP {status}, flash {flash[:50]!r}, open_row={open_row}",
-        status < 400 and "Message sent" in flash and open_row,
+        "2xx, flash 'Message sent', one new Open row",
+        f"HTTP {status}, flash {flash[:40]!r}, rows={row.count()}, badge={p.badge_of(row)!r}",
+        status < 400 and "Message sent" in flash and row.count() == 1 and p.badge_of(row) == "open",
     )
 
-    # Reload: the row stays.
-    resp = p.page.reload(wait_until="networkidle")
-    status = resp.status if resp else None
-    rows = p.page.evaluate(
-        "Array.from(document.querySelectorAll('table tbody tr')).map(r => r.textContent)"
-    )
-    open_row = any(MSG_BODY[:30] in r and "Open" in r for r in rows)
+    status = p.reload()
+    row = p.page.locator("table tbody tr", has_text=NEEDLE)
     p.check(
-        "your messages row survives reload",
-        "row still Open after reload",
-        f"HTTP {status}, open_row={open_row}",
-        status < 400 and open_row,
+        "sent message survives reload",
+        "one row, still Open",
+        f"HTTP {status}, rows={row.count()}, badge={p.badge_of(row)!r}",
+        status == 200 and row.count() == 1 and p.badge_of(row) == "open",
     )
 
-    # Template prefill: ?template=loot.
-    p.goto(f"{CLUB}/accounts/messages/new/?template=loot", "open form with template=loot")
-    body_val = p.page.locator("textarea[name=body]").input_value()
+    p.goto(f"{FORM}?template=loot")
+    body = p.page.locator("textarea[name=body]").input_value()
     p.check(
-        "template=loot prefills the body",
-        "body starts with loot template text",
-        body_val[:60],
-        "I think" in body_val and "missing:" in body_val,
+        "?template=loot prefills the body",
+        "loot template text with the character name",
+        body[:60],
+        "Aria Windrunner" in body and "missing" in body,
     )
 
 
-def player_before_answer(p: Tab) -> None:
-    """Alice checks her messages before the admin answers."""
-    p.goto(f"{CLUB}/", "open club home as Alice")
-
-    # "My Messages" card shows the new message with Open badge.
-    p.need(".list-group-item", "My Messages card items")
-    items = p.page.locator(".list-group-item").all_inner_texts()
-    found = any(MSG_BODY[:30] in t and "Open" in t for t in items)
+def player_before_answer(p: Tab, state: dict) -> None:
+    """Alice checks her message on the dashboard and its detail page before any answer."""
+    p.goto(f"{CLUB}/")
+    item = p.page.locator(".list-group-item", has_text=NEEDLE)
     p.check(
-        "My Messages card shows new message",
-        "message row with Open badge",
-        f"items={len(items)} found={found}",
-        found,
+        "My Messages card shows the new message as Open",
+        "one card row, Open badge, no admin preview",
+        f"rows={item.count()} badge={p.badge_of(item)!r}",
+        item.count() == 1 and p.badge_of(item) == "open" and "Admin" not in item.first.inner_text(),
     )
 
-    # Click "View Response" on Alice's message → detail page.
-    # Find the list item that contains our message body text and click its
-    # "View Response" link directly (avoids URL-matching issues).
-    clicked = p.page.evaluate(
-        """(needle) => {
-          const li = Array.from(document.querySelectorAll('.list-group-item'))
-            .find(el => el.textContent.includes(needle));
-          if (!li) return false;
-          const as = Array.from(li.querySelectorAll('a'));
-          const a = as.find(el => el.textContent.includes('View Response'));
-          if (!a) return false;
-          a.click();
-          return true;
-        }""",
-        MSG_BODY[:30],
-    )
-    if not clicked:
-        p.check(
-            "'View Response' link on Alice's message",
-            "link present and clickable",
-            "missing",
-            False,
-        )
-        return
-    p.page.wait_for_load_state("networkidle")
-    # Wait for the page to settle after HTMX navigation.
-    end = time.time() + 5
-    detail_path = ""
-    while time.time() < end:
-        try:
-            detail_path = p.page.evaluate("location.pathname")
-            break
-        except Exception:
-            time.sleep(0.1)
+    link = item.locator("a", has_text="View Response")
+    p.need(".list-group-item a:has-text('View Response')", "card 'View Response' link")
+    p.click_nav(link.first, "card link: View Response", DETAIL_PATH_RE)
+    state["pk"] = detail_pk(p.pathname())
+    p.check("detail page URL carries the message pk", "a pk", state["pk"], state["pk"] is not None)
+    text = p.main_text()
     p.check(
-        "'View Response' link navigates to detail",
-        "detail page URL",
-        detail_path,
-        bool(DETAIL_URL_RE.search(detail_path)),
-    )
-    h2_text = ""
-    end = time.time() + 5
-    while time.time() < end:
-        try:
-            h2_text = p.page.evaluate(
-                "() => { const el = document.querySelector('main h2');"
-                " return el ? el.innerText.trim() : ''; }"
-            )
-            break
-        except Exception:
-            time.sleep(0.1)
-    h2 = h2_text
-    p.check(
-        "detail page heading",
-        "'Your Message'",
-        h2,
-        h2 == "Your Message",
-    )
-    # Check the body is visible on the detail page.
-    body_shown = MSG_BODY[:30] in p.text()
-    badge_open = "Open" in p.text()
-    no_admin_response = "Admin Response" not in p.text()
-    p.check(
-        "detail page before answer",
-        "body + Open badge + no Admin Response",
-        f"body={body_shown} badge={badge_open} no_admin_response={no_admin_response}",
-        body_shown and badge_open and no_admin_response,
+        "detail page before the answer",
+        "heading 'Your Message', body, Open badge, no Admin Response",
+        f"h2={p.h2()!r} body={NEEDLE in text} admin_response={'Admin Response' in text}",
+        p.h2() == "Your Message"
+        and NEEDLE in text
+        and p.badge_of("main") == "open"
+        and "Admin Response" not in text,
     )
 
-    # "Back to inbox" link on the player detail page.
-    p.need("a:has-text('Back to inbox')", "'Back to inbox' link")
+    # The player's own "Back" link. A player cannot open the inbox.
+    back = p.page.locator("a:has-text('Back to inbox')")
+    p.check("detail page has a Back link", "one link", back.count(), back.count() == 1)
+    p.click_through(back.first)
+    path = p.pathname()
+    status = p.status_for("/accounts/messages/")
     p.check(
-        "Back to inbox link present",
-        "link exists",
-        "present",
-        True,
+        "player's 'Back to inbox' link leads to a working page",
+        "2xx page (not an error page)",
+        f"HTTP {status} at {path}",
+        status is not None and status < 400,
+        expect_problem=str(status) if status and status >= 400 else None,
     )
 
 
 # --------------------------------------------------------------------------- admin steps
 
 
-def admin_reads_inbox(a: Tab) -> None:
-    """Admin opens the inbox and finds Alice's message."""
-    a.goto(f"{CLUB}/accounts/messages/", "open admin inbox")
-
-    # The new message row is present.
-    a.need("#inbox-list tbody tr", "inbox rows")
-    rows = a.page.evaluate(
-        "Array.from(document.querySelectorAll('#inbox-list tbody tr'))"
-        ".filter(r => r.querySelector('input[name=message_ids]'))"
-        ".map(r => r.textContent)"
-    )
-    found = any(MSG_BODY[:30] in r for r in rows)
-    a.check(
-        "inbox shows Alice's message",
-        "row with sender + character + body + date",
-        f"rows={len(rows)} found={found}",
-        found,
-    )
-
-    # Status column visible at 1280; hidden at 390 (d-none d-sm-table-cell).
-    if a.width > 480:
-        status_col = a.page.locator("th:has-text('Status')").count() > 0
-        a.check("Status column header visible", "Status column at 1280", status_col, status_col)
+def admin_reads_inbox(a: Tab, state: dict) -> None:
+    """The admin opens the inbox from the header, finds Alice's message and reads it."""
+    a.goto(f"{CLUB}/")
+    inbox_link = a.page.locator('.wm-shortcuts a.wm-shortcut[aria-label="Inbox"]')
+    if inbox_link.count() and inbox_link.first.is_visible():
+        a.click_nav(inbox_link.first, "header link: Inbox", re.compile(r"/accounts/messages/$"))
     else:
-        # At 390, Status column cells are hidden (d-none d-sm-table-cell)
-        hidden = a.page.evaluate(
-            "Array.from(document.querySelectorAll('#inbox-list th.wm-col-optional'))"
-            ".every(e => e.offsetParent === null)"
-        )
-        a.check("Status column hidden at 390", "Status column hidden", hidden, hidden)
+        a.goto(INBOX, "open inbox")
 
-    # Open the detail page as admin by URL (inbox rows have no detail link).
-    detail_pk = a.page.evaluate(
-        """(needle) => {
-          const row = Array.from(document.querySelectorAll('#inbox-list tbody tr'))
-            .filter(r => r.querySelector('input[name=message_ids]'))
-            .find(r => r.textContent.includes(needle));
-          if (!row) return null;
-          const m = row.innerHTML.match(/messages\\/(\\d+)\\//);
-          return m ? m[1] : null;
-        }""",
-        MSG_BODY[:30],
-    )
-    if detail_pk:
-        a.goto(f"{CLUB}/accounts/messages/{detail_pk}/", "open message detail as admin by URL")
-        h2_text = ""
-        end = time.time() + 5
-        while time.time() < end:
-            try:
-                h2_text = a.page.evaluate(
-                    "() => { const el = document.querySelector('main h2');"
-                    " return el ? el.innerText.trim() : ''; }"
-                )
-                break
-            except Exception:
-                time.sleep(0.1)
-        h2 = h2_text
-        a.check(
-            "admin detail page heading",
-            "'Your Message'",
-            h2,
-            h2 == "Your Message",
-        )
-        body_shown = MSG_BODY[:30] in a.text()
-        a.check(
-            "admin detail page shows body",
-            "message body visible",
-            body_shown,
-            body_shown,
-        )
-    else:
-        a.check(
-            "admin finds detail URL for Alice's message",
-            "detail URL extractable from row",
-            "missing",
-            False,
-        )
-
-
-def admin_answers(a: Tab, width: int) -> None:
-    """Admin marks one message Handled and gives a coins grant on another."""
-    a.goto(f"{CLUB}/accounts/messages/?status=open&kind=all", "open inbox Open list")
-
-    # Find Alice's message PK.
-    msg_pk = a.page.evaluate(
-        """(needle) => {
-          const row = Array.from(document.querySelectorAll('#inbox-list tbody tr'))
-            .filter(r => r.querySelector('input[name=message_ids]'))
-            .find(r => r.textContent.includes(needle));
-          if (!row) return null;
-          const m = row.innerHTML.match(/name="message_ids" value="(\\d+)"/);
-          return m ? m[1] : null;
-        }""",
-        MSG_BODY[:30],
-    )
-    if not msg_pk:
-        a.check("admin finds Alice's message PK in Open inbox", "PK extractable", "missing", False)
-        return
-
-    # Mark the found message Handled through the modal (setup only).
-    row_loc = a.page.locator("#inbox-list tbody tr").filter(has_text=MSG_BODY[:30])
-    handled_btn = row_loc.locator("a[aria-label='Mark handled']")
-    if handled_btn.count() > 0:
-        handled_btn.first.click()
-        opened = a.modal_open() and a.modal_has("Mark handled")
-        a.check(
-            "Mark handled modal opens",
-            "modal with sender",
-            a.modal_text()[:60],
-            opened,
-        )
-        if opened:
-            a.page.locator("#app-modal .modal-footer button[type=submit]").first.click()
-            closed = a.modal_closed()
-            # HTMX may close the modal automatically; give it a moment.
-            end = time.time() + 5
-            while time.time() < end and not closed:
-                closed = a.modal_closed()
-                time.sleep(0.1)
-            a.check(
-                "Mark handled confirm closes modal",
-                "modal closed",
-                closed,
-                closed,
-            )
-
-    # Handled filter shows the row, Open no longer does.
-    a.goto(f"{CLUB}/accounts/messages/?status=handled&kind=all", "open inbox Handled list")
-    rows = a.page.evaluate(
-        "Array.from(document.querySelectorAll('#inbox-list tbody tr'))"
-        ".filter(r => r.querySelector('input[name=message_ids]'))"
-        ".map(r => r.textContent)"
-    )
-    handled_has = any(MSG_BODY[:30] in r for r in rows)
+    mine, state["admin_pk"] = a.inbox_find(NEEDLE)
+    shows_character = bool(mine) and "Aria Windrunner" in mine[0]
     a.check(
-        "Handled filter shows the message",
-        "row present under Handled",
-        handled_has,
-        handled_has,
+        "inbox row for Alice's message",
+        "one row with Alice's pk and her character name",
+        f"rows={len(mine)} pk={state['admin_pk']} (player pk {state.get('pk')}) "
+        f"character={shows_character}",
+        len(mine) == 1 and state["admin_pk"] == state.get("pk") and shows_character,
     )
-    a.goto(f"{CLUB}/accounts/messages/?status=open&kind=all", "open inbox Open list again")
-    rows = a.page.evaluate(
-        "Array.from(document.querySelectorAll('#inbox-list tbody tr'))"
-        ".filter(r => r.querySelector('input[name=message_ids]'))"
-        ".map(r => r.textContent)"
+
+    # The Status column hides below 576px (see inbox.html `wm-col-optional`).
+    hidden = a.page.evaluate(
+        "Array.from(document.querySelectorAll('#inbox-list th.wm-col-optional'))"
+        ".every(e => e.offsetParent === null)"
     )
-    open_has = any(MSG_BODY[:30] in r for r in rows)
     a.check(
-        "Open filter no longer shows the message",
-        "row absent from Open",
-        not open_has,
-        not open_has,
+        "Status column follows the screen width",
+        "hidden at 390, shown at 1280",
+        f"hidden={hidden}",
+        hidden == (a.width <= 480),
     )
 
-    # Re-open the handled message so it is back in Open, then give coins.
-    a.goto(f"{CLUB}/accounts/messages/?status=handled&kind=all", "open Handled list again")
-    row_loc = a.page.locator("#inbox-list tbody tr").filter(has_text=MSG_BODY[:30])
-    reopen_btn = row_loc.locator("a[aria-label='Reopen']")
-    if reopen_btn.count() > 0:
-        reopen_btn.first.click()
-        opened = a.modal_open() and a.modal_has("Reopen")
-        a.check(
-            "Reopen modal opens",
-            "modal with sender",
-            a.modal_text()[:60],
-            opened,
-        )
-        if opened:
-            a.page.locator("#app-modal .modal-footer button[type=submit]").first.click()
-            closed = a.modal_closed()
-            end = time.time() + 5
-            while time.time() < end and not closed:
-                closed = a.modal_closed()
-                time.sleep(0.1)
-            a.check(
-                "Reopen confirm closes modal",
-                "modal closed",
-                closed,
-                closed,
-            )
+    pk = state["admin_pk"]
+    if pk is None:
+        raise MissingControl("no pk for Alice's message in the inbox")
+    a.goto(f"{INBOX}{pk}/", "admin opens Alice's message detail by URL")
+    text = a.main_text()
+    a.check(
+        "admin detail page shows sender and body",
+        "Alice (Aria Windrunner) and the message body",
+        f"h2={a.h2()!r}",
+        NEEDLE in text and "Aria Windrunner" in text,
+    )
 
-    # Give coins: 1 gp.
-    a.goto(f"{CLUB}/accounts/messages/?status=open&kind=all", "open Open list for Give")
-    row_loc = a.page.locator("#inbox-list tbody tr").filter(has_text=MSG_BODY[:30])
-    give_btn = row_loc.locator("a[aria-label='Give coins']")
-    if give_btn.count() > 0:
-        give_btn.first.click()
-        opened = a.modal_open() and a.modal_has("Give coins")
-        a.check(
-            "Give coins modal opens",
-            "modal with sender",
-            a.modal_text()[:60],
-            opened,
-        )
-        if opened:
-            a.page.fill("#app-modal input[name=coins_gp]", GRANT_GP)
-            # Review
-            a.page.locator("#app-modal button[value=review]").first.click()
-            summary = a.modal_has("Give this from") and GRANT_GP in a.modal_text()
-            a.check(
-                "Give coins Review",
-                "summary shows 1 gp",
-                a.modal_text()[:120],
-                summary,
-            )
-            if summary:
-                a.page.locator("#app-modal button[name=confirmed]").first.click()
-                closed = a.modal_closed()
-                end = time.time() + 5
-                while time.time() < end and not closed:
-                    closed = a.modal_closed()
-                    time.sleep(0.1)
-                a.check(
-                    "Give coins confirm closes modal",
-                    "modal closed",
-                    closed,
-                    closed,
-                )
-                # Reload the inbox to see the granted row update.
-                a.page.reload(wait_until="networkidle")
-                # The grant marks the message Handled, so check the Handled list.
-                a.goto(
-                    f"{CLUB}/accounts/messages/?status=handled&kind=all",
-                    "open Handled list for grant check",
-                )
-                granted = a.wait(
-                    "Array.from(document.querySelectorAll('#inbox-list .wm-granted'))"
-                    ".some(e => e.textContent.includes('gp'))",
-                    timeout=5,
-                )
-                a.check(
-                    "Give coins shows grant in row",
-                    "'1 gp' under Granted",
-                    granted,
-                    granted,
-                )
+
+def admin_answers(a: Tab, state: dict) -> None:
+    """Mark Handled, then give 1 gp. Setup only; the checks are on the outcome."""
+    pk = state["pk"]
+    a.set_status(pk, "open", "Mark handled", "Mark handled")
+    a.goto(f"{INBOX}{pk}/")
+    a.reload()
+    a.check(
+        "Handled status survives a reload (admin detail page)",
+        "Handled badge and Admin Response section",
+        f"badge={a.badge_of('main')!r} response={'Admin Response' in a.main_text()}",
+        a.badge_of("main") == "handled" and "Admin Response" in a.main_text(),
+    )
+
+    a.set_status(pk, "handled", "Reopen", "Reopen")
+    a.give_coins(pk, GRANT_GP)
+    a.goto(f"{INBOX}{pk}/")
+    a.reload()
+    text = a.main_text()
+    cp = coins_to_cp(text.split("Items & Coins Granted")[-1])
+    a.check(
+        "the grant survives a reload (admin detail page)",
+        f"Handled, Items & Coins Granted, {GRANT_GP} gp",
+        f"badge={a.badge_of('main')!r} granted_heading={'Items & Coins Granted' in text} cp={cp}",
+        a.badge_of("main") == "handled"
+        and "Items & Coins Granted" in text
+        and cp == GRANT_GP * CP_PER["gp"],
+    )
 
 
 # --------------------------------------------------------------------------- player sees answer
 
 
-def player_sees_answer(p: Tab) -> None:
-    """Alice reloads and checks the admin's answer arrived."""
+def player_sees_answer(p: Tab, state: dict) -> None:
+    """Alice reloads and checks that the admin's answer arrived."""
     p.goto(f"{CLUB}/", "reload club home as Alice")
-
-    # Dashboard badge Handled, preview line.
-    items = p.page.locator(".list-group-item").all_inner_texts()
-    handled = any(MSG_BODY[:30] in t and "Handled" in t for t in items)
+    item = p.page.locator(".list-group-item", has_text=NEEDLE)
+    preview = "Admin response: items/coins granted"
     p.check(
-        "dashboard badge Handled + preview",
-        "badge Handled and admin response preview",
-        f"handled={handled}",
-        handled,
+        "dashboard card shows Handled and the admin preview",
+        f"Handled badge and {preview!r}",
+        f"rows={item.count()} badge={p.badge_of(item)!r}",
+        item.count() == 1 and p.badge_of(item) == "handled" and preview in item.first.inner_text(),
     )
 
-    # Open "View Response": status badge, Admin Response section, grant lines.
-    clicked = p.page.evaluate(
-        """(needle) => {
-          const li = Array.from(document.querySelectorAll('.list-group-item'))
-            .find(el => el.textContent.includes(needle));
-          if (!li) return false;
-          const as = Array.from(li.querySelectorAll('a'));
-          const a = as.find(el => el.textContent.includes('View Response'));
-          if (!a) return false;
-          a.click();
-          return true;
-        }""",
-        MSG_BODY[:30],
-    )
-    if clicked:
-        p.page.wait_for_load_state("networkidle")
-        h2_text = ""
-        end = time.time() + 5
-        while time.time() < end:
-            try:
-                h2_text = p.page.evaluate(
-                    "() => { const el = document.querySelector('main h2');"
-                    " return el ? el.innerText.trim() : ''; }"
-                )
-                break
-            except Exception:
-                time.sleep(0.1)
-        h2 = h2_text
-        p.check(
-            "detail page heading",
-            "'Your Message'",
-            h2,
-            h2 == "Your Message",
-        )
-        badge = "Handled" in p.text()
-        admin_response = "Admin Response" in p.text()
-        p.check(
-            "detail page shows Admin Response",
-            "Handled badge + Admin Response",
-            f"badge={badge} admin_response={admin_response}",
-            badge and admin_response,
-        )
-    else:
-        p.check(
-            "'View Response' link on Alice's message (after answer)",
-            "link present and clickable",
-            "missing",
-            False,
-        )
-
-    # "Your messages" table on the form page shows the new status.
-    p.goto(f"{CLUB}/accounts/messages/new/", "open message form (your messages table)")
-    rows = p.page.evaluate(
-        "Array.from(document.querySelectorAll('table tbody tr')).map(r => r.textContent)"
-    )
-    handled_row = any(MSG_BODY[:30] in r and "Handled" in r for r in rows)
+    link = item.locator("a", has_text="View Response")
+    p.click_nav(link.first, "card link: View Response (after the answer)", DETAIL_PATH_RE)
+    text = p.main_text()
+    cp = coins_to_cp(text.split("Items & Coins Granted")[-1])
     p.check(
-        "your messages table shows Handled",
-        "row with Handled badge",
-        handled_row,
-        handled_row,
+        "detail page shows the admin's answer",
+        f"Handled badge, Admin Response, {GRANT_GP} gp granted",
+        f"badge={p.badge_of('main')!r} response={'Admin Response' in text} cp={cp}",
+        p.badge_of("main") == "handled"
+        and "Admin Response" in text
+        and cp == GRANT_GP * CP_PER["gp"],
+    )
+
+    p.goto(FORM, "open the message form again")
+    row = p.page.locator("table tbody tr", has_text=NEEDLE)
+    p.check(
+        "'Your messages' table shows Handled",
+        "one row with the Handled badge",
+        f"rows={row.count()} badge={p.badge_of(row)!r}",
+        row.count() == 1 and p.badge_of(row) == "handled",
+    )
+
+    p.goto(f"{CLUB}/")
+    after = p.sheet_coins_cp()
+    before = state.get("coins_before")
+    p.check(
+        f"sheet coin total rose by {GRANT_GP} gp",
+        f"{before} cp + {GRANT_GP * CP_PER['gp']} cp"
+        if before is not None
+        else "a coin total before and after",
+        after,
+        before is not None and after == before + GRANT_GP * CP_PER["gp"],
     )
 
 
 # --------------------------------------------------------------------------- permissions
 
 
-def check_permissions(p: Tab, a: Tab) -> None:
-    """Alice cannot open the inbox or bob's message; admin can open Alice's."""
-    # Let the page settle after the previous section's navigations.
-    p.page.wait_for_load_state("networkidle")
-    # Alice opens the admin inbox: 403 or 404.
-    p.goto(f"{CLUB}/accounts/messages/", "Alice opens admin inbox", expect_status=403)
-    shown = p.page.locator("body").inner_text().strip()
+def check_permissions(p: Tab, a: Tab, site: Tab, state: dict) -> None:
+    """A player cannot open the inbox or another player's message."""
+    a.goto(f"{INBOX}?status=all&kind=all")
+    bob_rows, bob_pk = a.inbox_find(BOB_BODY[:25])
+    a.check("admin finds bob's message in the inbox", "one row", len(bob_rows), bob_pk is not None)
+    if bob_pk is None:
+        raise MissingControl("bob's message is not in the inbox")
+    a.goto(f"{INBOX}{bob_pk}/", "admin opens bob's message detail")
+
+    status = p.goto(INBOX, "Alice opens the admin inbox", expect_status=403)
+    shown = p.page.locator("body").inner_text()
     p.check(
-        "player gets 403/404 on admin inbox",
-        "403 or 404 page with text",
-        f"text={shown[:50]!r}",
-        bool(shown),
-        expect_problem="403",
+        "the inbox stays closed to a player",
+        "HTTP 403 and no message list",
+        f"HTTP {status}, list={p.page.locator('#inbox-list').count()}, "
+        f"body_shown={NEEDLE in shown}",
+        status == 403 and p.page.locator("#inbox-list").count() == 0 and NEEDLE not in shown,
     )
 
-    # Alice opens bob's message detail by URL: 404.
-    p.goto(f"{CLUB}/accounts/messages/99999/", "Alice opens nonexistent message", expect_status=404)
-    shown = p.page.locator("body").inner_text().strip()
+    status = p.goto(f"{INBOX}{bob_pk}/", "Alice opens bob's message detail", expect_status=404)
+    shown = p.page.locator("body").inner_text()
     p.check(
-        "player gets 404 on other's message",
-        "404 page with text",
-        f"text={shown[:50]!r}",
-        bool(shown),
-        expect_problem="404",
+        "another player's message stays closed",
+        "HTTP 404 and bob's text not shown",
+        f"HTTP {status}, bob_text_shown={BOB_BODY[:25] in shown}",
+        status == 404 and BOB_BODY[:25] not in shown,
     )
 
-    # Admin opens Alice's message: 200.
-    a.goto(f"{CLUB}/accounts/messages/1/", "admin opens message #1")
-    status_text = a.page.locator("body").inner_text().strip()
-    a.check(
-        "admin opens message #1",
-        "200 page with text",
-        f"text={status_text[:50]!r}",
-        bool(status_text),
+    # A site admin has no club membership. The detail view reads membership.id.
+    site.goto(f"{INBOX}{state['pk']}/")
+    status = site.status_for(f"{INBOX}{state['pk']}/")
+    site.check(
+        "site admin (no club membership) opens a message detail",
+        "HTTP 200",
+        f"HTTP {status}",
+        status == 200,
+        expect_problem="500" if status == 500 else None,
     )
 
 
 # --------------------------------------------------------------------------- layout at 390
 
 
-def layout_390(p: Tab, a: Tab) -> None:
-    """No horizontal scroll on form, inbox, detail page, dashboard card."""
-    p.page.wait_for_load_state("networkidle")
-    p.no_hscroll("message form no horizontal scroll")
-    a.no_hscroll("inbox no horizontal scroll")
-    p.goto(f"{CLUB}/", "open dashboard for layout")
-    p.no_hscroll("dashboard card no horizontal scroll")
+def layout_390(p: Tab, a: Tab, state: dict) -> None:
+    """Open each page first, then measure that page."""
+    pk = state["pk"]
+    p.no_hscroll("message form: no horizontal scroll", FORM)
+    p.no_hscroll("message detail (player): no horizontal scroll", f"{INBOX}{pk}/")
+    p.no_hscroll("dashboard My Messages card: no horizontal scroll", f"{CLUB}/")
+    a.no_hscroll("inbox: no horizontal scroll", INBOX)
+    a.no_hscroll("message detail (admin): no horizontal scroll", f"{INBOX}{pk}/")
 
 
 # --------------------------------------------------------------------------- runner
+
+
+def section(tab: Tab, name: str, fn, *args) -> None:
+    """Run one section. A crash is recorded as a failed check, not hidden."""
+    try:
+        fn(*args)
+    except Exception as exc:
+        tab.check(f"section '{name}'", "completes", f"{type(exc).__name__}: {exc}"[:200], False)
+        traceback.print_exc(limit=3)
 
 
 def run_width(browser, width: int, height: int) -> tuple[int, list[str]]:
@@ -790,50 +659,37 @@ def run_width(browser, width: int, height: int) -> tuple[int, list[str]]:
             env=env,
             check=True,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
         )
         with lib.run_server(env) as server:
-            player_ctx = browser.new_context(viewport={"width": width, "height": height})
-            admin_ctx = browser.new_context(viewport={"width": width, "height": height})
+            ctxs = [
+                browser.new_context(viewport={"width": width, "height": height}) for _ in range(3)
+            ]
             try:
-                player = Tab(player_ctx, server.base_url, "player", width)
-                admin = Tab(admin_ctx, server.base_url, "admin", width)
-
+                player = Tab(ctxs[0], server.base_url, "player", width)
+                admin = Tab(ctxs[1], server.base_url, "admin", width)
+                site = Tab(ctxs[2], server.base_url, "site admin", width)
                 lib.login(player.page, server.base_url, "player")
-                lib.login(admin.page, server.base_url, "admin")
+                lib.login(admin.page, server.base_url, "gm")
+                lib.login(site.page, server.base_url, "admin")
 
-                problems: list[str] = []
-
-                def section(tab: Tab, name: str, fn, *args):
-                    try:
-                        fn(*args)
-                    except Exception as exc:
-                        tab.check(
-                            f"section '{name}'",
-                            "completes",
-                            f"{type(exc).__name__}: {str(exc)[:160]}",
-                            False,
-                        )
-                        import traceback
-
-                        traceback.print_exc(limit=3)
-
-                section(player, "player send message", player_send_message, player)
-                section(player, "player before answer", player_before_answer, player)
-                section(admin, "admin reads inbox", admin_reads_inbox, admin)
-                section(admin, "admin answers", admin_answers, admin, width)
-                section(player, "player sees answer", player_sees_answer, player)
-                section(player, "permissions", check_permissions, player, admin)
+                state: dict = {}
+                section(player, "player sends", player_send_message, player, state)
+                section(player, "player before answer", player_before_answer, player, state)
+                section(admin, "admin reads inbox", admin_reads_inbox, admin, state)
+                section(admin, "admin answers", admin_answers, admin, state)
+                section(player, "player sees answer", player_sees_answer, player, state)
+                section(player, "permissions", check_permissions, player, admin, site, state)
                 if width <= 480:
-                    section(player, "layout 390", layout_390, player, admin)
+                    section(player, "layout 390", layout_390, player, admin, state)
 
-                problems += player.rec.problems()
-                problems += admin.rec.problems()
-                total = player.rec.controls_tried + admin.rec.controls_tried
-                return total, problems
+                tabs = (player, admin, site)
+                for t in tabs:
+                    t.flush()
+                problems = [f"[{t.label}] {x}" for t in tabs for x in t.problems]
+                return sum(t.rec.controls_tried for t in tabs), problems
             finally:
-                player_ctx.close()
-                admin_ctx.close()
+                for ctx in ctxs:
+                    ctx.close()
 
 
 def main() -> int:
@@ -849,10 +705,8 @@ def main() -> int:
                 try:
                     tried, found = run_width(browser, width, height)
                     per_width[width] = tried
-                    problems.extend(found)
+                    problems.extend(f"[{width}] {x}" for x in found)
                 except Exception as exc:
-                    import traceback
-
                     traceback.print_exc()
                     per_width[width] = 0
                     problems.append(f"[{width}] run crashed: {exc}")
@@ -866,8 +720,8 @@ def main() -> int:
             f"Flow 10 admin message check: PROBLEMS ({len(problems)}), browser={browser_name}, "
             f"controls tried={total} ({counts})"
         )
-        for p in problems:
-            print(f"  {p}")
+        for x in problems:
+            print(f"  {x}")
         return 1
     print(
         f"Flow 10 admin message check: clean, browser={browser_name}, "
