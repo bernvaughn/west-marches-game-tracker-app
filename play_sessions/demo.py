@@ -6,14 +6,14 @@ from django.utils import timezone
 
 from accounts.models import Membership
 from play_sessions.core import from_club_local
+from play_sessions.feed import get_or_create_token
 from play_sessions.models import (
     AttendanceHint,
-    PlaySession,
     PlayerRSVP,
+    PlaySession,
     SessionSettings,
 )
 from play_sessions.services_attendance import save_attendance, set_player_rsvp
-from play_sessions.feed import get_or_create_token
 
 
 def seed(club):

@@ -11,8 +11,16 @@ from items.models import ClubWeightSettings, ContainerSlot, ContainerSlotOption,
 from items.opening import open_container
 from ledger.models import LedgerEntry, LedgerLine
 from ledger.services import available_items, coin_balance
-from map.models import HexMap, Location, Tile, TileVisit, XPLevel
 from mail.models import ClubMailSettings
+from map.models import HexMap, Location, Tile, TileVisit, XPLevel
+from play_sessions.models import (
+    AttendanceHint,
+    PlayerRSVP,
+    PlaySession,
+    SessionAttendance,
+    SessionAward,
+    SessionSettings,
+)
 from player_characters.models import (
     Character,
     CharacterStatusChange,
@@ -22,14 +30,6 @@ from player_characters.models import (
 )
 from player_characters.sheet import xp_progress
 from player_items.models import PlayerItem, PlayerItemChange, PlayerNotice
-from play_sessions.models import (
-    AttendanceHint,
-    PlaySession,
-    PlayerRSVP,
-    SessionAward,
-    SessionAttendance,
-    SessionSettings,
-)
 from quests.models import Quest, QuestRequirement, QuestReward
 from shops.models import Rotation, Shop, ShopStock
 from starting_equipment.models import (
@@ -439,7 +439,16 @@ def test_demo_attendance_hint():
 def test_demo_weighted_items():
     call_command("seed_demo")
     club = Club.objects.get(slug="demo")
-    for name in ("Rope", "Torch", "Longsword", "Healing potion", "Wolf pelt", "Moonstone amulet", "Parchment", "Hempen cord"):
+    for name in (
+        "Rope",
+        "Torch",
+        "Longsword",
+        "Healing potion",
+        "Wolf pelt",
+        "Moonstone amulet",
+        "Parchment",
+        "Hempen cord",
+    ):
         item = Item.objects.get(club=club, name=name)
         assert item.weight_hundredth_lb is not None, f"{name} has no weight"
 

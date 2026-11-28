@@ -5,7 +5,7 @@ from ledger.models import LedgerEntry
 from ledger.services import Line, record
 
 from .life import archive, mark_dead
-from .models import Character, CharacterStatusChange, ItemNote, JunkMark
+from .models import Character, ItemNote, JunkMark
 
 CHARACTERS = [
     ("alice@example.com", "Aria Windrunner", 5),
@@ -249,6 +249,7 @@ def _seed_dead_and_archived(club):
     garrick = Character.objects.filter(club=club, name="Garrick Ashdown").first()
     if garrick is not None and not garrick.is_dead:
         from datetime import timedelta
+
         from django.utils import timezone
 
         died_on = timezone.localdate() - timedelta(days=10)

@@ -388,7 +388,9 @@ def test_demo_new_club_parity():
     }
     for name, weight in new_weights.items():
         assert name in demo_weights, f"{name} weighted on new club but not on demo club"
-        assert demo_weights[name] == weight, f"{name} weight differs: demo={demo_weights[name]} new={weight}"
+        assert demo_weights[name] == weight, (
+            f"{name} weight differs: demo={demo_weights[name]} new={weight}"
+        )
 
 
 def test_demo_weighted_items_are_not_on_new_club():
@@ -397,20 +399,20 @@ def test_demo_weighted_items_are_not_on_new_club():
     from django.core.management import call_command
 
     call_command("seed_demo")
-    demo_club = Club.objects.get(slug="demo")
 
     new_club = Club.objects.create(name="Parity Club", slug="parity-club-4")
     seed_new_club(new_club)
 
-    demo_weighted = set(
-        Item.objects.filter(club=demo_club).exclude(weight_hundredth_lb__isnull=True).values_list("name", flat=True)
-    )
     new_weighted = set(
-        Item.objects.filter(club=new_club).exclude(weight_hundredth_lb__isnull=True).values_list("name", flat=True)
+        Item.objects.filter(club=new_club)
+        .exclude(weight_hundredth_lb__isnull=True)
+        .values_list("name", flat=True)
     )
     # Demo-only weighted items should NOT appear on a new club
     demo_only = {"Healing potion", "Wolf pelt", "Moonstone amulet", "Parchment", "Hempen cord"}
-    assert demo_only.isdisjoint(new_weighted), f"Demo-only weights leaked to new club: {demo_only & new_weighted}"
+    assert demo_only.isdisjoint(new_weighted), (
+        f"Demo-only weights leaked to new club: {demo_only & new_weighted}"
+    )
 
 
 def test_demo_stacked_is_new_club_stacked_plus_demo_extras():

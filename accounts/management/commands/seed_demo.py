@@ -9,9 +9,9 @@ from items import demo as items_demo
 from ledger import demo as ledger_demo
 from mail import demo as mail_demo
 from map import demo as map_demo
+from play_sessions import demo as sessions_demo
 from player_characters import demo as characters_demo
 from player_items import demo as player_items_demo
-from play_sessions import demo as sessions_demo
 from quests import demo as quests_demo
 from shops import demo as shops_demo
 from starting_equipment import demo as starting_equipment_demo
@@ -37,7 +37,7 @@ class Command(BaseCommand):
                 stdout=self.stdout,
             )
 
-            # Backfill SRD weights onto seeded demo items (idempotent, never overwrites admin-set weights).
+            # Backfill SRD weights onto seeded demo items (never overwrites admin-set weights).
             call_command(
                 "seed_item_weights",
                 "--club",

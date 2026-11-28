@@ -4,6 +4,7 @@ from accounts.models import Membership
 from player_items.models import PlayerItem, PlayerNotice, normalize_name_key
 from player_items.services import add_player_item
 
+
 def seed(club):
     """Seed demo player-written items and notices.
 
@@ -12,7 +13,6 @@ def seed(club):
     """
     gm = Membership.objects.get(club=club, user__email="gm@example.com")
     alice = Membership.objects.get(club=club, user__email="alice@example.com")
-    bob = Membership.objects.get(club=club, user__email="bob@example.com")
 
     from player_characters.models import Character
 
@@ -21,7 +21,14 @@ def seed(club):
     borin = Character.objects.get(club=club, name="Borin Stonefist")
 
     # Aria: Grandmother's locket
-    _add_item(club, aria, "Grandmother's locket", 1, "A small silver locket with a painted portrait inside.", gm.user)
+    _add_item(
+        club,
+        aria,
+        "Grandmother's locket",
+        1,
+        "A small silver locket with a painted portrait inside.",
+        gm.user,
+    )
 
     # Wren: Lockpicks
     _add_item(club, wren, "Lockpicks", 1, "Fine steel lockpicks, barely used.", gm.user)
@@ -43,9 +50,10 @@ def seed(club):
 
 def _add_item(club, character, name, quantity, note, by):
     """Add a player-written item only when no row with that name_key exists for the character."""
-    from player_items.models import PlayerItem
 
-    name_key = __import__("player_items.models", fromlist=["normalize_name_key"]).normalize_name_key(name)
-    exists = PlayerItem.objects.for_club(club).filter(character=character, name_key=name_key).exists()
+    name_key = normalize_name_key(name)
+    exists = (
+        PlayerItem.objects.for_club(club).filter(character=character, name_key=name_key).exists()
+    )
     if not exists:
         add_player_item(club, character, name, quantity, note, by)

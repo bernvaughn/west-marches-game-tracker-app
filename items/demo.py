@@ -3,11 +3,11 @@ from .models import ClubWeightSettings, Item
 # Weights for demo-only items not covered by SRD or gear lists (hundredths of a lb).
 # Filled only while blank, so an admin-set weight survives a re-run.
 DEMO_WEIGHTS = {
-    "Healing potion": 50,      # 0.5 lb per vial
-    "Wolf pelt": 200,          # 2.0 lb
-    "Moonstone amulet": 10,    # 0.1 lb
-    "Parchment": 1,            # 0.01 lb per sheet
-    "Hempen cord": 2,          # 0.02 lb per foot
+    "Healing potion": 50,  # 0.5 lb per vial
+    "Wolf pelt": 200,  # 2.0 lb
+    "Moonstone amulet": 10,  # 0.1 lb
+    "Parchment": 1,  # 0.01 lb per sheet
+    "Hempen cord": 2,  # 0.02 lb per foot
 }
 
 ITEMS = [
