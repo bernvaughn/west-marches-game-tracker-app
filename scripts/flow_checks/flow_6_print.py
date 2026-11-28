@@ -42,6 +42,28 @@ DASHBOARD_RE = re.compile(r"/c/demo/accounts/dashboard/")
 
 DEMO_PASSWORD = "demo-password"
 
+# Real bugs already filed. A problem line containing the text is reported as known,
+# not as a new failure. Bug 01a22132-b68f-7be7-8f45-c9d0263d6323: the sheet per-item
+# "Print card" dropdown toggle has both data-bs-toggle="dropdown" and data-wm-tooltip.
+KNOWN_BUGS = {
+    "Bootstrap doesn't allow more than one instance per element. Bound instance: bs.tooltip": (
+        "01a22132-b68f-7be7-8f45-c9d0263d6323"
+    ),
+}
+
+
+def split_known(problems: list[str]) -> tuple[list[str], list[str]]:
+    """Split problem lines into (new, known) using KNOWN_BUGS."""
+    new: list[str] = []
+    known: list[str] = []
+    for p in problems:
+        bug = next((b for text, b in KNOWN_BUGS.items() if text in p), None)
+        if bug:
+            known.append(f"{p}  [filed bug {bug}]")
+        else:
+            new.append(p)
+    return new, known
+
 
 def wait_until(condition, timeout: float = 10.0, interval: float = 0.1):
     """Poll a Python callable until it returns something truthy, else return None."""
@@ -118,8 +140,11 @@ def pack_url(path: str, **flags: int) -> str:
 class Walker:
     """One browser context at one width, logging every control through a Recorder."""
 
-    def __init__(self, browser, base_url: str, width: int, height: int) -> None:
+    def __init__(
+        self, browser, base_url: str, width: int, height: int, browser_name: str = "chromium"
+    ) -> None:
         self.base_url = base_url
+        self.browser_name = browser_name
         self.width = width
         self.ctx = browser.new_context(viewport={"width": width, "height": height})
         self.page = self.ctx.new_page()
@@ -132,24 +157,25 @@ class Walker:
 
     def _inject_print_stub(self) -> None:
         """Inject a script that stubs window.print and records calls with stack traces."""
+        # Runs in every frame (including the hidden srcdoc print iframe). Each frame wraps
+        # its own window.print; all calls are pushed onto window.top.__prints.
         script = """
         (() => {
-            if (window.top.__prints) return;  // already injected
-            window.top.__prints = [];
+            let top;
+            try {
+                top = window.top;
+                if (!top.__prints) top.__prints = [];
+            } catch (e) {
+                return;  // cross-origin frame
+            }
+            if (window.__printStubbed) return;
+            window.__printStubbed = true;
             const origPrint = window.print;
             window.print = function(...args) {
                 const stack = new Error().stack;
-                window.top.__prints.push({href: location.href, stack});
+                top.__prints.push({href: location.href, stack});
                 return origPrint.apply(this, args);
             };
-            // Also catch print calls from iframes
-            try {
-                if (window.top !== window && window.top.__prints) {
-                    // Already handled by top
-                }
-            } catch (e) {
-                // Cross-origin, ignore
-            }
         })();
         """
         self.ctx.add_init_script(script)
@@ -163,12 +189,18 @@ class Walker:
         self.page.evaluate("window.top.__prints = []")
 
     def _check_print_call(self, control: str, expected_origin: str | None = None) -> bool:
-        """Check that window.print was called exactly once from a /static/js/ file."""
+        """Check that window.print was called exactly once from a /static/js/ file.
+
+        Polls up to 10 s: iframe prints (data-print-frame) fire only after a fetch and
+        the iframe load event.
+        """
+        wait_until(lambda: len(self._get_print_calls()) >= 1, timeout=10.0)
+        time.sleep(0.3)  # let a stray second call land
         calls = self._get_print_calls()
-        if not calls:
-            self.ck(control, "window.print called once", "no call recorded", False)
+        if len(calls) != 1:
+            self.ck(control, "window.print called once", f"{len(calls)} calls", False)
             return False
-        call = calls[-1]
+        call = calls[0]
         origin = print_origin(call.get("stack"))
         if not origin:
             self.ck(
@@ -306,8 +338,7 @@ class Walker:
     def check_print_media(self, control: str) -> bool:
         """Switch to print media and check that .no-print elements are hidden."""
         self.page.emulate_media(media="print")
-        self.page.wait_for_load_state("networkidle")
-        time.sleep(0.3)  # allow CSS to apply
+        time.sleep(0.3)  # allow CSS to apply (no networkidle: it can hang on iframes)
 
         # Check that .no-print elements are hidden
         no_print_visible = self.page.locator(".no-print").first.is_visible()
@@ -351,6 +382,20 @@ class Walker:
             and not toolbar_visible
             and not header_visible
             and not buttons_visible
+        )
+
+    def check_pdf_pages(self, control: str, min_pages: int = 1) -> bool | None:
+        """Render the page to PDF and count pages (Chromium only; Firefox has no page.pdf)."""
+        if self.browser_name != "chromium":
+            print(f"- {control}: PDF page count skipped on {self.browser_name}")
+            return None
+        data = self.page.pdf(print_background=True)
+        pages = count_pdf_pages(data)
+        return self.ck(
+            f"{control} PDF page count",
+            f">= {min_pages} pages",
+            f"{pages} pages",
+            pages >= min_pages,
         )
 
     def check_no_sideways_scroll(self, control: str) -> bool:
@@ -570,10 +615,10 @@ def check_item_cards(w: Walker) -> None:
             )
             w._reset_print_calls()
             w.post_form(print_form, "item cards: Print form submit")
-            # data-print-frame prints in iframe, print call not captured in main window
-            w.ck("item cards: Print form submit", "POST succeeded", "POST 200", True)
+            # data-print-frame prints in a srcdoc iframe; the stub reaches it
+            w._check_print_call("item cards: Print", "print_frame.js")
             # After print, button should be re-enabled (handled by print_frame.js)
-            time.sleep(0.5)
+            wait_until(lambda: not submit_btn.is_disabled())
             w.ck(
                 "item cards: Print button re-enabled after print",
                 "enabled",
@@ -640,9 +685,7 @@ def check_item_cards(w: Walker) -> None:
     sheets = w.page.locator(".wm-card-sheet").count()
     w.ck("item cards: wm-card-sheet present", "at least 1 sheet", f"{sheets} sheets", sheets >= 1)
 
-    # PDF page count on Chromium
-    if w.rec.__class__.__name__ != "Recorder":  # always true, just for clarity
-        pass  # We'll do PDF in the run_width function
+    w.check_pdf_pages("item cards")
 
 
 def check_single_item_card(w: Walker) -> None:
@@ -756,6 +799,7 @@ def check_single_item_card(w: Walker) -> None:
                 # Print media: check full page prints one card per page
                 w.check_print_media("single card")
                 # Check .wm-card-page present
+                w.check_pdf_pages("single card", min_pages=1)
                 pages = w.page.locator(".wm-card-page").count()
                 w.ck(
                     "single card: wm-card-page present (one per page)",
@@ -792,16 +836,16 @@ def check_slips(w: Walker) -> None:
         time.sleep(0.5)
         w._check_print_call("slips: Print button", "print_page.js")
 
+    # Print media check and slip count BEFORE leaving the page with Back
+    w.check_print_media("slips")
+    sheets = w.page.locator(".wm-slip-sheet").count()
+    w.ck("slips: wm-slip-sheet present", "at least 1", f"{sheets} sheets", sheets >= 1)
+    w.check_pdf_pages("slips")
+
     # Back link
     back_link = w.page.locator('a:has-text("Back")').first
     if back_link.count():
         w.click_nav(back_link, "slips: Back link", SHEET_PATH_RE)
-
-    # Print media check
-    w.check_print_media("slips")
-    # Check .wm-slip-sheet present
-    sheets = w.page.locator(".wm-slip-sheet").count()
-    w.ck("slips: wm-slip-sheet present", "at least 1", f"{sheets} sheets", sheets >= 1)
 
 
 def check_dashboard_modal(w: Walker) -> None:
@@ -963,12 +1007,11 @@ def check_pack_print_view(w: Walker) -> None:
             )
             w._reset_print_calls()
             w.post_form(print_form, "pack view: Print submit")
-            # data-print-frame prints in iframe, print call not captured in main window
-            w.ck("pack view: Print", "POST succeeded", "POST 200", True)
-    # Don't wait for networkidle - iframe load can hang it
+            w._check_print_call("pack view: Print", "print_frame.js")
 
     # Options box matches query flags (default: sheet=1, items=1, quests=1, map=0)
     w.check_print_media("pack view")
+    w.check_pdf_pages("pack view")
 
     # Sections: sheet name, coins, inventory rows equal sheet page, ready quests, map svg
     # Check sheet section exists
@@ -1045,12 +1088,12 @@ def run_flow(w: Walker) -> None:
         w.page.set_default_timeout(8000)
 
 
-def run_width(browser, width: int, height: int) -> tuple[int, list[str]]:
+def run_width(browser, browser_name: str, width: int, height: int) -> tuple[int, list[str]]:
     """Fresh DB and server for one width. Returns (controls tried, problems)."""
     with tempfile.TemporaryDirectory(prefix=f"flow6-{width}-") as td:
         env = lib.fresh_demo_db(Path(td) / "demo.sqlite3")
         with lib.run_server(env) as server:
-            w = Walker(browser, server.base_url, width, height)
+            w = Walker(browser, server.base_url, width, height, browser_name)
             try:
                 run_flow(w)
             except Exception as exc:
@@ -1070,7 +1113,7 @@ def main() -> int:
         try:
             for width, height in ((1280, 800), (390, 844)):
                 print(f"--- width {width} ---")
-                tried, found = run_width(browser, width, height)
+                tried, found = run_width(browser, browser_name, width, height)
                 per_width[width] = tried
                 problems.extend(found)
         finally:
@@ -1078,15 +1121,21 @@ def main() -> int:
 
     total = sum(per_width.values())
     counts = ", ".join(f"{w}px={n}" for w, n in per_width.items())
-    if problems:
+    new, known = split_known(problems)
+    for k in known:
+        print(f"  known: {k}")
+    if new:
         print(
-            f"Flow 6 print check: PROBLEMS ({len(problems)}), browser={browser_name}, "
+            f"Flow 6 print check: PROBLEMS ({len(new)}), browser={browser_name}, "
             f"controls tried={total} ({counts})"
         )
-        for p in problems:
+        for p in new:
             print(f"  {p}")
         return 1
-    print(f"Flow 6 print check: clean, browser={browser_name}, controls tried={total} ({counts})")
+    print(
+        f"Flow 6 print check: CLEAN, browser={browser_name}, controls tried={total} ({counts}), "
+        f"known filed-bug problems={len(known)}"
+    )
     return 0
 
 

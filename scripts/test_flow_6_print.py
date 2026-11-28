@@ -173,3 +173,15 @@ def test_has_inline_handler_empty_attr():
     """Empty on* attribute still counts."""
     el = MockElement({"onclick": "", "id": "btn"})
     assert has_inline_handler(el) is True
+
+
+def test_split_known_separates_filed_bug():
+    from scripts.flow_checks.flow_6_print import split_known
+
+    known_line = (
+        "@1280: console error: Bootstrap doesn't allow more than one instance per element. "
+        "Bound instance: bs.tooltip."
+    )
+    new, known = split_known([known_line, "@1280: http 500 /x"])
+    assert new == ["@1280: http 500 /x"]
+    assert len(known) == 1 and "01a22132" in known[0]
