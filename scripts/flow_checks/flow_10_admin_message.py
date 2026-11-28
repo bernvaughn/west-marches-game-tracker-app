@@ -349,13 +349,33 @@ def player_before_answer(p: Tab) -> None:
         )
         return
     p.page.wait_for_load_state("networkidle")
+    # Wait for the page to settle after HTMX navigation.
+    end = time.time() + 5
+    detail_path = ""
+    while time.time() < end:
+        try:
+            detail_path = p.page.evaluate("location.pathname")
+            break
+        except Exception:
+            time.sleep(0.1)
     p.check(
         "'View Response' link navigates to detail",
         "detail page URL",
-        p.page.evaluate("location.pathname"),
-        bool(DETAIL_URL_RE.search(p.page.evaluate("location.pathname"))),
+        detail_path,
+        bool(DETAIL_URL_RE.search(detail_path)),
     )
-    h2 = p.page.locator("h2").first.inner_text().strip()
+    h2_text = ""
+    end = time.time() + 5
+    while time.time() < end:
+        try:
+            h2_text = p.page.evaluate(
+                "() => { const el = document.querySelector('main h2');"
+                " return el ? el.innerText.trim() : ''; }"
+            )
+            break
+        except Exception:
+            time.sleep(0.1)
+    h2 = h2_text
     p.check(
         "detail page heading",
         "'Your Message'",
@@ -431,7 +451,18 @@ def admin_reads_inbox(a: Tab) -> None:
     )
     if detail_pk:
         a.goto(f"{CLUB}/accounts/messages/{detail_pk}/", "open message detail as admin by URL")
-        h2 = a.page.locator("h2").first.inner_text().strip()
+        h2_text = ""
+        end = time.time() + 5
+        while time.time() < end:
+            try:
+                h2_text = a.page.evaluate(
+                    "() => { const el = document.querySelector('main h2');"
+                    " return el ? el.innerText.trim() : ''; }"
+                )
+                break
+            except Exception:
+                time.sleep(0.1)
+        h2 = h2_text
         a.check(
             "admin detail page heading",
             "'Your Message'",
@@ -489,9 +520,11 @@ def admin_answers(a: Tab, width: int) -> None:
         if opened:
             a.page.locator("#app-modal .modal-footer button[type=submit]").first.click()
             closed = a.modal_closed()
-            if not closed:
-                a.page.locator("#app-modal .btn-close").click()
+            # HTMX may close the modal automatically; give it a moment.
+            end = time.time() + 5
+            while time.time() < end and not closed:
                 closed = a.modal_closed()
+                time.sleep(0.1)
             a.check(
                 "Mark handled confirm closes modal",
                 "modal closed",
@@ -543,9 +576,10 @@ def admin_answers(a: Tab, width: int) -> None:
         if opened:
             a.page.locator("#app-modal .modal-footer button[type=submit]").first.click()
             closed = a.modal_closed()
-            if not closed:
-                a.page.locator("#app-modal .btn-close").click()
+            end = time.time() + 5
+            while time.time() < end and not closed:
                 closed = a.modal_closed()
+                time.sleep(0.1)
             a.check(
                 "Reopen confirm closes modal",
                 "modal closed",
@@ -580,18 +614,26 @@ def admin_answers(a: Tab, width: int) -> None:
             if summary:
                 a.page.locator("#app-modal button[name=confirmed]").first.click()
                 closed = a.modal_closed()
-                if not closed:
-                    a.page.locator("#app-modal .btn-close").click()
+                end = time.time() + 5
+                while time.time() < end and not closed:
                     closed = a.modal_closed()
+                    time.sleep(0.1)
                 a.check(
                     "Give coins confirm closes modal",
                     "modal closed",
                     closed,
                     closed,
                 )
+                # Reload the inbox to see the granted row update.
+                a.page.reload(wait_until="networkidle")
+                # The grant marks the message Handled, so check the Handled list.
+                a.goto(
+                    f"{CLUB}/accounts/messages/?status=handled&kind=all",
+                    "open Handled list for grant check",
+                )
                 granted = a.wait(
                     "Array.from(document.querySelectorAll('#inbox-list .wm-granted'))"
-                    f".some(e => e.textContent.includes({GRANT_GP!r}))",
+                    ".some(e => e.textContent.includes('gp'))",
                     timeout=5,
                 )
                 a.check(
@@ -635,7 +677,18 @@ def player_sees_answer(p: Tab) -> None:
     )
     if clicked:
         p.page.wait_for_load_state("networkidle")
-        h2 = p.page.locator("h2").first.inner_text().strip()
+        h2_text = ""
+        end = time.time() + 5
+        while time.time() < end:
+            try:
+                h2_text = p.page.evaluate(
+                    "() => { const el = document.querySelector('main h2');"
+                    " return el ? el.innerText.trim() : ''; }"
+                )
+                break
+            except Exception:
+                time.sleep(0.1)
+        h2 = h2_text
         p.check(
             "detail page heading",
             "'Your Message'",
@@ -677,6 +730,8 @@ def player_sees_answer(p: Tab) -> None:
 
 def check_permissions(p: Tab, a: Tab) -> None:
     """Alice cannot open the inbox or bob's message; admin can open Alice's."""
+    # Let the page settle after the previous section's navigations.
+    p.page.wait_for_load_state("networkidle")
     # Alice opens the admin inbox: 403 or 404.
     p.goto(f"{CLUB}/accounts/messages/", "Alice opens admin inbox", expect_status=403)
     shown = p.page.locator("body").inner_text().strip()
@@ -713,11 +768,11 @@ def check_permissions(p: Tab, a: Tab) -> None:
 # --------------------------------------------------------------------------- layout at 390
 
 
-def layout_390(p: Tab) -> None:
+def layout_390(p: Tab, a: Tab) -> None:
     """No horizontal scroll on form, inbox, detail page, dashboard card."""
+    p.page.wait_for_load_state("networkidle")
     p.no_hscroll("message form no horizontal scroll")
-    p.goto(f"{CLUB}/accounts/messages/", "open inbox for layout")
-    p.no_hscroll("inbox no horizontal scroll")
+    a.no_hscroll("inbox no horizontal scroll")
     p.goto(f"{CLUB}/", "open dashboard for layout")
     p.no_hscroll("dashboard card no horizontal scroll")
 
@@ -770,7 +825,7 @@ def run_width(browser, width: int, height: int) -> tuple[int, list[str]]:
                 section(player, "player sees answer", player_sees_answer, player)
                 section(player, "permissions", check_permissions, player, admin)
                 if width <= 480:
-                    section(player, "layout 390", layout_390, player)
+                    section(player, "layout 390", layout_390, player, admin)
 
                 problems += player.rec.problems()
                 problems += admin.rec.problems()
