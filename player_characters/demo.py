@@ -4,18 +4,22 @@ from ledger import demo as ledger_demo
 from ledger.models import LedgerEntry
 from ledger.services import Line, record
 
-from .models import Character, ItemNote, JunkMark
+from .life import archive, mark_dead
+from .models import Character, CharacterStatusChange, ItemNote, JunkMark
 
 CHARACTERS = [
     ("alice@example.com", "Aria Windrunner", 5),
     ("alice@example.com", "Wren Thistledown", 2),
+    ("alice@example.com", "Pip Quickfoot", 1),
     ("bob@example.com", "Borin Stonefist", 4),
+    ("bob@example.com", "Garrick Ashdown", 3),
     ("bob@example.com", "Tilda Brightwater", 1),
 ]
 GEAR_NOTE = "Demo: starting gear"
 GEAR = {
     "Aria Windrunner": {"Rope": 1, "Healing potion": 2, "Torch": 5},
     "Borin Stonefist": {"Longsword": 1, "Torch": 3},
+    "Garrick Ashdown": {"Longsword": 1},
     "Tilda Brightwater": {"Priest's Pack": 1},
 }
 SPARE_PELT_NOTE = "Demo: a spare pelt"
@@ -90,13 +94,43 @@ SHEETS = {
         "xp": 0,
         "description": "A devoted cleric who carries an unopened Priest's Pack.",
     },
+    "Pip Quickfoot": {
+        "char_class": "Rogue",
+        "species": "Halfling",
+        "alignment": "Chaotic Neutral",
+        "pronouns": "they/them",
+        "dexterity": 16,
+        "charisma": 12,
+        "armor_class": 14,
+        "max_hp": 12,
+        "perception_bonus": 3,
+        "xp": 300,
+        "description": "A halfling rogue with light fingers and a lighter heart.",
+    },
+    "Garrick Ashdown": {
+        "char_class": "Fighter",
+        "species": "Human",
+        "alignment": "Neutral Good",
+        "pronouns": "he/him",
+        "strength": 16,
+        "dexterity": 12,
+        "constitution": 15,
+        "intelligence": 10,
+        "wisdom": 11,
+        "charisma": 10,
+        "armor_class": 16,
+        "max_hp": 30,
+        "perception_bonus": 1,
+        "xp": 1800,
+        "description": "A fallen shield-bearer, now memorialized.",
+    },
 }
 
 
 def seed(club):
     for email, name, level in CHARACTERS:
         owner = Membership.objects.get(club=club, user__email=email)
-        character, _ = Character.objects.get_or_create(
+        character, created = Character.objects.get_or_create(
             club=club, owner=owner, name=name, defaults={"level": level}
         )
         if character.level is None:
@@ -115,6 +149,8 @@ def seed(club):
     _give_borin_spare_pelt(club)
     _seed_item_note(club)
     _open_demo_stall(club)
+    _seed_borin_capacity(club)
+    _seed_dead_and_archived(club)
 
 
 def _give_gear(club):
@@ -191,3 +227,34 @@ def _open_demo_stall(club):
     parchment = Item.objects.filter(club=club, name="Parchment").first()
     if aria is not None and parchment is not None:
         JunkMark.objects.get_or_create(character=aria, item=parchment, defaults={"quantity": 5})
+
+
+def _seed_borin_capacity(club):
+    """Borin gets a manual carrying capacity override of 300 lb (only while None)."""
+    borin = Character.objects.filter(club=club, name="Borin Stonefist").first()
+    if borin is not None and borin.carrying_capacity_lb is None:
+        borin.carrying_capacity_lb = 300
+        borin.save(update_fields=["carrying_capacity_lb"])
+
+
+def _seed_dead_and_archived(club):
+    """Garrick Ashdown (Bob) is dead; Pip Quickfoot (Alice) is archived.
+
+    Guarded by the created flag / is_dead / is_archived so a re-run does not
+    write duplicate status changes.
+    """
+    gm = Membership.objects.get(club=club, user__email="gm@example.com")
+
+    # Garrick Ashdown: died 10 days ago
+    garrick = Character.objects.filter(club=club, name="Garrick Ashdown").first()
+    if garrick is not None and not garrick.is_dead:
+        from datetime import timedelta
+        from django.utils import timezone
+
+        died_on = timezone.localdate() - timedelta(days=10)
+        mark_dead(garrick, by=gm, died_on=died_on, note="Fell in the Goblin Caves.")
+
+    # Pip Quickfoot: archived
+    pip = Character.objects.filter(club=club, name="Pip Quickfoot").first()
+    if pip is not None and not pip.is_archived:
+        archive(pip, by=gm, note="Player moved away.")
