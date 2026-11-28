@@ -1,7 +1,7 @@
 {% load coins loot_tags units life_tags weights %}
 {% if rows %}
 <div class="wm-table-scroll"><table class="table table-sm table-striped wm-data-table wm-shop-stock">
-  <thead><tr><th>Item</th><th class="num">Price</th><th class="num">Weight</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
+  <thead><tr><th>Item</th><th class="num">Price</th><th class="num wm-col-optional">Weight</th><th class="num">Quantity</th><th><span class="visually-hidden">Buy</span></th></tr></thead>
   <tbody>
   {% for stock in rows %}
     {% with reason=selected_character|buy_block_reason %}
@@ -12,7 +12,7 @@
           {% if loot_rows %}<details class="wm-loot-stock-preview"><summary>Preview contents</summary>{% include "components/loot_rows.html" with rows=loot_rows %}</details>{% endif %}
       </td>
       <td class="num">{{ stock.price|coins }}</td>
-      <td class="num">{{ stock.item.weight_hundredth_lb|weight_display }}</td>
+      <td class="num wm-col-optional">{{ stock.item.weight_hundredth_lb|weight_display }}</td>
       <td class="num">{% if stock.quantity is None %}Unlimited{% else %}{{ stock.quantity }}{% endif %}</td>
       <td class="actions">{% if reason %}<p class="wm-sheet-note" role="status">{{ reason }}</p>{% else %}<a class="btn btn-sm btn-primary" href="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-get="{% url 'shops:buy' club.slug shop.id stock.id %}" hx-target="#app-modal .modal-content" data-app-modal>Buy</a>{% endif %}</td>
     </tr>
